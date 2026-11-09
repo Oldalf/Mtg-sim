@@ -1,0 +1,89 @@
+T0; Archmage's Charm; moved library => hand
+T0; Island; moved library => hand
+T0; Reliquary Tower; moved library => hand
+T0; Syr Konrad, the Grim; moved library => hand
+T0; Preordain; moved library => hand
+T0; Curious Homunculus // Voracious Reader; moved library => hand
+T0; Mana Sculpt; moved library => hand
+T1; Maddening Cacophony; moved library => hand
+T1; Island; moved hand => battlefield
+T2; Swamp; moved library => hand
+T2; Swamp; moved hand => battlefield
+T2; Swamp; tapped
+T2; Island; tapped
+T2; Scion of Halaster; moved commandZone => battlefield
+T3; Swamp; untapped
+T3; Island; untapped
+T3; Traumatize; moved library => hand
+T3; Reliquary Tower; moved hand => battlefield
+T3; Island; tapped
+T3; Swamp; tapped
+T3; Reliquary Tower; tapped
+T3; Gale, Waterdeep Prodigy; moved commandZone => battlefield
+T3; Withering Torment; moved miscCards => opponentsCards
+T4; Reliquary Tower; untapped
+T4; Swamp; untapped
+T4; Island; untapped
+T4; Stock Up; moved library => hand
+T4; Arcane Denial; moved library => hand
+T4; Arcane Denial; moved hand => graveyard
+T4; Island; tapped
+T4; Reliquary Tower; tapped
+T4; Swamp; tapped
+T4; Stock Up; moved hand => battlefield
+T4; Extended Absence; moved library => hand
+T4; Extended Absence; moved hand => library
+T4; Island; moved library => hand
+T4; Arcane Signet; moved library => hand
+T4; Island; moved hand => battlefield
+T4; Stock Up; moved battlefield => graveyard
+T4; Island; tapped
+T4; Preordain; moved hand => battlefield
+T4; Mindcrank; moved library => hand
+T4; Human; moved miscCards => opponentsCards
+T5; Island; untapped
+T5; Reliquary Tower; untapped
+T5; Swamp; untapped
+T5; Island; untapped
+T5; Darkwater Catacombs; moved library => hand
+T5; Sol Ring; moved library => hand
+T5; Archmage's Charm; moved hand => graveyard
+T5; Darkwater Catacombs; moved hand => graveyard
+T5; Reliquary Tower; tapped
+T5; Sol Ring; moved hand => battlefield
+T5; Sol Ring; tapped
+T5; Arcane Signet; moved hand => battlefield
+T5; Arcane Signet; tapped
+T5; Curious Homunculus // Voracious Reader; moved hand => battlefield
+T5; Island; tapped
+T5; Preordain; moved battlefield => graveyard
+T5; Swamp; tapped
+T5; Island; tapped
+T5; Mindcrank; moved hand => battlefield
+T6; Arcane Signet; untapped
+T6; Sol Ring; untapped
+T6; Island; untapped
+T6; Reliquary Tower; untapped
+T6; Swamp; untapped
+T6; Island; untapped
+T6; The Mindskinner; moved library => hand
+T6; Baral, Chief of Compliance; moved library => hand
+T6; Baral, Chief of Compliance; moved hand => graveyard
+T6; Curious Homunculus // Voracious Reader; flipped:true
+T6; Sol Ring; tapped
+T6; Swamp; tapped
+T6; Arcane Signet; tapped
+T6; Reliquary Tower; tapped
+T6; Syr Konrad, the Grim; moved hand => battlefield
+T7; Reliquary Tower; untapped
+T7; Sol Ring; untapped
+T7; Swamp; untapped
+T7; Arcane Signet; untapped
+T7; Nightscape Familiar; moved library => hand
+T7; Archmage Emeritus; moved library => hand
+T7; Archmage Emeritus; moved hand => graveyard
+T7; Swamp; tapped
+T7; Island; tapped
+T7; Island; tapped
+T7; Sol Ring; tapped
+T7; Maddening Cacophony; moved hand => battlefield

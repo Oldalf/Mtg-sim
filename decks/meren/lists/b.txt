@@ -1,0 +1,99 @@
+Commander
+1x Meren of Clan Nel Toth
+
+Draw
+1x Decode Transmissions
+1x Diresight
+1x Disciple of Bolas
+1x Garruk's Packleader
+1x Grim Haruspex
+1x Morbid Opportunist
+1x Phyrexian Arena
+1x Priest of Forgotten Gods
+1x Vampiric Rites
+1x Village Rites
+
+Land
+1x Blooming Marsh
+1x Bojuka Bog
+1x Command Tower
+1x Exotic Orchard
+10x Forest
+1x Llanowar Wastes
+1x Mosswort Bridge
+1x Necroblossom Snarl
+16x Swamp
+1x Tainted Wood
+1x Twilight Mire
+1x Vernal Fen
+1x Woodland Cemetery
+
+Mill
+1x Breach the Multiverse
+1x Grisly Salvage
+1x Grist, the Hunger Tide
+1x Liliana the Repentant
+1x Satyr Wayfinder
+
+Protection
+1x Spore Frog
+
+Ramp
+1x Dark Ritual
+1x Llanowar Elves
+1x Sakura-Tribe Elder
+1x Simulacrum Shaper
+1x Sol Ring
+1x Solemn Simulacrum
+1x Studious First-Year // Rampant Growth
+
+Recursion
+1x Grave Researcher // Reanimate
+1x Junji, the Midnight Sky
+1x Persist
+1x Sepulchral Primordial
+1x Unearth
+1x Victimize
+
+Removal
+1x Accursed Marauder
+1x Beast Within
+1x Butcher of Malakir
+1x Deadly Brew
+1x Demon's Disciple
+1x Heartless Act
+1x Infernal Grasp
+1x Insidious Fungus
+1x Plaguecrafter
+1x Saw in Half
+1x Shriekmaw
+1x Vindictive Lich
+
+Sac Outlet
+1x Umbral Collar Zealot
+1x Viscera Seer
+1x Wight of the Reliquary
+1x Woe Strider
+
+Tokens
+1x Avenger of the Fallen
+1x Grave Titan
+
+Tutor
+1x Buried Alive
+1x Dina's Guidance
+1x Eldritch Evolution
+1x Fauna Shaman
+1x Grim Servant
+1x Protean Hulk
+1x Rune-Scarred Demon
+1x Vile Entomber
+
+Win condition
+1x Gray Merchant of Asphodel
+1x Lotleth Giant
+1x Twilight Diviner
+1x Carrion Feeder
+1x Stitcher's Supplier
+1x Zulaport Cutthroat
+1x Elvish Mystic

@@ -1,0 +1,450 @@
+T0; Biomancer's Familiar; moved library => hand
+T0; Meloku the Clouded Mirror; moved library => hand
+T0; Evolving Wilds; moved library => hand
+T0; Soratami Mirror-Guard; moved library => hand
+T0; Growth Spiral; moved library => hand
+T0; Terramorphic Expanse; moved library => hand
+T0; Island; moved library => hand
+T1; PuPu UFO; moved library => hand
+T1; Evolving Wilds; moved hand => battlefield
+T1; Evolving Wilds; tapped
+T1; Evolving Wilds; moved battlefield => graveyard
+T1; Forest; moved library => battlefield
+T2; Kiri-Onna; moved library => hand
+T2; Island; moved hand => battlefield
+T2; Island; tapped
+T2; Forest; tapped
+T2; PuPu UFO; moved hand => battlefield
+T3; Island; untapped
+T3; Forest; untapped
+T3; Explore; moved library => hand
+T3; Terramorphic Expanse; moved hand => battlefield
+T3; Terramorphic Expanse; tapped
+T3; Terramorphic Expanse; moved battlefield => graveyard
+T3; Forest; moved library => battlefield
+T3; Island; tapped
+T3; Forest; tapped
+T3; Explore; moved hand => battlefield
+T3; Forest; moved library => hand
+T3; Explore; moved battlefield => graveyard
+T3; Forest; moved hand => battlefield
+T3; Island; untapped
+T3; Forest; tapped
+T3; Island; tapped
+T3; Forest; tapped
+T3; Growth Spiral; moved hand => battlefield
+T3; Forest; moved library => hand
+T3; Forest; moved hand => battlefield
+T3; Growth Spiral; moved battlefield => graveyard
+T3; PuPu UFO; tapped
+T3; PuPu UFO; untapped
+T4; Forest; untapped
+T4; Forest; untapped
+T4; Island; untapped
+T4; Forest; untapped
+T4; Moonbow Illusionist; moved library => hand
+T4; Island; tapped
+T4; Forest; tapped
+T4; Biomancer's Familiar; moved hand => battlefield
+T5; Island; untapped
+T5; Forest; untapped
+T5; Cultivate; moved library => hand
+T5; Forest; tapped
+T5; Forest; tapped
+T5; Forest; tapped
+T5; Cultivate; moved hand => battlefield
+T5; Island; moved library => hand
+T5; Island; moved library => hand
+T5; Cultivate; moved battlefield => graveyard
+T5; Island; moved hand => battlefield
+T5; Island; tapped
+T5; PuPu UFO; tapped
+T5; Island; moved hand => battlefield
+T5; Forest; tapped
+T5; Island; tapped
+T5; Island; tapped
+T5; Moonbow Illusionist; moved hand => battlefield
+T6; Forest; untapped
+T6; Island; untapped
+T6; Island; untapped
+T6; Forest; untapped
+T6; Island; untapped
+T6; Forest; untapped
+T6; Forest; untapped
+T6; PuPu UFO; untapped
+T6; Forest; moved library => hand
+T6; Island; tapped
+T6; Forest; tapped
+T6; Forest; tapped
+T6; Island; tapped
+T6; Forest; tapped
+T6; Island; tapped
+T6; Island; untapped
+T6; Forest; tapped
+T6; Aesi, Tyrant of Gyre Strait; moved commandZone => battlefield
+T6; Forest; moved hand => battlefield
+T6; Reach the Horizon; moved library => hand
+T6; Island; tapped
+T6; Island; moved battlefield => hand
+T6; Island; moved hand => battlefield
+T6; Island; moved library => hand
+T6; PuPu UFO; tapped
+T6; Island; moved hand => battlefield
+T6; Graceful Adept; moved library => hand
+T6; Forest; tapped
+T6; Island; tapped
+T6; Island; tapped
+T6; Graceful Adept; moved hand => battlefield
+T7; Forest; untapped
+T7; Island; untapped
+T7; Island; untapped
+T7; Island; untapped
+T7; Forest; untapped
+T7; Forest; untapped
+T7; Forest; untapped
+T7; Forest; untapped
+T7; Island; untapped
+T7; PuPu UFO; untapped
+T7; Budoka Gardener // Dokai, Weaver of Life; moved library => hand
+T7; Forest; tapped
+T7; Island; tapped
+T7; Budoka Gardener // Dokai, Weaver of Life; moved hand => battlefield
+T7; Island; tapped
+T7; Island; moved battlefield => hand
+T7; Island; moved hand => battlefield
+T7; Blue Sun's Zenith; moved library => hand
+T7; Island; tapped
+T7; Island; moved battlefield => hand
+T7; Island; moved hand => battlefield
+T7; Beast Within; moved library => hand
+T7; Island; tapped
+T7; Island; tapped
+T7; Island; tapped
+T7; Forest; tapped
+T7; Forest; tapped
+T7; Forest; tapped
+T7; Blue Sun's Zenith; moved hand => battlefield
+T7; Eternal Dominion; moved library => hand
+T7; Divert Disaster; moved library => hand
+T7; Sol Ring; moved library => hand
+T7; Blue Sun's Zenith; moved battlefield => library
+T7; Forest; tapped
+T7; Sol Ring; moved hand => battlefield
+T7; Sol Ring; tapped
+T7; Forest; moved battlefield => hand
+T7; PuPu UFO; tapped
+T7; Forest; moved hand => battlefield
+T7; Island; moved library => hand
+T8; PuPu UFO; untapped
+T8; Sol Ring; untapped
+T8; Island; untapped
+T8; Island; untapped
+T8; Island; untapped
+T8; Island; untapped
+T8; Forest; untapped
+T8; Forest; untapped
+T8; Forest; untapped
+T8; Forest; untapped
+T8; Forest; moved library => hand
+T8; Forest; moved hand => battlefield
+T8; Training Grounds; moved library => hand
+T8; Island; tapped
+T8; Sol Ring; tapped
+T8; Forest; tapped
+T8; Forest; tapped
+T8; Meloku the Clouded Mirror; moved hand => battlefield
+T8; Island; moved hand => battlefield
+T8; Loot, Exuberant Explorer; moved library => hand
+T8; Island; tapped
+T8; Island; moved battlefield => hand
+T8; Illusion; moved miscCards => battlefield
+T8; Budoka Gardener // Dokai, Weaver of Life; tapped
+T8; Island; moved hand => battlefield
+T8; Budoka Gardener // Dokai, Weaver of Life; upsideDown:true
+T8; Budoka Gardener // Dokai, Weaver of Life; untapped
+T8; Budoka Gardener // Dokai, Weaver of Life; tapped
+T8; Island; tapped
+T8; Island; moved battlefield => hand
+T8; PuPu UFO; tapped
+T8; Illusion; moved miscCards => battlefield
+T8; Island; moved hand => battlefield
+T8; Beanstalk Giant // Fertile Footsteps; moved library => hand
+T8; Forest; tapped
+T8; Island; tapped
+T8; Island; tapped
+T8; Loot, Exuberant Explorer; moved hand => battlefield
+T8; Forest; tapped
+T8; Forest; moved battlefield => hand
+T8; Forest; moved hand => battlefield
+T8; Entish Restoration; moved library => hand
+T8; Illusion; moved miscCards => battlefield
+T8; Forest; tapped
+T8; Island; tapped
+T8; Forest; tapped
+T8; Entish Restoration; moved hand => battlefield
+T8; Forest; moved battlefield => graveyard
+T8; Forest; moved library => battlefield
+T8; Island; moved library => battlefield
+T8; Island; moved library => battlefield
+T8; Island; tapped
+T8; Island; tapped
+T8; Forest; tapped
+T8; Entish Restoration; moved battlefield => graveyard
+T8; Bushwhack; moved library => hand
+T8; Nissa's Pilgrimage; moved library => hand
+T8; Patron of the Moon; moved library => hand
+T9; Forest; untapped
+T9; Island; untapped
+T9; Forest; untapped
+T9; Island; untapped
+T9; Island; untapped
+T9; PuPu UFO; untapped
+T9; Forest; untapped
+T9; Sol Ring; untapped
+T9; Island; untapped
+T9; Island; untapped
+T9; Budoka Gardener // Dokai, Weaver of Life; untapped
+T9; Island; untapped
+T9; Forest; untapped
+T9; Forest; untapped
+T9; Island; moved library => hand
+T9; Island; moved hand => battlefield
+T9; Explosive Vegetation; moved library => hand
+T9; Forest; tapped
+T9; Forest; tapped
+T9; Sol Ring; tapped
+T9; Island; tapped
+T9; Island; tapped
+T9; Elemental; moved miscCards => battlefield
+T9; Budoka Gardener // Dokai, Weaver of Life; tapped
+T9; Illusion; moved miscCards => battlefield
+T9; Island; tapped
+T9; Island; moved battlefield => hand
+T9; Island; moved hand => battlefield
+T9; Into the Wilds; moved library => hand
+T9; Island; tapped
+T9; Illusion; moved miscCards => battlefield
+T9; Island; moved battlefield => hand
+T9; Island; moved hand => battlefield
+T9; Wash Away; moved library => hand
+T9; Island; tapped
+T9; Island; moved battlefield => hand
+T9; Illusion; moved miscCards => battlefield
+T9; PuPu UFO; tapped
+T9; Island; moved hand => battlefield
+T9; Forest; moved library => hand
+T9; Forest; moved hand => battlefield
+T9; Haru-Onna; moved library => hand
+T9; Illusion; tapped
+T9; Illusion; tapped
+T9; Illusion; tapped
+T9; Forest; tapped
+T9; Forest; tapped
+T9; Forest; tapped
+T9; Forest; tapped
+T9; Island; tapped
+T9; Island; tapped
+T9; Loot, Exuberant Explorer; tapped
+T9; Soratami Savant; moved library => hand
+T9; Soratami Savant; moved hand => battlefield
+T10; Illusion; untapped
+T10; Illusion; untapped
+T10; Illusion; untapped
+T10; Forest; untapped
+T10; Island; untapped
+T10; Budoka Gardener // Dokai, Weaver of Life; untapped
+T10; Sol Ring; untapped
+T10; Loot, Exuberant Explorer; untapped
+T10; Island; untapped
+T10; Forest; untapped
+T10; Island; untapped
+T10; Forest; untapped
+T10; Island; untapped
+T10; PuPu UFO; untapped
+T10; Forest; untapped
+T10; Forest; untapped
+T10; Forest; untapped
+T10; Omniscience; moved library => hand
+T10; Island; tapped
+T10; Island; tapped
+T10; Island; tapped
+T10; Island; tapped
+T10; Forest; tapped
+T10; Forest; tapped
+T10; Sol Ring; tapped
+T10; Forest; tapped
+T10; Forest; tapped
+T10; Omniscience; moved hand => battlefield
+T10; Haru-Onna; moved hand => battlefield
+T10; Island; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Lotus Cobra; moved library => hand
+T10; Lotus Cobra; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Heartstone; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Farseek; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Druid Class; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Soratami Mirror-Mage; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Grow from the Ashes; moved library => hand
+T10; Soratami Mirror-Mage; moved hand => battlefield
+T10; Patron of the Moon; moved hand => battlefield
+T10; Budoka Gardener // Dokai, Weaver of Life; tapped
+T10; Island; tapped
+T10; Island; tapped
+T10; Island; tapped
+T10; Island; tapped
+T10; Forest; tapped
+T10; Elemental; moved miscCards => battlefield
+T10; Island; moved hand => battlefield
+T10; Demolition Field; moved library => hand
+T10; Demolition Field; moved hand => battlefield
+T10; Floodbringer; moved library => hand
+T10; Floodbringer; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Soratami Mindsweeper; moved library => hand
+T10; Soratami Mindsweeper; moved hand => battlefield
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Circuitous Route; moved library => hand
+T10; Kiri-Onna; moved battlefield => hand
+T10; Seismic Sense; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Island; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Khalni Heart Expedition; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Rampant Growth; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Forest; moved library => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Azusa's Many Journeys // Likeness of the Seeker; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Walking Atlas; moved library => hand
+T10; Walking Atlas; moved hand => battlefield
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Island; moved library => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Simic Growth Chamber; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Uyo, Silent Prophet; moved library => hand
+T10; Uyo, Silent Prophet; moved hand => battlefield
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Case of the Locked Hothouse; moved library => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Oboro Envoy; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Early Harvest; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Blue Sun's Zenith; moved library => hand
+T10; Island; moved hand => battlefield
+T10; PuPu UFO; tapped
+T10; Forest; moved hand => battlefield
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Forest; moved library => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Endless Swarm; moved library => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Island; moved library => hand
+T10; Early Harvest; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Early Harvest; moved battlefield => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Island; moved library => hand
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Kiri-Onna; moved hand => battlefield
+T10; Haru-Onna; moved battlefield => hand
+T10; Haru-Onna; moved hand => battlefield
+T10; Kiri-Onna; moved battlefield => hand
+T10; Forest; moved library => hand
+T10; Sakura-Tribe Elder; moved library => hand
+T10; Retreat to Coralhelm; moved library => hand
+T10; Island; moved library => hand
+T10; Retreat to Coralhelm; moved hand => battlefield
+T10; Early Harvest; moved hand => battlefield
+T10; Forest; untapped
+T10; Forest; untapped
+T10; Blue Sun's Zenith; moved hand => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield
+T10; Blue Sun's Zenith; moved miscCards => battlefield

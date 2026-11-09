@@ -1,0 +1,155 @@
+T0; Waterlogged Teachings // Inundated Archive; moved library => hand
+T0; Dimir Aqueduct; moved library => hand
+T0; Bender's Waterskin; moved library => hand
+T0; Swamp; moved library => hand
+T0; Windfall; moved library => hand
+T0; Deep Analysis; moved library => hand
+T0; Arcane Denial; moved library => hand
+T0; Swamp; moved hand => battlefield
+T0; Darkwater Catacombs; moved library => hand
+T0; Darkwater Catacombs; moved hand => library
+T1; Darkwater Catacombs; moved library => hand
+T2; Unwind; moved library => hand
+T2; Dimir Aqueduct; moved hand => battlefield
+T2; Swamp; moved battlefield => hand
+T2; Dimir Aqueduct; tapped
+T3; Dimir Aqueduct; untapped
+T3; Mocking Sprite; moved library => hand
+T3; Swamp; moved hand => battlefield
+T3; Swamp; tapped
+T3; Dimir Aqueduct; tapped
+T3; Scion of Halaster; moved commandZone => battlefield
+T3; Gale, Waterdeep Prodigy; moved commandZone => battlefield
+T3; Scion of Halaster; moved battlefield => commandZone
+T3; Vandalblast; moved miscCards => opponentsCards
+T4; Swamp; untapped
+T4; Dimir Aqueduct; untapped
+T4; Dispel; moved library => hand
+T4; Darkwater Catacombs; moved hand => battlefield
+T4; Dimir Aqueduct; tapped
+T4; Swamp; tapped
+T4; Bender's Waterskin; moved hand => battlefield
+T4; Swamp; untapped
+T4; Swamp; tapped
+T4; Darkwater Catacombs; tapped
+T4; Dimir Aqueduct; untapped
+T4; Dimir Aqueduct; tapped
+T4; Swamp; untapped
+T4; Darkwater Catacombs; untapped
+T4; Swamp; tapped
+T4; Darkwater Catacombs; tapped
+T4; Bender's Waterskin; tapped
+T4; Scion of Halaster; moved commandZone => battlefield
+T4; Bender's Waterskin; untapped
+T5; Darkwater Catacombs; untapped
+T5; Dimir Aqueduct; untapped
+T5; Swamp; untapped
+T5; Swamp; moved library => hand
+T5; Consider; moved library => hand
+T5; Consider; moved hand => graveyard
+T5; Swamp; moved hand => battlefield
+T5; Dimir Aqueduct; tapped
+T5; Swamp; tapped
+T5; Swamp; untapped
+T5; Dimir Aqueduct; untapped
+T5; Swamp; tapped
+T5; Bender's Waterskin; tapped
+T5; Swamp; untapped
+T5; Dimir Aqueduct; tapped
+T5; Mocking Sprite; moved hand => battlefield
+T5; Swamp; tapped
+T5; Darkwater Catacombs; tapped
+T5; Windfall; moved hand => battlefield
+T5; Dispel; moved hand => graveyard
+T5; Unwind; moved hand => graveyard
+T5; Waterlogged Teachings // Inundated Archive; moved hand => graveyard
+T5; Deep Analysis; moved hand => graveyard
+T5; Arcane Denial; moved hand => graveyard
+T5; Duskmantle Guildmage; moved library => hand
+T5; Academy Wall; moved library => hand
+T5; Drowned Catacomb; moved library => hand
+T5; Swamp; moved library => hand
+T5; See the Truth; moved library => hand
+T5; Windfall; moved battlefield => graveyard
+T5; Mana Drain; moved miscCards => opponentsCards
+T6; Dimir Aqueduct; untapped
+T6; Darkwater Catacombs; untapped
+T6; Swamp; untapped
+T6; Bender's Waterskin; untapped
+T6; Syr Konrad, the Grim; moved library => hand
+T6; Drowned Catacomb; moved hand => battlefield
+T6; Drowned Catacomb; tapped
+T6; See the Truth; moved hand => battlefield
+T6; Waterlogged Teachings // Inundated Archive; moved graveyard => battlefield
+T6; Dimir Aqueduct; tapped
+T6; Swamp; tapped
+T6; Frantic Search; moved library => hand
+T6; Waterlogged Teachings // Inundated Archive; moved battlefield => exile
+T6; Dark Ritual; moved library => hand
+T6; See the Truth; moved battlefield => graveyard
+T6; Bender's Waterskin; tapped
+T6; Swamp; tapped
+T6; Frantic Search; moved hand => battlefield
+T6; Island; moved library => hand
+T6; Fellwar Stone; moved library => hand
+T6; Academy Wall; moved hand => graveyard
+T6; Swamp; moved hand => graveyard
+T6; Dimir Aqueduct; untapped
+T6; Drowned Catacomb; untapped
+T6; Swamp; untapped
+T6; Bender's Waterskin; untapped
+T6; Swamp; tapped
+T6; Darkwater Catacombs; tapped
+T6; Darkwater Catacombs; untapped
+T6; Frantic Search; moved battlefield => graveyard
+T6; Drowned Catacomb; tapped
+T6; Dark Ritual; moved hand => battlefield
+T6; See the Truth; moved graveyard => battlefield
+T6; Diresight; moved library => hand
+T6; Island; moved library => hand
+T6; The Mindskinner; moved library => hand
+T6; Bender's Waterskin; tapped
+T6; See the Truth; moved battlefield => exile
+T6; Dark Ritual; counter:+1 / +1=1
+T6; Dark Ritual; counter:+1 / +1=2
+T6; Dark Ritual; counter:+1 / +1=3
+T6; Dark Ritual; counter:+1 / +1=2
+T6; Dark Ritual; counter:+1 / +1=1
+T6; Diresight; moved hand => battlefield
+T6; Dimir Aqueduct; tapped
+T6; Frantic Search; moved graveyard => battlefield
+T6; Cut Your Losses; moved library => hand
+T6; Extended Absence; moved library => hand
+T6; Island; moved hand => graveyard
+T6; Island; moved hand => graveyard
+T6; Dimir Aqueduct; untapped
+T6; Drowned Catacomb; untapped
+T6; Swamp; untapped
+T6; See the Truth; moved exile => battlefield
+T6; Frantic Search; moved battlefield => exile
+T6; See the Truth; moved battlefield => exile
+T6; Jidoor, Aristocratic Capital // Overture; moved library => graveyard
+T6; Mana Sculpt; moved library => hand
+T6; Case of the Ransacked Lab; moved library => hand
+T6; Diresight; moved battlefield => graveyard
+T6; Dark Ritual; moved battlefield => graveyard
+T6; Swamp; tapped
+T6; Darkwater Catacombs; tapped
+T6; Fellwar Stone; moved hand => battlefield
+T6; Dimir Aqueduct; tapped
+T6; Drowned Catacomb; tapped
+T6; The Mindskinner; moved hand => battlefield
+T7; Bender's Waterskin; untapped
+T7; Swamp; untapped
+T7; Dimir Aqueduct; untapped
+T7; Drowned Catacomb; untapped
+T7; Swamp; untapped
+T7; Darkwater Catacombs; untapped
+T7; Island; moved library => hand
+T7; Island; moved hand => battlefield
+T7; Darkwater Catacombs; tapped
+T7; Swamp; tapped
+T7; Dimir Aqueduct; tapped
+T7; Swamp; tapped
+T7; Syr Konrad, the Grim; moved hand => battlefield
+T7; The Mindskinner; tapped

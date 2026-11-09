@@ -1,0 +1,119 @@
+T0; Island; moved library => hand
+T0; Consider; moved library => hand
+T0; Focus the Mind; moved library => hand
+T0; Island; moved library => hand
+T0; Mocking Sprite; moved library => hand
+T0; Night's Whisper; moved library => hand
+T0; Archmage's Charm; moved library => hand
+T1; Wizards of Thay; moved library => hand
+T1; Island; moved hand => battlefield
+T1; Island; tapped
+T1; Consider; moved hand => battlefield
+T1; Arcane Denial; moved library => graveyard
+T1; Consider; moved battlefield => graveyard
+T1; Darkwater Catacombs; moved library => hand
+T2; Island; untapped
+T2; Island; moved library => hand
+T2; Darkwater Catacombs; moved hand => battlefield
+T2; Island; tapped
+T2; Darkwater Catacombs; tapped
+T2; Scion of Halaster; moved commandZone => battlefield
+T3; Darkwater Catacombs; untapped
+T3; Island; untapped
+T3; Unwind; moved library => hand
+T3; Island; moved hand => battlefield
+T3; Island; tapped
+T3; Island; tapped
+T3; Darkwater Catacombs; tapped
+T3; Gale, Waterdeep Prodigy; moved commandZone => battlefield
+T3; Human Soldier; moved miscCards => opponentsCards
+T4; Island; untapped
+T4; Darkwater Catacombs; untapped
+T4; Island; untapped
+T4; Swamp; moved library => hand
+T4; Swamp; moved hand => battlefield
+T4; Darkwater Catacombs; tapped
+T4; Island; tapped
+T4; Island; tapped
+T4; Mocking Sprite; moved hand => battlefield
+T4; Swamp; tapped
+T4; Night's Whisper; moved hand => battlefield
+T4; Swamp; moved library => hand
+T4; Sol Ring; moved library => hand
+T4; Night's Whisper; moved battlefield => graveyard
+T4; Dark Deal; moved miscCards => opponentsCards
+T5; Swamp; untapped
+T5; Island; untapped
+T5; Darkwater Catacombs; untapped
+T5; Island; untapped
+T5; Island; moved library => hand
+T5; Sunken Hollow; moved library => hand
+T5; Island; moved hand => graveyard
+T5; Sunken Hollow; moved hand => battlefield
+T5; Island; tapped
+T5; Sol Ring; moved hand => battlefield
+T5; Sol Ring; tapped
+T5; Island; tapped
+T5; Swamp; tapped
+T5; Wizards of Thay; moved hand => battlefield
+T5; Sunken Hollow; tapped
+T5; Focus the Mind; moved hand => battlefield
+T5; Darkwater Catacombs; tapped
+T5; Night's Whisper; moved graveyard => battlefield
+T5; Duskmantle Guildmage; moved library => hand
+T5; Bubbling Muck; moved library => hand
+T5; Night's Whisper; moved battlefield => exile
+T5; Dimir Signet; moved library => hand
+T5; Island; moved library => hand
+T5; An Offer You Can't Refuse; moved library => hand
+T5; Island; moved hand => graveyard
+T5; Focus the Mind; moved battlefield => graveyard
+T5; Archmage's Charm; moved hand => graveyard
+T5; Aven Interrupter; moved miscCards => opponentsCards
+T6; Sol Ring; untapped
+T6; Sunken Hollow; untapped
+T6; Swamp; untapped
+T6; Island; untapped
+T6; Darkwater Catacombs; untapped
+T6; Island; untapped
+T6; Island; moved library => hand
+T6; High Tide; moved library => hand
+T6; Island; moved hand => graveyard
+T6; Swamp; moved hand => battlefield
+T6; Sol Ring; tapped
+T6; Dimir Signet; moved hand => battlefield
+T6; Island; tapped
+T6; High Tide; moved hand => battlefield
+T6; Focus the Mind; moved graveyard => battlefield
+T6; Dimir Signet; tapped
+T6; Darkwater Catacombs; tapped
+T6; Wishclaw Talisman; moved library => hand
+T6; Emet-Selch of the Third Seat; moved library => hand
+T6; Arcane Signet; moved library => hand
+T6; Emet-Selch of the Third Seat; moved hand => graveyard
+T6; Focus the Mind; moved battlefield => exile
+T6; High Tide; moved battlefield => graveyard
+T6; Sunken Hollow; tapped
+T6; Arcane Signet; moved hand => battlefield
+T6; Island; tapped
+T6; Unwind; moved hand => battlefield
+T6; Arcane Signet; moved battlefield => graveyard
+T6; Sunken Hollow; untapped
+T6; Island; untapped
+T6; Island; untapped
+T6; Unwind; moved battlefield => graveyard
+T6; Swamp; tapped
+T6; Bubbling Muck; moved hand => battlefield
+T6; High Tide; moved graveyard => battlefield
+T6; High Tide; moved battlefield => exile
+T6; Bubbling Muck; moved battlefield => graveyard
+T6; Sunken Hollow; tapped
+T6; Wishclaw Talisman; moved hand => battlefield
+T6; Wishclaw Talisman; tapped
+T6; Wishclaw Talisman; moved battlefield => graveyard
+T6; Maddening Cacophony; moved library => hand
+T6; Island; tapped
+T6; Duskmantle Guildmage; moved hand => battlefield
+T6; Swamp; tapped
+T6; Island; tapped
+T6; Maddening Cacophony; moved hand => battlefield

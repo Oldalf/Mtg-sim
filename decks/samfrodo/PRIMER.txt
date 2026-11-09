@@ -1,0 +1,24 @@
+This deck is an Abzan tokens and aristocrats deck with Sam and Frodo as commanders.
+
+It makes tokens, Treasures and Food, sacrifices them, and every token that appears or dies drains the table. Life gain feeds a second drain plan through Gollum and Sanguine Bond. I usually attack with only Frodo (for the Ring and the cards) and Gollum (for his trigger).
+
+HOW IT WORKS
+Sam makes a Food at the beginning of combat and makes Foods cheaper to eat, so every turn feeds the engine. Peregrin Took and Tippy-Toe add a Food to every token event, and Academy Manufactor turns each Food, Clue or Treasure into one of each. Sacrifice outlets and death triggers turn that pile into drain.
+
+WIN LINES
+- Mirkwood Bats: each opponent loses 1 whenever you create a token or sacrifice one.
+- Marionette Apprentice: each opponent loses 1 whenever a creature or artifact you control dies. Marionette Master: the drain is its power for every artifact that dies.
+- Popular Egotist: a ping and 1 life for every permanent you sacrifice. Susurian Voidborn does the same when creatures and artifacts die.
+- Sanguine Bond and Gollum: life gain hurts the table. Eat Foods and Gollum's end-step trigger hits every opponent he connected with. Sanguine Bond targets one opponent, so spread the drain.
+- Frodo: gain 3 life, then attack and the Ring tempts you. Frodo draws once tempted twice, and at level 4 his hit drains 3 from each opponent.
+- Rapacious Guest drains its power when it leaves the battlefield. Own removal on it (Swords, Path to Exile, Go for the Throat) is a real line once it is big.
+- Merry and Pippin find each other when cast. Pippin gives the others +3/+3 and haste, for an alpha strike when it is lethal.
+
+MULLIGANS
+The first mulligan is free in my pod (a new 7), then it is a London mulligan (draw 7, bottom the extras). From simulating thousands of opening hands:
+- Keep 3 or 4 lands. Keep 2, 5 or 6 lands when the hand has a ramp piece, a token or Food maker, or a drain payoff. Mulligan 0 or 1 lands (a one-lander is nearly a full turn slower than a new seven) and 7 lands. After the free mulligan, 2 to 6 lands is fine.
+- Look for sources of all three colours (white, black and green). That is worth about a third of a turn, so lands that fix (Command Tower, Path of Ancestry, Exotic Orchard, the snarls) are worth keeping.
+- The best cards to see early are Academy Manufactor, Peregrin Took, Mirkwood Bats, Nuka-Cola Vending Machine, The Notary Hobbits, Sol Ring, Gollum and Gilded Goose. A hand with one of the first seven wins about a turn sooner, so it is an easy keep.
+- A token or Food maker and a drain payoff are each worth about a quarter of a turn. Ramp pieces are worth a little less.
+- Shire Shirriff, Unlucky Cabbage Merchant, Farmer Cotton (better with a big X later), Mentor of the Meek and Gwaihir don't help early. Don't keep a hand for them.
+- Removal looks weak in a simulation only because the opponents there do nothing. In a real game a hand with removal is a fine keep.

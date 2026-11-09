@@ -1,0 +1,18 @@
+
+Comparison (3000 games each).  A = decklist.txt   B = cut_tests/cut_4_engines.txt
+  Cumulative win % by turn
+            |        Any win          |   With counter backup
+  Turn      |    A       B      B-A   |    A       B      B-A
+  ----------+-------------------------+-------------------------
+  Turn 3    |    0.0     0.0    +0.0  |    0.0     0.0    +0.0
+  Turn 4    |    0.1     0.1    +0.0  |    0.0     0.0    +0.0
+  Turn 5    |    2.0     2.3    +0.3  |    0.3     0.8    +0.4
+  Turn 6    |   10.0    13.0    +3.0  |    3.6     5.1    +1.5
+  Turn 7    |   30.4    36.3    +5.9  |   15.7    19.6    +3.9
+  Turn 8    |   53.5    60.3    +6.8  |   34.4    41.3    +6.9
+  ----------+-------------------------+-------------------------
+  Avg turn  |   7.21    7.14   -0.06  |   7.43    7.38   -0.05
+
+  Differences smaller than about +/-2.6 percentage points are likely noise; use -n with more games to be sure.
+
+(453s)

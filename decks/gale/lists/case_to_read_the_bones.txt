@@ -1,0 +1,94 @@
+Commander
+1x Gale, Waterdeep Prodigy
+1x Scion of Halaster
+
+Combo cards
+1x Duskmantle Guildmage
+1x Expansion Algorithm
+1x Maddening Cacophony
+1x Mindcrank
+1x Prologue to Phyresis
+1x Riverchurn Monument
+1x Syr Konrad, the Grim
+1x The Mindskinner
+
+Counters
+1x An Offer You Can't Refuse
+1x Arcane Denial
+1x Counterspell
+1x Dispel
+1x Mana Sculpt
+1x Unwind
+
+Draw
+1x Baleful Strix
+1x Brainstorm
+1x Consider
+1x Deep Analysis
+1x Diresight
+1x Energybending
+1x Focus the Mind
+1x Frantic Search
+1x Night's Whisper
+1x Opt
+1x Ponder
+1x Preordain
+1x See the Truth
+1x Stock Up
+1x Windfall
+
+Test
+1x Read the Bones
+1x Spell Pierce
+1x Turnabout
+1x Muddle the Mixture
+
+Land
+1x Command Tower
+1x Darkwater Catacombs
+1x Dimir Aqueduct
+1x Drowned Catacomb
+1x Evolving Wilds
+1x Exotic Orchard
+1x Fetid Pools
+18x Island
+1x Reliquary Tower
+1x Sunken Hollow
+9x Swamp
+1x Thespian's Stage
+1x Underground River
+
+Ramp
+1x Arcane Signet
+1x Baral, Chief of Compliance
+1x Bender's Waterskin
+1x Bubbling Muck
+1x Curious Homunculus // Voracious Reader
+1x Dark Ritual
+1x Dimir Signet
+1x Fellwar Stone
+1x Geist of Saint Thalia
+1x High Tide
+1x Mocking Sprite
+1x Nightscape Familiar
+1x Sol Ring
+1x Talisman of Dominance
+1x Thunderclap Drake
+1x Wizards of Thay
+
+Recursion
+1x Unearth
+
+Removal
+1x Extended Absence
+1x Singularity Rupture
+1x Snap
+
+Tutor
+1x Diabolic Tutor
+1x Gifts Ungiven
+1x Insatiable Avarice
+1x Personal Tutor
+1x Solve the Equation
+1x Waterlogged Teachings // Inundated Archive
+1x Wishclaw Talisman

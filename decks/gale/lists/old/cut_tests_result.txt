@@ -1,0 +1,46 @@
+3000 games per list. Each card is replaced by 1 Island. 'B-A' = change in kill chance after the cut; |B-A| below ~2.6 points is noise.
+
+  cut                              |  by T6  by T7  by T8 | T8 w/ counter | avg turn
+  (current list)                   |   10.0   30.4   53.5 |          34.4 | 7.21
+!! 1 game(s) hit a simulator bug and were skipped (seeds 521). First error:
+Traceback (most recent call last):
+  File "D:\dev\magic\simulate.py", line 46, in run_chunk
+    _, p = Game(cmd, lib, random.Random(s), cfg, mode="protected").play()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\dev\magic\galesim\game.py", line 1309, in play
+    if self.develop():
+       ~~~~~~~~~~~~^^
+  File "D:\dev\magic\galesim\game.py", line 1230, in develop
+    pick = self.plan(cands, opts, main2)
+  File "D:\dev\magic\galesim\game.py", line 1149, in plan
+    tot += cl.rollout_value(main2)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "D:\dev\magic\galesim\game.py", line 1171, in rollout_value
+    won = self.develop()
+  File "D:\dev\magic\galesim\game.py", line 1214, in develop
+    if cl.ordered_cands(main2)[idx][3]() is False:
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\dev\magic\galesim\game.py", line 1003, in <lambda>
+    out.append((sc, self.eff_cost(cd), True, lambda cd=cd: self.cast_with_gale(cd)))
+                                                           ~~~~~~~~~~~~~~~~~~~^^^^
+  File "D:\dev\magic\galesim\game.py", line 1026, in cast_with_gale
+    return self.cast_IS(cd, base=base, mode=mode, gale_target=tgt)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\dev\magic\galesim\game.py", line 778, in cast_IS
+    self.resolve(cd, from_gy, mode)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "D:\dev\magic\galesim\game.py", line 664, in resolve
+    self.hand.append(top[0])
+                     ~~~^^^
+IndexError: list index out of range
+
+  Secrets of the Dead              |   +0.5   +2.1   +2.6 |          +2.1 | -0.00
+  Emet-Selch of the Third Seat     |   -0.2   +1.3   +2.8 |          +2.4 | +0.01
+  Archmage Emeritus                |   +0.2   +1.5   +1.3 |          +1.1 | -0.01
+  Wizards of Thay                  |   +0.6   +2.9   +2.6 |          +2.4 | -0.03
+  Mocking Sprite                   |   +0.1   +1.7   +2.1 |          +2.3 | -0.01
+  Case of the Ransacked Lab        |   +0.2   +1.1   +1.5 |          +0.8 | -0.01
+  Academy Wall                     |   +0.2   +1.7   +2.0 |          +2.1 | -0.00
+  Cut Your Losses                  |   -0.5   +0.8   +1.8 |          +2.3 | +0.03
+
+(2147s)  Variant lists are saved in cut_tests/.

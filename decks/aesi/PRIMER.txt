@@ -1,0 +1,30 @@
+This deck is a Simic landfall deck, built for bracket 3.
+
+The goal is a deck that is consistently fun to play and not awful to play against. It is a modified version of the Reverse Landfall deck by DefCatMtg: his list was the starting point, with cards I own instead of a few expensive ones.
+
+HOW IT WORKS
+Aesi draws a card for every land that enters. The moonfolk return a land you control to your hand, so you can play it again for another landfall trigger. Extra land drops (Azusa, Loot, Case of the Locked Hothouse) and creatures that put a land from your hand onto the battlefield (Walking Atlas, Sakura-Tribe Scout, PuPu UFO, Budoka Gardener) turn that into a stream of cards. Biomancer's Familiar, Training Grounds and Heartstone make the moonfolk abilities cost as little as one mana, never less. I track land drops and lands put onto the battlefield separately with two dice.
+
+LOOPS
+Demonstrate a loop two or three times and then name the result. Stop before the library is empty. A loop needs a way to replay a land and a way to return it.
+- Retreat to Coralhelm or Elven Raft-Steerer + a land-putting creature + Simic Growth Chamber: infinite landfall, so Aesi draws what you need.
+- The same with a moonfolk ability at one mana: Meloku makes infinite Illusions, Soratami Mindsweeper mills everyone, Oboro Breezecaller untaps a land and pays for itself, Soratami Mirror-Mage returns three lands and gains mana with Biomancer's Familiar.
+- Kodama of the East Tree + Meloku: infinite 1/1 flying Illusions.
+- Uyo + Retreat + a putter, with two lands that make two mana: infinite copies of an instant or sorcery.
+- Omniscience + Kiri-Onna + Haru-Onna: cast them for free over and over. Count the opponents' creatures, bounce them all and draw that many cards, then draw until you have what you need.
+Lotus Cobra turns any of these into infinite mana.
+
+WIN LINES
+- Mill: the Mindsweeper loop, or a huge Blue Sun's Zenith copied by Uyo for every opponent.
+- An army: Meloku's Illusions, or Dokai's big Elementals, attacking the next turn.
+- Endless Swarm or Eternal Dominion (epic: you can't cast spells afterwards, and you copy it every upkeep). Uyo can make the copies much faster: about 10 to 20 Eternal Dominion copies take enough of the opponents' best cards to win by the next upkeep.
+
+MULLIGANS
+The first mulligan is free in my pod (a new 7), then it is a London mulligan (draw 7, bottom the extras). From simulating thousands of opening hands with this list:
+- Keep 3 to 6 lands if one of them makes green. Lands are cards with Aesi, so a five-lander is the best hand.
+- 2 lands is a keep only with a green source and a cheap ramp piece (Rampant Growth, Search for Tomorrow, Sakura-Tribe Elder, Lotus Cobra, Sol Ring). Otherwise it is slightly worse than a new seven.
+- Mulligan 0 or 1 lands. A one-lander is worse than a six-card hand. Mulligan 7 lands too.
+- A green source is the most important single thing, worth about a full turn: nearly all the ramp costs G. Forests, duals, fetch lands, Simic Growth Chamber and Command Tower all count. No green source: mulligan. Blue matters little early.
+- The best cards to see early are Sol Ring, Lotus Cobra, Walking Atlas, Cultivate, Sakura-Tribe Scout, PuPu UFO, Skyshroud Claim and Kodama. Any ramp piece that costs one or two is worth about half a turn.
+- Kiri-Onna, Patron of the Moon, Soratami Mirror-Mage, Soratami Mindsweeper, Graceful Adept, Oboro Envoy, Soratami Mirror-Guard and Kira win games later but do nothing before turn 5. A hand of lands and one of them is fine; a hand with several of them and little mana is not.
+- Aim to cast Aesi on turn 5 or 6. Keep hands that ramp toward six mana.

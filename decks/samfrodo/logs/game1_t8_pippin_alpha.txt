@@ -1,0 +1,203 @@
+T0; Necroblossom Snarl; moved library => hand
+T0; Tireless Provisioner; moved library => hand
+T0; Path to Exile; moved library => hand
+T0; Savvy Hunter; moved library => hand
+T0; Fortified Village; moved library => hand
+T0; Belladonna Took; moved library => hand
+T0; Arcane Signet; moved library => hand
+T1; Plains; moved library => hand
+T1; Fortified Village; moved hand => battlefield
+T2; Plains; moved library => hand
+T2; Plains; moved hand => battlefield
+T2; Plains; tapped
+T2; Fortified Village; tapped
+T2; Frodo, Adventurous Hobbit; moved commandZone => battlefield
+T3; Plains; untapped
+T3; Fortified Village; untapped
+T3; Rapacious Guest; moved library => hand
+T3; Plains; moved hand => battlefield
+T3; Plains; tapped
+T3; Plains; tapped
+T3; Arcane Signet; moved hand => battlefield
+T4; Plains; untapped
+T4; Plains; untapped
+T4; Supper for Spiders; moved library => hand
+T4; Necroblossom Snarl; moved hand => battlefield
+T4; Necroblossom Snarl; tapped
+T4; Arcane Signet; tapped
+T4; Plains; tapped
+T4; Fortified Village; tapped
+T4; Sam, Loyal Attendant; moved commandZone => battlefield
+T4; Food; moved miscCards => battlefield
+T4; Plains; tapped
+T4; Food; tapped
+T4; Frodo, Adventurous Hobbit; tapped
+T4; The Ring // The Ring Tempts You; moved miscCards => battlefield
+T4; The Ring // The Ring Tempts You; counter:+1 / +1=1
+T5; Frodo, Adventurous Hobbit; untapped
+T5; Plains; untapped
+T5; Arcane Signet; untapped
+T5; Necroblossom Snarl; untapped
+T5; Fortified Village; untapped
+T5; Plains; untapped
+T5; Forest; moved library => hand
+T5; Forest; moved hand => battlefield
+T5; Forest; moved battlefield => hand
+T5; Necroblossom Snarl; tapped
+T5; Plains; tapped
+T5; Fortified Village; tapped
+T5; Tireless Provisioner; moved hand => battlefield
+T5; Forest; moved hand => battlefield
+T5; Treasure; moved miscCards => battlefield
+T5; Treasure; tapped
+T5; Plains; tapped
+T5; Forest; tapped
+T5; Rapacious Guest; moved hand => battlefield
+T5; Food; moved miscCards => battlefield
+T5; Arcane Signet; tapped
+T5; Food; tapped
+T5; Frodo, Adventurous Hobbit; tapped
+T5; The Ring // The Ring Tempts You; counter:+1 / +1=2
+T5; Merry, Warden of Isengard; moved library => hand
+T5; Harmonize; moved library => hand
+T5; Savvy Hunter; moved hand => graveyard
+T5; Rapacious Guest; counter:+1 / +1=1
+T6; Arcane Signet; untapped
+T6; Necroblossom Snarl; untapped
+T6; Forest; untapped
+T6; Plains; untapped
+T6; Plains; untapped
+T6; Fortified Village; untapped
+T6; Frodo, Adventurous Hobbit; untapped
+T6; Mirkwood Bats; moved library => hand
+T6; Plains; tapped
+T6; Arcane Signet; tapped
+T6; Belladonna Took; moved hand => battlefield
+T6; Forest; tapped
+T6; Forest; untapped
+T6; Forest; tapped
+T6; Plains; tapped
+T6; Fortified Village; tapped
+T6; Merry, Warden of Isengard; moved hand => battlefield
+T6; Pippin, Warden of Isengard; moved library => hand
+T6; Food; moved miscCards => battlefield
+T6; Soldier; moved miscCards => battlefield
+T6; Forest; moved library => hand
+T6; Necroblossom Snarl; tapped
+T6; Frodo, Adventurous Hobbit; tapped
+T6; Crypt Incursion; moved library => hand
+T6; Forest; moved library => hand
+T6; Crypt Incursion; moved hand => graveyard
+T6; Forest; moved hand => battlefield
+T6; Rapacious Guest; counter:+1 / +1=2
+T6; Treasure; moved miscCards => battlefield
+T6; Frodo, Adventurous Hobbit; counter:+1 / +1=1
+T6; Rapacious Guest; tapped
+T6; Rapacious Guest; untapped
+T6; Rapacious Guest; counter:+1 / +1=3
+T6; Soldier; counter:+1 / +1=1
+T6; Merry, Warden of Isengard; counter:+1 / +1=1
+T6; Tireless Provisioner; counter:+1 / +1=1
+T6; Belladonna Took; counter:+1 / +1=1
+T7; Forest; untapped
+T7; Necroblossom Snarl; untapped
+T7; Fortified Village; untapped
+T7; Frodo, Adventurous Hobbit; untapped
+T7; Plains; untapped
+T7; Plains; untapped
+T7; Arcane Signet; untapped
+T7; Swamp; moved library => hand
+T7; Swamp; moved hand => battlefield
+T7; Treasure; moved miscCards => battlefield
+T7; Soldier; moved miscCards => battlefield
+T7; Of Herbs and Stewed Rabbit; moved library => hand
+T7; Forest; tapped
+T7; Forest; tapped
+T7; Necroblossom Snarl; tapped
+T7; Fortified Village; tapped
+T7; Mirkwood Bats; moved hand => battlefield
+T7; Arcane Signet; tapped
+T7; Plains; tapped
+T7; Pippin, Warden of Isengard; moved hand => battlefield
+T7; Food; moved miscCards => battlefield
+T7; Belladonna Took; counter:+1 / +1=2
+T7; Mirkwood Bats; counter:+1 / +1=1
+T7; Sam, Loyal Attendant; counter:+1 / +1=1
+T7; Sam, Loyal Attendant; counter:+1 / +1=2
+T7; Frodo, Adventurous Hobbit; counter:+1 / +1=2
+T7; Tireless Provisioner; counter:+1 / +1=2
+T7; Rapacious Guest; counter:+1 / +1=4
+T7; Soldier; counter:+1 / +1=2
+T7; Soldier; counter:+1 / +1=1
+T7; Merry, Warden of Isengard; counter:+1 / +1=2
+T7; Pippin, Warden of Isengard; counter:+1 / +1=1
+T7; Frodo, Adventurous Hobbit; tapped
+T7; Isolated Chapel; moved library => hand
+T7; Tippy-Toe, Terrific Partner; moved library => hand
+T7; Supper for Spiders; moved hand => graveyard
+T7; Swamp; tapped
+T7; Food; tapped
+T7; Soldier; tapped
+T7; Soldier; tapped
+T7; Rapacious Guest; tapped
+T8; Arcane Signet; untapped
+T8; Rapacious Guest; untapped
+T8; Soldier; untapped
+T8; Soldier; untapped
+T8; Frodo, Adventurous Hobbit; untapped
+T8; Fortified Village; untapped
+T8; Swamp; untapped
+T8; Forest; untapped
+T8; Necroblossom Snarl; untapped
+T8; Forest; untapped
+T8; Plains; untapped
+T8; Swamp; moved library => hand
+T8; Forest; tapped
+T8; Forest; tapped
+T8; Necroblossom Snarl; tapped
+T8; Fortified Village; tapped
+T8; Tippy-Toe, Terrific Partner; moved hand => battlefield
+T8; Forest; moved hand => battlefield
+T8; Food; moved miscCards => battlefield
+T8; Food; moved miscCards => battlefield
+T8; Gilded Goose; moved library => hand
+T8; Soldier; moved miscCards => battlefield
+T8; Soldier; counter:+1 / +1=1
+T8; Soldier; counter:+1 / +1=3
+T8; Rapacious Guest; counter:+1 / +1=5
+T8; Tireless Provisioner; counter:+1 / +1=3
+T8; Belladonna Took; counter:+1 / +1=3
+T8; Mirkwood Bats; counter:+1 / +1=2
+T8; Sam, Loyal Attendant; counter:+1 / +1=3
+T8; Tippy-Toe, Terrific Partner; counter:+1 / +1=1
+T8; Frodo, Adventurous Hobbit; counter:+1 / +1=3
+T8; Rapacious Guest; counter:+1 / +1=6
+T8; Merry, Warden of Isengard; counter:+1 / +1=3
+T8; Pippin, Warden of Isengard; counter:+1 / +1=2
+T8; Treasure; tapped
+T8; Treasure; tapped
+T8; Mirkwood Bats; tapped
+T8; Mirkwood Bats; untapped
+T8; Mirkwood Bats; tapped
+T8; Mirkwood Bats; untapped
+T8; Plains; tapped
+T8; Of Herbs and Stewed Rabbit; moved hand => battlefield
+T8; Rapacious Guest; counter:+1 / +1=7
+T8; Food; moved miscCards => battlefield
+T8; Food; moved miscCards => battlefield
+T8; Pippin, Warden of Isengard; tapped
+T8; Merry, Warden of Isengard; tapped
+T8; Rapacious Guest; tapped
+T8; Soldier; tapped
+T8; Soldier; tapped
+T8; Tireless Provisioner; tapped
+T8; Soldier; tapped
+T8; Belladonna Took; tapped
+T8; Of Herbs and Stewed Rabbit; tapped
+T8; Mirkwood Bats; tapped
+T8; Sam, Loyal Attendant; tapped
+T8; Frodo, Adventurous Hobbit; tapped
+T8; Tippy-Toe, Terrific Partner; tapped
+T8; Plains; tapped
+T8; Path to Exile; moved hand => battlefield
+T8; Rapacious Guest; moved battlefield => graveyard

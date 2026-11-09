@@ -1,0 +1,195 @@
+T0; Counterspell; moved library => hand
+T0; Evolving Wilds; moved library => hand
+T0; Swamp; moved library => hand
+T0; Island; moved library => hand
+T0; Swamp; moved library => hand
+T0; An Offer You Can't Refuse; moved library => hand
+T0; See the Truth; moved library => hand
+T1; Thunderclap Drake; moved library => hand
+T1; Island; moved hand => battlefield
+T1; Island; moved battlefield => hand
+T1; Evolving Wilds; moved hand => battlefield
+T1; Evolving Wilds; tapped
+T1; Evolving Wilds; moved battlefield => graveyard
+T1; Island; moved library => battlefield
+T2; Dispel; moved library => hand
+T2; Island; tapped
+T2; Island; moved hand => library
+T2; Thunderclap Drake; moved hand => battlefield
+T3; Island; untapped
+T3; Island; moved library => hand
+T3; Swamp; moved hand => battlefield
+T3; Swamp; tapped
+T3; Island; tapped
+T3; Swamp; untapped
+T3; Island; untapped
+T3; Island; moved hand => battlefield
+T3; Island; tapped
+T3; See the Truth; moved hand => battlefield
+T3; Fellwar Stone; moved library => hand
+T3; See the Truth; moved battlefield => graveyard
+T3; Swamp; tapped
+T3; Island; tapped
+T3; Fellwar Stone; moved hand => battlefield
+T4; Swamp; untapped
+T4; Island; untapped
+T4; Island; untapped
+T4; Prologue to Phyresis; moved library => hand
+T4; Island; moved hand => battlefield
+T4; Island; tapped
+T4; Island; tapped
+T4; Swamp; tapped
+T4; Gale, Waterdeep Prodigy; moved commandZone => battlefield
+T4; Island; tapped
+T4; Prologue to Phyresis; moved hand => battlefield
+T4; Sol Ring; moved library => hand
+T4; Prologue to Phyresis; moved battlefield => graveyard
+T4; Fellwar Stone; tapped
+T4; Sol Ring; moved hand => battlefield
+T5; Fellwar Stone; untapped
+T5; Swamp; untapped
+T5; Island; untapped
+T5; Island; untapped
+T5; Island; untapped
+T5; Case of the Ransacked Lab; moved library => hand
+T5; Sol Ring; tapped
+T5; Island; tapped
+T5; Case of the Ransacked Lab; moved hand => battlefield
+T5; Swamp; tapped
+T5; Island; tapped
+T5; Scion of Halaster; moved commandZone => battlefield
+T6; Swamp; untapped
+T6; Island; untapped
+T6; Island; untapped
+T6; Sol Ring; untapped
+T6; Syr Konrad, the Grim; moved library => hand
+T6; The Mindskinner; moved library => hand
+T6; The Mindskinner; moved hand => graveyard
+T6; Sol Ring; tapped
+T6; Fellwar Stone; tapped
+T6; Island; tapped
+T6; Island; tapped
+T6; Syr Konrad, the Grim; moved hand => battlefield
+T7; Sol Ring; untapped
+T7; Fellwar Stone; untapped
+T7; Island; untapped
+T7; Island; untapped
+T7; Mana Sculpt; moved library => hand
+T7; Energybending; moved library => hand
+T7; Mana Sculpt; moved hand => graveyard
+T7; Swamp; moved hand => battlefield
+T7; Swamp; tapped
+T7; Swamp; untapped
+T7; Island; tapped
+T7; Energybending; moved hand => battlefield
+T7; Island; tapped
+T7; See the Truth; moved graveyard => battlefield
+T7; Island; moved library => hand
+T7; Baral, Chief of Compliance; moved library => hand
+T7; Island; moved library => hand
+T7; See the Truth; moved battlefield => exile
+T7; Energybending; moved battlefield => graveyard
+T7; Unwind; moved library => hand
+T7; Case of the Ransacked Lab; counter:+1 / +1=1
+T7; Case of the Ransacked Lab; counter:+1 / +1=2
+T7; Island; tapped
+T7; Fellwar Stone; tapped
+T7; Baral, Chief of Compliance; moved hand => battlefield
+T7; Swamp; tapped
+T7; Swamp; untapped
+T8; Fellwar Stone; untapped
+T8; Island; untapped
+T8; Island; untapped
+T8; Island; untapped
+T8; Riverchurn Monument; moved library => hand
+T8; Brainstorm; moved library => hand
+T8; Riverchurn Monument; moved hand => graveyard
+T8; Island; moved hand => battlefield
+T8; Island; tapped
+T8; Brainstorm; moved hand => battlefield
+T8; Mocking Sprite; moved library => hand
+T8; Fetid Pools; moved library => hand
+T8; Island; moved library => hand
+T8; Fetid Pools; moved hand => library
+T8; Island; moved hand => library
+T8; Brainstorm; moved battlefield => graveyard
+T8; Case of the Ransacked Lab; counter:
+T8; Swamp; tapped
+T8; Island; tapped
+T8; Swamp; untapped
+T8; Sol Ring; tapped
+T8; Mocking Sprite; moved hand => battlefield
+T8; Swamp; tapped
+T8; Island; tapped
+T8; Fetid Pools; moved library => graveyard
+T8; Fellwar Stone; tapped
+T8; Island; tapped
+T8; Island; moved library => graveyard
+T9; Island; untapped
+T9; Sol Ring; untapped
+T9; Fellwar Stone; untapped
+T9; Island; untapped
+T9; Swamp; untapped
+T9; Island; untapped
+T9; Island; untapped
+T9; Night's Whisper; moved library => hand
+T9; Island; moved library => hand
+T9; Island; moved hand => graveyard
+T9; Swamp; tapped
+T9; Night's Whisper; moved hand => battlefield
+T9; Energybending; moved graveyard => battlefield
+T9; Diresight; moved library => hand
+T9; Energybending; moved battlefield => exile
+T9; Turnabout; moved library => hand
+T9; Dark Ritual; moved library => hand
+T9; Night's Whisper; moved battlefield => graveyard
+T9; Swamp; tapped
+T9; Diresight; moved hand => battlefield
+T9; Wizards of Thay; moved library => graveyard
+T9; Singularity Rupture; moved library => hand
+T9; Island; moved library => hand
+T9; Diresight; moved battlefield => graveyard
+T9; Island; tapped
+T9; Island; tapped
+T9; Island; tapped
+T9; Island; tapped
+T9; Turnabout; moved hand => battlefield
+T9; Island; untapped
+T9; Island; untapped
+T9; Island; untapped
+T9; Swamp; untapped
+T9; Island; untapped
+T9; Swamp; untapped
+T9; Brainstorm; moved graveyard => battlefield
+T9; Ponder; moved library => hand
+T9; Swamp; moved library => hand
+T9; Opt; moved library => hand
+T9; Dispel; moved hand => library
+T9; Swamp; moved hand => library
+T9; Brainstorm; moved battlefield => exile
+T9; Turnabout; moved battlefield => graveyard
+T9; Opt; moved hand => battlefield
+T9; Swamp; tapped
+T9; Diresight; moved graveyard => battlefield
+T9; Dispel; moved library => graveyard
+T9; Swamp; moved library => graveyard
+T9; Exotic Orchard; moved library => hand
+T9; Duskmantle Guildmage; moved library => hand
+T9; Swamp; untapped
+T9; Swamp; tapped
+T9; Diresight; moved battlefield => exile
+T9; Unearth; moved library => hand
+T9; Opt; moved battlefield => graveyard
+T9; Swamp; tapped
+T9; Dark Ritual; moved hand => battlefield
+T9; Island; tapped
+T9; Duskmantle Guildmage; moved hand => battlefield
+T9; Dark Ritual; counter:+1 / +1=1
+T9; Dark Ritual; counter:+1 / +1=2
+T9; Dark Ritual; counter:+1 / +1=3
+T9; Dark Ritual; counter:+1 / +1=2
+T9; Island; tapped
+T9; Island; tapped
+T9; Sol Ring; tapped
+T9; Fellwar Stone; tapped
+T9; Singularity Rupture; moved hand => battlefield

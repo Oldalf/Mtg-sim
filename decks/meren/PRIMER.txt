@@ -1,0 +1,31 @@
+This deck is a Golgari reanimator deck built for bracket 2 to 3.
+
+The goal is a deck that is consistent and fun to play: slower than a combo deck, with a board and big drains instead of a one-turn kill. Meren and the other reanimation cards are value engines that swing the tempo, and forced sacrifice keeps the board under control.
+
+HOW IT WORKS
+Meren gets an experience counter whenever another creature you control dies. At your end step she returns a creature card from your graveyard to the battlefield if its mana value is at most your experience, and to your hand if not. So the deck fills the graveyard (self-mill and tutors), sacrifices creatures for value, and lets Meren bring back the best ones turn after turn.
+
+WIN LINES
+- Gray Merchant of Asphodel: each opponent loses life equal to your devotion to black. With 5 experience (its mana value) and a free sacrifice outlet, sacrifice it at your end step and Meren brings it back for another drain every turn.
+- Lotleth Giant: damage to one opponent equal to the number of creature cards in your graveyard.
+- Twilight Diviner doubles both, because a creature that enters from a graveyard makes a token copy. Saw in Half on your own Gray Merchant gives two copies.
+- Grave Titan, Avenger of the Fallen and the sacrifice outlets (Viscera Seer, Woe Strider, Umbral Collar Zealot, Wight of the Reliquary) build the board and the experience.
+
+FILLING THE GRAVEYARD AND FINDING PIECES
+- Mill: Breach the Multiverse, Grisly Salvage, Grist, Liliana the Repentant, Satyr Wayfinder.
+- Tutors: Buried Alive, Fauna Shaman, Grim Servant, Dina's Guidance, Eldritch Evolution, Vile Entomber, Protean Hulk, Rune-Scarred Demon.
+- Ramp: Sol Ring, Llanowar Elves, Sakura-Tribe Elder, Solemn Simulacrum, Dark Ritual, Studious First-Year.
+- Green is the colour of the ramp, so a Forest early matters.
+
+CARE WITH
+- Spore Frog is a fog. Keep it home, attack with the rest, and sacrifice it on their turn to prevent the damage coming back.
+- Your own life matters. Phyrexian Arena, Infernal Grasp and Diresight cost life, and Gray Merchant and Disciple of Bolas gain it.
+
+MULLIGANS
+The first mulligan is free in my pod (a new 7), then it is a London mulligan (draw 7, bottom the extras). From simulating thousands of opening hands:
+- Keep 3 to 5 lands if one of them makes green. Keep 2 lands only with a green source and a ramp piece, a graveyard filler or a tutor. No green source: mulligan.
+- Mulligan 0 or 1 lands; a one-lander is worse than a six-card hand. Mulligan 7 lands. 6 lands is a mulligan the first time and a keep after that.
+- A green source is the most important single thing, worth about two thirds of a turn of speed: green is the colour of the ramp. Having both black and green in the opening hand is nearly as good.
+- The best cards to see early are Sol Ring, Liliana the Repentant, Sakura-Tribe Elder, Grist, Priest of Forgotten Gods, Fauna Shaman, Satyr Wayfinder and Grisly Salvage. A ramp piece or a graveyard filler or tutor is worth about a third of a turn each, so a hand with green and one of them is a keep, even with only 2 lands.
+- Expensive payoffs (Gray Merchant, Lotleth Giant, Grave Titan) and sacrifice outlets don't speed the deck up by themselves. Don't keep a 2-land hand just because it has them.
+- Removal and the two Witnesses look weak in a simulation only because the opponents there do nothing. In a real game a hand with removal is a fine keep.

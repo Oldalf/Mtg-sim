@@ -1,0 +1,40 @@
+This deck is a mill combo deck.
+
+Originally I wanted to get into Magic to play mill decks, but quickly found out that milling people generates a lot of aggro. So after rethinking it, this deck was born. The goal is still to win through milling, but to mill people once or twice at most and win that turn.
+
+HOW IT WORKS
+Gale lets you cast a card of the other type from your graveyard whenever you cast an instant or sorcery from your hand, so your graveyard works as a second hand. Scion of Halaster fills it: on your first draw each turn you look at two cards and bin one. Early on you play rocks, cost reducers and cheap draw, then tutor for the missing piece and win in one big turn.
+
+WIN LINES
+- Duskmantle Guildmage + Mindcrank: activate Guildmage's first ability (never the second), then any mill starts a loop until everyone is dead.
+- Guildmage + a big mill: a kicked Maddening Cacophony or Singularity Rupture mills half of every library, which is lethal on its own.
+- Kicked Maddening Cacophony + Riverchurn Monument: mill half, then exhaust Monument for the other half.
+- Syr Konrad + The Mindskinner: attack with Mindskinner and the Konrad chain mills everyone out.
+- Syr Konrad + Mindcrank + kicked Cacophony: every creature milled pings everyone, and Mindcrank keeps it going. Always kick it.
+- Prologue to Phyresis + Expansion Algorithm: Prologue early as a cantrip leaves poison, then Algorithm for X = 9.
+
+Mana for the big turn: High Tide, Bubbling Muck, Energybending, Turnabout, Dark Ritual, Energy Tap (tap Gale), Drain Power. Countering your own spell with An Offer You Can't Refuse or Unwind also gives mana and triggers Gale. Go off with a counterspell up when you can.
+
+MULLIGANS
+The first mulligan is free in my pod (a new 7), then it is a London mulligan (draw 7, bottom the extras). From simulating thousands of opening hands with this list:
+- Keep 3 or 4 lands. 2 or 5 lands is fine too when the hand does something: a rock, a cantrip, a cost reducer or a tutor.
+- Mulligan 0 or 1 lands. A one-lander wins about as late as a six-card hand, and the first mulligan costs nothing. Mulligan 6 or 7 lands too.
+- The best cards to see early are Sol Ring, Duskmantle Guildmage, the tutors (Wishclaw Talisman, Diabolic Tutor, Gifts Ungiven, Insatiable Avarice), Maddening Cacophony and any other rock. A combo piece or a tutor with three lands is an easy keep.
+- Counterspells and Spell Pierce protect a combo that is ready, and Drain Power is mana for the big turn. None of them help the setup, so don't keep a hand for them.
+- Having both a blue and a black source in the opening hand matters much less than the land count.
+- After the free mulligan, only 0 lands or 6 or more lands is worth going to six. A one-lander is a coin flip, so keep it only with a rock, a cantrip, a cost reducer or a tutor.
+
+TUTOR TARGETS
+- Guildmage out: Mindcrank, otherwise Maddening Cacophony.
+- Mindcrank out: Guildmage (Muddle the Mixture can transmute for it).
+- Konrad and Mindcrank out: Maddening Cacophony.
+- Konrad out: The Mindskinner. Mindskinner out: Syr Konrad.
+- Opponents already have poison: Expansion Algorithm.
+- Combo ready: a counterspell or High Tide / Dark Ritual.
+
+GIFTS UNGIVEN
+Build piles where every split still wins. Binned instants and sorceries come back with Gale, binned creatures and artifacts don't, so mix spells and count your mana for the worst split.
+- Gale + Guildmage out, about 9 mana: Maddening Cacophony, Mindcrank, Singularity Rupture, High Tide.
+- Gale + Konrad + Mindcrank out, about 8 mana: Maddening Cacophony, Singularity Rupture, High Tide, Dark Ritual.
+- Gale + Guildmage + Mindcrank out with an instant in hand: Gifts for only Maddening Cacophony and Singularity Rupture. Both go to the graveyard, and Gale casts Cacophony.
+Avoid piles that need two permanents, and don't put Expansion Algorithm in a pile.

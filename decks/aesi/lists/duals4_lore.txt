@@ -1,0 +1,106 @@
+Commander
+1x Aesi, Tyrant of Gyre Strait
+
+Activated Ability Ramp
+1x Biomancer's Familiar
+1x Heartstone
+1x Training Grounds
+
+Additional lands
+1x Azusa, Lost but Seeking
+1x Azusa's Many Journeys // Likeness of the Seeker
+1x Budoka Gardener // Dokai, Weaver of Life
+1x Case of the Locked Hothouse
+1x Druid Class
+1x Loot, Exuberant Explorer
+1x PuPu UFO
+1x Sakura-Tribe Scout
+1x Summer Bloom
+1x Walking Atlas
+
+Bounce
+1x Floodbringer
+1x Moonbow Illusionist
+1x Oboro Breezecaller
+
+Copy
+1x Uyo, Silent Prophet
+
+Counters
+1x Divert Disaster
+1x Soratami Savant
+1x Wash Away
+
+Draw
+1x Blue Sun's Zenith
+1x Graceful Adept
+1x Seismic Sense
+1x Soratami Cloudskater
+
+Evasion
+1x Soratami Mirror-Guard
+
+Finisher
+1x Endless Swarm
+1x Eternal Dominion
+1x Haru-Onna
+1x Kiri-Onna
+1x Omniscience
+
+Land
+1x Demolition Field
+1x Evolving Wilds
+14x Forest
+16x Island
+1x Reliquary Tower
+1x Simic Growth Chamber
+1x Terramorphic Expanse
+
+Landfall
+1x Retreat to Coralhelm
+
+Mill
+1x Soratami Mindsweeper
+
+Protection
+1x Kira, Great Glass-Spinner
+1x Oboro Envoy
+1x Soratami Rainshaper
+
+Ramp
+1x Beanstalk Giant // Fertile Footsteps
+1x Circuitous Route
+1x Cultivate
+1x Early Harvest
+1x Entish Restoration
+1x Explore
+1x Explosive Vegetation
+1x Farseek
+1x Grow from the Ashes
+1x Growth Spiral
+1x Harrow
+
+1x Khalni Heart Expedition
+1x Kodama of the East Tree
+1x Lotus Cobra
+1x Nissa's Pilgrimage
+1x Patron of the Moon
+1x Rampant Growth
+1x Reach the Horizon
+1x Sakura-Tribe Elder
+1x Sol Ring
+
+Removal
+1x Beast Within
+1x Bushwhack
+1x Soratami Mirror-Mage
+
+Tokens
+1x Meloku the Clouded Mirror
+
+Test
+1x Command Tower
+1x Hinterland Harbor
+1x Vineglimmer Snarl
+1x Yavimaya Coast
+1x Nature's Lore

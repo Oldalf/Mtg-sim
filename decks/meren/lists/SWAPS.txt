@@ -1,0 +1,9 @@
+Meren test lists: what was removed and added, compared with decklist.txt (checked with a diff).
+
+B3 (b3.txt):   out Eternal Witness, Timeless Witness, Songs of the Damned, Puppeteer Clique, Solemn Simulacrum
+               in  Carrion Feeder, Stitcher's Supplier, Wood Elves, Ophiomancer, Skull Prophet
+A3 (a3.txt):   B3, plus out Village Rites, Rune-Scarred Demon; in Fleshbag Marauder, Fyndhorn Elves
+B3x (b3x.txt): B3 with Solemn Simulacrum kept and no Skull Prophet (four cuts, four adds: Carrion Feeder, Stitcher's Supplier, Wood Elves, Ophiomancer)
+
+Tried and dropped: Zulaport Cutthroat (drain, not the plan), Elvish Mystic (replaced by Ophiomancer), Sylvan Caryatid (replaced by Skull Prophet),
+cutting Twilight Diviner and Sepulchral Primordial (list C3: fewer wins).

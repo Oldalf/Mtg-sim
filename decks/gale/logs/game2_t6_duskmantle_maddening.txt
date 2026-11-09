@@ -1,0 +1,112 @@
+T0; Island; moved library => hand
+T0; Maddening Cacophony; moved library => hand
+T0; Dimir Signet; moved library => hand
+T0; Island; moved library => hand
+T0; An Offer You Can't Refuse; moved library => hand
+T0; Island; moved library => hand
+T0; Opt; moved library => hand
+T1; Secrets of the Dead; moved library => hand
+T1; Island; moved hand => battlefield
+T1; Opt; moved hand => battlefield
+T1; Nightscape Familiar; moved library => hand
+T1; Opt; moved battlefield => graveyard
+T2; Unwind; moved library => hand
+T2; Island; moved hand => battlefield
+T2; Island; tapped
+T2; Island; tapped
+T2; Dimir Signet; moved hand => battlefield
+T3; Island; untapped
+T3; Island; untapped
+T3; Underground River; moved library => hand
+T3; Underground River; moved hand => battlefield
+T3; Island; tapped
+T3; Dimir Signet; tapped
+T3; Nightscape Familiar; moved hand => battlefield
+T3; Island; tapped
+T3; Underground River; tapped
+T3; Gale, Waterdeep Prodigy; moved commandZone => battlefield
+T3; Magus of the Wheel; moved miscCards => opponentsCards
+T4; Island; untapped
+T4; Underground River; untapped
+T4; Island; untapped
+T4; Dimir Signet; untapped
+T4; Island; moved library => hand
+T4; Island; moved hand => battlefield
+T4; Dimir Signet; tapped
+T4; Island; tapped
+T4; Scion of Halaster; moved commandZone => battlefield
+T4; Island; tapped
+T4; Island; tapped
+T4; Secrets of the Dead; moved hand => battlefield
+T4; Ooze; moved miscCards => opponentsCards
+T5; Dimir Signet; untapped
+T5; Island; untapped
+T5; Island; untapped
+T5; Island; untapped
+T5; Baral, Chief of Compliance; moved library => hand
+T5; Island; moved hand => battlefield
+T5; Island; moved library => hand
+T5; Island; moved hand => graveyard
+T5; Island; tapped
+T5; Baral, Chief of Compliance; moved hand => battlefield
+T5; Island; tapped
+T5; Maddening Cacophony; moved hand => battlefield
+T5; Island; tapped
+T5; Opt; moved graveyard => battlefield
+T5; Windfall; moved library => hand
+T5; Opt; moved battlefield => graveyard
+T5; Maddening Cacophony; moved battlefield => graveyard
+T5; Island; tapped
+T5; Island; untapped
+T5; Gifts Ungiven; moved library => hand
+T5; Island; tapped
+T5; Underground River; tapped
+T5; Dimir Signet; tapped
+T5; Gifts Ungiven; moved hand => battlefield
+T5; High Tide; moved library => battlefield
+T5; Duskmantle Guildmage; moved library => battlefield
+T5; Riverchurn Monument; moved library => battlefield
+T5; Unearth; moved library => battlefield
+T5; Gifts Ungiven; moved battlefield => graveyard
+T5; Unearth; moved battlefield => hand
+T5; Riverchurn Monument; moved battlefield => hand
+T5; Duskmantle Guildmage; moved battlefield => graveyard
+T5; High Tide; moved battlefield => graveyard
+T5; Song of the Dryads; moved miscCards => opponentsCards
+T6; Island; untapped
+T6; Island; untapped
+T6; Island; untapped
+T6; Island; untapped
+T6; Underground River; untapped
+T6; Dimir Signet; untapped
+T6; Arcane Denial; moved library => hand
+T6; Swamp; moved library => hand
+T6; Arcane Denial; moved hand => graveyard
+T6; Swamp; moved hand => battlefield
+T6; Swamp; tapped
+T6; Unearth; moved hand => battlefield
+T6; Unearth; moved battlefield => hand
+T6; Swamp; untapped
+T6; Swamp; tapped
+T6; Unearth; moved hand => battlefield
+T6; Island; tapped
+T6; High Tide; moved graveyard => battlefield
+T6; High Tide; moved battlefield => exile
+T6; Duskmantle Guildmage; moved graveyard => battlefield
+T6; Unearth; moved battlefield => graveyard
+T6; Island; tapped
+T6; Riverchurn Monument; moved hand => battlefield
+T6; Unwind; moved hand => battlefield
+T6; Island; untapped
+T6; Island; untapped
+T6; Island; untapped
+T6; Riverchurn Monument; moved battlefield => graveyard
+T6; Unwind; moved battlefield => graveyard
+T6; Island; tapped
+T6; Windfall; moved hand => battlefield
+T6; An Offer You Can't Refuse; moved hand => battlefield
+T6; Island; tapped
+T6; Island; tapped
+T6; Maddening Cacophony; moved graveyard => battlefield
+T6; Underground River; tapped
+T6; Island; tapped
