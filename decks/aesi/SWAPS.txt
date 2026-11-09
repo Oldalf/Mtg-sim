@@ -1,0 +1,31 @@
+AESI: swaps from decklist.txt (your original list) to lists/package.txt
+Status: you said it "looks good" (2026-11-07), but these are still open: Many Journeys out or kept, Search for Tomorrow vs Nature's Lore / Three Visits, and which duals you already own.
+Result in the simulator: win by turn 10 went from 81.8% to 86.1%, slow starts from 12.7% to 9.7%.
+Full list to copy: lists/package.txt (100 cards, 39 lands)
+
+CUT (4 spells):
+  Explore
+  Growth Spiral
+  Into the Wilds
+  Azusa's Many Journeys // Likeness of the Seeker
+
+CUT (6 basics):
+  Forest x3 (16 -> 13)
+  Island x3 (18 -> 15)
+
+ADD (4 spells, about 1.7 EUR total, prices vary by printing):
+  Search for Tomorrow    (0.16)
+  Wood Elves             (0.06)
+  Skyshroud Claim        (1.36)
+  Elven Raft-Steerer     (0.11)
+
+ADD (6 dual lands, about 3.1 EUR total):
+  Command Tower          (0.20)
+  Vineglimmer Snarl      (0.22)
+  Hinterland Harbor      (0.35)
+  Yavimaya Coast         (0.52)
+  Botanical Sanctum      (1.64)
+  Temple of Mystery      (0.14)
+
+Alternatives tested the same as Search for Tomorrow: Nature's Lore (~2.90 EUR), Three Visits (~4.89 EUR).
+Keeping Many Journeys instead of Skyshroud Claim: about 1.6 points worse for win by turn 10.

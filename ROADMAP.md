@@ -38,7 +38,7 @@ Needs the most new engine work, so it comes last.
 
 ## Phase 4: a fifth deck
 
-**Status (2026-11-07): waiting for Pontus.** He brings the decklist (Archidekt export), how it wins, and a log if he has one. Then: agree the rules (opponents, win condition, combat, anything new), `--fetch` the cards, engine work for whatever the list needs, the deck folder (rules, AI, tests on hand-built boards, planner score, mulligan rule, `--diag` measures, analyzer hooks), first numbers, a card ranking, and a primer with a MULLIGANS section. Most of what the earlier decks needed is in the engine now.
+**Status (2026-11-10): first version done: `decks/mike/` (Vnwxt, Verbose Host; details and results in its `PLAN.md`).** Rules agreed, engine hooks added (`Perm.marks`, `evasive`, `onCombatDamage`; the other four decks are IDENTICAL), 27 rules tests, planner on, mulligan rule, primer. Waiting for: his cut ideas, whether to add Fblthp, more logs. (Original brief: the decklist, how it wins, and a log.) Then: agree the rules (opponents, win condition, combat, anything new), `--fetch` the cards, engine work for whatever the list needs, the deck folder (rules, AI, tests on hand-built boards, planner score, mulligan rule, `--diag` measures, analyzer hooks), first numbers, a card ranking, and a primer with a MULLIGANS section. Most of what the earlier decks needed is in the engine now.
 
 ## Next session (updated 2026-11-07)
 

@@ -1,0 +1,24 @@
+This deck is a mono-blue card draw deck, built for bracket 2 to 3.
+
+The goal is a deck that is fun to play and keeps itself protected without being oppressive. It started as a gimmick: a tiny creature (Vnwxt, "Mike") holding 20 or more cards in hand.
+
+HOW IT WORKS
+Vnwxt has "start your engines": your speed rises once on each of your turns when an opponent loses life, up to 4. At max speed every card you draw is doubled. Teferi's Ageless Insight doubles every draw except the first one in your draw step. Everything in the deck pays you for drawing: Psychosis Crawler drains each opponent for every card, Ominous Seas makes an 8/8 Kraken every 8 cards, Clinquant Skymage and Oneirophage grow, Emrakul's Messenger and Mischievous Mystic make tokens on your second draw, Krang doubles all of those triggers.
+Get speed up early with cheap evasive creatures (Shoreline Looter, Looter il-Kor, Invisible Stalker, Slither Blade, Gingerbrute, flyers) so one of them connects every turn.
+
+WIN LINES
+- Mill yourself: draw your whole library with Laboratory Maniac or Jace, Wielder of Mysteries on the battlefield, then draw once more. Do not draw the last cards without a win card, Living Conundrum or Ormos on the battlefield. Living Conundrum and Ormos are the safety net if the win card is missing or gets removed.
+- Twenty-Toed Toad: attack with it while holding 20 or more cards. It needs no damage and no other attacker.
+- Psychosis Crawler: about 40 cards drawn with it on the battlefield kills the whole table. Krang or Aurora Shifter copying the Crawler doubles that.
+- Big swing: Ominous Seas Krakens, Hand of Vecna (plus X/plus X for the cards in hand), Nerd Rage (plus 10/plus 10 at 10 or more cards). Put them on a flyer or an unblockable creature, or give it Aqueous Form.
+- Slick Imitator at max speed copies a big Pull from Tomorrow or Treasure Cruise.
+
+PROTECTION
+Hold the counterspells (Negate, Refute, Spell Pierce, Spell Syphon, Aether Spike, Diversion Unit, Siren Stormtamer) for the turn you go for the win. Aetherize, Evacuation, Wash Out and Aether Gale are the reset buttons. They stay in your hand, which also counts toward the Toad's twenty.
+
+MULLIGANS
+The first mulligan is free in my pod (a new 7), then it is a London mulligan. From simulating thousands of opening hands with this list:
+- Keep 2 to 5 lands. Three and four lands are best, but even a two-lander is fine because the deck is full of one and two mana draw spells and creatures.
+- Mulligan 0 or 1 lands. A one-lander wins noticeably later, even with cantrips.
+- The best cards to see early: Twenty-Toed Toad, Psychosis Crawler, Loyal Drake, Harmonized Trio, Sol Ring, Teferi's Ageless Insight, Jace, Shoreline Looter and Looter il-Kor.
+- Vnwxt on turn 2 is the goal. Then attack with something evasive every turn to get speed.

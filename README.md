@@ -57,7 +57,9 @@ Current decks:
 - `samfrodo`: Sam & Frodo, Abzan tokens / aristocrats (bracket 2–3). Wins with all three opponents drained from 40; only Frodo and Gollum attack, unless an all-in attack kills the table. Run `npm run sim -- samfrodo` (rules and results: `decks/samfrodo/PLAN.md`).
 - `aesi`: Aesi, Tyrant of Gyre Strait, Simic "reverse landfall" (bracket 3). Extra land drops, lands returned and replayed, and loops shortcut by a solver (mill, endless flyers, Uyo copies). Run `npm run sim -- aesi` (rules and results: `decks/aesi/PLAN.md`).
 
-The phases (Meren, Sam & Frodo, then Simic landfall) and what each needs: `ROADMAP.md`.
+- `mike`: Vnwxt, Verbose Host, mono-blue card draw (bracket 2–3). Three wins: mill yourself out with Laboratory Maniac / Jace, Twenty-Toed Toad with 20 cards in hand, or drain/attack all three opponents (Psychosis Crawler, Krakens, Hand of Vecna). Every draw is modelled (Vnwxt at max speed and Teferi double it). Run `npm run sim -- mike` (rules and results: `decks/mike/PLAN.md`).
+
+The phases (Meren, Sam & Frodo, Simic landfall, then Mike) and what each needs: `ROADMAP.md`.
 
 ## Adding a deck
 

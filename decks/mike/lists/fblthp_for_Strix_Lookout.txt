@@ -1,0 +1,99 @@
+Commander
+1x Vnwxt, Verbose Host
+
+Burn
+1x Psychosis Crawler
+
+Copy
+1x Aurora Shifter
+1x Slick Imitator
+
+Counters
+1x Clinquant Skymage
+1x Krang, the All-Powerful
+1x Oneirophage
+1x Pensive Professor
+
+Counterspell
+1x Aether Spike
+1x Negate
+1x Refute
+1x Spell Pierce
+1x Spell Syphon
+
+Draw
+1x Body of Knowledge
+1x Brainstorm
+1x Consider
+1x Flux
+1x Folio of Fancies
+1x Frantic Search
+1x Harmonized Trio // Brainstorm
+1x Looter il-Kor
+1x Loyal Drake
+1x Nerd Rage
+1x Ormos, Archive Keeper
+1x Pull from Tomorrow
+1x Roil Cartographer
+1x Shielded Aether Thief
+1x Shoreline Looter
+1x Spectral Sailor
+1x Fblthp, Impossibly Lost
+1x Teferi's Ageless Insight
+1x Treasure Cruise
+1x Tune the Narrative
+1x Windfall
+1x Wizard Class
+
+Evasion
+1x Aqueous Form
+1x Atomic Microsizer
+1x Gingerbrute
+1x Invisible Stalker
+1x Slither Blade
+
+Finisher
+1x Jace, Wielder of Mysteries
+1x Laboratory Maniac
+1x Twenty-Toed Toad
+
+Land
+1x Amonkhet Raceway
+1x Avishkar Raceway
+1x Castle Vantress
+29x Island
+1x Muraganda Raceway
+1x Mystic Sanctuary
+1x Reliquary Tower
+1x Rogue's Passage
+
+Protection
+1x Diversion Unit
+1x Living Conundrum
+1x Siren Stormtamer
+
+Pump
+1x Hand of Vecna
+
+Ramp
+1x Arcane Signet
+1x Commander's Sphere
+1x Sol Ring
+1x The Water Crystal
+1x Thought Vessel
+1x Thunderclap Drake
+
+Removal
+1x Aether Gale
+1x Aetherize
+1x Evacuation
+1x Pongify
+1x Rapid Hybridization
+1x Reality Shift
+1x Volatile Stormdrake
+1x Wash Out
+
+Tokens
+1x Emrakul's Messenger
+1x Mischievous Mystic
+1x Ominous Seas

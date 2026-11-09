@@ -30,14 +30,16 @@ import { deck as gale } from "./decks/gale/index";
 import { deck as meren } from "./decks/meren/index";
 import { deck as samfrodo } from "./decks/samfrodo/index";
 import { deck as aesi } from "./decks/aesi/index";
+import { deck as mike } from "./decks/mike/index";
 import { runKillTests } from "./decks/gale/tests/kills.test";
 import { runMerenTests } from "./decks/meren/tests/meren.test";
 import { runSamFrodoTests } from "./decks/samfrodo/tests/samfrodo.test";
 import { runAesiTests } from "./decks/aesi/tests/aesi.test";
+import { runMikeTests } from "./decks/mike/tests/mike.test";
 import { regress, RegressSpec } from "./engine/regress";
 
-const DECKS: Record<string, R.Deck> = { gale, meren, samfrodo, aesi };
-const TESTS: Record<string, () => boolean> = { gale: runKillTests, meren: runMerenTests, samfrodo: runSamFrodoTests, aesi: runAesiTests };
+const DECKS: Record<string, R.Deck> = { gale, meren, samfrodo, aesi, mike };
+const TESTS: Record<string, () => boolean> = { gale: runKillTests, meren: runMerenTests, samfrodo: runSamFrodoTests, aesi: runAesiTests, mike: runMikeTests };
 /** What --regress records per deck (lists relative to the deck folder). */
 const REGRESS: Record<string, RegressSpec> = {
   gale: { lists: ["decklist.txt", "lists/proposed.txt"], tests: runKillTests,
@@ -45,6 +47,7 @@ const REGRESS: Record<string, RegressSpec> = {
   meren: { lists: ["decklist.txt"], tests: runMerenTests },
   samfrodo: { lists: ["decklist.txt"], tests: runSamFrodoTests },
   aesi: { lists: ["decklist.txt"], tests: runAesiTests },
+  mike: { lists: ["decklist.txt"], tests: runMikeTests },
 };
 
 interface Args {

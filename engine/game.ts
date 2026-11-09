@@ -28,6 +28,8 @@ export class Perm {
   counters = 0;
   /** Power changes that aren't counters (e.g. Saw in Half copies at half power). */
   powerMod = 0;
+  /** Free bit flags a deck may use for attachments and the like (copied with the permanent). */
+  marks = 0;
 
   constructor(public cd: CardDef, public land: LandInfo | null = null, tapped = false) {
     this.tapped = tapped;
@@ -50,6 +52,7 @@ export class Perm {
     p.token = this.token;
     p.counters = this.counters;
     p.powerMod = this.powerMod;
+    p.marks = this.marks;
     return p;
   }
 }
@@ -1337,13 +1340,14 @@ export abstract class Game<S = unknown> {
     pool.sort((a, b) => this.power(b) - this.power(a));
     const untappedOthers = (attacking: Set<Perm>) =>
       this.creatures().filter((p) => !p.tapped && !attacking.has(p)).length;
-    const deal = (att: Perm[]) => {
-      const fly = att.filter((p) => p.cd.flying), ground = att.filter((p) => !p.cd.flying);
+    const connecting = (att: Perm[]) => {
+      const fly = att.filter((p) => this.evasive(p)), ground = att.filter((p) => !this.evasive(p));
       const blocked = Math.floor(ground.length / 2);
       // opponents block the biggest ground attackers
       const g = ground.slice().sort((a, b) => this.power(b) - this.power(a)).slice(blocked);
-      return [...fly, ...g].reduce((s, p) => s + this.power(p), 0);
+      return [...fly, ...g];
     };
+    const deal = (att: Perm[]) => connecting(att).reduce((s, p) => s + this.power(p), 0);
     const crackback = (att: Perm[], dmg: number) => {
       if (fog) return 0;
       const home = untappedOthers(new Set(att));
@@ -1370,11 +1374,19 @@ export abstract class Game<S = unknown> {
       this.hurtOpp(t, hit);
       dmg -= hit;
     }
+    this.onCombatDamage(connecting(all), total);
     this.pendingCrackback += crackback(best, total);
     if (fog) this.fogUsed = true;
     this.say(`attack with ${all.length} creature(s): ${total} damage, opp life [${this.life.join(", ")}]` +
       (fog ? ` (${fog.cd.name} stays home)` : `, crackback ${crackback(best, total)}`));
   }
+
+  /** Can this attacker not be blocked (flying, shadow, "can't be blocked")? Decks override it. */
+  evasive(p: Perm): boolean {
+    return p.cd.flying;
+  }
+  /** After combat damage: the attackers that connected and the total damage dealt. */
+  onCombatDamage(_connected: Perm[], _damage: number): void {}
 
   /** Combat damage we'll take on the opponents' turns (applied at our next upkeep). */
   pendingCrackback = 0;

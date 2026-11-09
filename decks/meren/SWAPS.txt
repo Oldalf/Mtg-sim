@@ -1,0 +1,21 @@
+MEREN: swaps from decklist.txt (your original list) to lists/b3.txt
+Result in the simulator (8,000 games, same seeds): win by turn 8 / 10 / 12 went from 17.6 / 71.8 / 95.3% to 22.2 / 77.4 / 96.2%, average win turn 9.63 -> 9.43.
+Full list to copy: lists/b3.txt (100 cards)
+
+CUT (5):
+  Eternal Witness
+  Timeless Witness
+  Songs of the Damned
+  Puppeteer Clique
+  Solemn Simulacrum
+
+ADD (5):
+  Carrion Feeder
+  Stitcher's Supplier
+  Wood Elves
+  Ophiomancer
+  Skull Prophet
+
+Note: the sim is a goldfish game. The two Witnesses (getting removal back) and Solemn (ramp plus a card) are worth more against real opponents than the numbers show, so those cuts are your call.
+
+Tested and not better than this list (see lists/SWAPS.txt): A3 (also Village Rites and Rune-Scarred Demon out, Fleshbag Marauder and Fyndhorn Elves in) and B3x (Solemn kept, no Skull Prophet).

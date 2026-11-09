@@ -1,0 +1,31 @@
+GALE: swaps from decklist.txt (your original list) to lists/proposed.txt (the adopted list, 2026-11-04)
+Result in the simulator: kill by turn 7 / 8 went from 31.9 / 55.7% to 51.4 / 75.3%.
+Full list to copy: lists/proposed.txt
+
+CUT (11):
+  Jidoor, Aristocratic Capital // Overture
+  Cut Your Losses
+  Traumatize
+  Secrets of the Dead
+  Academy Wall
+  Emet-Selch of the Third Seat
+  Archmage Emeritus
+  Archmage's Charm
+  Case of the Ransacked Lab
+  Baleful Strix
+  Reliquary Tower
+
+ADD (8 new cards):
+  Prologue to Phyresis
+  Expansion Algorithm
+  Turnabout
+  Muddle the Mixture
+  Spell Pierce
+  Pieces of the Puzzle
+  Energy Tap
+  Drain Power
+
+ADD (3 more basics):
+  Island x3 (15 -> 18)
+
+Net: 11 out, 11 in. Still 37 lands plus Waterlogged Teachings.

@@ -4096,5 +4096,766 @@
    "Mill"
   ],
   "layout": "normal"
+ },
+ "Aether Gale": {
+  "name": "Aether Gale",
+  "full_name": "Aether Gale",
+  "mana_cost": "{3}{U}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Return six target nonland permanents to their owners' hands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Aether Spike": {
+  "name": "Aether Spike",
+  "full_name": "Aether Spike",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant",
+  "oracle": "Choose target spell. You get {E}{E} (two energy counters), then you may pay any amount of {E}. Counter that spell unless its controller pays {1} for each {E} paid this way.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Aetherize": {
+  "name": "Aetherize",
+  "full_name": "Aetherize",
+  "mana_cost": "{3}{U}",
+  "type_line": "Instant",
+  "oracle": "Return all attacking creatures to their owner's hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Amonkhet Raceway": {
+  "name": "Amonkhet Raceway",
+  "full_name": "Amonkhet Raceway",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{T}: Add {C}.\nMax speed — {T}: Target creature gains haste until end of turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Max speed",
+   "Start your engines!"
+  ],
+  "layout": "normal"
+ },
+ "Aqueous Form": {
+  "name": "Aqueous Form",
+  "full_name": "Aqueous Form",
+  "mana_cost": "{U}",
+  "type_line": "Enchantment — Aura",
+  "oracle": "Enchant creature\nEnchanted creature can't be blocked.\nWhenever enchanted creature attacks, scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Enchant",
+   "Scry"
+  ],
+  "layout": "normal"
+ },
+ "Atomic Microsizer": {
+  "name": "Atomic Microsizer",
+  "full_name": "Atomic Microsizer",
+  "mana_cost": "{U}",
+  "type_line": "Artifact — Equipment",
+  "oracle": "Equipped creature gets +1/+0.\nWhenever equipped creature attacks, choose up to one target creature. That creature can't be blocked this turn and has base power and toughness 1/1 until end of turn.\nEquip {2}",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Equip"
+  ],
+  "layout": "normal"
+ },
+ "Aurora Shifter": {
+  "name": "Aurora Shifter",
+  "full_name": "Aurora Shifter",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Shapeshifter",
+  "oracle": "Whenever this creature deals combat damage to a player, you get that many {E}.\nAt the beginning of combat on your turn, you may pay {E}{E}. When you do, this creature becomes a copy of another target creature you control, except it has this ability and \"Whenever this creature deals combat damage to a player, you get that many {E}.\"",
+  "power": "1",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Avishkar Raceway": {
+  "name": "Avishkar Raceway",
+  "full_name": "Avishkar Raceway",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{T}: Add {C}.\nMax speed — {3}, {T}, Discard a card: Draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Max speed",
+   "Start your engines!"
+  ],
+  "layout": "normal"
+ },
+ "Body of Knowledge": {
+  "name": "Body of Knowledge",
+  "full_name": "Body of Knowledge",
+  "mana_cost": "{3}{U}{U}",
+  "type_line": "Creature — Avatar",
+  "oracle": "Body of Knowledge's power and toughness are each equal to the number of cards in your hand.\nYou have no maximum hand size.\nWhenever this creature is dealt damage, draw that many cards.",
+  "power": "*",
+  "toughness": "*",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Castle Vantress": {
+  "name": "Castle Vantress",
+  "full_name": "Castle Vantress",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control an Island.\n{T}: Add {U}.\n{2}{U}{U}, {T}: Scry 2.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Scry"
+  ],
+  "layout": "normal"
+ },
+ "Clinquant Skymage": {
+  "name": "Clinquant Skymage",
+  "full_name": "Clinquant Skymage",
+  "mana_cost": "{3}{U}",
+  "type_line": "Creature — Bird Wizard",
+  "oracle": "Flying\nWhenever you draw a card, put a +1/+1 counter on this creature.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal"
+ },
+ "Diversion Unit": {
+  "name": "Diversion Unit",
+  "full_name": "Diversion Unit",
+  "mana_cost": "{1}{U}",
+  "type_line": "Artifact Creature — Robot",
+  "oracle": "Flying\n{U}, Sacrifice this creature: Counter target instant or sorcery spell unless its controller pays {3}.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal"
+ },
+ "Emrakul's Messenger": {
+  "name": "Emrakul's Messenger",
+  "full_name": "Emrakul's Messenger",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Eldrazi Faerie Rogue",
+  "oracle": "Devoid (This card has no color.)\nFlying\nWhenever you draw your second card each turn, create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\"",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [
+   "Flying",
+   "Devoid"
+  ],
+  "layout": "normal"
+ },
+ "Evacuation": {
+  "name": "Evacuation",
+  "full_name": "Evacuation",
+  "mana_cost": "{3}{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Return all creatures to their owners' hands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Flux": {
+  "name": "Flux",
+  "full_name": "Flux",
+  "mana_cost": "{2}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Each player discards any number of cards, then draws that many cards.\nDraw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Folio of Fancies": {
+  "name": "Folio of Fancies",
+  "full_name": "Folio of Fancies",
+  "mana_cost": "{1}{U}",
+  "type_line": "Artifact — Book",
+  "oracle": "Players have no maximum hand size.\n{X}{X}, {T}: Each player draws X cards.\n{2}{U}, {T}: Each opponent mills cards equal to the number of cards in their hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Mill"
+  ],
+  "layout": "normal"
+ },
+ "Gingerbrute": {
+  "name": "Gingerbrute",
+  "full_name": "Gingerbrute",
+  "mana_cost": "{1}",
+  "type_line": "Artifact Creature — Food Golem",
+  "oracle": "Haste (This creature can attack and {T} as soon as it comes under your control.)\n{1}: This creature can't be blocked this turn except by creatures with haste.\n{2}, {T}, Sacrifice this creature: You gain 3 life.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Haste"
+  ],
+  "layout": "normal"
+ },
+ "Hand of Vecna": {
+  "name": "Hand of Vecna",
+  "full_name": "Hand of Vecna",
+  "mana_cost": "{3}",
+  "type_line": "Legendary Artifact — Equipment",
+  "oracle": "At the beginning of combat on your turn, equipped creature or a creature you control named Vecna gets +X/+X until end of turn, where X is the number of cards in your hand.\nEquip—Pay 1 life for each card in your hand.\nEquip {2}",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Equip"
+  ],
+  "layout": "normal"
+ },
+ "Harmonized Trio": {
+  "name": "Harmonized Trio",
+  "full_name": "Harmonized Trio // Brainstorm",
+  "mana_cost": "{U}",
+  "type_line": "Creature — Merfolk Bard Wizard",
+  "oracle": "{T}, Tap two untapped creatures you control: This creature becomes prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Prepared"
+  ],
+  "layout": "prepare",
+  "back": {
+   "name": "Brainstorm",
+   "mana_cost": "{U}",
+   "type_line": "Instant",
+   "oracle": "Draw three cards, then put two cards from your hand on top of your library in any order."
+  }
+ },
+ "Invisible Stalker": {
+  "name": "Invisible Stalker",
+  "full_name": "Invisible Stalker",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Human Rogue",
+  "oracle": "Hexproof (This creature can't be the target of spells or abilities your opponents control.)\nThis creature can't be blocked.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Hexproof"
+  ],
+  "layout": "normal"
+ },
+ "Jace, Wielder of Mysteries": {
+  "name": "Jace, Wielder of Mysteries",
+  "full_name": "Jace, Wielder of Mysteries",
+  "mana_cost": "{1}{U}{U}{U}",
+  "type_line": "Legendary Planeswalker — Jace",
+  "oracle": "If you would draw a card while your library has no cards in it, you win the game instead.\n+1: Target player mills two cards. Draw a card.\n−8: Draw seven cards. Then if your library has no cards in it, you win the game.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Mill"
+  ],
+  "layout": "normal"
+ },
+ "Krang, the All-Powerful": {
+  "name": "Krang, the All-Powerful",
+  "full_name": "Krang, the All-Powerful",
+  "mana_cost": "{4}{U}",
+  "type_line": "Legendary Artifact Creature — Utrom Robot",
+  "oracle": "If a player drawing a card causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.\nWhenever a player draws their second card each turn, put a +1/+1 counter on Krang.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Laboratory Maniac": {
+  "name": "Laboratory Maniac",
+  "full_name": "Laboratory Maniac",
+  "mana_cost": "{2}{U}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "If you would draw a card while your library has no cards in it, you win the game instead.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Living Conundrum": {
+  "name": "Living Conundrum",
+  "full_name": "Living Conundrum",
+  "mana_cost": "{4}{U}",
+  "type_line": "Creature — Elemental",
+  "oracle": "Hexproof\nIf you would draw a card while your library has no cards in it, skip that draw instead.\nAs long as there are no cards in your library, this creature has base power and toughness 10/10 and has flying and vigilance.",
+  "power": "2",
+  "toughness": "5",
+  "keywords": [
+   "Hexproof"
+  ],
+  "layout": "normal"
+ },
+ "Looter il-Kor": {
+  "name": "Looter il-Kor",
+  "full_name": "Looter il-Kor",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Kor Rogue",
+  "oracle": "Shadow (This creature can block or be blocked by only creatures with shadow.)\nWhenever this creature deals damage to an opponent, draw a card, then discard a card.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Shadow"
+  ],
+  "layout": "normal"
+ },
+ "Loyal Drake": {
+  "name": "Loyal Drake",
+  "full_name": "Loyal Drake",
+  "mana_cost": "{2}{U}",
+  "type_line": "Creature — Drake",
+  "oracle": "Flying\nLieutenant — At the beginning of combat on your turn, if you control your commander, draw a card.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Flying",
+   "Lieutenant"
+  ],
+  "layout": "normal"
+ },
+ "Mischievous Mystic": {
+  "name": "Mischievous Mystic",
+  "full_name": "Mischievous Mystic",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "Flying\nWhenever you draw your second card each turn, create a 1/1 blue Faerie creature token with flying.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal"
+ },
+ "Muraganda Raceway": {
+  "name": "Muraganda Raceway",
+  "full_name": "Muraganda Raceway",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{T}: Add {C}.\nMax speed — {T}: Add {C}{C}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Max speed",
+   "Start your engines!"
+  ],
+  "layout": "normal"
+ },
+ "Negate": {
+  "name": "Negate",
+  "full_name": "Negate",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant",
+  "oracle": "Counter target noncreature spell.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Nerd Rage": {
+  "name": "Nerd Rage",
+  "full_name": "Nerd Rage",
+  "mana_cost": "{2}{U}",
+  "type_line": "Enchantment — Aura",
+  "oracle": "Enchant creature\nWhen this Aura enters, draw two cards.\nEnchanted creature has \"You have no maximum hand size\" and \"Whenever this creature attacks, if you have ten or more cards in hand, it gets +10/+10 until end of turn.\"",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Enchant"
+  ],
+  "layout": "normal"
+ },
+ "Ominous Seas": {
+  "name": "Ominous Seas",
+  "full_name": "Ominous Seas",
+  "mana_cost": "{1}{U}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever you draw a card, put a foreshadow counter on this enchantment.\nRemove eight foreshadow counters from this enchantment: Create an 8/8 blue Kraken creature token.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal"
+ },
+ "Oneirophage": {
+  "name": "Oneirophage",
+  "full_name": "Oneirophage",
+  "mana_cost": "{3}{U}",
+  "type_line": "Creature — Squid Illusion",
+  "oracle": "Flying\nWhenever you draw a card, put a +1/+1 counter on this creature.",
+  "power": "1",
+  "toughness": "2",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal"
+ },
+ "Ormos, Archive Keeper": {
+  "name": "Ormos, Archive Keeper",
+  "full_name": "Ormos, Archive Keeper",
+  "mana_cost": "{4}{U}{U}",
+  "type_line": "Legendary Creature — Sphinx",
+  "oracle": "Flying\nIf you would draw a card while your library has no cards in it, instead put five +1/+1 counters on Ormos.\n{1}{U}{U}, Discard three cards with different names: Draw five cards.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal"
+ },
+ "Pensive Professor": {
+  "name": "Pensive Professor",
+  "full_name": "Pensive Professor",
+  "mana_cost": "{1}{U}{U}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "Increment (Whenever you cast a spell, if the amount of mana you spent is greater than this creature's power or toughness, put a +1/+1 counter on this creature.)\nWhenever one or more +1/+1 counters are put on this creature, draw a card.",
+  "power": "0",
+  "toughness": "2",
+  "keywords": [
+   "Increment"
+  ],
+  "layout": "normal"
+ },
+ "Pongify": {
+  "name": "Pongify",
+  "full_name": "Pongify",
+  "mana_cost": "{U}",
+  "type_line": "Instant",
+  "oracle": "Destroy target creature. It can't be regenerated. Its controller creates a 3/3 green Ape creature token.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Psychosis Crawler": {
+  "name": "Psychosis Crawler",
+  "full_name": "Psychosis Crawler",
+  "mana_cost": "{5}",
+  "type_line": "Artifact Creature — Phyrexian Horror",
+  "oracle": "Psychosis Crawler's power and toughness are each equal to the number of cards in your hand.\nWhenever you draw a card, each opponent loses 1 life.",
+  "power": "*",
+  "toughness": "*",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Pull from Tomorrow": {
+  "name": "Pull from Tomorrow",
+  "full_name": "Pull from Tomorrow",
+  "mana_cost": "{X}{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Draw X cards, then discard a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Rapid Hybridization": {
+  "name": "Rapid Hybridization",
+  "full_name": "Rapid Hybridization",
+  "mana_cost": "{U}",
+  "type_line": "Instant",
+  "oracle": "Destroy target creature. It can't be regenerated. That creature's controller creates a 3/3 green Frog Lizard creature token.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Reality Shift": {
+  "name": "Reality Shift",
+  "full_name": "Reality Shift",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant",
+  "oracle": "Exile target creature. Its controller manifests the top card of their library. (That player puts the top card of their library onto the battlefield face down as a 2/2 creature. If it's a creature card, it can be turned face up any time for its mana cost.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Manifest"
+  ],
+  "layout": "normal"
+ },
+ "Refute": {
+  "name": "Refute",
+  "full_name": "Refute",
+  "mana_cost": "{1}{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Counter target spell. Draw a card, then discard a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Roil Cartographer": {
+  "name": "Roil Cartographer",
+  "full_name": "Roil Cartographer",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Merfolk Rogue",
+  "oracle": "Landfall — Whenever a land you control enters, you get {E} (an energy counter).\n{T}, Pay six {E}: Draw three cards.",
+  "power": "1",
+  "toughness": "3",
+  "keywords": [
+   "Landfall"
+  ],
+  "layout": "normal"
+ },
+ "Shielded Aether Thief": {
+  "name": "Shielded Aether Thief",
+  "full_name": "Shielded Aether Thief",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Vedalken Rogue",
+  "oracle": "Flash (You may cast this spell any time you could cast an instant.)\nWhenever this creature blocks, you get {E} (an energy counter).\n{T}, Pay {E}{E}{E}: Draw a card.",
+  "power": "0",
+  "toughness": "4",
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal"
+ },
+ "Shoreline Looter": {
+  "name": "Shoreline Looter",
+  "full_name": "Shoreline Looter",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Rat Rogue",
+  "oracle": "This creature can't be blocked.\nThreshold — Whenever this creature deals combat damage to a player, draw a card. Then discard a card unless there are seven or more cards in your graveyard.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Threshold"
+  ],
+  "layout": "normal"
+ },
+ "Siren Stormtamer": {
+  "name": "Siren Stormtamer",
+  "full_name": "Siren Stormtamer",
+  "mana_cost": "{U}",
+  "type_line": "Creature — Siren Pirate Wizard",
+  "oracle": "Flying\n{U}, Sacrifice this creature: Counter target spell or ability that targets you or a creature you control.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal"
+ },
+ "Slick Imitator": {
+  "name": "Slick Imitator",
+  "full_name": "Slick Imitator",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Ooze",
+  "oracle": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nMax speed — {1}, Sacrifice this creature: Copy target spell you control. You may choose new targets for the copy. (A copy of a permanent spell becomes a token.)",
+  "power": "1",
+  "toughness": "3",
+  "keywords": [
+   "Max speed",
+   "Start your engines!"
+  ],
+  "layout": "normal"
+ },
+ "Slither Blade": {
+  "name": "Slither Blade",
+  "full_name": "Slither Blade",
+  "mana_cost": "{U}",
+  "type_line": "Creature — Snake Rogue",
+  "oracle": "This creature can't be blocked.",
+  "power": "1",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Spectral Sailor": {
+  "name": "Spectral Sailor",
+  "full_name": "Spectral Sailor",
+  "mana_cost": "{U}",
+  "type_line": "Creature — Spirit Pirate",
+  "oracle": "Flash (You may cast this spell any time you could cast an instant.)\nFlying\n{3}{U}: Draw a card.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Flying",
+   "Flash"
+  ],
+  "layout": "normal"
+ },
+ "Spell Syphon": {
+  "name": "Spell Syphon",
+  "full_name": "Spell Syphon",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant",
+  "oracle": "Counter target spell unless its controller pays {1} for each blue permanent you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Strix Lookout": {
+  "name": "Strix Lookout",
+  "full_name": "Strix Lookout",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Bird",
+  "oracle": "Flying, vigilance (Attacking doesn't cause this creature to tap.)\n{1}{U}, {T}: Draw a card, then discard a card.",
+  "power": "1",
+  "toughness": "2",
+  "keywords": [
+   "Flying",
+   "Vigilance"
+  ],
+  "layout": "normal"
+ },
+ "Teferi's Ageless Insight": {
+  "name": "Teferi's Ageless Insight",
+  "full_name": "Teferi's Ageless Insight",
+  "mana_cost": "{2}{U}{U}",
+  "type_line": "Legendary Enchantment",
+  "oracle": "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "The Water Crystal": {
+  "name": "The Water Crystal",
+  "full_name": "The Water Crystal",
+  "mana_cost": "{2}{U}{U}",
+  "type_line": "Legendary Artifact",
+  "oracle": "Blue spells you cast cost {1} less to cast.\nIf an opponent would mill one or more cards, they mill that many cards plus four instead.\n{4}{U}{U}, {T}: Each opponent mills cards equal to the number of cards in your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Mill"
+  ],
+  "layout": "normal"
+ },
+ "Thought Vessel": {
+  "name": "Thought Vessel",
+  "full_name": "Thought Vessel",
+  "mana_cost": "{2}",
+  "type_line": "Artifact",
+  "oracle": "You have no maximum hand size.\n{T}: Add {C}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Treasure Cruise": {
+  "name": "Treasure Cruise",
+  "full_name": "Treasure Cruise",
+  "mana_cost": "{7}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nDraw three cards.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Delve"
+  ],
+  "layout": "normal"
+ },
+ "Tune the Narrative": {
+  "name": "Tune the Narrative",
+  "full_name": "Tune the Narrative",
+  "mana_cost": "{U}",
+  "type_line": "Instant",
+  "oracle": "Draw a card. You get {E}{E} (two energy counters).",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Twenty-Toed Toad": {
+  "name": "Twenty-Toed Toad",
+  "full_name": "Twenty-Toed Toad",
+  "mana_cost": "{3}{U}",
+  "type_line": "Creature — Frog Wizard",
+  "oracle": "Your maximum hand size is twenty.\nWhenever you attack with two or more creatures, put a +1/+1 counter on this creature and draw a card.\nWhenever this creature attacks, you win the game if there are twenty or more counters on it or you have twenty or more cards in hand.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Vnwxt, Verbose Host": {
+  "name": "Vnwxt, Verbose Host",
+  "full_name": "Vnwxt, Verbose Host",
+  "mana_cost": "{1}{U}",
+  "type_line": "Legendary Creature — Homunculus",
+  "oracle": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nYou have no maximum hand size.\nMax speed — If you would draw a card, draw two cards instead.",
+  "power": "0",
+  "toughness": "4",
+  "keywords": [
+   "Max speed",
+   "Start your engines!"
+  ],
+  "layout": "normal"
+ },
+ "Volatile Stormdrake": {
+  "name": "Volatile Stormdrake",
+  "full_name": "Volatile Stormdrake",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Drake",
+  "oracle": "Flying, hexproof from activated and triggered abilities\nWhen this creature enters, exchange control of this creature and target creature an opponent controls. If you do, you get {E}{E}{E}{E}, then sacrifice that creature unless you pay an amount of {E} equal to its mana value.",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [
+   "Flying",
+   "Hexproof from",
+   "Hexproof"
+  ],
+  "layout": "normal"
+ },
+ "Wash Out": {
+  "name": "Wash Out",
+  "full_name": "Wash Out",
+  "mana_cost": "{3}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Return all permanents of the color of your choice to their owners' hands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Fblthp, the Lost": {
+  "name": "Fblthp, the Lost",
+  "full_name": "Fblthp, the Lost",
+  "mana_cost": "{1}{U}",
+  "type_line": "Legendary Creature — Homunculus",
+  "oracle": "When Fblthp enters, draw a card. If it entered from your library or was cast from your library, draw two cards instead.\nWhen Fblthp becomes the target of a spell, shuffle Fblthp into its owner's library.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Wizard Class": {
+  "name": "Wizard Class",
+  "full_name": "Wizard Class",
+  "mana_cost": "{U}",
+  "type_line": "Enchantment — Class",
+  "oracle": "(Gain the next level as a sorcery to add its ability.)\nYou have no maximum hand size.\n{2}{U}: Level 2\nWhen this Class becomes level 2, draw two cards.\n{4}{U}: Level 3\nWhenever you draw a card, put a +1/+1 counter on target creature you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "class"
+ },
+ "Fblthp, Impossibly Lost": {
+  "name": "Fblthp, Impossibly Lost",
+  "full_name": "Fblthp, Impossibly Lost",
+  "mana_cost": "{1}{U}",
+  "type_line": "Legendary Creature — Homunculus",
+  "oracle": "When one or more of your opponents are dealt combat damage during your turn, draw two cards. If your library has no cards in it, you win the game. Fblthp's owner shuffles him into their library. (If you draw from an empty library this way, you still win the game.)",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal"
  }
 }
