@@ -40,7 +40,11 @@ Needs the most new engine work, so it comes last.
 
 **Status (2026-11-10): first version done: `decks/mike/` (Vnwxt, Verbose Host; details and results in its `PLAN.md`).** Rules agreed, engine hooks added (`Perm.marks`, `evasive`, `onCombatDamage`; the other four decks are IDENTICAL), 27 rules tests, planner on, mulligan rule, primer. Waiting for: his cut ideas, whether to add Fblthp, more logs. (Original brief: the decklist, how it wins, and a log.) Then: agree the rules (opponents, win condition, combat, anything new), `--fetch` the cards, engine work for whatever the list needs, the deck folder (rules, AI, tests on hand-built boards, planner score, mulligan rule, `--diag` measures, analyzer hooks), first numbers, a card ranking, and a primer with a MULLIGANS section. Most of what the earlier decks needed is in the engine now.
 
-## Next session (updated 2026-11-07)
+## Next session (updated 2026-11-10)
+
+0. **Mike: mill checks** (see `decks/mike/PLAN.md`, "Next: mill checks"): Slick Imitator copying Windfall and Flux, the safety rule and the Windfall gate, how often the library is emptied. Then his cut ideas and the Fblthp choice. Ask eco or full power before the runs.
+
+(Earlier list, from 2026-11-07:)
 
 Start here. State: four decks run (gale, meren, samfrodo, aesi), all tests pass, regress baselines are current for all four (`--regress check` = IDENTICAL). Each deck has a `PRIMER.txt` and a mulligan rule; lands play by their real text; `--eco` runs in the background without loading the machine.
 

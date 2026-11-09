@@ -72,3 +72,11 @@ Pontus is considering it for more card draw. Swapped for each of seven draw card
 - Interaction is held and never cast. Judge counterspells and bounce yourself.
 - Whether Laboratory Maniac / Jace should be held until the library is low (safer against removal, about 4 points slower here).
 - Mulligan rule is in `mulligan.ts`; cut ideas from Pontus: none yet (no cut tests before he names them).
+
+## Next: mill checks (Pontus, 2026-11-10)
+
+A lot of his real games end in a mill, so the mill line needs a closer look. His points:
+- **Slick Imitator is a main power source.** At max speed it copies a spell. Windfall cast with 15 cards in hand draws 30 (Vnwxt doubles), the copy discards those 30 and draws 60: a guaranteed draw-out, which wins at once if Maniac / Jace is in play and is safe with Conundrum / Ormos. Flux works the same way. The simulator only copies Pull from Tomorrow, Treasure Cruise and Brainstorm (`IMITATE` in `game.ts`): add Windfall and Flux.
+- **Vnwxt stacks with Teferi's Ageless Insight** (4 cards per effect draw with both, 3 in the draw step). This is already in the engine and tested (`mike.test.ts`), but check it in traces.
+- **He is surprised the simulator decks itself so rarely (0.0%) and mills only about 14% of the time.** Likely reasons to check: (1) the AI's safety rule stops drawing at 3 cards left without a protector, and Windfall / Flux are gated by it (`drawOk`, and Windfall is skipped when key cards are in hand); (2) Maniac / Jace are held back or the AI prefers damage and the Toad; (3) Thunderclap Drake's copy isn't modelled. Measure how often the library is emptied, how often a protector is out when it is, and how many games would have decked with the safety rule off (`--set keep_library=0`).
+- Then re-run the sensitivity table and update this file.
