@@ -135,6 +135,11 @@ function extraRank(short: string, k: string): number | null {
     if (short === "H") return k.includes("U") || k.includes("B") ? 1.5 : null;
     return k.includes(short) ? 1 : null;
   }
+  if (/^[WUBRG](\/[WUBRG]){2}$/.test(k)) { // a three-colour land ("W/U/B")
+    if (short === "N") return 5.6;
+    if (short === "H") return k.includes("U") || k.includes("B") ? 1.6 : null;
+    return k.includes(short) ? 1.2 : null;
+  }
   if (/^C\d+$/.test(k)) return short === "N" ? 0.5 : null;
   if (k === "GU") return short === "G" || short === "U" ? 1 : short === "N" ? 5 : null; // Simic Growth Chamber: both
   return null;
@@ -325,6 +330,11 @@ export abstract class Game<S = unknown> {
     return g > 0 ? "N" : null;
   }
 
+  /** Which source to tap first for a generic cost (N) can be adjusted by a deck: lower = tapped first. */
+  rankAdjust(_short: string, _kind: string, rank: number): number {
+    return rank;
+  }
+
   private pick(short: string, isIS: boolean): Perm | null {
     const rank = RANK[short];
     let best: Perm | null = null, br = 99;
@@ -341,7 +351,7 @@ export abstract class Game<S = unknown> {
       }
       if (k === "S" && !isIS) continue;
       if (k === "F" && feed < 1) continue;
-      let r = rank[k];
+      let r = this.rankAdjust(short, k, rank[k]);
       if (this.ht && this.islandTyped(p) && (short === "U" || short === "N" || short === "H")) r -= 0.5;
       if (r < br) { best = p; br = r; }
     }

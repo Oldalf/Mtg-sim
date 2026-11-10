@@ -42,7 +42,7 @@ Needs the most new engine work, so it comes last.
 
 ## Next session (updated 2026-11-10)
 
-0. **Mike: mill checks** (see `decks/mike/PLAN.md`, "Next: mill checks"): Slick Imitator copying Windfall and Flux, the safety rule and the Windfall gate, how often the library is emptied. Then his cut ideas and the Fblthp choice. Ask eco or full power before the runs.
+0. **Mike:** the mill checks are done (see `decks/mike/PLAN.md`; mill wins 14% -> 32%). Next: Pontus's cut ideas and the Fblthp choice, Maniac / Jace timing, more logs. Ask eco or full power before runs.
 
 (Earlier list, from 2026-11-07:)
 

@@ -4857,5 +4857,714 @@
   "toughness": "1",
   "keywords": [],
   "layout": "normal"
+ },
+ "Ad Nauseam": {
+  "name": "Ad Nauseam",
+  "full_name": "Ad Nauseam",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Instant",
+  "oracle": "Reveal the top card of your library and put that card into your hand. You lose life equal to its mana value. You may repeat this process any number of times.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Autumn's Veil": {
+  "name": "Autumn's Veil",
+  "full_name": "Autumn's Veil",
+  "mana_cost": "{G}",
+  "type_line": "Instant",
+  "oracle": "Spells you control can't be countered by blue or black spells this turn, and creatures you control can't be the targets of blue or black spells this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Avatar's Wrath": {
+  "name": "Avatar's Wrath",
+  "full_name": "Avatar's Wrath",
+  "mana_cost": "{2}{W}{W}",
+  "type_line": "Sorcery",
+  "oracle": "Choose up to one target creature, then airbend all other creatures. (Exile them. While each one is exiled, its owner may cast it for {2} rather than its mana cost.)\nUntil your next turn, your opponents can't cast spells from anywhere other than their hands.\nExile Avatar's Wrath.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Airbend"
+  ],
+  "layout": "normal"
+ },
+ "Bala Ged Recovery": {
+  "name": "Bala Ged Recovery",
+  "full_name": "Bala Ged Recovery // Bala Ged Sanctuary",
+  "mana_cost": "{2}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Return target card from your graveyard to your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "modal_dfc",
+  "back": {
+   "name": "Bala Ged Sanctuary",
+   "mana_cost": "",
+   "type_line": "Land",
+   "oracle": "This land enters tapped.\n{T}: Add {G}."
+  }
+ },
+ "Bilbo's Gambit": {
+  "name": "Bilbo's Gambit",
+  "full_name": "Bilbo's Gambit",
+  "mana_cost": "{1}{W}",
+  "type_line": "Instant",
+  "oracle": "Gift a Treasure (You may promise an opponent a gift as you cast this spell. If you do, they create a Treasure token before its other effects. It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nReturn target spell to its owner's hand. If the gift was promised, players can't cast spells this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Gift",
+   "Treasure"
+  ],
+  "layout": "normal"
+ },
+ "Brass's Bounty": {
+  "name": "Brass's Bounty",
+  "full_name": "Brass's Bounty",
+  "mana_cost": "{6}{R}",
+  "type_line": "Sorcery",
+  "oracle": "For each land you control, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Treasure"
+  ],
+  "layout": "normal"
+ },
+ "Bring to Light": {
+  "name": "Bring to Light",
+  "full_name": "Bring to Light",
+  "mana_cost": "{3}{G}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Converge — Search your library for a creature, instant, or sorcery card with mana value less than or equal to the number of colors of mana spent to cast this spell, exile that card, then shuffle. You may cast that card without paying its mana cost.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Converge"
+  ],
+  "layout": "normal"
+ },
+ "Codie, Vociferous Codex": {
+  "name": "Codie, Vociferous Codex",
+  "full_name": "Codie, Vociferous Codex",
+  "mana_cost": "{3}",
+  "type_line": "Legendary Artifact Creature — Book Construct",
+  "oracle": "You can't cast permanent spells.\n{4}, {T}: Add {W}{U}{B}{R}{G}. When you next cast a spell this turn, exile cards from the top of your library until you exile an instant or sorcery card with lesser mana value. Until end of turn, you may cast that card without paying its mana cost. Put each other card exiled this way on the bottom of your library in a random order.",
+  "power": "1",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Constant Mists": {
+  "name": "Constant Mists",
+  "full_name": "Constant Mists",
+  "mana_cost": "{1}{G}",
+  "type_line": "Instant",
+  "oracle": "Buyback—Sacrifice a land. (You may sacrifice a land in addition to any other costs as you cast this spell. If you do, put this card into your hand as it resolves.)\nPrevent all combat damage that would be dealt this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Buyback"
+  ],
+  "layout": "normal"
+ },
+ "Crackle with Power": {
+  "name": "Crackle with Power",
+  "full_name": "Crackle with Power",
+  "mana_cost": "{X}{X}{X}{R}{R}",
+  "type_line": "Sorcery",
+  "oracle": "Crackle with Power deals five times X damage to each of up to X targets.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Cycle of Renewal": {
+  "name": "Cycle of Renewal",
+  "full_name": "Cycle of Renewal",
+  "mana_cost": "{2}{G}",
+  "type_line": "Instant — Lesson",
+  "oracle": "Sacrifice a land. Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Daze": {
+  "name": "Daze",
+  "full_name": "Daze",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant",
+  "oracle": "You may return an Island you control to its owner's hand rather than pay this spell's mana cost.\nCounter target spell unless its controller pays {1}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Demonic Tutor": {
+  "name": "Demonic Tutor",
+  "full_name": "Demonic Tutor",
+  "mana_cost": "{1}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Search your library for a card, put that card into your hand, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Elvish Spirit Guide": {
+  "name": "Elvish Spirit Guide",
+  "full_name": "Elvish Spirit Guide",
+  "mana_cost": "{2}{G}",
+  "type_line": "Creature — Elf Spirit",
+  "oracle": "Exile this card from your hand: Add {G}.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Exsanguinate": {
+  "name": "Exsanguinate",
+  "full_name": "Exsanguinate",
+  "mana_cost": "{X}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Each opponent loses X life. You gain life equal to the life lost this way.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Field of the Dead": {
+  "name": "Field of the Dead",
+  "full_name": "Field of the Dead",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\n{T}: Add {C}.\nWhenever this land or another land you control enters, if you control seven or more lands with different names, create a 2/2 black Zombie creature token.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Fierce Guardianship": {
+  "name": "Fierce Guardianship",
+  "full_name": "Fierce Guardianship",
+  "mana_cost": "{2}{U}",
+  "type_line": "Instant",
+  "oracle": "If you control a commander, you may cast this spell without paying its mana cost.\nCounter target noncreature spell.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Flashback": {
+  "name": "Flashback",
+  "full_name": "Flashback",
+  "mana_cost": "{R}",
+  "type_line": "Instant",
+  "oracle": "Target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. (You may cast that card from your graveyard for its flashback cost. Then exile it.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Flow State": {
+  "name": "Flow State",
+  "full_name": "Flow State",
+  "mana_cost": "{1}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Look at the top three cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order. If there is an instant card and a sorcery card in your graveyard, instead put two of them into your hand and the rest on the bottom of your library in any order.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Fog": {
+  "name": "Fog",
+  "full_name": "Fog",
+  "mana_cost": "{G}",
+  "type_line": "Instant",
+  "oracle": "Prevent all combat damage that would be dealt this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Gemstone Caverns": {
+  "name": "Gemstone Caverns",
+  "full_name": "Gemstone Caverns",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Glacial Chasm": {
+  "name": "Glacial Chasm",
+  "full_name": "Glacial Chasm",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "Cumulative upkeep—Pay 2 life. (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhen this land enters, sacrifice a land.\nCreatures you control can't attack.\nPrevent all damage that would be dealt to you.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cumulative upkeep"
+  ],
+  "layout": "normal"
+ },
+ "Horizon of Progress": {
+  "name": "Horizon of Progress",
+  "full_name": "Horizon of Progress",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}, Pay 1 life: Add one mana of any type that a land you control could produce.\n{3}, {T}: You may put a land card from your hand onto the battlefield tapped.\n{1}, {T}, Sacrifice this land: Draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Hour of Promise": {
+  "name": "Hour of Promise",
+  "full_name": "Hour of Promise",
+  "mana_cost": "{4}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Search your library for up to two land cards, put them onto the battlefield tapped, then shuffle. Then if you control three or more Deserts, create two 2/2 black Zombie creature tokens.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Jeska's Will": {
+  "name": "Jeska's Will",
+  "full_name": "Jeska's Will",
+  "mana_cost": "{2}{R}",
+  "type_line": "Sorcery",
+  "oracle": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Lim-Dûl's Vault": {
+  "name": "Lim-Dûl's Vault",
+  "full_name": "Lim-Dûl's Vault",
+  "mana_cost": "{U}{B}",
+  "type_line": "Instant",
+  "oracle": "Look at the top five cards of your library. As many times as you choose, you may pay 1 life, put those cards on the bottom of your library in any order, then look at the top five cards of your library. Then shuffle and put the last cards you looked at this way on top in any order.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Mana Drain": {
+  "name": "Mana Drain",
+  "full_name": "Mana Drain",
+  "mana_cost": "{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Manamorphose": {
+  "name": "Manamorphose",
+  "full_name": "Manamorphose",
+  "mana_cost": "{1}{R/G}",
+  "type_line": "Instant",
+  "oracle": "Add two mana in any combination of colors.\nDraw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Maze of Ith": {
+  "name": "Maze of Ith",
+  "full_name": "Maze of Ith",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Untap target attacking creature. Prevent all combat damage that would be dealt to and dealt by that creature this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Merchant Scroll": {
+  "name": "Merchant Scroll",
+  "full_name": "Merchant Scroll",
+  "mana_cost": "{1}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Search your library for a blue instant card, reveal that card, put it into your hand, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Minamo, School at Water's Edge": {
+  "name": "Minamo, School at Water's Edge",
+  "full_name": "Minamo, School at Water's Edge",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "{T}: Add {U}.\n{U}, {T}: Untap target legendary permanent.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Mistrise Village": {
+  "name": "Mistrise Village",
+  "full_name": "Mistrise Village",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control a Mountain or a Forest.\n{T}: Add {U}.\n{U}, {T}: The next spell you cast this turn can't be countered.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Mizzix's Mastery": {
+  "name": "Mizzix's Mastery",
+  "full_name": "Mizzix's Mastery",
+  "mana_cost": "{3}{R}",
+  "type_line": "Sorcery",
+  "oracle": "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost. Exile Mizzix's Mastery.\nOverload {5}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Overload"
+  ],
+  "layout": "normal"
+ },
+ "Mountain": {
+  "name": "Mountain",
+  "full_name": "Mountain",
+  "mana_cost": "",
+  "type_line": "Basic Land — Mountain",
+  "oracle": "({T}: Add {R}.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Narset's Reversal": {
+  "name": "Narset's Reversal",
+  "full_name": "Narset's Reversal",
+  "mana_cost": "{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Copy target instant or sorcery spell, then return it to its owner's hand. You may choose new targets for the copy.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Orim's Chant": {
+  "name": "Orim's Chant",
+  "full_name": "Orim's Chant",
+  "mana_cost": "{W}",
+  "type_line": "Instant",
+  "oracle": "Kicker {W} (You may pay an additional {W} as you cast this spell.)\nTarget player can't cast spells this turn. If this spell was kicked, creatures can't attack this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Kicker"
+  ],
+  "layout": "normal"
+ },
+ "Planar Engineering": {
+  "name": "Planar Engineering",
+  "full_name": "Planar Engineering",
+  "mana_cost": "{3}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Sacrifice two lands. Search your library for four basic land cards, put them onto the battlefield tapped, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Profane Tutor": {
+  "name": "Profane Tutor",
+  "full_name": "Profane Tutor",
+  "mana_cost": "",
+  "type_line": "Sorcery",
+  "oracle": "Suspend 2—{1}{B} (Rather than cast this card from your hand, pay {1}{B} and exile it with two time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)\nSearch your library for a card, put that card into your hand, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Suspend"
+  ],
+  "layout": "normal"
+ },
+ "Pyretic Ritual": {
+  "name": "Pyretic Ritual",
+  "full_name": "Pyretic Ritual",
+  "mana_cost": "{1}{R}",
+  "type_line": "Instant",
+  "oracle": "Add {R}{R}{R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Raffine's Tower": {
+  "name": "Raffine's Tower",
+  "full_name": "Raffine's Tower",
+  "mana_cost": "",
+  "type_line": "Land — Plains Island Swamp",
+  "oracle": "({T}: Add {W}, {U}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal"
+ },
+ "Reiterate": {
+  "name": "Reiterate",
+  "full_name": "Reiterate",
+  "mana_cost": "{1}{R}{R}",
+  "type_line": "Instant",
+  "oracle": "Buyback {3} (You may pay an additional {3} as you cast this spell. If you do, put this card into your hand as it resolves.)\nCopy target instant or sorcery spell. You may choose new targets for the copy.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Buyback"
+  ],
+  "layout": "normal"
+ },
+ "Return the Favor": {
+  "name": "Return the Favor",
+  "full_name": "Return the Favor",
+  "mana_cost": "{R}{R}",
+  "type_line": "Instant",
+  "oracle": "Spree (Choose one or more additional costs.)\n+ {1} — Copy target instant spell, sorcery spell, activated ability, or triggered ability. You may choose new targets for the copy.\n+ {1} — Change the target of target spell or ability with a single target.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Spree"
+  ],
+  "layout": "normal"
+ },
+ "Scapeshift": {
+  "name": "Scapeshift",
+  "full_name": "Scapeshift",
+  "mana_cost": "{2}{G}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Sacrifice any number of lands. Search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Seething Song": {
+  "name": "Seething Song",
+  "full_name": "Seething Song",
+  "mana_cost": "{2}{R}",
+  "type_line": "Instant",
+  "oracle": "Add {R}{R}{R}{R}{R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Shared Roots": {
+  "name": "Shared Roots",
+  "full_name": "Shared Roots",
+  "mana_cost": "{1}{G}",
+  "type_line": "Sorcery — Lesson",
+  "oracle": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Silence": {
+  "name": "Silence",
+  "full_name": "Silence",
+  "mana_cost": "{W}",
+  "type_line": "Instant",
+  "oracle": "Your opponents can't cast spells this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Simian Spirit Guide": {
+  "name": "Simian Spirit Guide",
+  "full_name": "Simian Spirit Guide",
+  "mana_cost": "{2}{R}",
+  "type_line": "Creature — Ape Spirit",
+  "oracle": "Exile this card from your hand: Add {R}.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Spara's Headquarters": {
+  "name": "Spara's Headquarters",
+  "full_name": "Spara's Headquarters",
+  "mana_cost": "",
+  "type_line": "Land — Forest Plains Island",
+  "oracle": "({T}: Add {G}, {W}, or {U}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal"
+ },
+ "Spelltwine": {
+  "name": "Spelltwine",
+  "full_name": "Spelltwine",
+  "mana_cost": "{5}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Exile target instant or sorcery card from your graveyard and target instant or sorcery card from an opponent's graveyard. Copy those cards. Cast the copies if able without paying their mana costs. Exile Spelltwine.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Splendid Reclamation": {
+  "name": "Splendid Reclamation",
+  "full_name": "Splendid Reclamation",
+  "mana_cost": "{3}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Return all land cards from your graveyard to the battlefield tapped.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Sundering Eruption": {
+  "name": "Sundering Eruption",
+  "full_name": "Sundering Eruption // Volcanic Fissure",
+  "mana_cost": "{2}{R}",
+  "type_line": "Sorcery",
+  "oracle": "Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle. Creatures without flying can't block this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "modal_dfc",
+  "back": {
+   "name": "Volcanic Fissure",
+   "mana_cost": "",
+   "type_line": "Land",
+   "oracle": "As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {R}."
+  }
+ },
+ "Teferi's Protection": {
+  "name": "Teferi's Protection",
+  "full_name": "Teferi's Protection",
+  "mana_cost": "{2}{W}",
+  "type_line": "Instant",
+  "oracle": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before you untap during your untap step.)\nExile Teferi's Protection.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Torment of Hailfire": {
+  "name": "Torment of Hailfire",
+  "full_name": "Torment of Hailfire",
+  "mana_cost": "{X}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Repeat the following process X times. Each opponent loses 3 life unless that player sacrifices a nonland permanent of their choice or discards a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Valakut Awakening": {
+  "name": "Valakut Awakening",
+  "full_name": "Valakut Awakening // Valakut Stoneforge",
+  "mana_cost": "{2}{R}",
+  "type_line": "Instant",
+  "oracle": "Put any number of cards from your hand on the bottom of your library, then draw that many cards plus one.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "modal_dfc",
+  "back": {
+   "name": "Valakut Stoneforge",
+   "mana_cost": "",
+   "type_line": "Land",
+   "oracle": "This land enters tapped.\n{T}: Add {R}."
+  }
+ },
+ "Vampiric Tutor": {
+  "name": "Vampiric Tutor",
+  "full_name": "Vampiric Tutor",
+  "mana_cost": "{B}",
+  "type_line": "Instant",
+  "oracle": "Search your library for a card, then shuffle and put that card on top. You lose 2 life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Vesuva": {
+  "name": "Vesuva",
+  "full_name": "Vesuva",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "You may have this land enter tapped as a copy of any land on the battlefield.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Volatile Fault": {
+  "name": "Volatile Fault",
+  "full_name": "Volatile Fault",
+  "mana_cost": "",
+  "type_line": "Land — Cave",
+  "oracle": "{T}: Add {C}.\n{1}, {T}, Sacrifice this land: Destroy target nonbasic land an opponent controls. That player may search their library for a basic land card, put it onto the battlefield, then shuffle. You create a Treasure token.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Treasure"
+  ],
+  "layout": "normal"
+ },
+ "Yavimaya, Cradle of Growth": {
+  "name": "Yavimaya, Cradle of Growth",
+  "full_name": "Yavimaya, Cradle of Growth",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "Each land is a Forest in addition to its other land types.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
+ },
+ "Ziatora's Proving Ground": {
+  "name": "Ziatora's Proving Ground",
+  "full_name": "Ziatora's Proving Ground",
+  "mana_cost": "",
+  "type_line": "Land — Swamp Mountain Forest",
+  "oracle": "({T}: Add {B}, {R}, or {G}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal"
+ },
+ "Mana Geyser": {
+  "name": "Mana Geyser",
+  "full_name": "Mana Geyser",
+  "mana_cost": "{3}{R}{R}",
+  "type_line": "Sorcery",
+  "oracle": "Add {R} for each tapped land your opponents control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal"
  }
 }

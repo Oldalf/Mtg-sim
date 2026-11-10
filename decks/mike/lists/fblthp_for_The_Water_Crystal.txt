@@ -35,7 +35,7 @@ Draw
 1x Ormos, Archive Keeper
 1x Pull from Tomorrow
 1x Roil Cartographer
-1x Fblthp, Impossibly Lost
+1x Shielded Aether Thief
 1x Shoreline Looter
 1x Spectral Sailor
 1x Strix Lookout
@@ -79,7 +79,7 @@ Ramp
 1x Arcane Signet
 1x Commander's Sphere
 1x Sol Ring
-1x The Water Crystal
+1x Fblthp, Impossibly Lost
 1x Thought Vessel
 1x Thunderclap Drake
 

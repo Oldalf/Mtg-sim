@@ -33,7 +33,7 @@ Mono-blue card draw, bracket 2–3. "Mike" is the nickname (Mike Wazowski: one e
 
 (Results, rankings and open questions follow in the sections below.)
 
-## Results (`decklist.txt`, 16,000 games, planner on)
+## Results of the first version (`decklist.txt`, 16,000 games, planner on; the mill numbers are from before the mill checks below)
 
 Win by turn 9 / 10 / 11 / 12 / 14: **about 59.5 / 83 / 94 / 98 / 99.7%**; the 90th-percentile game wins on turn 11. Vnwxt comes down on turn 2.05 on average, and max speed is reached by turn 8 in 97% of games. We never deck ourselves (0.0%).
 
@@ -73,10 +73,26 @@ Pontus is considering it for more card draw. Swapped for each of seven draw card
 - Whether Laboratory Maniac / Jace should be held until the library is low (safer against removal, about 4 points slower here).
 - Mulligan rule is in `mulligan.ts`; cut ideas from Pontus: none yet (no cut tests before he names them).
 
-## Next: mill checks (Pontus, 2026-11-10)
+## Mill checks (Pontus's points, done 2026-11-10 session 2; 8,000 games, eco mode)
 
-A lot of his real games end in a mill, so the mill line needs a closer look. His points:
-- **Slick Imitator is a main power source.** At max speed it copies a spell. Windfall cast with 15 cards in hand draws 30 (Vnwxt doubles), the copy discards those 30 and draws 60: a guaranteed draw-out, which wins at once if Maniac / Jace is in play and is safe with Conundrum / Ormos. Flux works the same way. The simulator only copies Pull from Tomorrow, Treasure Cruise and Brainstorm (`IMITATE` in `game.ts`): add Windfall and Flux.
-- **Vnwxt stacks with Teferi's Ageless Insight** (4 cards per effect draw with both, 3 in the draw step). This is already in the engine and tested (`mike.test.ts`), but check it in traces.
-- **He is surprised the simulator decks itself so rarely (0.0%) and mills only about 14% of the time.** Likely reasons to check: (1) the AI's safety rule stops drawing at 3 cards left without a protector, and Windfall / Flux are gated by it (`drawOk`, and Windfall is skipped when key cards are in hand); (2) Maniac / Jace are held back or the AI prefers damage and the Toad; (3) Thunderclap Drake's copy isn't modelled. Measure how often the library is emptied, how often a protector is out when it is, and how many games would have decked with the safety rule off (`--set keep_library=0`).
-- Then re-run the sensitivity table and update this file.
+Pontus's real games often end in a mill, and the first version milled only about 14% of the time. Changes:
+- **Slick Imitator** now also copies Windfall and Flux (it already copied Pull from Tomorrow, Treasure Cruise and Brainstorm). A Windfall with 14 other cards at max speed draws 28, and the copy discards those and draws 56 (test in `mike.test.ts`).
+- **Windfall / Flux** are no longer blocked by the "stop drawing at 3 cards left" rule when a win piece, Conundrum or Ormos is out: a refill that draws the library out is now the plan (score 99 with Maniac / Jace out). Flux discards the whole hand when that empties the library.
+- **Thunderclap Drake**'s sacrifice (one copy of the next draw spell per time the commander was cast) is modelled; it fires rarely (no change in the numbers).
+- New diag lines: library emptied (%), and emptied with a protector out (%).
+
+Result (default settings): win by turn 9 / 10 / 11 **62.5 / 85.1 / 95.0%** (before: 59.6 / 83.3 / 94.5). Wins by milling **32%** (before 14%), Toad 28%, damage 40%. The library empties in 33% of games, and in 33.1% of them a protector is out; we still never deck ourselves. `keep_library=0` (no safety margin at all) changes nothing: the safety rule is not what holds the mill back, the other wins simply come first or at the same time.
+
+Still open: how early Maniac / Jace come down, Jace's +1 on ourselves, and whether the AI should hold the Toad / damage plan to let the mill finish. Pontus decides what "fun" means here.
+
+## Fblthp, round 2 (after the mill checks; 8,000 games each; eco mode)
+
+Pontus didn't like the first round's swap candidates, so Fblthp replaced Mischievous Mystic, The Water Crystal, Roil Cartographer or Krang (lists `lists/fblthp_for_*.txt`). Base: win by turn 9 / 10 / 11 = 62.5 / 85.1 / 95.0%.
+| Fblthp for | by T9 | by T10 | by T11 | mill wins |
+|---|---|---|---|---|
+| Mischievous Mystic | 64.5 (+2.0) | 86.2 (+1.1) | 95.4 (+0.4) | 33.5 |
+| The Water Crystal | 64.0 (+1.5) | 86.3 (+1.2) | 95.7 (+0.7) | 32.9 |
+| Roil Cartographer | 64.6 (+2.1) | 86.4 (+1.3) | 95.5 (+0.5) | 32.7 |
+| Krang | 64.2 (+1.7) | 86.3 (+1.2) | 95.2 (+0.2) | 34.1 |
+
+All four are about +1.5 to +2 by turn 9 and +1 by turn 10: at the edge of the noise (about ±2), the same size as the first round, so Fblthp is a small plus in place of any of them and none of the four is clearly the best cut. Krang's swap shifts wins from damage (39.5% -> 35.7%) to mill and Toad; Krang is also the doubler for Crawler and Seas, which this goldfish model counts only through those wins.

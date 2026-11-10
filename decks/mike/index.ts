@@ -35,6 +35,8 @@ export const deck = {
     { label: "Won with the Toad (%)", unit: "%" as const, f: (rows: DiagRow[]) => pct(rows, (r) => r.how === 2) },
     { label: "Won by life loss (%)", unit: "%" as const, f: (rows: DiagRow[]) => pct(rows, (r) => r.how === 3 || r.how === 4) },
     { label: "Win with a counterspell in hand and 2 mana untapped (%)", unit: "%" as const, f: (rows: DiagRow[]) => pct(rows, (r) => r.backup === 1) },
+    { label: "Library emptied (%)", unit: "%" as const, f: (rows: DiagRow[]) => pct(rows, (r) => r.emptied === 1) },
+    { label: "Library emptied with a win piece / Conundrum / Ormos out (%)", unit: "%" as const, f: (rows: DiagRow[]) => pct(rows, (r) => r.emptiedSafe === 1) },
     { label: "Decked ourselves (%)", unit: "%" as const, f: (rows: DiagRow[]) => pct(rows, (r) => r.died === 1) },
     { label: "Average turn Vnwxt comes down", unit: "n" as const, f: (rows: DiagRow[]) => meanOf(rows.filter((r) => r.vnwxtOut != null), (r) => r.vnwxtOut as number) },
     { label: "Reaches max speed by turn 8 (%)", unit: "%" as const, f: (rows: DiagRow[]) => pct(rows, (r) => r.maxSpeed != null && (r.maxSpeed as number) <= 8) },

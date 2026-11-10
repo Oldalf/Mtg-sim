@@ -59,7 +59,9 @@ Current decks:
 
 - `mike`: Vnwxt, Verbose Host, mono-blue card draw (bracket 2–3). Three wins: mill yourself out with Laboratory Maniac / Jace, Twenty-Toed Toad with 20 cards in hand, or drain/attack all three opponents (Psychosis Crawler, Krakens, Hand of Vecna). Every draw is modelled (Vnwxt at max speed and Teferi double it). Run `npm run sim -- mike` (rules and results: `decks/mike/PLAN.md`).
 
-The phases (Meren, Sam & Frodo, Simic landfall, then Mike) and what each needs: `ROADMAP.md`.
+- `codie`: Codie, Vociferous Codex, five-colour spells combo (bracket 4, someone else's deck). Wins with an X spell (Exsanguinate, Crackle with Power, Torment of Hailfire), copied by Reiterate. A solver finds the kill line each turn and recognises Reiterate loops (Jeska's Will, Mana Geyser, Brass's Bounty), treating the mana they make as bottomless. Run `npm run sim -- codie` (rules and results: `decks/codie/PLAN.md`).
+
+The phases (Meren, Sam & Frodo, Simic landfall, Mike, then Codie) and what each needs: `ROADMAP.md`.
 
 ## Adding a deck
 

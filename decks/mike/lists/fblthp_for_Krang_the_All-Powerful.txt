@@ -10,7 +10,7 @@ Copy
 
 Counters
 1x Clinquant Skymage
-1x Krang, the All-Powerful
+1x Fblthp, Impossibly Lost
 1x Oneirophage
 1x Pensive Professor
 
@@ -43,7 +43,7 @@ Draw
 1x Treasure Cruise
 1x Tune the Narrative
 1x Windfall
-1x Fblthp, Impossibly Lost
+1x Wizard Class
 
 Evasion
 1x Aqueous Form

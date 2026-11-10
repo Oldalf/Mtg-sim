@@ -113,6 +113,18 @@ export const LANDS: Record<string, LandInfo> = {
   "Thespian's Stage": { mana: "C" },
   "Underground River": { mana: "A", pain: "UB", colourless: true },
   "Jidoor, Aristocratic Capital": { mana: "U", etb: "tapped" }, // front face; Overture is the adventure
+  // Codie (5 colours): three-colour lands make exactly their colours ("W/U/B")
+  "Raffine's Tower": { mana: "W/U/B", etb: "tapped", island: true, swamp: true, plains: true, cycling: 3 },
+  "Spara's Headquarters": { mana: "G/W/U", etb: "tapped", island: true, forest: true, plains: true, cycling: 3 },
+  "Ziatora's Proving Ground": { mana: "B/R/G", etb: "tapped", swamp: true, mountain: true, forest: true, cycling: 3 },
+  "Field of the Dead": { mana: "C", etb: "tapped" },
+  "Gemstone Caverns": { mana: "C" },
+  "Horizon of Progress": { mana: "A", pain: "WUBRG" }, // one mana of any type a land you control could produce, 1 life
+  "Minamo, School at Water's Edge": { mana: "U" },
+  "Yavimaya, Cradle of Growth": { mana: "G", forest: true },
+  "Volatile Fault": { mana: "C" },
+  "Maze of Ith": { mana: "" },
+  "Glacial Chasm": { mana: "", special: "chasm" }, // never played by the AI (creatures can't attack, 2 life a turn)
 };
 /** Modal double-faced spells that may be played as a land instead. */
 export const MDFC_LAND_BACK: Record<string, LandInfo> = {

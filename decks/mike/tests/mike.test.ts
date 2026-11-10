@@ -131,6 +131,16 @@ export function runMikeTests(): boolean {
   g = board([MANIAC], [], rep("Island", 6));
   check("a win piece on the battlefield: drawing everything is the plan", g.drawOk(20), true);
 
+  // ---- Slick Imitator copies a Windfall (Pontus: 15 cards in hand = 30 drawn, then the copy discards 30 and draws 60)
+  g = board([VNWXT, "Slick Imitator"], ["Windfall", ...rep("Brainstorm", 14)], rep("Island", 300));
+  g.speed = 4;
+  g.castIS(C.get("Windfall"));
+  check("Windfall with 14 other cards at max speed, copied by Slick Imitator: 28 drawn, then 56", [g.hand.length, g.onBf("Slick Imitator")], [56, false]);
+  g = board([VNWXT, MANIAC], ["Flux", ...rep("Brainstorm", 14)], rep("Island", 25));
+  g.speed = 4;
+  g.castIS(C.get("Flux"));
+  check("Flux with a win piece out and a small library: the whole hand is refilled and the library runs out (win)", g.milled, true);
+
   // ---- the Water Crystal makes blue spells cheaper
   g = board(["The Water Crystal"], []);
   check("The Water Crystal: Pull from Tomorrow (X=3) costs one less", g.effCost(C.get("Pull from Tomorrow"), C.Cost.parse("{U}{U}").withGeneric(3)).mv, 4);

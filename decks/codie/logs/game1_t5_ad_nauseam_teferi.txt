@@ -1,0 +1,85 @@
+T0; Teferi's Protection; moved library => hand
+T0; Sundering Eruption // Volcanic Fissure; moved library => hand
+T0; Island; moved library => hand
+T0; Growth Spiral; moved library => hand
+T0; Avatar's Wrath; moved library => hand
+T0; Exotic Orchard; moved library => hand
+T0; Grow from the Ashes; moved library => hand
+T1; Forest; moved library => hand
+T1; Exotic Orchard; moved hand => battlefield
+T2; Swamp; moved library => hand
+T2; Island; moved hand => battlefield
+T2; Island; tapped
+T2; Exotic Orchard; tapped
+T2; Growth Spiral; moved hand => battlefield
+T2; Plains; moved library => hand
+T2; Swamp; moved hand => battlefield
+T2; Growth Spiral; moved battlefield => graveyard
+T3; Island; untapped
+T3; Exotic Orchard; untapped
+T3; Valakut Awakening // Valakut Stoneforge; moved library => hand
+T3; Plains; moved hand => battlefield
+T3; Plains; tapped
+T3; Swamp; tapped
+T3; Island; tapped
+T3; Codie, Vociferous Codex; moved commandZone => battlefield
+T4; Plains; untapped
+T4; Swamp; untapped
+T4; Island; untapped
+T4; Cycle of Renewal; moved library => hand
+T4; Forest; moved hand => battlefield
+T4; Forest; tapped
+T4; Plains; tapped
+T4; Swamp; tapped
+T4; Island; tapped
+T4; Codie, Vociferous Codex; tapped
+T4; Grow from the Ashes; moved hand => battlefield
+T4; Bilbo's Gambit; moved library => battlefield
+T4; Bilbo's Gambit; moved battlefield => exile
+T4; Plains; moved library => battlefield
+T4; Swamp; moved library => battlefield
+T4; Grow from the Ashes; moved battlefield => graveyard
+T4; Plains; tapped
+T4; Swamp; tapped
+T4; Exotic Orchard; tapped
+T4; Valakut Awakening // Valakut Stoneforge; moved hand => battlefield
+T4; Cycle of Renewal; moved hand => battlefield
+T4; Cycle of Renewal; moved battlefield => library
+T4; Avatar's Wrath; moved hand => library
+T4; Sundering Eruption // Volcanic Fissure; moved hand => library
+T4; Valakut Awakening // Valakut Stoneforge; moved battlefield => graveyard
+T4; Constant Mists; moved library => hand
+T4; Arcane Denial; moved library => hand
+T4; Narset's Reversal; moved library => hand
+T4; Elvish Spirit Guide; moved library => hand
+T5; Plains; untapped
+T5; Swamp; untapped
+T5; Forest; untapped
+T5; Codie, Vociferous Codex; untapped
+T5; Plains; untapped
+T5; Swamp; untapped
+T5; Island; untapped
+T5; Exotic Orchard; untapped
+T5; Flashback; moved library => hand
+T5; Swamp; tapped
+T5; Swamp; untapped
+T5; Island; tapped
+T5; Plains; tapped
+T5; Forest; tapped
+T5; Swamp; tapped
+T5; Codie, Vociferous Codex; tapped
+T5; Flashback; moved hand => battlefield
+T5; Valakut Awakening // Valakut Stoneforge; moved graveyard => exile
+T5; Flashback; moved battlefield => graveyard
+T5; Profane Tutor; moved library => exile
+T5; Ad Nauseam; moved library => hand
+T5; Codie, Vociferous Codex; counter:Generic=1
+T5; Codie, Vociferous Codex; counter:Generic=2
+T5; Codie, Vociferous Codex; counter:Generic=3
+T5; Codie, Vociferous Codex; counter:Generic=4
+T5; Exotic Orchard; tapped
+T5; Plains; tapped
+T5; Swamp; tapped
+T5; Elvish Spirit Guide; moved hand => exile
+T5; Ad Nauseam; moved hand => battlefield
+T5; Teferi's Protection; moved hand => battlefield

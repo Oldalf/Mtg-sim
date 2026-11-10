@@ -103,7 +103,7 @@ function removeOne<T>(xs: T[], x: T): void {
 }
 
 /** Draw spells worth a Slick Imitator copy. */
-const IMITATE = new Set(["Pull from Tomorrow", "Treasure Cruise", "Brainstorm"]);
+const IMITATE = new Set(["Pull from Tomorrow", "Treasure Cruise", "Brainstorm", "Windfall", "Flux"]);
 const COUNTERSPELLS = new Set(["Aether Spike", "Negate", "Refute", "Spell Pierce", "Spell Syphon", "Diversion Unit"]);
 
 const NO_SEARCH: KillSearcher<null> = { search: () => 0, lastLine: null, lastP: null, bestMiss: null, minChance: 1 };
@@ -127,6 +127,9 @@ export class MikeGame extends Game<null> {
   milled = false; // won by drawing from an empty library
   toadWon = false;
   winHow: string | null = null;
+  emptiedTurn: number | null = null; // the turn our library first hit zero
+  emptiedSafe = false; // ...with a win piece, Conundrum or Ormos out
+  drakeCopies = 0; // Thunderclap Drake: copies of the next instant or sorcery this turn
   crawlerDrain = 0; // life drained by Psychosis Crawler triggers
   commanderCasts = 0;
   // ---- measures for --diag (they change nothing in the game)
@@ -236,7 +239,7 @@ export class MikeGame extends Game<null> {
     const dr = (k: number) => this.drawsByTurn.slice(1, k + 1).reduce((s, x) => s + (x ?? 0), 0);
     return { vnwxtOut: this.vnwxtOut, maxSpeed: this.maxSpeedTurn, spent5: this.spentEnd[5] ?? null, spent6: this.spentEnd[6] ?? null,
       hand6: this.handEnd[6] ?? null, hand8: this.handEnd[8] ?? null, draws6: dr(6), draws8: dr(8), casts5: upTo(5),
-      lib8: this.libEnd[8] ?? null, died: this.died ? 1 : 0, backup: this.prot !== null ? 1 : 0, how: this.winHow === "mill" ? 1 : this.winHow === "Toad" ? 2 : this.winHow === "Crawler" ? 3 : this.winHow ? 4 : null };
+      lib8: this.libEnd[8] ?? null, died: this.died ? 1 : 0, emptied: this.emptiedTurn !== null ? 1 : 0, emptiedSafe: this.emptiedTurn !== null && this.emptiedSafe ? 1 : 0, backup: this.prot !== null ? 1 : 0, how: this.winHow === "mill" ? 1 : this.winHow === "Toad" ? 2 : this.winHow === "Crawler" ? 3 : this.winHow ? 4 : null };
   }
   noteTurnEnd(): void {
     this.handEnd[this.turn] = this.hand.length;
@@ -303,6 +306,10 @@ export class MikeGame extends Game<null> {
     }
     this.firstDrawDone = true;
     this.hand.push(this.library.shift()!);
+    if (!this.library.length && this.emptiedTurn === null) {
+      this.emptiedTurn = this.turn;
+      this.emptiedSafe = this.safe();
+    }
     this.drawsTurn += 1;
     this.drawTriggers();
   }
@@ -350,6 +357,12 @@ export class MikeGame extends Game<null> {
   /** Cards one effect would draw, counting the doublers (a rough count; each event is not the first of the draw step). */
   draws(n: number): number {
     return n * this.drawsFor(false);
+  }
+  /** Cards drawn by a Windfall / Flux that discards k cards, with the Slick Imitator copy (it discards what was just drawn). */
+  refillDraws(k: number, flux: boolean): number {
+    const first = this.draws(flux ? k + 1 : Math.max(k, 7));
+    if (!this.imitatorReady() || this.availMana() < 1) return first;
+    return first + this.draws(flux ? first + 1 : first);
   }
   /** Is it safe to empty the library? A win piece, or Conundrum / Ormos, is on the battlefield. */
   safe(): boolean {
@@ -497,6 +510,7 @@ export class MikeGame extends Game<null> {
     this.purgeSpawns();
     super.startTurn();
     this.speedUpTurn = false;
+    this.drakeCopies = 0;
     this.oppLostLife = false;
     this.drawsTurn = 0;
     this.drawStepOpen = true;
@@ -650,14 +664,20 @@ export class MikeGame extends Game<null> {
         add(sc + (winP ? 40 : 0), cost, true, () => this.castIS(cd));
         continue;
       }
-      if (n === "Flux") {
-        if (this.drawOk(2) && this.hand.some((c) => c.land !== null || HOLD.has(c.name))) add(sc, cost, true, () => this.castIS(cd));
-        continue;
-      }
-      if (n === "Windfall") {
-        const k = this.hand.length - 1;
-        const keepers = this.hand.some((c) => [MANIAC, JACE, TOAD, CRAWLER, KRANG].includes(c.name));
-        if (k >= 4 && this.drawOk(k) && (!keepers || this.cnt(CRAWLER) > 0)) add(this.cnt(CRAWLER) ? 85 : 40, cost, true, () => this.castIS(cd));
+      if (n === "Flux" || n === "Windfall") {
+        const k = this.hand.length - 1; // cards that get discarded (Flux: all of them when the mill is safe)
+        const total = this.refillDraws(k, n === "Flux");
+        const keepers = this.hand.some((c) => c !== cd && [MANIAC, JACE, TOAD, CRAWLER, KRANG].includes(c.name));
+        if (this.safe()) {
+          // a protector is out: a refill that draws the library out is the plan
+          const empties = total >= this.library.length;
+          if (empties && !(keepers && !winP && this.cnt(CRAWLER) === 0)) add(winP ? 99 : 70, cost, true, () => this.castIS(cd));
+          else if (n === "Flux" && this.drawOk(2) && this.hand.some((c) => c.land !== null || HOLD.has(c.name))) add(sc, cost, true, () => this.castIS(cd));
+          else if (n === "Windfall" && k >= 4 && !keepers && this.cnt(CRAWLER) > 0) add(85, cost, true, () => this.castIS(cd));
+        } else if (n === "Flux") {
+          if (this.drawOk(2) && this.hand.some((c) => c.land !== null || HOLD.has(c.name))) add(sc, cost, true, () => this.castIS(cd));
+        } else if (k >= 4 && total <= this.library.length - (this.cfg.keep_library as number) && (!keepers || this.cnt(CRAWLER) > 0))
+          add(this.cnt(CRAWLER) ? 85 : 40, cost, true, () => this.castIS(cd));
         continue;
       }
       if (n === "Pull from Tomorrow") {
@@ -708,6 +728,8 @@ export class MikeGame extends Game<null> {
     for (const p of this.bf) {
       const n = p.cd.name;
       if (n === SAILOR && this.drawOk(1)) add(40 + boost, Cost.parse("{3}{U}"), () => this.pay(Cost.parse("{3}{U}")) && (this.draw(1), true));
+      else if (n === "Thunderclap Drake" && this.commanderCasts > 0 && this.hand.some((c) => ["Windfall", "Flux", "Pull from Tomorrow", "Treasure Cruise"].includes(c.name)) && (this.winPiece() || this.safe()))
+        add(88, Cost.parse("{2}{U}"), () => { if (!this.pay(Cost.parse("{2}{U}"))) return false; this.dies(p); this.drakeCopies = this.commanderCasts; return true; });
       else if (n === STRIX && ready(p)) add(34, Cost.parse("{1}{U}"), () => this.tapPay(p, "{1}{U}", () => { this.draw(1); this.discard(1); }));
       else if (n === THIEF && ready(p) && this.ener >= 3 && this.drawOk(1)) add(44 + boost, new Cost(), () => { p.tapped = true; this.ener -= 3; this.draw(1); return true; });
       else if (n === CARTO && ready(p) && this.ener >= 6 && this.drawOk(3)) add(60 + boost, new Cost(), () => { p.tapped = true; this.ener -= 6; this.draw(3); return true; });
@@ -806,7 +828,8 @@ export class MikeGame extends Game<null> {
     const n = cd.name;
     if (n === "Tune the Narrative") { this.draw(1); this.ener += 2; }
     else if (n === "Flux") {
-      const bad = this.hand.filter((c) => c !== cd && (c.land !== null || HOLD.has(c.name))).sort((a, b) => this.cardValue(a) - this.cardValue(b)).slice(0, 4);
+      const all = this.safe() && this.refillDraws(this.hand.length, true) >= this.library.length;
+      const bad = all ? this.hand.slice() : this.hand.filter((c) => c !== cd && (c.land !== null || HOLD.has(c.name))).sort((a, b) => this.cardValue(a) - this.cardValue(b)).slice(0, 4);
       for (const c of bad) { removeOne(this.hand, c); this.toGy(c); }
       this.draw(bad.length + 1);
     } else if (n === "Windfall") {
@@ -834,7 +857,12 @@ export class MikeGame extends Game<null> {
   override castIS(cd: CardDef, fromGy = false, base: Cost | null = null, mode: string | null = null,
                   trig: Record<string, unknown> = {}): boolean {
     if (!super.castIS(cd, fromGy, base, mode, trig)) return false;
-    if (IMITATE.has(cd.name)) this.imitate(cd, mode);
+    if (IMITATE.has(cd.name)) {
+      for (let i = 0; i < this.drakeCopies; i++) this.resolve(cd, false, mode);
+      if (this.drakeCopies) this.say("Thunderclap Drake: " + this.drakeCopies + " cop" + (this.drakeCopies > 1 ? "ies" : "y") + " of", cd);
+      this.drakeCopies = 0;
+      this.imitate(cd, mode);
+    }
     return true;
   }
   override castPerm(cd: CardDef, fromCommand = false): boolean {

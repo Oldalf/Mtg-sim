@@ -1,0 +1,80 @@
+T0; Plains; moved library => hand
+T0; Gemstone Caverns; moved library => hand
+T0; Volatile Fault; moved library => hand
+T0; Path to Exile; moved library => hand
+T0; Command Tower; moved library => hand
+T0; Dark Ritual; moved library => hand
+T0; Nature's Lore; moved library => hand
+T0; Volatile Fault; moved hand => exile
+T0; Gemstone Caverns; moved hand => battlefield
+T1; Vesuva; moved library => hand
+T1; Command Tower; moved hand => battlefield
+T1; Command Tower; tapped
+T1; Gemstone Caverns; tapped
+T1; Nature's Lore; moved hand => battlefield
+T1; Nature's Lore; moved battlefield => graveyard
+T1; Ziatora's Proving Ground; moved library => battlefield
+T1; Ziatora's Proving Ground; tapped
+T2; Ziatora's Proving Ground; untapped
+T2; Command Tower; untapped
+T2; Gemstone Caverns; untapped
+T2; Shared Roots; moved library => hand
+T2; Vesuva; moved hand => battlefield
+T2; Vesuva; tapped
+T2; Ziatora's Proving Ground; tapped
+T2; Command Tower; tapped
+T2; Gemstone Caverns; tapped
+T2; Codie, Vociferous Codex; moved commandZone => battlefield
+T3; Vesuva; untapped
+T3; Ziatora's Proving Ground; untapped
+T3; Command Tower; untapped
+T3; Gemstone Caverns; untapped
+T3; Flow State; moved library => hand
+T3; Plains; moved hand => battlefield
+T3; Plains; tapped
+T3; Ziatora's Proving Ground; tapped
+T3; Vesuva; tapped
+T3; Command Tower; tapped
+T3; Codie, Vociferous Codex; tapped
+T3; Flow State; moved hand => battlefield
+T3; Manamorphose; moved library => battlefield
+T3; Frantic Search; moved library => battlefield
+T3; Vampiric Tutor; moved library => battlefield
+T3; Ad Nauseam; moved library => battlefield
+T3; Ad Nauseam; moved battlefield => library
+T3; Vampiric Tutor; moved battlefield => exile
+T3; Frantic Search; moved battlefield => library
+T3; Manamorphose; moved battlefield => library
+T3; Ad Nauseam; moved library => hand
+T3; Forest; moved library => hand
+T3; Flow State; moved battlefield => graveyard
+T4; Plains; untapped
+T4; Ziatora's Proving Ground; untapped
+T4; Vesuva; untapped
+T4; Codie, Vociferous Codex; untapped
+T4; Command Tower; untapped
+T4; Silence; moved library => hand
+T4; Forest; moved hand => battlefield
+T4; Forest; tapped
+T4; Plains; tapped
+T4; Ziatora's Proving Ground; tapped
+T4; Vesuva; tapped
+T4; Codie, Vociferous Codex; tapped
+T4; Silence; moved hand => battlefield
+T4; Profane Tutor; moved library => battlefield
+T4; Profane Tutor; moved battlefield => exile
+T4; Silence; moved battlefield => graveyard
+T4; Teferi's Protection; moved library => hand
+T4; Codie, Vociferous Codex; counter:Generic=1
+T4; Codie, Vociferous Codex; counter:Generic=2
+T4; Codie, Vociferous Codex; counter:Generic=3
+T4; Codie, Vociferous Codex; counter:Generic=4
+T4; Codie, Vociferous Codex; counter:Generic=3
+T4; Dark Ritual; moved hand => battlefield
+T4; Dark Ritual; counter:Generic=1
+T4; Dark Ritual; counter:Generic=2
+T4; Dark Ritual; counter:Generic=3
+T4; Command Tower; tapped
+T4; Gemstone Caverns; tapped
+T4; Ad Nauseam; moved hand => battlefield
+T4; Teferi's Protection; moved hand => battlefield

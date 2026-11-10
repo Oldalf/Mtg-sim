@@ -1,0 +1,116 @@
+T0; Thespian's Stage; moved library => hand
+T0; Exotic Orchard; moved library => hand
+T0; Yavimaya, Cradle of Growth; moved library => hand
+T0; Farseek; moved library => hand
+T0; Shared Roots; moved library => hand
+T0; Brass's Bounty; moved library => hand
+T0; Fierce Guardianship; moved library => hand
+T1; Mountain; moved library => hand
+T1; Yavimaya, Cradle of Growth; moved hand => battlefield
+T2; Demonic Tutor; moved library => hand
+T2; Thespian's Stage; moved hand => battlefield
+T2; Thespian's Stage; tapped
+T2; Yavimaya, Cradle of Growth; tapped
+T2; Farseek; moved hand => graveyard
+T2; Ziatora's Proving Ground; moved library => battlefield
+T2; Ziatora's Proving Ground; tapped
+T3; Ziatora's Proving Ground; untapped
+T3; Thespian's Stage; untapped
+T3; Yavimaya, Cradle of Growth; untapped
+T3; Glacial Chasm; moved library => hand
+T3; Exotic Orchard; moved hand => battlefield
+T3; Exotic Orchard; tapped
+T3; Ziatora's Proving Ground; tapped
+T3; Shared Roots; moved hand => battlefield
+T3; Mountain; moved library => battlefield
+T3; Mountain; tapped
+T3; Shared Roots; moved battlefield => graveyard
+T3; Demonic Tutor; moved hand => battlefield
+T3; Thespian's Stage; tapped
+T3; Yavimaya, Cradle of Growth; tapped
+T3; Demonic Tutor; moved battlefield => graveyard
+T3; Reiterate; moved library => hand
+T4; Yavimaya, Cradle of Growth; untapped
+T4; Mountain; untapped
+T4; Exotic Orchard; untapped
+T4; Ziatora's Proving Ground; untapped
+T4; Thespian's Stage; untapped
+T4; Growth Spiral; moved library => hand
+T4; Mountain; moved hand => battlefield
+T4; Mountain; tapped
+T4; Mountain; tapped
+T4; Exotic Orchard; tapped
+T4; Codie, Vociferous Codex; moved commandZone => battlefield
+T4; Yavimaya, Cradle of Growth; tapped
+T4; Thespian's Stage; tapped
+T4; Growth Spiral; moved hand => battlefield
+T4; Exsanguinate; moved library => hand
+T4; Growth Spiral; moved battlefield => graveyard
+T5; Mountain; untapped
+T5; Mountain; untapped
+T5; Yavimaya, Cradle of Growth; untapped
+T5; Exotic Orchard; untapped
+T5; Thespian's Stage; untapped
+T5; Merchant Scroll; moved library => hand
+T5; Exotic Orchard; tapped
+T5; Mountain; tapped
+T5; Mountain; tapped
+T5; Thespian's Stage; tapped
+T5; Codie, Vociferous Codex; tapped
+T5; Merchant Scroll; moved hand => battlefield
+T5; Codie, Vociferous Codex; counter:Generic=1
+T5; Codie, Vociferous Codex; counter:Generic=2
+T5; Codie, Vociferous Codex; counter:Generic=3
+T5; Codie, Vociferous Codex; counter:Generic=4
+T5; Codie, Vociferous Codex; counter:Generic=5
+T5; Codie, Vociferous Codex; counter:Generic=4
+T5; Codie, Vociferous Codex; counter:Generic=3
+T5; Merchant Scroll; moved battlefield => graveyard
+T5; Flashback; moved library => battlefield
+T5; Flashback; moved battlefield => exile
+T5; Demonic Tutor; moved graveyard => battlefield
+T5; Codie, Vociferous Codex; counter:Generic=2
+T5; Codie, Vociferous Codex; counter:Generic=1
+T5; Demonic Tutor; moved battlefield => exile
+T5; Mana Geyser; moved library => hand
+T5; Mystical Tutor; moved library => hand
+T5; Codie, Vociferous Codex; counter:
+T6; Thespian's Stage; untapped
+T6; Codie, Vociferous Codex; untapped
+T6; Mountain; untapped
+T6; Mountain; untapped
+T6; Exotic Orchard; untapped
+T6; Constant Mists; moved library => hand
+T6; Ziatora's Proving Ground; tapped
+T6; Exotic Orchard; tapped
+T6; Mountain; tapped
+T6; Mountain; tapped
+T6; Thespian's Stage; tapped
+T6; Yavimaya, Cradle of Growth; tapped
+T6; Codie, Vociferous Codex; tapped
+T6; Codie, Vociferous Codex; counter:Generic=1
+T6; Codie, Vociferous Codex; counter:Generic=2
+T6; Codie, Vociferous Codex; counter:Generic=3
+T6; Codie, Vociferous Codex; counter:Generic=4
+T6; Codie, Vociferous Codex; counter:Generic=5
+T6; Mana Geyser; moved hand => battlefield
+T6; Mana Geyser; counter:Generic=1
+T6; Mana Geyser; counter:Generic=2
+T6; Mana Geyser; counter:Generic=3
+T6; Mana Geyser; counter:Generic=4
+T6; Mana Geyser; counter:Generic=5
+T6; Mana Geyser; counter:Generic=6
+T6; Mana Geyser; counter:Generic=7
+T6; Mana Geyser; counter:Generic=8
+T6; Mana Geyser; counter:Generic=9
+T6; Mana Geyser; counter:Generic=10
+T6; Mana Geyser; counter:Generic=11
+T6; Mana Geyser; counter:Generic=12
+T6; Mana Geyser; counter:Generic=13
+T6; Codie, Vociferous Codex; counter:Generic=4
+T6; Codie, Vociferous Codex; counter:Generic=3
+T6; Codie, Vociferous Codex; counter:Generic=2
+T6; Codie, Vociferous Codex; counter:Generic=1
+T6; Brass's Bounty; moved hand => battlefield
+T6; Reiterate; moved hand => battlefield
+T6; Exsanguinate; moved hand => battlefield

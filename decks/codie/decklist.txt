@@ -1,0 +1,104 @@
+Commander
+1x Codie, Vociferous Codex
+
+Draw
+1x Ad Nauseam
+1x Brainstorm
+1x Flow State
+1x Frantic Search
+1x Manamorphose
+1x Stock Up
+1x Valakut Awakening // Valakut Stoneforge
+1x Windfall
+
+Finisher
+1x Crackle with Power
+1x Exsanguinate
+1x Reiterate
+1x Torment of Hailfire
+
+Land
+1x Command Tower
+1x Exotic Orchard
+1x Field of the Dead
+5x Forest
+1x Gemstone Caverns
+1x Glacial Chasm
+1x Horizon of Progress
+3x Island
+1x Maze of Ith
+1x Minamo, School at Water's Edge
+1x Mistrise Village
+4x Mountain
+3x Plains
+1x Raffine's Tower
+1x Spara's Headquarters
+3x Swamp
+1x Thespian's Stage
+1x Vesuva
+1x Volatile Fault
+1x Yavimaya, Cradle of Growth
+1x Ziatora's Proving Ground
+
+Protection
+1x Autumn's Veil
+1x Bilbo's Gambit
+1x Constant Mists
+1x Fog
+1x Orim's Chant
+1x Return the Favor
+1x Silence
+1x Teferi's Protection
+
+Ramp
+1x Brass's Bounty
+1x Crop Rotation
+1x Cultivate
+1x Cycle of Renewal
+1x Dark Ritual
+1x Elvish Spirit Guide
+1x Explosive Vegetation
+1x Farseek
+1x Grow from the Ashes
+1x Growth Spiral
+1x Hour of Promise
+1x Jeska's Will
+1x Mana Geyser
+1x Nature's Lore
+1x Planar Engineering
+1x Pyretic Ritual
+1x Rampant Growth
+1x Scapeshift
+1x Seething Song
+1x Shared Roots
+1x Simian Spirit Guide
+1x Sylvan Scrying
+1x Three Visits
+
+Recursion
+1x Bala Ged Recovery // Bala Ged Sanctuary
+1x Flashback
+1x Mizzix's Mastery
+1x Spelltwine
+1x Splendid Reclamation
+
+Removal
+1x An Offer You Can't Refuse
+1x Arcane Denial
+1x Avatar's Wrath
+1x Counterspell
+1x Daze
+1x Fierce Guardianship
+1x Mana Drain
+1x Narset's Reversal
+1x Path to Exile
+1x Sundering Eruption // Volcanic Fissure
+
+Tutor
+1x Bring to Light
+1x Demonic Tutor
+1x Lim-Dûl's Vault
+1x Merchant Scroll
+1x Personal Tutor
+1x Profane Tutor
+1x Vampiric Tutor

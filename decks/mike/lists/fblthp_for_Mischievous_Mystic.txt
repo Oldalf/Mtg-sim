@@ -41,7 +41,7 @@ Draw
 1x Strix Lookout
 1x Teferi's Ageless Insight
 1x Treasure Cruise
-1x Fblthp, Impossibly Lost
+1x Tune the Narrative
 1x Windfall
 1x Wizard Class
 
@@ -95,5 +95,5 @@ Removal
 
 Tokens
 1x Emrakul's Messenger
-1x Mischievous Mystic
+1x Fblthp, Impossibly Lost
 1x Ominous Seas
