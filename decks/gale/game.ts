@@ -4,7 +4,7 @@
  */
 import * as C from "../../engine/cards";
 import { Cost, CardDef } from "../../engine/cards";
-import { Game, Cand, KillSearcher, Perm, firstMax, firstMin, sortDesc } from "../../engine/game";
+import { Game, Cand, KillSearcher, Perm, WinAttempt, firstMax, firstMin, sortDesc } from "../../engine/game";
 import { MulliganRule } from "../../engine/mulligan";
 import { MULLIGAN } from "./mulligan";
 import { GALE, SCION, COMBO_PERMS, COMBO_SPELLS, ENGINES, COMBO_SORC } from "./roles";
@@ -127,6 +127,39 @@ export class GaleGame extends Game<Light> {
     }
   }
 
+  /** A pod: what the others can answer in our kill line. The spells it casts (the most expensive first: the finisher),
+   *  and the permanents it names (Guildmage, Mindskinner, the Monument, Gale for a cast from the graveyard). */
+  override winAttempt(): WinAttempt | null {
+    const text = this.lastKillLine.join(" | ");
+    if (!text) return null;
+    const have = new Set([...this.hand, ...this.gy, ...this.library].map((c) => c.name));
+    const spells: string[] = [];
+    for (const m of text.matchAll(/cast (.+?)(?: \[unk\])? from (?:hand|graveyard)/g)) if (have.has(m[1]) && !spells.includes(m[1])) spells.push(m[1]);
+    spells.sort((a, b) => C.get(b).mv - C.get(a).mv);
+    const perms: string[] = [];
+    for (const p of this.bf) {
+      if (p.land !== null || p.cd.rock || perms.includes(p.cd.name)) continue;
+      const words = [p.cd.name, p.cd.name.split(",")[0], ...p.cd.name.split(/[ ,]+/).filter((x) => x.length >= 7)];
+      if (words.some((x) => text.includes(x))) perms.push(p.cd.name);
+    }
+    return { spells, perms, backup: this.prot === this.turn ? 1 : 0 };
+  }
+
+  /** A pod: with The Mindskinner out, damage our creatures would deal to an opponent is prevented and each opponent mills that many. */
+  override combatHit(slot: number, n: number): void {
+    if (this.onBf("The Mindskinner")) this.oppEvents([EV.DMG, slot, n]);
+    else super.combatHit(slot, n);
+  }
+  /** How close to winning the others think we are: Gale out, the kill engines, a big graveyard of instants and sorceries. */
+  override podClose(): number {
+    let c = 0;
+    if (this.onBf(GALE)) c += 0.3;
+    if (this.onBf("Duskmantle Guildmage") || this.onBf("The Mindskinner") || this.onBf("Riverchurn Monument")) c += 0.3;
+    if (this.gy.filter((x) => x.isIS).length >= 8) c += 0.2;
+    if (this.landsBf().length + this.bf.filter((p) => p.cd.rock).length >= 8) c += 0.2;
+    return Math.min(1, c);
+  }
+
   override commanderCost(cd: CardDef, cost: Cost): Cost {
     return cd.name === GALE ? cost.withGeneric(cost.g + 2 * this.galeCasts) : cost;
   }
@@ -177,7 +210,7 @@ export class GaleGame extends Game<Light> {
       const ev: number[] = [];
       for (let i = 0; i < this.life.length; i++) ev.push(EV.PUTGY, i, this.cfg.opp_hand_size as number);
       this.oppEvents(ev);
-      this.draw(Math.max(k, this.cfg.opp_hand_size as number));
+      this.draw(this.inArena() ? this.arena!.wheel(this, k) : Math.max(k, this.cfg.opp_hand_size as number));
     } else if (n === "Unearth") {
       const opts = this.gy.filter((c) => c.isCreature && c.mv <= 3);
       if (opts.length) {
@@ -737,6 +770,11 @@ export class GaleGame extends Game<Light> {
         this.oppEvents([EV.DMG, t, 10]);
         this.say("Mindskinner attacks: opp libraries", `[${this.lib.join(", ")}]`);
       }
+    }
+    if (this.inArena()) {
+      // a pod: the other creatures attack when no blocker can stop or kill them (in a goldfish game Gale never attacks)
+      const pool = this.creatures().filter((p) => p.cd.name !== "The Mindskinner" && !p.tapped && !p.sick && this.power(p) > 0 && !this.srcKind(p, true));
+      if (pool.length) this.arenaCombat(pool);
     }
   }
 }

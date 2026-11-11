@@ -32,6 +32,7 @@ import { deck as samfrodo } from "./decks/samfrodo/index";
 import { deck as aesi } from "./decks/aesi/index";
 import { deck as mike } from "./decks/mike/index";
 import { deck as codie } from "./decks/codie/index";
+import { deck as goldfish } from "./decks/goldfish/index";
 import { runKillTests } from "./decks/gale/tests/kills.test";
 import { runMerenTests } from "./decks/meren/tests/meren.test";
 import { runSamFrodoTests } from "./decks/samfrodo/tests/samfrodo.test";
@@ -39,8 +40,10 @@ import { runAesiTests } from "./decks/aesi/tests/aesi.test";
 import { runMikeTests } from "./decks/mike/tests/mike.test";
 import { runCodieTests } from "./decks/codie/tests/codie.test";
 import { regress, RegressSpec } from "./engine/regress";
+import * as P from "./engine/pod";
+import { runPodTests } from "./engine/pod.test";
 
-const DECKS: Record<string, R.Deck> = { gale, meren, samfrodo, aesi, mike, codie };
+const DECKS: Record<string, R.Deck> = { gale, meren, samfrodo, aesi, mike, codie, goldfish };
 const TESTS: Record<string, () => boolean> = { gale: runKillTests, meren: runMerenTests, samfrodo: runSamFrodoTests, aesi: runAesiTests, mike: runMikeTests, codie: runCodieTests };
 /** What --regress records per deck (lists relative to the deck folder). */
 const REGRESS: Record<string, RegressSpec> = {
@@ -59,6 +62,7 @@ interface Args {
   games: number;
   workers: number;
   workersGiven: boolean;
+  gamesGiven: boolean;
   eco: boolean;
   duty: number | null;
   turns: number | null;
@@ -81,7 +85,7 @@ interface Args {
 }
 
 function parseArgs(argv: string[]): Args {
-  const a: Args = { deck: "", lists: [], games: 5000, workers: R.defaultWorkers(), workersGiven: false, eco: false, duty: null, turns: null, set: [], trace: 0,
+  const a: Args = { deck: "", lists: [], games: 5000, workers: R.defaultWorkers(), workersGiven: false, gamesGiven: false, eco: false, duty: null, turns: null, set: [], trace: 0,
     seed: 1, mode: "any", rank: false, cut: null, replace: "Island", analyze: null, list: null, ai: 200,
     budget: 20000, fetch: false, test: false, diag: false, hands: false, regress: null };
   const rest: string[] = [];
@@ -91,7 +95,7 @@ function parseArgs(argv: string[]): Args {
       if (i + 1 >= argv.length) throw new Error(`${x} needs a value`);
       return argv[++i];
     };
-    if (x === "-n" || x === "--games") a.games = parseInt(val(), 10);
+    if (x === "-n" || x === "--games") { a.games = parseInt(val(), 10); a.gamesGiven = true; }
     else if (x === "-w" || x === "--workers") { a.workers = parseInt(val(), 10); a.workersGiven = true; }
     else if (x === "--eco") a.eco = true;
     else if (x === "--duty") a.duty = parseInt(val(), 10);
@@ -126,8 +130,43 @@ function parseArgs(argv: string[]): Args {
   return a;
 }
 
+/** npm run pod -- gale meren samfrodo aesi mike -n 1000 [--turns 17] [--trace 1 --seed 5] [--eco] [--set key=value] */
+async function podMain(args: Args): Promise<void> {
+  const set: Config = {};
+  let threat: string | undefined, policy: string | undefined;
+  for (const s of args.set) {
+    const [k, v] = s.split("=");
+    if (k === "threat") threat = v;
+    else if (k === "policy") policy = v;
+    else set[k] = v === "true" ? true : v === "false" ? false : Number(v);
+  }
+  if (args.test) process.exit(runPodTests() ? 0 : 1);
+  const spec = P.podSpec(DECKS, args.lists, args.turns ?? 17, set, threat, policy);
+  if (args.trace) {
+    for (let s = args.seed; s < args.seed + args.trace; s++) {
+      const g = P.playPod(DECKS, spec, s, true);
+      console.log(`\n===== pod game seed ${s}: seats ${spec.decks.map((d, i) => `${d}=${g.seat[i] + 1}`).join(", ")} -> ${g.winner === null ? "no winner" : spec.decks[g.winner] + " wins"} in round ${g.turn} (${g.how})`);
+      for (const l of g.log ?? []) console.log(l);
+    }
+    return;
+  }
+  let workers = args.workers, duty = 100;
+  if (args.eco || args.duty !== null) {
+    if (!args.workersGiven) workers = Math.max(1, Math.floor(P.cores() / 4));
+    duty = args.duty ?? 70;
+    try { os.setPriority(os.constants.priority.PRIORITY_BELOW_NORMAL); } catch { /* not allowed here */ }
+    console.log(`eco mode: ${workers} worker(s), below-normal priority, busy about ${duty}% of the time`);
+  }
+  const games = args.gamesGiven ? args.games : 1000;
+  const t0 = Date.now();
+  const r = await P.simulatePod(spec, games, workers, duty);
+  P.printPod(spec, r.games);
+  console.log(`\n(${((Date.now() - t0) / 1000).toFixed(0)}s)`);
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
+  if (args.deck === "pod") return podMain(args);
   const deck = DECKS[args.deck];
   if (!deck) throw new Error(`unknown deck ${args.deck}; choose from ${Object.keys(DECKS).join(", ")}`);
   if (args.eco || args.duty !== null) {
@@ -213,7 +252,8 @@ async function main(): Promise<void> {
 
 if (!isMainThread && workerData === "sim-worker") {
   // a runner worker: play the seeds it is sent
-  parentPort!.on("message", (job: R.Job) => parentPort!.postMessage(R.runJob(DECKS[job.deck], job)));
+  parentPort!.on("message", (job: R.Job | P.PodJob) =>
+    parentPort!.postMessage("pod" in job ? P.runPodJob(DECKS, job) : R.runJob(DECKS[job.deck], job)));
 } else {
   main().catch((e) => {
     console.error(e instanceof Error ? e.message : e);

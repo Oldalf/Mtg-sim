@@ -58,3 +58,7 @@ Start here. State: four decks run (gale, meren, samfrodo, aesi), all tests pass,
 4. **Aesi** (see `decks/aesi/PLAN.md`, "Open"): his small choices on the package list (make `lists/package.txt` the default, Many Journeys, Search for Tomorrow vs Nature's Lore, which duals he owns); the low-ranked cards; the few unmodelled bits; more logs.
 5. **Gale**: his goldfish feedback on the adopted list; ideas in `decks/gale/PLAN.md`.
 6. Housekeeping: `decks/gale/lists/` and `decks/aesi/lists/` hold many finished test lists; keep the adopted ones.
+
+## Phase 5: pod simulation (planned 2026-11-11)
+
+Several decks playing against each other in one pod (3 to 6; first: gale, meren, samfrodo, aesi, mike), to judge win rates, win turns and whether a group of decks is a balanced pod. The plan, its steps and the decisions waiting for Pontus are in `POD_PLAN.md`. Nothing is built yet.

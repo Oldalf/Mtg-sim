@@ -16,6 +16,7 @@ export const deck = {
   dir: path.join(ROOT, "decks", "mike"),
   defaultList: "decklist.txt",
   cfg: CFG,
+  ownsDecking: true,
   Game: MikeGame,
   metrics: [["Win", "win"], ["First opponent dead", "1st dead"]] as [[string, string], [string, string]],
   compareTurns: [9, 10, 11, 12],

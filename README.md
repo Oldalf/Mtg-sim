@@ -30,6 +30,7 @@ npm run sim -- aesi --hands -n 8000                  # how opening hands do, by 
 npm run sim -- gale --fetch lists/new.txt            # download data for new cards from Scryfall
 npm run sim -- gale --test                           # the deck's kill-finder tests (must print ALL OK)
 npm run sim -- gale --regress check                  # after a refactor: results must be IDENTICAL
+npm run pod -- gale meren samfrodo aesi mike -n 1000 # a pod: the decks play against each other (3 to 6 decks; see POD_PLAN.md)
 npm run check                                        # type-check the code
 ```
 

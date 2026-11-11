@@ -13,6 +13,7 @@
 import * as C from "./cards";
 import { Cost, CardDef, LandInfo } from "./cards";
 import { Rng } from "./rng";
+import { ANSWERS, Answer, KEY_SPELLS } from "./answers";
 import { MulliganRule, DEFAULT_MULLIGAN, keepsHand } from "./mulligan";
 
 export type Config = Record<string, number | boolean>;
@@ -145,13 +146,80 @@ function extraRank(short: string, k: string): number | null {
   return null;
 }
 
+/** How an attacker gets past blockers. "skulk": creatures with greater power can't block it. */
+export type Evasion = "none" | "flying" | "skulk" | "unblockable";
+/** A creature in a pod combat, as both sides see it. */
+export interface Fighter {
+  p: Perm;
+  name: string;
+  power: number;
+  toughness: number;
+  evasion: Evasion;
+  /** Can block flyers (flying or reach). */
+  air: boolean;
+  deathtouch: boolean;
+  trample?: boolean;
+  /** First strike or double strike: it deals its damage first. */
+  first?: boolean;
+  /** Menace: it takes two blockers. */
+  menace?: boolean;
+  /** What its owner would pay to keep it (tokens are cheap, the commander is dear). */
+  value: number;
+  commander: boolean;
+}
+export interface FightRow { a: Fighter; b: Fighter | null; aDies: boolean; bDies: boolean }
+/** A deck going for the win in a pod: what the others can answer. Countering one of `spells`, or removing one of
+ *  `perms` (the most important first), stops it. `backup`: answers of ours that we can answer back (a counterspell with mana). */
+export interface WinAttempt { spells: string[]; perms: string[]; backup: number }
+/** An opposing permanent, as a removal spell sees it. */
+export interface Target { p: Perm; name: string; value: number; power: number; types: Set<string>; token: boolean; commander: boolean }
+export interface FightResult {
+  /** The defender returned the attackers to their owner's hand (Aetherize). */
+  bounced?: boolean;
+  rows: FightRow[];
+  /** Combat damage that reaches the defending player. */
+  dmg: number;
+  /** The defender is dead from this attack (life or 21 commander damage). */
+  kills: boolean;
+}
+/** The pod, as a game sees it (engine/pod.ts supplies it; null in a goldfish game). */
+export interface Arena {
+  /** Is this the real game of a player (not a planner copy)? */
+  real(g: Game<unknown>): boolean;
+  /** Attack opponent `slot` with these creatures: the defender blocks by the shared rule. apply = false only forecasts. */
+  fight(g: Game<unknown>, slot: number, att: Fighter[], apply: boolean): FightResult;
+  /** The power of each creature opponent `slot` controls (what could attack us on their turn). */
+  board(g: Game<unknown>, slot: number): number[];
+  /** Each opponent sacrifices its least valuable creature (nontoken only: Accursed Marauder). */
+  edict(g: Game<unknown>, nontoken: boolean): void;
+  /** Take the best legal target of the biggest threat off the battlefield (an enters-the-battlefield removal effect). Returns its name. */
+  snipe(g: Game<unknown>, ans: Answer): string | null;
+  say(g: Game<unknown>, s: string): void;
+  /** We declared a win in the middle of our turn: the others may answer it now. True = it was stopped (the turn goes on). */
+  answerWin(g: Game<unknown>): boolean;
+  /** We cast this spell (paid, on the stack): does an opponent counter it? */
+  counter(g: Game<unknown>, cd: CardDef): boolean;
+  /** How much we'd rather attack opponent `slot` (the pod's threat rule, step 4). */
+  prefer(g: Game<unknown>, slot: number): number;
+  /** We found a kill without counter backup: go for it now (the deck's pod policy)? */
+  go(g: Game<unknown>): boolean;
+  /** Windfall: each opponent discards its hand and draws as many as the biggest hand discarded (at least `mine`). Returns that number. */
+  wheel(g: Game<unknown>, mine: number): number;
+  /** Each player draws n (Folio of Fancies): the opponents' part. */
+  eachDraws(g: Game<unknown>, n: number): void;
+}
+
 export abstract class Game<S = unknown> {
+  /** Set in a pod game: real opponents with real blockers. */
+  arena: Arena | null = null;
   killNow = false;
   inRollout = false;
   seen4: Set<string> | null = null;
   log: string[] = [];
   library: CardDef[];
   command: CardDef[];
+  /** Our commanders' names (this.command only holds the ones in the command zone right now). */
+  commanderNames: string[] = [];
   hand: CardDef[] = [];
   gy: CardDef[] = [];
   exile: CardDef[] = [];
@@ -200,6 +268,7 @@ export abstract class Game<S = unknown> {
     this.library = library.map((n) => C.get(n));
     rng.shuffle(this.library);
     this.command = commanders.map((n) => C.get(n));
+    this.commanderNames = commanders.slice();
     const n = cfg.opponents as number;
     this.life = new Array(n).fill(cfg.opp_life);
     this.lib = new Array(n).fill(cfg.opp_library);
@@ -492,14 +561,18 @@ export abstract class Game<S = unknown> {
         `lands ${this.landsBf().length}, graveyard ${fmtList(this.gy.map((c) => c.name))}`);
       for (const step of ks.lastLine ?? []) this.say("      > " + step);
     }
+    if (r >= 1) this.lastKillLine = (ks.lastLine ?? []).slice();
     if (r >= 1 && this.unprot === null) this.unprot = this.turn;
     if (r === 2) this.prot = this.turn;
     this.killNow = r >= 1;
-    if (r === 2 || (r === 1 && this.mode === "any")) {
+    if (r === 2 || (r === 1 && this.mode === "any" && (!this.inArena() || this.arena!.go(this)))) {
       this.say("KILL -> WIN" + (r === 2 ? " (with counter backup)" : " (no counter backup)"));
       return 2;
     }
-    if (r === 1) this.say("kill available but no counter backup: keep the kill intact and look for protection");
+    if (r === 1) {
+      this.podWaits++;
+      this.say("kill available but no counter backup: keep the kill intact and look for protection");
+    }
     return r;
   }
 
@@ -756,6 +829,10 @@ export abstract class Game<S = unknown> {
     this.spellsCast += 1;
     this.onCastIS(fromGy);
     this.castTriggers(cd, fromGy, trig);
+    if (this.inArena() && this.arena!.counter(this, cd)) {
+      (fromGy ? this.exile : this.gy).push(cd);
+      return true;
+    }
     this.resolve(cd, fromGy, mode);
     (fromGy ? this.exile : this.gy).push(cd);
     return true;
@@ -785,6 +862,11 @@ export abstract class Game<S = unknown> {
     } else removeOne(this.hand, cd);
     this.spellsCast += 1;
     this.say("cast", cd);
+    if (this.inArena() && this.arena!.counter(this, cd)) {
+      // countered: a commander goes back to the command zone (its tax still counts this cast)
+      (fromCommand ? this.command : this.gy).push(cd);
+      return true;
+    }
     this.enter(cd);
     return true;
   }
@@ -1127,8 +1209,9 @@ export abstract class Game<S = unknown> {
       if (this.checkKill() === 2) return true;
       const cands = this.orderedCands(main2);
       const afford: number[] = [];
+      const reserve = this.podReserve();
       cands.forEach((c, i) => {
-        if (c.score > 0 && this.canPay(c.cost, c.isIS)) afford.push(i);
+        if (c.score > 0 && this.canPay(c.cost, c.isIS) && (reserve === 0 || this.openMana() - c.cost.mv >= reserve)) afford.push(i);
       });
       if (!afford.length) return false;
       if (this.mode === "protected" && this.killNow) {
@@ -1222,36 +1305,58 @@ export abstract class Game<S = unknown> {
     if (this.hand.length > 7 && !this.onBf("Reliquary Tower")) this.discard(this.hand.length - 7);
   }
 
-  /** Play the game. Returns [first turn with any kill, first turn with a kill + counter backup]. */
-  play(): [number | null, number | null] {
+  /** Before the first turn: the opening hand and mulligans. */
+  setup(): void {
     this.energy = false;
     this.ht = this.muck = 0;
     this.spellsCast = 0;
     this.mulligan();
-    const maxt = this.cfg.max_turn as number;
-    while (this.turn < maxt) {
-      this.startTurn();
-      this.upkeep();
-      if (!(this.turn === 1 && this.onPlay)) this.draw(1);
-      this.playLand();
-      if (this.develop()) break;
-      this.combat();
-      if (this.oppsBeaten()) {
-        if (this.unprot === null) this.unprot = this.turn;
-        this.prot = this.turn;
-        this.say("Opponents beaten in combat");
-        break;
-      }
-      this.lastKey = null;
-      if (this.develop(true)) break;
-      this.endTurn();
-      if (this.turn === 4) {
-        // for the card ranking: every card seen by the end of turn 4
-        this.seen4 = new Set([...this.hand, ...this.gy, ...this.exile].map((c) => c.name));
-        for (const p of this.bf) this.seen4.add(p.cd.name);
-      }
-      this.say("end: hand", fmtList(this.hand.map((c) => c.name)));
+  }
+
+  /** One full turn of ours. Returns true when the game ended in it (a win, or we lost). A pod plays the decks' turns in seat order. */
+  takeTurn(): boolean {
+    this.startTurn();
+    this.upkeep();
+    if (!(this.turn === 1 && this.onPlay)) this.draw(1);
+    this.playLand();
+    if (this.developWin()) return true;
+    this.combat();
+    if (this.oppsBeaten()) {
+      if (this.unprot === null) this.unprot = this.turn;
+      this.prot = this.turn;
+      this.say("Opponents beaten in combat");
+      return true;
     }
+    this.lastKey = null;
+    if (this.developWin(true)) return true;
+    if (this.inArena() && this.cfg.pod_defence !== false) this.podDefence();
+    this.endTurn();
+    if (this.turn === 4) {
+      // for the card ranking: every card seen by the end of turn 4
+      this.seen4 = new Set([...this.hand, ...this.gy, ...this.exile].map((c) => c.name));
+      for (const p of this.bf) this.seen4.add(p.cd.name);
+    }
+    this.say("end: hand", fmtList(this.hand.map((c) => c.name)));
+    return false;
+  }
+
+  /** develop(), but in a pod a declared win may be answered: then the turn goes on without the card it was stopped at. */
+  developWin(main2 = false): boolean {
+    for (let tries = 0; tries < 4; tries++) {
+      if (!this.develop(main2)) return false;
+      if (this.died || !this.inArena() || !this.arena!.answerWin(this)) return true;
+      this.unprot = this.prot = null;
+      this.killNow = false;
+      this.lastKey = null;
+    }
+    return false;
+  }
+
+  /** Play the game. Returns [first turn with any kill, first turn with a kill + counter backup]. */
+  play(): [number | null, number | null] {
+    this.setup();
+    const maxt = this.cfg.max_turn as number;
+    while (this.turn < maxt) if (this.takeTurn()) break;
     return [this.unprot, this.prot];
   }
 
@@ -1345,6 +1450,7 @@ export abstract class Game<S = unknown> {
     if (this.attacked) return;
     const cands = this.creatures().filter((p) => this.canAttack(p));
     if (!cands.length) return;
+    if (this.inArena()) { this.arenaCombat(cands); return; }
     const fog = this.fogBlocker();
     const pool = fog ? cands.filter((p) => p !== fog) : cands;
     pool.sort((a, b) => this.power(b) - this.power(a));
@@ -1398,6 +1504,411 @@ export abstract class Game<S = unknown> {
   /** After combat damage: the attackers that connected and the total damage dealt. */
   onCombatDamage(_connected: Perm[], _damage: number): void {}
 
+  // ================================================================ pod combat (real opponents; see engine/pod.ts)
+  /** Are we the real game of a player in a pod (not a planner copy, not a goldfish game)? */
+  inArena(): boolean {
+    return this.arena !== null && !this.inRollout && this.arena.real(this);
+  }
+  /** How this attacker gets past blockers. Decks override it (or evasive()). */
+  evasion(p: Perm): Evasion {
+    return this.evasive(p) ? (p.cd.flying ? "flying" : "unblockable") : "none";
+  }
+  /** What we'd pay to keep this creature: decides which creatures trade or chump block. */
+  blockValue(p: Perm): number {
+    return (p.token ? 5 : 10 + 10 * p.cd.mv) + (this.isCommander(p) ? 100 : 0);
+  }
+  isCommander(p: Perm): boolean {
+    return !p.token && this.commanderNames.includes(p.cd.name);
+  }
+  fighter(p: Perm, pw?: (p: Perm) => number, tg?: (p: Perm) => number): Fighter {
+    const k = p.cd.keywords;
+    return {
+      p, name: p.cd.name, power: pw ? pw(p) : this.power(p), toughness: tg ? tg(p) : this.toughness(p), evasion: this.evasion(p),
+      air: k.has("flying") || k.has("reach"), deathtouch: k.has("deathtouch"), value: this.blockValue(p), commander: this.isCommander(p),
+      trample: k.has("trample"), first: k.has("first strike") || k.has("double strike"), menace: k.has("menace"),
+    };
+  }
+  /** Our untapped creatures, as blockers (a summoning-sick creature can block). */
+  blockers(): Fighter[] {
+    return this.creatures().filter((p) => !p.tapped).map((p) => this.fighter(p));
+  }
+  /** We are about to take this much combat damage: prevent all combat damage this turn (a fog)? Returns true if we did. */
+  fogPrevent(_dmg: number, _lethal: boolean): boolean {
+    return false;
+  }
+
+  /** Attack opponent `slot` for real: blockers are declared, creatures die, the damage that connects is dealt. */
+  strike(slot: number, att: Perm[], pw?: (p: Perm) => number, tg?: (p: Perm) => number): { dmg: number; connected: Perm[] } {
+    const r = this.arena!.fight(this, slot, att.map((p) => this.fighter(p, pw, tg)), true);
+    if (r.bounced) for (const row of r.rows) this.podRemove(row.a.p, "bounce");
+    for (const row of r.rows) if (row.aDies) this.dies(row.a.p);
+    if (r.kills) this.hurtOpp(slot, Math.max(r.dmg, this.life[slot]));
+    else if (r.dmg > 0) this.combatHit(slot, r.dmg);
+    return { dmg: r.dmg, connected: r.dmg > 0 ? r.rows.filter((x) => x.b === null).map((x) => x.a.p) : [] };
+  }
+
+  /** Combat damage our creatures deal to opponent `slot` (a deck may replace it: The Mindskinner). */
+  combatHit(slot: number, n: number): void {
+    this.hurtOpp(slot, n);
+  }
+
+  /** The attackers worth sending at opponent `slot`, and what the attack would do. An attacker stays home if it
+   *  would be blocked without killing its blocker, or would die for less than it kills; a lethal attack sends everything. */
+  planAttack(slot: number, pool: Perm[], pw?: (p: Perm) => number, tg?: (p: Perm) => number): { att: Perm[]; score: number; dmg: number } {
+    let att = pool.slice();
+    let r: FightResult = { rows: [], dmg: 0, kills: false };
+    for (let it = 0; it < 6 && att.length; it++) {
+      r = this.arena!.fight(this, slot, att.map((p) => this.fighter(p, pw, tg)), false);
+      if (r.kills) break;
+      const bad = new Set(r.rows.filter((x) => x.b !== null && (!x.bDies || (x.aDies && x.b.value < x.a.value))).map((x) => x.a.p));
+      if (!bad.size) break;
+      att = att.filter((p) => !bad.has(p));
+    }
+    if (!att.length) return { att, score: 0, dmg: 0 };
+    const gain = r.rows.reduce((s, x) => s + (x.bDies ? x.b!.value : 0) - (x.aDies ? x.a.value : 0), 0);
+    return { att, score: (r.kills ? 1000 : 0) + r.dmg + gain / 20 - this.life[slot] / 1000, dmg: r.dmg };
+  }
+
+  /** The opponent to attack with these creatures (the attack that does the most; a kill first), or null if no attack is worth it.
+   *  `prefer` adds to an opponent's score. */
+  pickDefender(pool: Perm[], prefer?: (slot: number) => number): { slot: number; att: Perm[] } | null {
+    let best: { slot: number; att: Perm[] } | null = null, bs = 0;
+    for (let i = 0; i < this.life.length; i++) {
+      if (!this.oppAlive(i)) continue;
+      const pl = this.planAttack(i, pool);
+      if (!pl.att.length) continue;
+      const sc = pl.score + (prefer ? prefer(i) : 0) + this.arena!.prefer(this, i) + 0.01;
+      if (best === null || sc > bs) { best = { slot: i, att: pl.att }; bs = sc; }
+    }
+    return best;
+  }
+
+  /** Creatures to keep home as blockers: enough that the biggest board among the opponents can't kill us next turn
+   *  (each blocker stops their biggest attacker). None if we couldn't stop it anyway. */
+  homeGuard(pool: Perm[], pw: (p: Perm) => number): Set<Perm> {
+    let need = 0;
+    for (let i = 0; i < this.life.length; i++) {
+      if (!this.oppAlive(i)) continue;
+      const ps = this.arena!.board(this, i).sort((a, b) => b - a);
+      let sum = ps.reduce((s, x) => s + x, 0), k = 0;
+      while (sum >= this.myLife && k < ps.length) sum -= ps[k++];
+      need = Math.max(need, k);
+    }
+    const stay = new Set<Perm>();
+    if (!need) return stay;
+    const others = this.creatures().filter((p) => !p.tapped && !pool.includes(p)).length;
+    const vig = pool.filter((p) => p.cd.keywords.has("vigilance")).length;
+    const hold = need - others - vig;
+    if (hold <= 0 || hold > pool.length) return stay;
+    for (const p of pool.filter((q) => !q.cd.keywords.has("vigilance")).sort((a, b) => pw(a) - pw(b)).slice(0, hold)) stay.add(p);
+    return stay;
+  }
+
+  /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage. */
+  arenaCombat(pool: Perm[], pw?: (p: Perm) => number, tg?: (p: Perm) => number): void {
+    const power = pw ?? ((p: Perm) => this.power(p));
+    let best: { slot: number; att: Perm[]; score: number; dmg: number } | null = null;
+    const stay = this.homeGuard(pool, power);
+    for (const cands of stay.size ? [pool, pool.filter((p) => !stay.has(p))] : [pool]) {
+      for (let i = 0; i < this.life.length; i++) {
+        if (!this.oppAlive(i)) continue;
+        const pl = this.planAttack(i, cands, pw, tg);
+        // the whole team only for a kill; otherwise the guards stay home
+        if (cands === pool && stay.size && pl.score < 1000) continue;
+        if (!pl.att.length || pl.score <= 0) continue;
+        const sc = pl.score + this.arena!.prefer(this, i);
+        if (best === null || sc > best.score) best = { slot: i, ...pl, score: sc };
+      }
+      if (best) break;
+    }
+    if (!best) return;
+    // the creatures that weren't sent may attack other opponents (the guards stay home)
+    const groups = [best];
+    let rest = pool.filter((p) => !best!.att.includes(p) && !(stay.has(p) && best!.score < 1000));
+    while (rest.length && groups.length < 3) {
+      let next: { slot: number; att: Perm[]; score: number; dmg: number } | null = null;
+      for (let i = 0; i < this.life.length; i++) {
+        if (!this.oppAlive(i) || groups.some((x) => x.slot === i)) continue;
+        const pl = this.planAttack(i, rest, pw, tg);
+        if (!pl.att.length || pl.score <= 0) continue;
+        const sc = pl.score + this.arena!.prefer(this, i);
+        if (next === null || sc > next.score) next = { slot: i, ...pl, score: sc };
+      }
+      if (!next) break;
+      groups.push(next);
+      rest = rest.filter((p) => !next!.att.includes(p));
+    }
+    this.attacked = true;
+    const sent = groups.flatMap((x) => x.att);
+    for (const p of sent) if (!p.cd.keywords.has("vigilance")) p.tapped = true;
+    const joined = this.onAttack(sent);
+    const connected: Perm[] = [];
+    let total = 0;
+    groups.forEach((gr, k) => {
+      const all = [...gr.att, ...(k === 0 ? joined : [])].filter((p) => this.bf.includes(p));
+      if (!all.length || !this.oppAlive(gr.slot)) return;
+      const r = this.strike(gr.slot, all, pw, tg);
+      connected.push(...r.connected);
+      total += r.dmg;
+      this.say(`attack opponent ${gr.slot + 1} with ${all.length} creature(s): ${r.dmg} damage, opp life [${this.life.join(", ")}]`);
+    });
+    this.onCombatDamage(connected.filter((p) => this.bf.includes(p)), total);
+  }
+
+  /** A pod, after our second main phase: if the biggest opposing board would leave us at cfg.chump_life (10) or less next turn
+   *  even with our untapped creatures blocking, cast creatures from hand as blockers, cheapest first (decks built against
+   *  goldfish opponents never do this on their own). */
+  podDefence(): void {
+    for (let n = 0; n < 4; n++) {
+      const mine = this.creatures().filter((p) => !p.tapped).length;
+      let worst = 0;
+      for (let i = 0; i < this.life.length; i++) {
+        if (!this.oppAlive(i)) continue;
+        const ps = this.arena!.board(this, i).sort((a, b) => b - a).slice(mine);
+        worst = Math.max(worst, ps.reduce((s, x) => s + x, 0));
+      }
+      if (worst <= 0 || this.myLife - worst > ((this.cfg.chump_life as number) ?? 10)) return;
+      const cs = this.hand.filter((c) => c.isCreature && this.canPay(this.effCost(c), false)).sort((a, b) => this.effCost(a).mv - this.effCost(b).mv);
+      if (!cs.length || !this.castPerm(cs[0])) return;
+      this.say("(a blocker: the biggest opposing board would leave us at", this.myLife - worst, "life)");
+    }
+  }
+
+  // ================================================================ pod interaction (answers; see engine/answers.ts and engine/pod.ts)
+  /** The steps of the kill the search found (Gale), for winAttempt(). */
+  lastKillLine: string[] = [];
+  /** Opponents' life / library / poison just before our combo was applied (a deck sets it): put back if the win is stopped. */
+  podPre: [number[], number[], number[]] | null = null;
+
+  /** We say we have won (takeTurn() returned true): what could the others answer? null = nothing (the damage is done). */
+  winAttempt(): WinAttempt | null {
+    return null;
+  }
+  /** What this card answers in a pod (null = it isn't interaction). */
+  answer(cd: CardDef): Answer | null {
+    return ANSWERS[cd.name] ?? null;
+  }
+  answerCost(cd: CardDef): Cost {
+    const a = this.answer(cd);
+    return this.effCost(cd, a?.cost ? Cost.parse(a.cost) : null);
+  }
+  /** Untapped mana sources. */
+  openMana(): number {
+    let n = 0;
+    for (const p of this.bf) if (!p.tapped && this.srcKind(p)) n++;
+    return n;
+  }
+  /** Mana to leave untapped on our own turn for the cheapest instant-speed answer in hand (from round cfg.hold_from, default 5). */
+  podReserve(): number {
+    if (!this.podHold) return 0;
+    if (!this.inArena() || this.cfg.pod_answers === false || this.turn < ((this.cfg.hold_from as number) ?? 5)) return 0;
+    let best = 0;
+    for (const c of this.hand) {
+      const a = this.answer(c);
+      if (!a || !a.instant || a.kind === "wipe") continue;
+      const mv = this.answerCost(c).mv;
+      if (best === 0 || mv < best) best = mv;
+    }
+    return best;
+  }
+  /** Cast an answer from hand: pay for it, put it into the graveyard. False if we can't. */
+  podCast(cd: CardDef): boolean {
+    const cost = this.answerCost(cd);
+    if (!this.hand.includes(cd) || !this.pay(cost, true)) return false;
+    removeOne(this.hand, cd);
+    this.gy.push(cd);
+    const life = this.answer(cd)?.pay ?? 0;
+    if (life) this.loseLife(life);
+    return true;
+  }
+  static spellOk(a: Answer, cd: CardDef): boolean {
+    if (a.spells === "noncreature") return !cd.isCreature;
+    if (a.spells === "instant") return cd.isInstant;
+    if (a.spells === "instant-sorcery") return cd.isIS;
+    return true;
+  }
+  static permOk(a: Answer, types: Set<string>): boolean {
+    return !types.has("land") && (a.hits ?? []).some((h) => types.has(h));
+  }
+  /** Answer a win attempt of `owner` at instant speed with up to `need` cards from hand (they are cast). A removal spell needs
+   *  a legal target (type, "nonblack" and the like, hexproof); a shield of the owner's (Kira...) may counter it: then it is
+   *  spent for nothing (listed with `shield`) and the next answer may try again. */
+  podRespond(w: WinAttempt, need: number, owner: Game<unknown>): { card: string; target: string; how: string; shield?: string; a: Answer }[] {
+    const out: { card: string; target: string; how: string; shield?: string; a: Answer }[] = [];
+    for (const cd of this.hand.slice()) {
+      if (out.filter((x) => !x.shield).length >= need) break;
+      const a = this.answer(cd);
+      if (!a || !a.instant || a.kind === "wipe") continue;
+      if (a.kind === "counter") {
+        const target = w.spells.find((x) => Game.spellOk(a, C.get(x)));
+        if (!target || !this.podCast(cd)) continue;
+        out.push({ card: cd.name, target, how: "countered", a });
+        continue;
+      }
+      let p: Perm | undefined;
+      for (const x of w.perms) {
+        p = owner.bf.find((q) => q.cd.name === x && Game.permOk(a, q.cd.types) && owner.podCanTarget(q, a));
+        if (p) break;
+      }
+      if (!p || !this.podCast(cd)) continue;
+      const shield = owner.podShield(p) ?? undefined;
+      out.push({ card: cd.name, target: p.cd.name, how: a.how ?? "destroy", shield, a });
+    }
+    return out;
+  }
+  /** May an opponent's removal spell target this permanent of ours? (Hexproof, shroud, the spell's own limits.) */
+  podCanTarget(p: Perm, a: Answer): boolean {
+    if (this.cfg.pod_legal === false) return true; // (a check: every permanent is a legal target)
+    const k = p.cd.keywords;
+    if (k.has("shroud") || (k.has("hexproof") && !/hexproof from/i.test(p.cd.oracle))) return false;
+    for (const x of a.not ?? []) {
+      if (x === "artifact" && p.cd.types.has("artifact")) return false;
+      if (x === "black" && p.cd.cost.b > 0) return false;
+      if (x === "counters" && p.counters !== 0) return false;
+    }
+    return true;
+  }
+  /** Creatures we already protected this turn (Kira counters only the first spell aimed at each creature). */
+  podShielded = new Set<Perm>();
+  /** This turn we keep mana up for an answer (the pod decides it each turn: --set hold_chance, default always). */
+  podHold = true;
+  /** Times we found a kill and didn't go for it (no counter backup, the deck's policy said wait). */
+  podWaits = 0;
+  /** An opponent aims a spell at this permanent of ours: do we counter it? Kira, Great Glass-Spinner (the first time each
+   *  creature is targeted each turn), Soratami Rainshaper ({3} and a land back to hand: shroud), Siren Stormtamer ({U},
+   *  sacrifice it). Returns the card that did it. */
+  podShield(p: Perm): string | null {
+    if (!p.cd.isCreature || this.cfg.pod_legal === false) return null;
+    if (this.onBf("Kira, Great Glass-Spinner") && !this.podShielded.has(p)) {
+      this.podShielded.add(p);
+      return "Kira, Great Glass-Spinner";
+    }
+    const rain = this.perm("Soratami Rainshaper");
+    if (rain && this.openMana() >= 4) {
+      this.tapMana(3);
+      const land = this.landsBf().find((q) => q.tapped) ?? this.landsBf()[0];
+      if (land) { removeOne(this.bf, land); this.hand.push(land.cd); }
+      return "Soratami Rainshaper";
+    }
+    const siren = this.perm("Siren Stormtamer");
+    if (siren && siren !== p && this.openMana() >= 1 && this.canPay(Cost.parse("{U}"), true)) {
+      this.pay(Cost.parse("{U}"), true);
+      this.sacrifice(siren);
+      return "Siren Stormtamer";
+    }
+    return null;
+  }
+  /** One of our permanents was removed by this answer: what we get for it (a 3/3, a basic land, life, a 2/2). */
+  podGet(p: Perm, a: Answer): void {
+    if (a.gives === "token3") this.createTokens(C.makeToken("Beast", 3, 3, "Green"));
+    else if (a.gives === "manifest") this.createTokens(C.makeToken("Manifest", 2, 2));
+    else if (a.gives === "life") this.gainLife(this.power(p));
+    else if (a.gives === "land") {
+      const basic = this.library.find((c) => c.land !== null && /^(Snow-Covered )?(Plains|Island|Swamp|Mountain|Forest|Wastes)$/.test(c.name));
+      if (basic) { removeOne(this.library, basic); this.enter(basic, "library", { tapped: true }); this.shuffle(); }
+    }
+  }
+  /** Removed by an opponent's answer: off the battlefield, and the owner gets what the card gives. */
+  podSuffer(p: Perm, a: Answer): void {
+    if (!this.bf.includes(p)) return;
+    this.podRemove(p, a.how ?? "destroy");
+    this.podGet(p, a);
+  }
+  /** One of our permanents is removed by an opponent. A commander goes back to the command zone (the tax counts its casts). */
+  podRemove(p: Perm, how: string): void {
+    if (!this.bf.includes(p)) return;
+    if (this.isCommander(p)) {
+      removeOne(this.bf, p);
+      this.command.push(p.cd);
+    } else if (how === "destroy" || how === "sacrifice") {
+      if (p.cd.isCreature) this.dies(p);
+      else {
+        removeOne(this.bf, p);
+        if (!p.token) this.gy.push(p.cd);
+      }
+    } else {
+      removeOne(this.bf, p);
+      if (!p.token) (how === "bounce" ? this.hand : this.exile).push(p.cd);
+    }
+  }
+  /** Tap n of our untapped mana sources (mana spent on something that was answered). */
+  tapMana(n: number): void {
+    for (const p of this.bf) if (n > 0 && !p.tapped && this.srcKind(p)) { p.tapped = true; n--; }
+  }
+  /** Our win was stopped at this card: it is gone from wherever it is. A countered spell goes to the graveyard (exile if it
+   *  was cast from there) and its mana is spent; a removed permanent is destroyed / exiled / bounced (a commander goes to
+   *  the command zone). The turn goes on. */
+  podLose(name: string, how: string, a?: Answer): void {
+    const p = this.bf.find((q) => q.cd.name === name && !q.token);
+    if (p && how !== "countered") {
+      if (a) this.podSuffer(p, a);
+      else this.podRemove(p, how);
+      return;
+    }
+    const cd = C.get(name);
+    if (how === "countered") this.tapMana(this.effCost(cd).mv);
+    const take = (xs: CardDef[]) => {
+      const i = xs.findIndex((c) => c.name === name);
+      if (i < 0) return false;
+      xs.splice(i, 1);
+      return true;
+    };
+    if (take(this.command)) this.command.push(cd);
+    else if (take(this.hand)) (how === "exile" ? this.exile : how === "bounce" ? this.hand : this.gy).push(cd);
+    else if (how === "countered" && take(this.gy)) this.exile.push(cd);
+    // a shortcut line (a loop that draws its finisher) still had it in the library
+    else if (take(this.library)) (how === "exile" ? this.exile : this.gy).push(cd);
+  }
+  /** After our win was stopped: the opponents' totals go back to before the combo. Decks add their own flags. */
+  podWinStopped(): void {
+    if (this.podPre) {
+      [this.life, this.lib, this.poison] = [this.podPre[0].slice(), this.podPre[1].slice(), this.podPre[2].slice()];
+      this.podPre = null;
+    }
+  }
+  /** Our answers were answered back (we went for the win with backup): n counterspells in hand are spent. */
+  podBurnCounters(against: string[]): string[] {
+    const used: string[] = [];
+    for (const name of against) {
+      const target = C.get(name);
+      const cd = this.hand.find((c) => { const a = this.answer(c); return a?.kind === "counter" && Game.spellOk(a, target) && this.canPay(this.answerCost(c), true); });
+      if (cd && this.podCast(cd)) used.push(cd.name);
+    }
+    return used;
+  }
+  /** How much the others want to counter this spell of ours: mana value x 10, +30 for a commander, + the card's key bonus. */
+  podWeight(cd: CardDef): number {
+    return 10 * cd.mv + (this.commanderNames.includes(cd.name) ? 30 : 0) + (KEY_SPELLS[cd.name] ?? 0);
+  }
+  /** How close we are to winning, 0 to 1 (decks override it): part of the threat the others see. */
+  podClose(): number {
+    return 0;
+  }
+  /** Our permanents an opponent may aim this removal spell at. */
+  podTargets(a: Answer): Target[] {
+    return this.bf.filter((p) => p.land === null && Game.permOk(a, p.cd.types) && this.podCanTarget(p, a)).map((p) => ({
+      p, name: p.cd.name, power: p.cd.isCreature ? this.power(p) : 0, types: p.cd.types, token: p.token, commander: this.isCommander(p),
+      value: (p.token ? 0 : this.cardValue(p.cd)) + (this.isCommander(p) ? 30 : 0) + (p.cd.isCreature ? 2 * this.power(p) : 0),
+    }));
+  }
+  /** How dangerous we look to the others (step 4): board power, nonland permanents, mana, cards in hand, damage dealt so far,
+   *  and the deck's own "close to winning" (podClose, worth cfg.threat_close, default 25). */
+  threat(): number {
+    let t = this.hand.length / 2 + this.damageDealt / 10;
+    for (const p of this.bf) {
+      if (p.land !== null) t += 0.5;
+      else t += (p.cd.isCreature ? this.power(p) : 0) + (p.cd.rock ? 1 : 3);
+    }
+    return t + ((this.cfg.threat_close as number) ?? 25) * this.podClose();
+  }
+  /** We are being attacked: an instant in hand that returns the attackers to hand (Aetherize), if the hit is lethal or big. */
+  podDefend(dmg: number, lethal: boolean): "none" | "fog" | "bounce" {
+    if (this.fogPrevent(dmg, lethal)) return "fog";
+    if (!lethal && dmg < ((this.cfg.fog_at as number) ?? 6)) return "none";
+    const cd = this.hand.find((c) => this.answer(c)?.wipe === "attackers");
+    return cd && this.podCast(cd) ? "bounce" : "none";
+  }
+
   /** Combat damage we'll take on the opponents' turns (applied at our next upkeep). */
   pendingCrackback = 0;
   /** We attacked relying on the fog blocker: it must be used (sacrificed) before our next turn. */
@@ -1409,10 +1920,15 @@ export abstract class Game<S = unknown> {
   resolveOther(_cd: CardDef, _fromGy: boolean, _mode: string | null): void {}
   /** "Whenever you cast" triggers that resolve before the spell (e.g. Gale's recast). */
   castTriggers(_cd: CardDef, _fromGy: boolean, _trig: Record<string, unknown>): void {}
-  commanderCost(_cd: CardDef, cost: Cost): Cost {
-    return cost;
+  /** Commander tax: {2} more for each earlier cast from the command zone. */
+  commanderCost(cd: CardDef, cost: Cost): Cost {
+    const n = this.commandCasts.filter((x) => x === cd.name).length;
+    return n ? cost.withGeneric(cost.g + 2 * n) : cost;
   }
-  onCommanderCast(_cd: CardDef): void {}
+  onCommanderCast(cd: CardDef): void {
+    this.commandCasts.push(cd.name);
+  }
+  commandCasts: string[] = [];
   /** [how much we want to cast c, its cost], to decide if a tapped land costs us mana now. */
   landWant(c: CardDef): [number, Cost] {
     return [30, this.effCost(c)];

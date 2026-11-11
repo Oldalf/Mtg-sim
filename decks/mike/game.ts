@@ -16,7 +16,7 @@
  */
 import * as C from "../../engine/cards";
 import { Cost, CardDef, makeToken } from "../../engine/cards";
-import { Game, Cand, KillSearcher, Perm, Zone, firstMax, firstMin } from "../../engine/game";
+import { Game, Cand, Evasion, KillSearcher, Perm, WinAttempt, Zone, firstMax, firstMin } from "../../engine/game";
 import { MulliganRule } from "../../engine/mulligan";
 import { MULLIGAN } from "./mulligan";
 
@@ -181,6 +181,32 @@ export class MikeGame extends Game<null> {
   /** Our counterspells: Negate, Refute, Spell Pierce, Spell Syphon and Aether Spike (the engine only knows a few). */
   override hasCounterInHand(): boolean {
     return this.hand.some((c) => COUNTERSPELLS.has(c.name));
+  }
+  /** A pod: a mill win needs Laboratory Maniac or Jace on the battlefield, the Toad win needs the Toad: removing it in
+   *  response stops the win. A counterspell with two mana open answers one removal spell (Siren Stormtamer: Game.podShield). */
+  override winAttempt(): WinAttempt | null {
+    const perms = this.winHow === "mill" ? [MANIAC, JACE].filter((n) => this.onBf(n)) : this.winHow === "Toad" ? [TOAD] : [];
+    if (!perms.length) return null;
+    const backup = this.hasCounterInHand() && this.availMana() >= 2 ? 1 : 0;
+    return { spells: [], perms, backup };
+  }
+  /** A pod: the win was stopped (the Maniac / Jace / Toad removed in response). A mill win: the draw from the empty
+   *  library still happens, now without the win piece (Living Conundrum or Ormos may save us). */
+  override podWinStopped(): void {
+    super.podWinStopped();
+    const mill = this.milled;
+    this.milled = this.toadWon = false;
+    this.winHow = null;
+    if (mill && !this.library.length) this.drawOne();
+  }
+  /** How close to winning the others think we are: a win piece out and a small library, or a Toad near twenty. */
+  override podClose(): number {
+    const piece = this.onBf(MANIAC) || this.onBf(JACE);
+    const lib = this.library.length;
+    let c = piece ? (lib <= 15 ? 1 : lib <= 35 ? 0.6 : 0.3) : lib <= 15 ? 0.3 : 0;
+    const toad = this.perm(TOAD);
+    if (toad) c = Math.max(c, Math.min(1, Math.max(toad.counters, this.hand.length) / 20));
+    return c;
   }
   override checkKill(): number {
     if (this.died) return 2;
@@ -387,6 +413,11 @@ export class MikeGame extends Game<null> {
   override evasive(p: Perm): boolean {
     const d = this.eff(p);
     return d.flying || UNBLOCKABLE.has(d.name) || (p.marks & (M_AQUEOUS | M_UNBLOCK)) !== 0;
+  }
+  override evasion(p: Perm): Evasion {
+    const d = this.eff(p);
+    if (UNBLOCKABLE.has(d.name) || (p.marks & (M_AQUEOUS | M_UNBLOCK)) !== 0) return "unblockable";
+    return d.flying ? "flying" : "none";
   }
   override powerBonus(p: Perm): number {
     const d = this.eff(p);
@@ -736,7 +767,7 @@ export class MikeGame extends Game<null> {
       else if (n === SPHERE && this.drawOk(1) && main2) add(30 + boost, new Cost(), () => { this.dies(p); this.draw(1); return true; });
       else if (n === FOLIO && ready(p)) {
         const x = Math.min(this.maxX(0, 2), room);
-        if (x >= 1) add(Math.min(96, 30 + 6 * x + boost), new Cost(2 * x), () => this.tapPay(p, "{" + 2 * x + "}", () => this.draw(x)));
+        if (x >= 1) add(Math.min(96, 30 + 6 * x + boost), new Cost(2 * x), () => this.tapPay(p, "{" + 2 * x + "}", () => { this.draw(x); if (this.inArena()) this.arena!.eachDraws(this, x); }));
       } else if (n === ORMOS) {
         const names = new Set<string>();
         const picks: CardDef[] = [];
@@ -835,7 +866,7 @@ export class MikeGame extends Game<null> {
     } else if (n === "Windfall") {
       const k = this.hand.length;
       for (const c of this.hand.splice(0)) this.toGy(c);
-      this.draw(Math.max(k, 7));
+      this.draw(this.inArena() ? this.arena!.wheel(this, k) : Math.max(k, 7));
     } else if (n === "Pull from Tomorrow") {
       const x = parseInt((mode ?? "x=0").slice(2), 10);
       this.draw(x);

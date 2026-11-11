@@ -10,6 +10,7 @@ import { Cost, CardDef, makeToken } from "../../engine/cards";
 import { Game, Cand, KillSearcher, Perm, Zone, firstMax, firstMin, sortDesc } from "../../engine/game";
 import { MulliganRule } from "../../engine/mulligan";
 import { MULLIGAN } from "./mulligan";
+import { SHRIEKMAW } from "../../engine/answers";
 
 export const MEREN = "Meren of Clan Nel Toth";
 export const GRAY_MERCHANT = "Gray Merchant of Asphodel";
@@ -345,7 +346,11 @@ export class MerenGame extends Game<null> {
       this.exileAtEnd.push(s);
     } else if (n === "Sepulchral Primordial") {
       for (let i = 0; i < this.oppsAlive(); i++) this.enter(TOKENS.stolen, "graveyard", { token: true });
+    } else if (n === "Shriekmaw") {
+      // a pod: destroy the biggest threat's best creature (nonartifact, nonblack isn't checked)
+      if (this.inArena()) this.arena!.snipe(this, SHRIEKMAW);
     } else if (EDICT_ETB.has(n)) {
+      if (this.inArena()) this.arena!.edict(this, n === "Accursed Marauder"); // a pod: the opponents sacrifice too
       // each player sacrifices: we lose our worst creature (Accursed Marauder: a nontoken one)
       const pool = this.fodder().filter((q) => n !== "Accursed Marauder" || !q.token);
       const f = pool[0] ?? (n === "Accursed Marauder" || n === "Fleshbag Marauder" ? p : null);
@@ -372,6 +377,8 @@ export class MerenGame extends Game<null> {
     const n = p.cd.name;
     if (!p.cd.land) this.leftThisTurn = true;
     if (p.cd.isCreature) {
+      // a pod: Butcher of Malakir (it or another creature of ours dies: each opponent sacrifices a creature)
+      if (this.inArena() && (n === "Butcher of Malakir" || this.onBf("Butcher of Malakir"))) this.arena!.edict(this, false);
       if (n !== MEREN && this.onBf(MEREN)) this.exp++;
       if (this.onBf("Morbid Opportunist") && !this.morbidUsed) {
         this.morbidUsed = true;
@@ -521,6 +528,26 @@ export class MerenGame extends Game<null> {
   override combat(): void {
     this.creatureCombat();
   }
+  /** How close to winning the others think we are: Meren out, black devotion for Gray Merchant, a big graveyard. */
+  override podClose(): number {
+    let c = 0;
+    if (this.onBf(MEREN)) c += 0.3;
+    if (this.devotion("B") >= 8) c += 0.3;
+    if (this.gyCreatures() >= 8) c += 0.2;
+    if (this.onBf("Priest of Forgotten Gods") || this.onBf("Zulaport Cutthroat")) c += 0.2;
+    return Math.min(1, c);
+  }
+  /** A pod: Spore Frog is the fog, not a blocker. */
+  override blockValue(p: Perm): number {
+    return p.cd.name === "Spore Frog" ? 500 : super.blockValue(p);
+  }
+  /** A pod: sacrifice Spore Frog to prevent all combat damage this turn, when the hit is lethal or big (cfg.fog_at). */
+  override fogPrevent(dmg: number, lethal: boolean): boolean {
+    const frog = this.perm("Spore Frog");
+    if (!frog || (!lethal && dmg < ((this.cfg.fog_at as number) ?? 6))) return false;
+    this.sacrifice(frog);
+    return true;
+  }
 
   // ================================================================ tutors
   wanted(): string[] {
@@ -585,6 +612,7 @@ export class MerenGame extends Game<null> {
       }
     } else if (n === "Songs of the Damned") this.pool.B += this.gyCreatures();
     else if (n === "Deadly Brew") {
+      if (this.inArena()) this.arena!.edict(this, false);
       const f = this.fodder()[0];
       if (f) {
         this.sacrifice(f);

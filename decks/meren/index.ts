@@ -30,6 +30,8 @@ export const deck = {
   dir: path.join(ROOT, "decks", "meren"),
   defaultList: "decklist.txt",
   cfg: CFG,
+  // a pod: every other player must be dead (the goldfish rule was two dead or 100 damage)
+  podCfg: (players: number) => ({ win_dead: players - 1, win_damage: 1e9 }),
   Game: MerenGame,
   metrics: [["Win (2 dead / 100 dmg)", "win"], ["First opponent dead", "1st dead"]] as [[string, string], [string, string]],
   compareTurns: [8, 10, 12],

@@ -24,6 +24,7 @@ export const deck = {
   dir: path.join(ROOT, "decks", "samfrodo"),
   defaultList: "decklist.txt",
   cfg: CFG,
+  podCfg: (players: number) => ({ win_dead: players - 1 }),
   Game: SamFrodoGame,
   metrics: [["Win (all 3 dead)", "win"], ["First opponent dead", "1st dead"]] as [[string, string], [string, string]],
   compareTurns: [10, 12, 14],

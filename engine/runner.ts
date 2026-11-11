@@ -33,6 +33,10 @@ export interface Deck {
   logTrackers?: string[];
   /** Tokens that are sacrificed whenever they're tapped (Food, Treasure): a tap in the log means they're gone. */
   logSacOnTap?: string[];
+  /** Pod games: settings that differ from the goldfish ones (e.g. a win rule that only made sense against goldfish opponents). */
+  podCfg?: (players: number) => Config;
+  /** The deck handles drawing from its own empty library itself (Mike: Laboratory Maniac / Living Conundrum). */
+  ownsDecking?: boolean;
   cfg: Config;
   Game: new (commanders: string[], library: string[], rng: Rng, cfg: Config, verbose?: boolean,
              mode?: "any" | "protected") => Game<unknown>;

@@ -11,7 +11,7 @@
  */
 import * as C from "../../engine/cards";
 import { Cost, CardDef, makeToken } from "../../engine/cards";
-import { Game, Cand, KillSearcher, Perm, Zone, firstMax } from "../../engine/game";
+import { Game, Cand, Evasion, KillSearcher, Perm, Zone, firstMax } from "../../engine/game";
 import { MulliganRule } from "../../engine/mulligan";
 import { MULLIGAN } from "./mulligan";
 
@@ -552,6 +552,7 @@ export class SamFrodoGame extends Game<null> {
     this.phase = "combat";
     if (this.onBf(SAM)) this.makeTokens([FOOD]); // Sam: at the beginning of combat on your turn
     if (this.checkKill() === 2) return;
+    if (this.inArena()) { this.podCombat(); return; }
     if (this.allIn()) return;
     const frodo = this.perm(FRODO), gollum = this.perm(GOLLUM);
     const ready = (p: Perm | null) => p !== null && !p.sick && !p.tapped;
@@ -597,6 +598,86 @@ export class SamFrodoGame extends Game<null> {
     }
     if (damaged) for (const _ of this.bf.filter((q) => q.cd.name === "Rapacious Guest")) this.makeTokens([FOOD]);
     this.say(`attack with ${att.map((p) => p.cd.name.split(",")[0]).join(" + ")}: opp life [${this.life.join(", ")}]`);
+    this.checkKill();
+  }
+
+  /** How close to winning the others think we are: the Ring's tempts, Sam and Frodo out, a pile of Food. */
+  override podClose(): number {
+    let c = Math.min(0.5, this.ringTempts * 0.15);
+    if (this.onBf(SAM)) c += 0.2;
+    if (this.onBf(FRODO)) c += 0.2;
+    if (this.foods().length >= 4) c += 0.1;
+    return Math.min(1, c);
+  }
+  /** Skulk (Gollum) and the Ring-bearer (Frodo, once the Ring has tempted us): creatures with greater power can't block them. */
+  override evasion(p: Perm): Evasion {
+    if (p.cd.name === GOLLUM || (p.cd.name === FRODO && this.ringTempts >= 1)) return "skulk";
+    return super.evasion(p);
+  }
+
+  /** Combat in a pod: Frodo and Gollum each pick an opponent whose blockers can't stop them; the rest of the team
+   *  attacks by the shared rule (engine arenaCombat). Pippin's all-in pump isn't used in a pod yet. */
+  podCombat(): void {
+    const frodo = this.perm(FRODO), gollum = this.perm(GOLLUM);
+    const ready = (p: Perm | null) => p !== null && !p.sick && !p.tapped;
+    if (ready(frodo) && this.gained < 3) this.eatFoodsFor(3 - this.gained);
+    const fs = ready(frodo) && (this.gained >= 3 || this.ringTempts >= 1) ? this.pickDefender([frodo!]) : null;
+    let damaged = false;
+    const who: string[] = [];
+    if (fs) {
+      this.attacked = true;
+      who.push("Frodo");
+      for (const _ of this.bf.filter((q) => q.cd.name === "Meriadoc Brandybuck")) this.makeTokens([FOOD]);
+      const loot = this.ringTempts >= 2;
+      if (this.gained >= 3) {
+        this.ringTempts++;
+        this.say(`the Ring tempts you (${this.ringTempts})`);
+        if (this.ringTempts >= 2) this.draw(1);
+      }
+      if (loot) {
+        this.draw(1);
+        this.discard(1);
+      }
+      if (this.strike(fs.slot, [frodo!]).dmg > 0) {
+        damaged = true;
+        if (this.ringTempts >= 4) this.drainEach(3);
+      }
+    }
+    // Gollum: an opponent it hasn't hit yet first
+    const gs = ready(gollum) && this.bf.includes(gollum!) ? this.pickDefender([gollum!], (s) => (this.gollumHit[s] ? 0 : 50)) : null;
+    if (gs) {
+      this.attacked = true;
+      who.push("Gollum");
+      gollum!.tapped = true;
+      if (!fs && isHalfling(gollum!.cd)) for (const _ of this.bf.filter((q) => q.cd.name === "Meriadoc Brandybuck")) this.makeTokens([FOOD]);
+      if (this.strike(gs.slot, [gollum!]).dmg > 0) {
+        this.gollumHit[gs.slot] = true;
+        damaged = true;
+      }
+    }
+    if (damaged) for (const _ of this.bf.filter((q) => q.cd.name === "Rapacious Guest")) this.makeTokens([FOOD]);
+    if (who.length) this.say(`attack with ${who.join(" + ")}: opp life [${this.life.join(", ")}]`);
+    // Pippin: sacrifice four Foods, the other creatures get +3/+3 and haste: only for an attack that kills a player
+    const pip = this.perm("Pippin, Warden of Isengard");
+    if (pip && !pip.tapped && !pip.sick && this.foods().length >= 4) {
+      const went = new Set<Perm>([...(fs ? [frodo!] : []), ...(gs ? [gollum!] : [])]);
+      const team = this.creatures().filter((p) => !p.tapped && p !== pip && !went.has(p));
+      const pw = (p: Perm) => this.power(p) + 3, tg = (p: Perm) => this.toughness(p) + 3;
+      for (let i = 0; i < this.life.length && team.length; i++) {
+        if (!this.oppAlive(i)) continue;
+        const pl = this.planAttack(i, team, pw, tg);
+        if (pl.score < 1000) continue;
+        pip.tapped = true;
+        for (const f of this.foods().slice(0, 4)) this.sacrifice(f);
+        for (const p of pl.att) p.tapped = true;
+        this.attacked = true;
+        const r = this.strike(i, pl.att, pw, tg);
+        this.say(`Pippin: +3/+3 and haste, attack opponent ${i + 1} with ${pl.att.length} creature(s): ${r.dmg} damage`);
+        break;
+      }
+    }
+    const rest = this.creatures().filter((p) => this.canAttack(p) && p !== frodo && p !== gollum);
+    if (rest.length) this.arenaCombat(rest);
     this.checkKill();
   }
 

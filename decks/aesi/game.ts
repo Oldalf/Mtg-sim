@@ -15,7 +15,7 @@
  */
 import * as C from "../../engine/cards";
 import { Cost, CardDef, makeToken } from "../../engine/cards";
-import { Game, Cand, KillSearcher, Perm, Zone, firstMax, firstMin } from "../../engine/game";
+import { Game, Cand, KillSearcher, Perm, WinAttempt, Zone, firstMax, firstMin } from "../../engine/game";
 import { MulliganRule } from "../../engine/mulligan";
 import { MULLIGAN } from "./mulligan";
 
@@ -190,6 +190,7 @@ export class AesiGame extends Game<AesiGame> {
   // ================================================================ the win condition
   override checkKill(): number {
     if (this.died) return 2;
+    if (this.inArena() && !this.oppsBeaten()) this.podPre = [this.life.slice(), this.lib.slice(), this.poison.slice()];
     if (!this.oppsBeaten()) this.comboSolve();
     if (this.oppsBeaten()) {
       if (this.unprot === null) {
@@ -213,6 +214,29 @@ export class AesiGame extends Game<AesiGame> {
   }
   keep(): number {
     return this.cfg.keep_library as number;
+  }
+  /** A pod: a loop win can be answered by countering its finisher (Blue Sun's Zenith, Endless Swarm, Eternal Dominion) or by
+   *  removing a loop piece. A counterspell in hand answers one more (Kira and Soratami Rainshaper protect the creatures: Game.podShield). */
+  override podWinStopped(): void {
+    super.podWinStopped();
+    this.loopWinHow = null;
+  }
+  /** How close to winning the others think we are: Retreat or a land-putter with an untapper, Aesi out, many lands. */
+  override podClose(): number {
+    let c = 0;
+    if (this.onBf(RETREAT) || this.onBf(OMNI)) c += 0.5;
+    if (this.bf.some((p) => PUTTERS.has(p.cd.name))) c += 0.2;
+    if (this.onBf(AESI)) c += 0.2;
+    if (this.landsBf().length >= 9) c += 0.2;
+    return Math.min(1, c);
+  }
+  override winAttempt(): WinAttempt | null {
+    const how = this.loopWinHow;
+    if (!how) return null;
+    const spells = [BSZ, SWARM, DOMINION].filter((n) => how.includes(n));
+    const perms = [RETREAT, RAFT, OMNI, KODAMA, MELOKU, UYO, MINDSWEEPER, ...PUTTERS, KIRI, HARU, PATRON, COBRA, AESI].filter((n) => this.onBf(n));
+    const backup = this.hand.some((c) => this.answer(c)?.kind === "counter") ? 1 : 0;
+    return { spells, perms, backup };
   }
   /** An opponent milled out (they lose at their next draw; counted now). */
   millOut(i: number): void {
@@ -716,6 +740,15 @@ export class AesiGame extends Game<AesiGame> {
     // lands that are 2/2 creatures (Nature's Revolt, Natural Affinity, Sylvan Awakening): untapped ones that
     // aren't summoning sick (Awakening gives haste)
     const landAtt = this.landsCreatures() ? this.landsBf().filter((p) => !p.tapped && (!p.sick || this.awakened)) : [];
+    if (this.inArena()) {
+      // a pod: real blockers decide. Land creatures are 2/2; the Druid Class land is as big as our land count
+      const dl = druidLand ? landAtt[0] ?? this.landsBf().find((p) => !p.tapped) ?? null : null;
+      const pool = [...ready, ...landAtt, ...(dl && !landAtt.includes(dl) ? [dl] : [])];
+      const size = (p: Perm) => (p === dl ? druidLand : 2);
+      if (pool.length) this.arenaCombat(pool, (p) => (p.land !== null ? size(p) : this.power(p)), (p) => (p.land !== null ? size(p) : this.toughness(p)));
+      this.checkKill();
+      return;
+    }
     const g = [...ground.map((p) => this.power(p)), ...(druidLand ? [druidLand] : []), ...landAtt.map(() => 2)].sort((a, b) => b - a);
     const groundDmg = g.slice(Math.floor(g.length / 2)).reduce((s, x) => s + x, 0);
     let att = fly, dmg = flyDmg;
