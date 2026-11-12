@@ -11,6 +11,7 @@
  * an empty library or 10+ poison counters.
  */
 import * as C from '../../engine/cards';
+import * as Facts from '../../engine/card-facts';
 import { Cost, CardDef } from '../../engine/cards';
 import { KillSearch } from '../../engine/search';
 import { Rng } from '../../engine/rng';
@@ -837,7 +838,7 @@ export function children(st: Light): Light[] {
   perm('Mindcrank', 'crank');
   perm('Syr Konrad, the Grim', 'konrad');
   // creatures that untap lands as they enter (Peregrine Drake, Cloud of Faeries)
-  for (const [name, k] of Object.entries(C.UNTAP_ON_ETB)) {
+  for (const [name, k] of Object.entries(Facts.UNTAP_ON_ETB)) {
     if (!hand.includes(name)) continue;
     const c = st.copy();
     if (c.pay(C.get(name))) {
@@ -925,7 +926,7 @@ export function children(st: Light): Light[] {
     } else {
       cd = C.get(name);
       // counters need a target; Archmage's Charm can always pick "target player draws two"
-      if (!cd.isIS || (C.COUNTERS.has(name) && name !== "Archmage's Charm"))
+      if (!cd.isIS || (Facts.COUNTERS.has(name) && name !== "Archmage's Charm"))
         continue;
       spell = name;
       isSorc = cd.isSorcery;
@@ -1143,7 +1144,7 @@ function selfCounters(st: Light): Light[] {
 /** Can we still cast a counterspell from hand with what's left? */
 export function isProtected(st: Light): boolean {
   for (const name of uniqSorted(st.hand)) {
-    if (C.COUNTERS.has(name)) {
+    if (Facts.COUNTERS.has(name)) {
       const c = st.copy();
       if (c.pay(C.get(name))) return true;
     }

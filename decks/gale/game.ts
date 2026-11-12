@@ -3,9 +3,16 @@
  * The game itself (mana, zones, casting, turns, planner) is the shared engine in engine/game.ts.
  */
 import * as C from '../../engine/cards';
+import * as Facts from '../../engine/card-facts';
 import { Cost, CardDef } from '../../engine/cards';
 import { Game } from '../../engine/game';
-import { Cand, KillSearcher, Perm, WinAttempt } from '../../engine/game-types';
+import {
+  Cand,
+  KillSearcher,
+  LogBoardView,
+  Perm,
+  WinAttempt,
+} from '../../engine/game-types';
 import {
   firstMax,
   firstMin,
@@ -133,8 +140,8 @@ export class GaleGame extends Game<Light> {
   }
 
   // ---------------------------------------------------------------- log analyzer hooks
-  override syncFromLog(board: { bf: { name: string }[] }): void {
-    this.galeCasts = board.bf.some((p) => p.name === GALE) ? 1 : 0;
+  override syncFromLog(board: LogBoardView): void {
+    this.galeCasts = board.battlefield.some((p) => p.name === GALE) ? 1 : 0;
   }
   override lightAddMana(L: Light, n: number): void {
     L.pool.A += n;
@@ -457,10 +464,12 @@ export class GaleGame extends Game<Light> {
       (p) => p.cd.power >= 2 && !FODDER_EXCLUDE.has(p.cd.name),
     ).length;
     L.redIs = this.redIS();
-    L.redNc = this.bf.filter((p) => C.REDUCE_NONCREATURE.has(p.cd.name)).length;
-    L.redBlue = this.bf.filter((p) => C.REDUCE_BLUE.has(p.cd.name)).length;
+    L.redNc = this.bf.filter((p) =>
+      Facts.REDUCE_NONCREATURE.has(p.cd.name),
+    ).length;
+    L.redBlue = this.bf.filter((p) => Facts.REDUCE_BLUE.has(p.cd.name)).length;
     L.redGy =
-      2 * this.bf.filter((p) => C.REDUCE_FROM_GY2.has(p.cd.name)).length;
+      2 * this.bf.filter((p) => Facts.REDUCE_FROM_GY2.has(p.cd.name)).length;
     L.life = this.life.slice();
     L.lib = this.lib.map((x) => Math.max(0, x - (nextTurn && x > 0 ? 1 : 0)));
     L.ogy = this.ogy.slice();
@@ -515,19 +524,19 @@ export class GaleGame extends Game<Light> {
       if (this.onBf(n)) return 10;
       return this.hand.some((c) => c.name === n) ? 30 : 70;
     }
-    if (C.COUNTERS.has(n)) return this.hasCounterInHand() ? 38 : 58;
-    if (C.TUTORS.has(n)) return 66;
+    if (Facts.COUNTERS.has(n)) return this.hasCounterInHand() ? 38 : 58;
+    if (Facts.TUTORS.has(n)) return 66;
     if (n === 'Sol Ring') return 85;
     if (cd.rock) return this.manaSources() < 6 ? 60 : 20;
     if (
-      C.REDUCE_IS.has(n) ||
-      C.REDUCE_NONCREATURE.has(n) ||
-      C.REDUCE_BLUE.has(n) ||
+      Facts.REDUCE_IS.has(n) ||
+      Facts.REDUCE_NONCREATURE.has(n) ||
+      Facts.REDUCE_BLUE.has(n) ||
       ENGINES.has(n)
     )
       return this.onBf(n) ? 15 : 55;
-    if (C.RITUALS.has(n)) return 42;
-    if (n in C.DRAW_SPELLS) return 30 + 6 * C.DRAW_SPELLS[n];
+    if (Facts.RITUALS.has(n)) return 42;
+    if (n in Facts.DRAW_SPELLS) return 30 + 6 * Facts.DRAW_SPELLS[n];
     if (cd.mdfcLand) return 50;
     return 25;
   }
@@ -558,7 +567,7 @@ export class GaleGame extends Game<Light> {
         if (!(
           COMBO_PERMS.has(name) ||
           COMBO_SPELLS.has(name) ||
-          C.COUNTERS.has(name) ||
+          Facts.COUNTERS.has(name) ||
           COMBO_SORC.has(name) ||
           name === 'Jidoor, Aristocratic Capital'
         ))
@@ -680,7 +689,7 @@ export class GaleGame extends Game<Light> {
       if (
         COMBO_PERMS.has(c.name) ||
         COMBO_SPELLS.has(c.name) ||
-        C.COUNTERS.has(c.name) ||
+        Facts.COUNTERS.has(c.name) ||
         COMBO_SORC.has(c.name)
       )
         pool.set(c.name, c);
@@ -782,10 +791,11 @@ export class GaleGame extends Game<Light> {
 
   override devValueIS(cd: CardDef, fromGy = false): number {
     const n = cd.name;
-    if (COMBO_SORC.has(n) || C.COUNTERS.has(n) || C.RITUALS.has(n)) return 0;
+    if (COMBO_SORC.has(n) || Facts.COUNTERS.has(n) || Facts.RITUALS.has(n))
+      return 0;
     if (n === 'See the Truth') return fromGy ? 62 : 42;
-    if (n in C.DRAW_SPELLS) {
-      const v = 38 + 8 * C.DRAW_SPELLS[n];
+    if (n in Facts.DRAW_SPELLS) {
+      const v = 38 + 8 * Facts.DRAW_SPELLS[n];
       if (n === 'Windfall' && this.hand.length > 3) {
         if (!this.onBf(GALE)) return 0;
         // with Gale out, discarded instants/sorceries stay castable from the graveyard,
@@ -800,7 +810,7 @@ export class GaleGame extends Game<Light> {
       if (n === 'Insatiable Avarice') return 0;
       return v;
     }
-    if (C.TUTORS.has(n)) return 72;
+    if (Facts.TUTORS.has(n)) return 72;
     if (n === 'Unearth')
       return this.gy.some(
         (c) => c.isCreature && c.mv <= 3 && c.name in PERM_SCORE,
@@ -891,7 +901,9 @@ export class GaleGame extends Game<Light> {
         // transmute {1}{U}{U}: discard it, find a card with mana value 2 (Guildmage, Mindcrank,
         // Cacophony, Prologue, Expansion Algorithm, ...). Keeps it as a counter when it's the only one.
         const sc =
-          this.hand.filter((c) => C.COUNTERS.has(c.name)).length >= 2 ? 72 : 60;
+          this.hand.filter((c) => Facts.COUNTERS.has(c.name)).length >= 2
+            ? 72
+            : 60;
         out.push({
           score: sc,
           cost: new Cost(1, 2),
@@ -901,7 +913,7 @@ export class GaleGame extends Game<Light> {
         continue;
       }
       if (n === "Archmage's Charm") {
-        if (this.hand.filter((c) => C.COUNTERS.has(c.name)).length >= 2)
+        if (this.hand.filter((c) => Facts.COUNTERS.has(c.name)).length >= 2)
           out.push({
             score: 36,
             cost: this.effCost(cd),
@@ -910,7 +922,7 @@ export class GaleGame extends Game<Light> {
           });
         continue;
       }
-      if (C.RITUALS.has(n)) continue;
+      if (Facts.RITUALS.has(n)) continue;
       const sc = this.devValueIS(cd);
       if (sc <= 0 && !this.onBf(GALE)) continue;
       out.push({
@@ -942,7 +954,7 @@ export class GaleGame extends Game<Light> {
     const out: Cand[] = [];
     for (const kname of SELF_COUNTER_DEV) {
       const k = this.hand.find((c) => c.name === kname);
-      if (!k || !this.hand.some((c) => C.COUNTERS.has(c.name) && c !== k))
+      if (!k || !this.hand.some((c) => Facts.COUNTERS.has(c.name) && c !== k))
         continue;
       const sorc = this.gy.filter(
         (g) => g.isSorcery && this.devValueIS(g, true) > 0,
@@ -952,11 +964,11 @@ export class GaleGame extends Game<Light> {
         (c) =>
           c !== k &&
           c.isIS && // not a rock or other permanent
-          !C.COUNTERS.has(c.name) &&
+          !Facts.COUNTERS.has(c.name) &&
           !COMBO_SORC.has(c.name) &&
           !COMBO_PERMS.has(c.name) &&
           !COMBO_SPELLS.has(c.name) &&
-          !C.TUTORS.has(c.name) &&
+          !Facts.TUTORS.has(c.name) &&
           c.name !== 'Jidoor, Aristocratic Capital',
       );
       if (!targets.length) continue;

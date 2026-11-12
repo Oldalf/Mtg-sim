@@ -4,12 +4,12 @@ import * as path from 'path';
 import { ROOT } from '../../engine/cards';
 import { CFG } from './config';
 import { MikeGame, LOG_TRACKERS } from './game';
+import { DiagRow } from '../../engine/runner';
 import {
-  DiagRow,
   percentOf,
   winByTurnMetrics,
   averageOf,
-} from '../../engine/runner';
+} from '../../engine/diag-metrics';
 
 /** A game with no win by turn 14 counts as turn 15. */
 const win = (r: DiagRow) => (r.win ?? 15) as number;

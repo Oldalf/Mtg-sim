@@ -1,16 +1,14 @@
 /** Meren of Clan Nel Toth: Golgari reanimator (bracket 2-3). Wins with Gray Merchant / Lotleth Giant drains and combat. */
 import * as path from 'path';
-import { ROOT } from '../../engine/cards';
+import { ROOT, landMakes, CardDef } from '../../engine/cards';
 import { CFG } from './config';
 import { MerenGame } from './game';
+import { DiagRow } from '../../engine/runner';
 import {
-  landMakes,
-  DiagRow,
   percentOf,
   winByTurnMetrics,
   averageOf,
-} from '../../engine/runner';
-import { CardDef } from '../../engine/cards';
+} from '../../engine/diag-metrics';
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);

@@ -24,7 +24,9 @@
  *   setup:        initDeck, mulliganRule, diag (numbers to report per game)
  */
 import * as C from './cards';
-import { Cost, CardDef, LandInfo } from './cards';
+import * as Facts from './card-facts';
+import { Cost, CardDef } from './cards';
+import { LandInfo } from './card-facts';
 import { Rng } from './rng';
 import { MulliganRule, DEFAULT_MULLIGAN, keepsHand } from './mulligan';
 import { fmt, fmtList, fmtPool } from './log-format';
@@ -33,6 +35,7 @@ import {
   Cand,
   Config,
   KillSearcher,
+  LogBoardView,
   ManaPool,
   Perm,
   Zone,
@@ -216,13 +219,13 @@ export abstract class GameCore<S = unknown> {
   }
 
   hasCounterInHand(): boolean {
-    return this.hand.some((c) => C.COUNTERS.has(c.name));
+    return this.hand.some((c) => Facts.COUNTERS.has(c.name));
   }
 
   redIS(): number {
     let n = 0;
     for (const p of this.bf) {
-      if (C.REDUCE_IS.has(p.cd.name)) n++;
+      if (Facts.REDUCE_IS.has(p.cd.name)) n++;
       if (p.cd.name === 'Curious Homunculus' && p.transformed) n++;
     }
     return n;
@@ -233,11 +236,13 @@ export abstract class GameCore<S = unknown> {
     let red = 0;
     if (cd.isIS) red += this.redIS();
     if (!cd.isCreature)
-      for (const p of this.bf) if (C.REDUCE_NONCREATURE.has(p.cd.name)) red++;
+      for (const p of this.bf)
+        if (Facts.REDUCE_NONCREATURE.has(p.cd.name)) red++;
     if (cost.u || cost.h)
-      for (const p of this.bf) if (C.REDUCE_BLUE.has(p.cd.name)) red++;
+      for (const p of this.bf) if (Facts.REDUCE_BLUE.has(p.cd.name)) red++;
     if (fromGy)
-      for (const p of this.bf) if (C.REDUCE_FROM_GY2.has(p.cd.name)) red += 2;
+      for (const p of this.bf)
+        if (Facts.REDUCE_FROM_GY2.has(p.cd.name)) red += 2;
     if (cd.name === 'Focus the Mind' && this.spellsCast > 0) red += 2;
     return cost.withGeneric(Math.max(0, cost.g - red));
   }
@@ -269,7 +274,7 @@ export abstract class GameCore<S = unknown> {
       (ignoreSick || !p.sick)
     )
       return 'S';
-    const mc = C.MANA_CREATURES[p.cd.name];
+    const mc = Facts.MANA_CREATURES[p.cd.name];
     if (mc && (ignoreSick || !p.sick)) return mc;
     return null;
   }
@@ -809,7 +814,7 @@ export abstract class GameCore<S = unknown> {
     if (opts.tapped) p.tapped = true;
     this.bf.push(p);
     if (cd.name === 'Baleful Strix') this.draw(1);
-    const untap = C.UNTAP_ON_ETB[cd.name];
+    const untap = Facts.UNTAP_ON_ETB[cd.name];
     if (untap) this.untapLands(untap);
     this.onEnter(p, from);
     return p;
@@ -1868,7 +1873,7 @@ export abstract class GameCore<S = unknown> {
   // hooks for the log analyzer
   /** How the analyzer names a line that only wins with some probability. */
   chanceName = 'chain';
-  syncFromLog(_board: unknown): void {}
+  syncFromLog(_board: LogBoardView): void {}
   /** What a token in an Archidekt log is (its name as the player typed it), or null to leave it out. */
   logToken(_name: string): CardDef | null {
     return null;

@@ -4,7 +4,8 @@ import * as path from 'path';
 import { ROOT } from '../../engine/cards';
 import { CFG } from './config';
 import { CodieGame } from './game';
-import { DiagRow, percentOf, winByTurnMetrics } from '../../engine/runner';
+import { DiagRow } from '../../engine/runner';
+import { percentOf, winByTurnMetrics } from '../../engine/diag-metrics';
 
 const win = (r: DiagRow) => (r.win ?? 13) as number;
 

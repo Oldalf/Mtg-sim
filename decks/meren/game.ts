@@ -8,7 +8,7 @@
 import * as C from '../../engine/cards';
 import { Cost, CardDef, makeToken } from '../../engine/cards';
 import { Game, GameWithoutKillSearch } from '../../engine/game';
-import { Cand, Perm, Zone } from '../../engine/game-types';
+import { Cand, LogBoardView, Perm, Zone } from '../../engine/game-types';
 import {
   firstMax,
   firstMin,
@@ -248,7 +248,7 @@ export class MerenGame extends GameWithoutKillSearch {
   }
 
   // ---------------------------------------------------------------- log analyzer hooks
-  override syncFromLog(board: { trackers: Record<string, number> }): void {
+  override syncFromLog(board: LogBoardView): void {
     this.exp = board.trackers['Start Your Engines!'] ?? 0;
   }
 

@@ -22,6 +22,7 @@ import {
   Perm,
   WinAttempt,
   Zone,
+  LogBoardView,
 } from '../../engine/game-types';
 import { firstMax, firstMin, removeIfPresent } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
@@ -485,10 +486,7 @@ export class AesiGame extends Game<AesiGame> {
     };
     return ks;
   }
-  override syncFromLog(board: {
-    landsFromHand: number;
-    trackers: Record<string, number>;
-  }): void {
+  override syncFromLog(board: LogBoardView): void {
     this.dropsUsed = Math.min(board.landsFromHand, this.dropsAllowed());
     for (const p of this.bf) {
       if (p.cd.name === DRUID) p.counters = Math.max(1, p.counters);

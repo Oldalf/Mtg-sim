@@ -11,5 +11,5 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["sim.ts", "engine/**/*.ts", "decks/**/*.ts"]
+  "include": ["sim.ts", "cli/**/*.ts", "engine/**/*.ts", "decks/**/*.ts"]
 }

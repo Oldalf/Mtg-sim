@@ -24,7 +24,6 @@
  *
  *   npm run pod -- gale meren samfrodo aesi mike -n 1000       (a deck may name its list: gale:lists/proposed.txt)
  */
-import * as os from 'os';
 import { Worker } from 'worker_threads';
 import { Config } from './game-types';
 import { buildArena } from './pod-arena';
@@ -221,6 +220,3 @@ export function podSpec(
   }
   return { decks, lists: files, cap, set, threat, policy };
 }
-
-export const cores = (): number =>
-  os.availableParallelism?.() ?? os.cpus().length;

@@ -1,5 +1,6 @@
 /** The plain data types and constants shared by the game engine, the pod and every deck. */
-import { Cost, CardDef, LandInfo } from './cards';
+import { Cost, CardDef } from './cards';
+import { LandInfo } from './card-facts';
 import { Answer } from './answers';
 import type { Game } from './game';
 
@@ -66,6 +67,13 @@ export const BASE_CONFIG: Config = {
 /** Where a permanent came from when it entered the battlefield. */
 export type Zone =
   'hand' | 'graveyard' | 'library' | 'command' | 'exile' | 'token' | 'stack';
+
+/** What a deck may read of the board that the log analyzer rebuilt from an Archidekt log (see Game.syncFromLog). */
+export interface LogBoardView {
+  landsFromHand: number; // lands put onto the battlefield from hand this turn
+  trackers: Record<string, number>; // the counters the player keeps in Archidekt's misc zone
+  battlefield: { name: string }[];
+}
 
 /** Something the AI may do now. act() returns false if it couldn't be done after all. */
 export interface Cand {
