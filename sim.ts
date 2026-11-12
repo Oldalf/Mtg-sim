@@ -25,7 +25,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { isMainThread, parentPort, workerData } from 'worker_threads';
 import * as R from './engine/runner';
-import { Config } from './engine/game';
+import { Config } from './engine/game-types';
 import { deck as gale } from './decks/gale/index';
 import { deck as meren } from './decks/meren/index';
 import { deck as samfrodo } from './decks/samfrodo/index';

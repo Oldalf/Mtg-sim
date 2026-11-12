@@ -1,5 +1,5 @@
 /** Settings for the Meren goldfish simulation (change one with: npm run sim -- meren --set key=value). */
-import { BASE_CONFIG, Config } from '../../engine/game';
+import { BASE_CONFIG, Config } from '../../engine/game-types';
 
 export const CFG: Config = {
   ...BASE_CONFIG,

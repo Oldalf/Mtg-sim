@@ -15,17 +15,15 @@
  */
 import * as C from '../../engine/cards';
 import { Cost, CardDef, makeToken } from '../../engine/cards';
+import { Game } from '../../engine/game';
 import {
-  Game,
   Cand,
   KillSearcher,
   Perm,
   WinAttempt,
   Zone,
-  firstMax,
-  firstMin,
-  removeIfPresent,
-} from '../../engine/game';
+} from '../../engine/game-types';
+import { firstMax, firstMin, removeIfPresent } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 

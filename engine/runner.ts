@@ -7,7 +7,8 @@ import * as os from 'os';
 import * as path from 'path';
 import { Worker } from 'worker_threads';
 import * as C from './cards';
-import { Config, Game } from './game';
+import { Config } from './game-types';
+import { Game } from './game';
 import { Rng } from './rng';
 
 /** What a deck folder exports (decks/<name>/index.ts). */

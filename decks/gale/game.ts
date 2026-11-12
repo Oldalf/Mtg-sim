@@ -4,17 +4,14 @@
  */
 import * as C from '../../engine/cards';
 import { Cost, CardDef } from '../../engine/cards';
+import { Game } from '../../engine/game';
+import { Cand, KillSearcher, Perm, WinAttempt } from '../../engine/game-types';
 import {
-  Game,
-  Cand,
-  KillSearcher,
-  Perm,
-  WinAttempt,
   firstMax,
   firstMin,
   sortDesc,
   removeOrThrow,
-} from '../../engine/game';
+} from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 import {

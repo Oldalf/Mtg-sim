@@ -1,6 +1,6 @@
 /** Sanity checks: hand-built board states that must (or must not) be a kill. Run: npm run sim -- gale --test */
 import * as C from '../../../engine/cards';
-import { Perm } from '../../../engine/game';
+import { Perm } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
 import { GaleGame } from '../game';

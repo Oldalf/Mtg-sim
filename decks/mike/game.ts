@@ -16,18 +16,9 @@
  */
 import * as C from '../../engine/cards';
 import { Cost, CardDef, makeToken } from '../../engine/cards';
-import {
-  Game,
-  Cand,
-  Evasion,
-  GameWithoutKillSearch,
-  Perm,
-  WinAttempt,
-  Zone,
-  firstMax,
-  firstMin,
-  removeIfPresent,
-} from '../../engine/game';
+import { Game, GameWithoutKillSearch } from '../../engine/game';
+import { Cand, Evasion, Perm, WinAttempt, Zone } from '../../engine/game-types';
+import { firstMax, firstMin, removeIfPresent } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 

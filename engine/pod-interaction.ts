@@ -7,7 +7,8 @@
  */
 import { Answer } from './answers';
 import { CardDef } from './cards';
-import { Game, Perm, Target } from './game';
+import { Game } from './game';
+import { Perm, Target } from './game-types';
 import { PodTable } from './pod-table';
 
 /** Targeted removal on one's own turn only goes for permanents worth at least this much (unless set in the deck's config). */

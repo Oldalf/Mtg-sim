@@ -10,7 +10,8 @@
  * an off-turn event the table refreshes those arrays; afterwards it applies what changed to the real players.
  */
 import * as C from './cards';
-import { Config, Game } from './game';
+import { Config } from './game-types';
+import { Game } from './game';
 import { Rng } from './rng';
 import { Deck } from './runner';
 import { PodGame, PodSpec, PodStats } from './pod-types';

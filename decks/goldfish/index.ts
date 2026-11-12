@@ -2,7 +2,8 @@
  *  against do-nothing players gives its goldfish numbers:  npm run pod -- gale goldfish goldfish goldfish --set pod_race=true */
 import * as path from 'path';
 import { ROOT } from '../../engine/cards';
-import { Cand, Config, Game, KillSearcher } from '../../engine/game';
+import { Cand, Config, KillSearcher } from '../../engine/game-types';
+import { Game } from '../../engine/game';
 
 class GoldfishGame extends Game<null> {
   light(): null {

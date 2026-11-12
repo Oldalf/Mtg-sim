@@ -26,7 +26,7 @@
  */
 import * as os from 'os';
 import { Worker } from 'worker_threads';
-import { Config } from './game';
+import { Config } from './game-types';
 import { buildArena } from './pod-arena';
 import { useRemovalAfterTurn } from './pod-interaction';
 import { PodTable } from './pod-table';

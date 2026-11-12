@@ -1,5 +1,5 @@
 /** The shapes of the data that go into and come out of a pod game. */
-import { Config } from './game';
+import { Config } from './game-types';
 
 export interface PodSpec {
   decks: string[]; // deck names, in the order given on the command line

@@ -2,7 +2,7 @@
  * The shared combat rules of a pod game: who may block whom, who dies in a fight, and which blocks a defender
  * chooses. Pure functions of the creatures involved, so they are easy to test (see pod.test.ts).
  */
-import { Fighter } from './game';
+import { Fighter } from './game-types';
 
 /** May this blocker block this attacker? */
 function canBlock(blocker: Fighter, attacker: Fighter): boolean {

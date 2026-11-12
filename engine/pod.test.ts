@@ -1,5 +1,5 @@
 /** Checks of the pod's shared blocking rule on hand-built combats. Run: npm run pod -- --test */
-import { Evasion, Fighter, Perm } from './game';
+import { Evasion, Fighter, Perm } from './game-types';
 import { assignBlocks, duel } from './pod-blocking';
 import { ANSWERS } from './answers';
 import * as C from './cards';

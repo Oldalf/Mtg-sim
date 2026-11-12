@@ -2,7 +2,8 @@
  * One attack in a pod game: the defender answers with instant removal, blocks by the shared rule (pod-blocking.ts),
  * and the damage that gets through is worked out. Commander damage is counted here (21 from one commander kills).
  */
-import { Fighter, FightResult, FightRow, Game } from './game';
+import { Fighter, FightResult, FightRow } from './game-types';
+import { Game } from './game';
 import { assignBlocks, duel } from './pod-blocking';
 import { hitWithRemoval } from './pod-interaction';
 import { PodTable } from './pod-table';

@@ -2,7 +2,8 @@
  * Builds the Arena: the object that every deck's Game uses to reach the other players of a pod (attack them, ask
  * whether they counter a spell, make them sacrifice...). Each method hands the question to the pod rules.
  */
-import { Arena, Game } from './game';
+import { Arena } from './game-types';
+import { Game } from './game';
 import { fightOpponent } from './pod-combat';
 import {
   answerWin,

@@ -1,5 +1,5 @@
 /** Settings for the Codie goldfish simulation (change one with: npm run sim -- codie --set key=value). */
-import { BASE_CONFIG, Config } from '../../engine/game';
+import { BASE_CONFIG, Config } from '../../engine/game-types';
 
 export const CFG: Config = {
   ...BASE_CONFIG,

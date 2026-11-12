@@ -20,7 +20,8 @@
 import * as fs from 'fs';
 import * as C from './cards';
 import { Cost } from './cards';
-import { Config, Game, Perm, emptyPool } from './game';
+import { Config, Perm, emptyPool } from './game-types';
+import { Game } from './game';
 import { Rng } from './rng';
 import { Deck } from './runner';
 

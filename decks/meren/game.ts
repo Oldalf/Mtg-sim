@@ -7,17 +7,14 @@
  */
 import * as C from '../../engine/cards';
 import { Cost, CardDef, makeToken } from '../../engine/cards';
+import { Game, GameWithoutKillSearch } from '../../engine/game';
+import { Cand, Perm, Zone } from '../../engine/game-types';
 import {
-  Game,
-  Cand,
-  GameWithoutKillSearch,
-  Perm,
-  Zone,
   firstMax,
   firstMin,
   sortDesc,
   removeIfPresent,
-} from '../../engine/game';
+} from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 import { SHRIEKMAW } from '../../engine/answers';
