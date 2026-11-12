@@ -6,10 +6,22 @@
  * draw / scry / tutor effects of common cards, the turn loop, mulligans, and the turn planner
  * (it tries its best few plays on copies of the game and keeps the best one).
  *
- * A deck subclasses Game and fills in the hooks (see "deck hooks" below): its kill search (light,
- * killReachable, killSearch), what it wants to do (candidates, cardValue, devValueIS,
- * positionValue, tutorTarget), combat, and the effects of cards only it uses (resolveOther,
- * castTriggers, beforeDraw, onToGy, ...).
+ * Reading order (one section per banner below):
+ *   state and helpers -> mana -> zones and drawing -> effects of common cards -> creatures -> life and damage
+ *   -> casting -> lands -> choosing what to do (candidates, the turn planner) -> the turn -> deck hooks -> combat.
+ *
+ * A turn (takeTurn): startTurn, upkeep, draw, playLand, developWin (cast things until nothing is worth doing; each
+ * step first checks for a kill), combat, developWin again (second main phase), endTurn.
+ * develop() asks the deck for its candidates() (everything it may do now with a score), keeps the ones we can pay
+ * for, and lets the planner pick between the best few by playing them out on copies of the game.
+ *
+ * A deck subclasses Game (see decks/goldfish/index.ts for the smallest one, decks/gale for a full one) and fills in:
+ *   must have:    light / lightKey / killSearch (or extend GameWithoutKillSearch), candidates
+ *   what it wants: cardValue, discardValue, devValueIS, tutorTarget, positionValue, landWant, landBias
+ *   card effects: resolveOther, castTriggers, beforeDraw, onToGy, onEnter, onDies, onLandEnter, powerBonus,
+ *                 toughnessBonus, upkeep, endStep, commanderCost, onCommanderCast
+ *   combat:       canAttack, fogBlocker, evasive, winsWith, onAttack, onCombatDamage (or combat() itself)
+ *   setup:        initDeck, mulliganRule, diag (numbers to report per game)
  */
 import * as C from './cards';
 import { Cost, CardDef, LandInfo } from './cards';
@@ -36,6 +48,23 @@ const BASIC_OF: Record<string, string> = {
   G: 'Forest',
 };
 type Snap = [ManaPool, boolean[]];
+
+/** How good a land that makes this kind of mana is to play (A = any colour, UB = blue and black, F = fetch land). */
+const LAND_MANA_SCORE: Record<string, number> = {
+  A: 6,
+  UB: 7,
+  F: 4,
+  U: 5,
+  B: 5,
+  G: 5,
+  W: 5,
+  R: 5,
+  C: 3,
+  '': 4,
+};
+
+/** A land card's land side (a modal double-faced card has it on the back). */
+const landInfoOf = (card: CardDef): LandInfo => (card.land ?? card.mdfcLand)!;
 
 /** Which mana source to tap first for what we're short of (a colour, H = hybrid, N = generic). */
 const RANK: Record<string, Record<string, number>> = {
@@ -567,117 +596,198 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ effects of common cards
+  /** What a spell does when it resolves, for the cards the engine knows. Other cards go to the deck's resolveOther(). */
   resolve(cd: CardDef, fromGy = false, mode: string | null = null): void {
-    const n = cd.name;
-    if (n === 'Brainstorm') {
-      this.draw(3);
-      for (let i = 0; i < Math.min(2, this.hand.length); i++) {
-        const c = firstMin(this.hand, (x) => this.cardValue(x));
-        removeOrThrow(this.hand, c);
-        this.library.unshift(c);
-      }
-    } else if (n === 'Consider') {
-      this.scry(1, true);
-      this.draw(1);
-    } else if (n === 'Opt') {
-      this.scry(1);
-      this.draw(1);
-    } else if (n === 'Chart a Course') {
-      this.draw(2);
-      if (!this.attacked) this.discard(1);
-    } else if (n === 'Read the Bones') {
-      this.scry(2);
-      this.draw(2);
-      this.myLife -= 2;
-    } else if (n === 'Pieces of the Puzzle' || n === 'Fact or Fiction') {
-      const top = this.library.splice(0, 5);
-      let keep: CardDef[];
-      if (n === 'Pieces of the Puzzle') {
-        // up to two instants/sorceries to hand, the rest to the graveyard
-        keep = sortDesc(
-          top.filter((c) => c.isIS),
-          (c) => this.cardValue(c),
-        ).slice(0, 2);
-      } else {
-        // opponent splits: the best card alone vs the other four
-        sortDesc(top, (c) => this.cardValue(c));
-        const rest = top.slice(1);
-        keep =
-          top.length &&
-          this.cardValue(top[0]) >
-            rest.reduce((s, c) => s + this.cardValue(c), 0) * 0.6
-            ? top.slice(0, 1)
-            : rest;
-      }
-      for (const c of top) {
-        if (keep.includes(c)) this.hand.push(c);
-        else this.toGy(c, true);
-      }
-    } else if (n === 'Ponder') {
-      const top = this.library.slice(0, 3);
-      if (top.length && Math.max(...top.map((c) => this.cardValue(c))) < 40)
-        this.shuffle();
-      else {
-        this.library.splice(0, 3);
-        sortDesc(top, (c) => this.cardValue(c));
-        this.library.unshift(...top);
-      }
-      this.draw(1);
-    } else if (n === 'Preordain') {
-      this.scry(2);
-      this.draw(1);
-    } else if (n === 'Deep Analysis' || n === "Night's Whisper") this.draw(2);
-    else if (n === 'Diresight') {
-      this.scry(2, true);
-      this.draw(2);
-    } else if (n === 'Stock Up') {
-      const top = this.library.splice(0, 5);
-      sortDesc(top, (c) => this.cardValue(c));
-      this.hand.push(...top.slice(0, 2));
-      this.library.push(...top.slice(2));
-    } else if (n === 'See the Truth') {
-      const top = this.library.splice(0, 3);
-      if (fromGy || !top.length) this.hand.push(...top);
-      else {
-        sortDesc(top, (c) => this.cardValue(c));
-        this.hand.push(top[0]);
-        this.library.push(...top.slice(1));
-      }
-    } else if (n === 'Energybending') {
-      this.energy = true;
-      this.draw(1);
-    } else if (n === 'Focus the Mind') {
-      this.draw(3);
-      this.discard(1);
-    } else if (n === 'Frantic Search') {
-      this.draw(2);
-      this.discard(2);
-      this.untapLands(3);
-    } else if (n === 'Snap') this.untapLands(2);
-    else if (n === "Archmage's Charm") this.draw(2);
-    else if (n === 'Dark Ritual') this.pool.B += 3;
-    else if (n === 'Cabal Ritual') this.pool.B += this.cabalMana();
-    else if (n === 'Drain Power') this.pool.C += this.drainPowerMana();
-    else if (n === 'Energy Tap') {
-      const p = this.energyTapTarget();
-      if (p) {
-        p.tapped = true;
-        this.pool.C += p.cd.mv;
-      }
-    } else if (n === 'High Tide') this.ht += 1;
-    else if (n === 'Bubbling Muck') this.muck += 1;
-    else if (n === 'Diabolic Tutor') this.doTutor(() => true, false);
-    else if (n === 'Solve the Equation') this.doTutor((c) => c.isIS, false);
-    else if (n === 'Personal Tutor') this.doTutor((c) => c.isSorcery, true);
-    else if (n === 'Waterlogged Teachings')
-      this.doTutor((c) => c.isInstant, false);
-    else if (n === 'Insatiable Avarice') {
-      if (mode === 'tutor' || mode === 'both') this.doTutor(() => true, true);
-      if (mode === 'draw' || mode === 'both') {
+    if (this.resolveCardSelection(cd, fromGy)) return;
+    if (this.resolveManaOrTutor(cd, mode)) return;
+    this.resolveOther(cd, fromGy, mode);
+  }
+
+  /** Draw, scry and "look at the top cards" spells. Returns false if this isn't one of them. */
+  private resolveCardSelection(cd: CardDef, fromGy: boolean): boolean {
+    switch (cd.name) {
+      case 'Brainstorm': {
         this.draw(3);
-        this.myLife -= 3;
+        for (let i = 0; i < Math.min(2, this.hand.length); i++) {
+          const card = firstMin(this.hand, (x) => this.cardValue(x));
+          removeOrThrow(this.hand, card);
+          this.library.unshift(card);
+        }
+        return true;
       }
-    } else this.resolveOther(cd, fromGy, mode);
+      case 'Consider':
+        this.scry(1, true);
+        this.draw(1);
+        return true;
+      case 'Opt':
+        this.scry(1);
+        this.draw(1);
+        return true;
+      case 'Chart a Course':
+        this.draw(2);
+        if (!this.attacked) this.discard(1);
+        return true;
+      case 'Read the Bones':
+        this.scry(2);
+        this.draw(2);
+        this.myLife -= 2;
+        return true;
+      case 'Pieces of the Puzzle':
+      case 'Fact or Fiction':
+        this.resolveTopFiveSplit(cd.name);
+        return true;
+      case 'Ponder':
+        this.ponder();
+        return true;
+      case 'Preordain':
+        this.scry(2);
+        this.draw(1);
+        return true;
+      case 'Deep Analysis':
+      case "Night's Whisper":
+      case "Archmage's Charm":
+        this.draw(2);
+        return true;
+      case 'Diresight':
+        this.scry(2, true);
+        this.draw(2);
+        return true;
+      case 'Stock Up':
+        this.stockUp();
+        return true;
+      case 'See the Truth':
+        this.seeTheTruth(fromGy);
+        return true;
+      case 'Energybending':
+        this.energy = true;
+        this.draw(1);
+        return true;
+      case 'Focus the Mind':
+        this.draw(3);
+        this.discard(1);
+        return true;
+      case 'Frantic Search':
+        this.draw(2);
+        this.discard(2);
+        this.untapLands(3);
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /** Look at the top three: shuffle them away if none is good, otherwise put them back best first. Then draw. */
+  private ponder(): void {
+    const top = this.library.slice(0, 3);
+    if (top.length && Math.max(...top.map((c) => this.cardValue(c))) < 40)
+      this.shuffle();
+    else {
+      this.library.splice(0, 3);
+      sortDesc(top, (c) => this.cardValue(c));
+      this.library.unshift(...top);
+    }
+    this.draw(1);
+  }
+
+  /** Take the two best of the top five; the rest go to the bottom. */
+  private stockUp(): void {
+    const top = this.library.splice(0, 5);
+    sortDesc(top, (c) => this.cardValue(c));
+    this.hand.push(...top.slice(0, 2));
+    this.library.push(...top.slice(2));
+  }
+
+  /** Look at the top three: from the graveyard all go to hand, otherwise the best one does and the rest go to the bottom. */
+  private seeTheTruth(fromGraveyard: boolean): void {
+    const top = this.library.splice(0, 3);
+    if (fromGraveyard || !top.length) this.hand.push(...top);
+    else {
+      sortDesc(top, (c) => this.cardValue(c));
+      this.hand.push(top[0]);
+      this.library.push(...top.slice(1));
+    }
+  }
+
+  /** Looks at the top five cards and keeps some in hand, the rest go to the graveyard. */
+  private resolveTopFiveSplit(
+    spell: 'Pieces of the Puzzle' | 'Fact or Fiction',
+  ): void {
+    const top = this.library.splice(0, 5);
+    let keep: CardDef[];
+    if (spell === 'Pieces of the Puzzle') {
+      // up to two instants/sorceries to hand, the rest to the graveyard
+      keep = sortDesc(
+        top.filter((c) => c.isIS),
+        (c) => this.cardValue(c),
+      ).slice(0, 2);
+    } else {
+      // opponent splits: the best card alone vs the other four
+      sortDesc(top, (c) => this.cardValue(c));
+      const rest = top.slice(1);
+      keep =
+        top.length &&
+        this.cardValue(top[0]) >
+          rest.reduce((s, c) => s + this.cardValue(c), 0) * 0.6
+          ? top.slice(0, 1)
+          : rest;
+    }
+    for (const card of top) {
+      if (keep.includes(card)) this.hand.push(card);
+      else this.toGy(card, true);
+    }
+  }
+
+  /** Rituals, untap spells and tutors. Returns false if this isn't one of them. */
+  private resolveManaOrTutor(cd: CardDef, mode: string | null): boolean {
+    switch (cd.name) {
+      case 'Snap':
+        this.untapLands(2);
+        return true;
+      case 'Dark Ritual':
+        this.pool.B += 3;
+        return true;
+      case 'Cabal Ritual':
+        this.pool.B += this.cabalMana();
+        return true;
+      case 'Drain Power':
+        this.pool.C += this.drainPowerMana();
+        return true;
+      case 'Energy Tap': {
+        const target = this.energyTapTarget();
+        if (target) {
+          target.tapped = true;
+          this.pool.C += target.cd.mv;
+        }
+        return true;
+      }
+      case 'High Tide':
+        this.ht += 1;
+        return true;
+      case 'Bubbling Muck':
+        this.muck += 1;
+        return true;
+      case 'Diabolic Tutor':
+        this.doTutor(() => true, false);
+        return true;
+      case 'Solve the Equation':
+        this.doTutor((c) => c.isIS, false);
+        return true;
+      case 'Personal Tutor':
+        this.doTutor((c) => c.isSorcery, true);
+        return true;
+      case 'Waterlogged Teachings':
+        this.doTutor((c) => c.isInstant, false);
+        return true;
+      case 'Insatiable Avarice':
+        if (mode === 'tutor' || mode === 'both') this.doTutor(() => true, true);
+        if (mode === 'draw' || mode === 'both') {
+          this.draw(3);
+          this.myLife -= 3;
+        }
+        return true;
+      default:
+        return false;
+    }
   }
 
   untapLands(k: number): void {
@@ -901,163 +1011,189 @@ export abstract class GameCore<S = unknown> {
     return false;
   }
 
+  /** Plays the best land from hand, if we haven't played one this turn. */
   playLand(): void {
     if (this.landPlayed) return;
-    let lands = this.hand.filter((c) => c.land !== null);
-    const mdfc = this.hand.filter((c) => c.mdfcLand);
-    if (!lands.length && mdfc.length && this.landsBf().length < 5) lands = mdfc;
+    const lands = this.landsWeCouldPlay();
     if (!lands.length) return;
-    const nLands = this.landsBf().length;
-    const info = (cd: CardDef) => (cd.land ?? cd.mdfcLand)!;
+    const landsOnBattlefield = this.landsBf().length;
+    const needManaNow = this.needsManaThisTurn();
 
-    const etbTapped = (cd: CardDef): boolean =>
-      this.entersTapped(cd) || info(cd).special === 'wilds';
+    const land = firstMax(lands, (candidate) =>
+      this.scoreLandToPlay(candidate, landsOnBattlefield, needManaNow),
+    );
+    removeOrThrow(this.hand, land);
+    this.landPlayed = true;
+    const landInfo = { ...landInfoOf(land) };
+    if (landInfo.special === 'wilds') {
+      this.crackEvolvingWilds(land, landInfo);
+      return;
+    }
+    const permanent = new Perm(land, landInfo, this.landEntersTapped(land));
+    permanent.sick = false;
+    this.say(
+      'play land',
+      land.land !== null ? land : 'Inundated Archive (MDFC)',
+      permanent.tapped ? '(tapped)' : '',
+    );
+    if (landInfo.special === 'bounce') this.returnLandToHand();
+    this.bf.push(permanent);
+    this.onLandEnter(permanent, false);
+  }
 
-    // do we need the mana this turn?
-    const avail =
+  /** The lands in hand. A land-on-the-back-side card counts only when we have no real land and few lands out. */
+  private landsWeCouldPlay(): CardDef[] {
+    const lands = this.hand.filter((c) => c.land !== null);
+    const mdfcLands = this.hand.filter((c) => c.mdfcLand);
+    if (!lands.length && mdfcLands.length && this.landsBf().length < 5)
+      return mdfcLands;
+    return lands;
+  }
+
+  private landEntersTapped(land: CardDef): boolean {
+    return this.entersTapped(land) || landInfoOf(land).special === 'wilds';
+  }
+
+  /** Would a land that enters untapped let us cast a spell we want this turn? (Then a tapped land is bad.) */
+  private needsManaThisTurn(): boolean {
+    const manaAvailable =
       this.bf.filter((p) => !p.tapped && this.srcKind(p)).length +
       this.pool.U +
       this.pool.B +
       this.pool.C +
       this.pool.S;
-    let wantNow = false;
-    for (const c of [...this.hand, ...this.command]) {
-      if (c.land !== null) continue;
+    for (const card of [...this.hand, ...this.command]) {
+      if (card.land !== null) continue;
       // only spells the AI would actually cast proactively (not counters, rituals, combo sorceries)
-      const [sc, cost] = this.landWant(c);
-      if (sc >= 50 && cost.mv === avail + 1) wantNow = true;
+      const [wantScore, cost] = this.landWant(card);
+      if (wantScore >= 50 && cost.mv === manaAvailable + 1) return true;
     }
-    const colourNeed = (): string => {
-      if (
-        this.colors.length === 2 &&
-        this.colors[0] === 'U' &&
-        this.colors[1] === 'B'
-      ) {
-        const uSrc = this.bf.filter((p) =>
-          ['U', 'A', 'UB', 'F'].includes(this.srcKind(p, true) ?? ''),
-        ).length;
-        const bSrc = this.bf.filter((p) =>
-          ['B', 'A', 'UB', 'F'].includes(this.srcKind(p, true) ?? ''),
-        ).length;
-        const bNeed = this.hand.some((c) => c.cost.b);
-        return (bSrc === 0 && bNeed) || (uSrc >= bSrc + 3 && bNeed) ? 'B' : 'U';
-      }
-      // any other deck: first, a colour that lets us cast a spell this turn with the new land (e.g. a turn-1 Llanowar
-      // Elves); otherwise the colour with the most pips in hand per source we already have
-      const pip: Record<string, (c: CardDef) => number> = {
-        W: (c) => c.cost.w,
-        U: (c) => c.cost.u,
-        B: (c) => c.cost.b,
-        R: (c) => c.cost.r,
-        G: (c) => c.cost.gn,
-      };
-      const mana =
-        this.bf.filter((p) => !p.tapped && this.srcKind(p)).length + 1;
-      const castable = this.hand
-        .filter((c) => c.land === null && c.mv > 0 && c.mv <= mana)
-        .sort((x, y) => y.mv - x.mv || this.cardValue(y) - this.cardValue(x));
-      for (const c of castable) {
-        const need = this.colors.filter((col) => pip[col](c) > 0);
-        const missing = need.filter(
-          (col) =>
-            !this.bf.some((p) => {
-              const k = this.srcKind(p, true) ?? '';
-              return k === col || k === 'A';
-            }),
-        );
-        if (missing.length === 1) return missing[0];
-      }
-      let best = this.colors[0],
-        bv = -1;
-      for (const col of this.colors) {
-        const need = this.hand.reduce((s, c) => s + pip[col](c), 0);
-        const src = this.bf.filter((p) => {
-          const k = this.srcKind(p, true) ?? '';
-          return k === col || k === 'A' || (k.length === 2 && k.includes(col));
-        }).length;
-        const v = need / (src + 1);
-        if (v > bv) {
-          best = col;
-          bv = v;
-        }
-      }
-      return best;
-    };
-    const MANA_SCORE: Record<string, number> = {
-      A: 6,
-      UB: 7,
-      F: 4,
-      U: 5,
-      B: 5,
-      G: 5,
-      W: 5,
-      R: 5,
-      C: 3,
-      '': 4,
-    };
-    const score = (cd: CardDef): number => {
-      const i = info(cd);
-      let s =
-        MANA_SCORE[
-          i.mana.length === 3 && i.mana[1] === '/' ? 'A' : (i.mana ?? '')
-        ] ?? 3;
-      if (
-        i.mana.length === 1 &&
-        COLOURS.includes(i.mana) &&
-        i.mana === colourNeed()
-      )
-        s += 1.5;
-      if (i.special === 'bounce') s = nLands >= 1 ? 8 : -5;
-      if (etbTapped(cd)) s += wantNow ? -6 : 4;
-      if (cd.mdfcLand) s -= 3;
-      s += this.landBias(cd);
-      return s;
-    };
+    return false;
+  }
 
-    const cd = firstMax(lands, score);
-    removeOrThrow(this.hand, cd);
-    this.landPlayed = true;
-    const inf = { ...info(cd) };
-    if (inf.special === 'wilds') {
-      const want = colourNeed();
-      const basic =
-        this.library.find((c) => c.name === BASIC_OF[want]) ??
-        this.library.find((c) => c.land && c.land.basic) ??
-        null;
-      this.gy.push(cd);
-      if (basic) {
-        removeOrThrow(this.library, basic);
-        this.shuffle();
-        const q = new Perm(basic, basic.land, true);
-        this.bf.push(q);
-        this.onLandEnter(new Perm(cd, inf), true);
-        this.onLandEnter(q, false);
-      }
-      this.say('play Evolving Wilds -> crack for', basic ?? 'None');
-      return;
+  /** How good a land is to play now (higher is better): its mana, the colour we need, and whether it enters tapped. */
+  private scoreLandToPlay(
+    land: CardDef,
+    landsOnBattlefield: number,
+    needManaNow: boolean,
+  ): number {
+    const info = landInfoOf(land);
+    let score =
+      LAND_MANA_SCORE[
+        info.mana.length === 3 && info.mana[1] === '/' ? 'A' : (info.mana ?? '')
+      ] ?? 3;
+    if (
+      info.mana.length === 1 &&
+      COLOURS.includes(info.mana) &&
+      info.mana === this.colourNeededFromNewLand()
+    )
+      score += 1.5;
+    if (info.special === 'bounce') score = landsOnBattlefield >= 1 ? 8 : -5;
+    if (this.landEntersTapped(land)) score += needManaNow ? -6 : 4;
+    if (land.mdfcLand) score -= 3;
+    score += this.landBias(land);
+    return score;
+  }
+
+  /** The colour we most want the next land to make. */
+  private colourNeededFromNewLand(): string {
+    if (
+      this.colors.length === 2 &&
+      this.colors[0] === 'U' &&
+      this.colors[1] === 'B'
+    )
+      return this.colourNeededByBlueBlackDeck();
+    return this.colourNeededByOtherDeck();
+  }
+
+  private colourNeededByBlueBlackDeck(): string {
+    const sourcesOf = (kinds: string[]) =>
+      this.bf.filter((p) => kinds.includes(this.srcKind(p, true) ?? '')).length;
+    const blueSources = sourcesOf(['U', 'A', 'UB', 'F']);
+    const blackSources = sourcesOf(['B', 'A', 'UB', 'F']);
+    const blackNeeded = this.hand.some((c) => c.cost.b);
+    return (blackSources === 0 && blackNeeded) ||
+      (blueSources >= blackSources + 3 && blackNeeded)
+      ? 'B'
+      : 'U';
+  }
+
+  /** First, a colour that lets us cast a spell this turn with the new land (e.g. a turn-1 Llanowar Elves);
+   *  otherwise the colour with the most pips in hand per source we already have. */
+  private colourNeededByOtherDeck(): string {
+    const pipsOf: Record<string, (c: CardDef) => number> = {
+      W: (c) => c.cost.w,
+      U: (c) => c.cost.u,
+      B: (c) => c.cost.b,
+      R: (c) => c.cost.r,
+      G: (c) => c.cost.gn,
+    };
+    const makesColour = (p: Perm, colour: string) => {
+      const kind = this.srcKind(p, true) ?? '';
+      return kind === colour || kind === 'A';
+    };
+    const manaWithNewLand =
+      this.bf.filter((p) => !p.tapped && this.srcKind(p)).length + 1;
+    const castable = this.hand
+      .filter((c) => c.land === null && c.mv > 0 && c.mv <= manaWithNewLand)
+      .sort((x, y) => y.mv - x.mv || this.cardValue(y) - this.cardValue(x));
+    for (const spell of castable) {
+      const coloursNeeded = this.colors.filter((col) => pipsOf[col](spell) > 0);
+      const missing = coloursNeeded.filter(
+        (col) => !this.bf.some((p) => makesColour(p, col)),
+      );
+      if (missing.length === 1) return missing[0];
     }
-    const p = new Perm(cd, inf, etbTapped(cd));
-    p.sick = false;
-    this.say(
-      'play land',
-      cd.land !== null ? cd : 'Inundated Archive (MDFC)',
-      p.tapped ? '(tapped)' : '',
-    );
-    if (inf.special === 'bounce') {
-      const others = this.bf.filter((q) => q.land !== null);
-      if (others.length) {
-        others.sort(
-          (a, b) =>
-            +!a.land!.basic - +!b.land!.basic || +!a.tapped - +!b.tapped,
+    let bestColour = this.colors[0];
+    let bestPipsPerSource = -1;
+    for (const colour of this.colors) {
+      const pips = this.hand.reduce((sum, c) => sum + pipsOf[colour](c), 0);
+      const sources = this.bf.filter((p) => {
+        const kind = this.srcKind(p, true) ?? '';
+        return (
+          makesColour(p, colour) || (kind.length === 2 && kind.includes(colour))
         );
-        const back = others[0];
-        if (!back.tapped && this.srcKind(back)) this.tap(back, 'N'); // float the mana before bouncing
-        removeOrThrow(this.bf, back);
-        this.hand.push(back.cd);
+      }).length;
+      const pipsPerSource = pips / (sources + 1);
+      if (pipsPerSource > bestPipsPerSource) {
+        bestColour = colour;
+        bestPipsPerSource = pipsPerSource;
       }
     }
-    this.bf.push(p);
-    this.onLandEnter(p, false);
+    return bestColour;
+  }
+
+  /** Evolving Wilds: sacrifice it and put a basic land onto the battlefield tapped. */
+  private crackEvolvingWilds(wilds: CardDef, wildsInfo: LandInfo): void {
+    const colour = this.colourNeededFromNewLand();
+    const basic =
+      this.library.find((c) => c.name === BASIC_OF[colour]) ??
+      this.library.find((c) => c.land && c.land.basic) ??
+      null;
+    this.gy.push(wilds);
+    if (basic) {
+      removeOrThrow(this.library, basic);
+      this.shuffle();
+      const basicPermanent = new Perm(basic, basic.land, true);
+      this.bf.push(basicPermanent);
+      this.onLandEnter(new Perm(wilds, wildsInfo), true);
+      this.onLandEnter(basicPermanent, false);
+    }
+    this.say('play Evolving Wilds -> crack for', basic ?? 'None');
+  }
+
+  /** A land that returns another land to hand (a bounce land): returns the best one, preferring a nonbasic and a tapped
+   *  one. An untapped one is tapped for mana first, so the mana isn't lost. */
+  private returnLandToHand(): void {
+    const others = this.bf.filter((q) => q.land !== null);
+    if (!others.length) return;
+    others.sort(
+      (a, b) => +!a.land!.basic - +!b.land!.basic || +!a.tapped - +!b.tapped,
+    );
+    const returned = others[0];
+    if (!returned.tapped && this.srcKind(returned)) this.tap(returned, 'N');
+    removeOrThrow(this.bf, returned);
+    this.hand.push(returned.cd);
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */

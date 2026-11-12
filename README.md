@@ -38,13 +38,13 @@ npm run check                                        # type-check the code
 
 **Power-save mode (`--eco`, or `npm run eco -- <deck> ...`):** for long runs while you do something else. It lowers the process priority, uses a quarter of the cores and makes each worker rest between chunks, so it is busy about 70% of the time (`--duty N` changes that, `-w N` the worker count). Results are identical, only slower: on a 16-core machine a run takes about 3 times as long and keeps about 3 of 16 cores busy on average (instead of nearly all), and it prints the average at the end. Lists and logs are looked up as given, then inside the deck's folder.
 
-**Testing a change:** copy `decks/gale/decklist.txt` to `decks/gale/lists/test.txt`, edit it, then run `npm run sim -- gale decklist.txt lists/test.txt -n 3000`. If a card is new, run `--fetch` on the list first. New cards are played generically (by type and mana cost) until rules are added: card facts that hold in any deck go in `engine/cards.ts` / `engine/game.ts`, deck-specific behaviour in the deck's folder.
+**Testing a change:** copy `decks/gale/decklist.txt` to `decks/gale/lists/test.txt`, edit it, then run `npm run sim -- gale decklist.txt lists/test.txt -n 3000`. If a card is new, run `--fetch` on the list first. New cards are played generically (by type and mana cost) until rules are added: card facts that hold in any deck go in `engine/cards.ts` / `engine/game-core.ts`, deck-specific behaviour in the deck's folder.
 
 ## Layout
 
 | Folder / file | What it is |
 |---|---|
-| `engine/` | The shared engine: card data and facts (`cards.ts`), the game (`game.ts`: zones, mana, lands, casting, draw/scry/tutor effects, turn loop, mulligans, turn planner), the kill-search driver (`search.ts`), the runner (`runner.ts`: worker threads, tables, card ranking, cut tests), the Archidekt log analyzer (`analyze.ts`), the Scryfall fetcher (`fetch.ts`), the refactor safety net (`regress.ts`) and seeded random numbers (`rng.ts`). |
+| `engine/` | The shared engine: card data and facts (`cards.ts`), the rules of one game (`game-core.ts`: zones, mana, lands, casting, draw/scry/tutor effects, turn loop, mulligans, turn planner; its header lists the hooks a deck fills in), the pod parts of a game (`game.ts`: blocks, removal, counterspells), shared types (`game-types.ts`), the pod (`pod.ts` plays the rounds, with `pod-table.ts`, `pod-combat.ts`, `pod-blocking.ts`, `pod-interaction.ts`, `pod-arena.ts`, `pod-report.ts`), the kill-search driver (`search.ts`), the runner (`runner.ts`: worker threads, tables, card ranking, cut tests), the Archidekt log analyzer (`analyze.ts`), the Scryfall fetcher (`fetch.ts`), the refactor safety net (`regress.ts`) and seeded random numbers (`rng.ts`). |
 | `decks/<name>/` | One deck: its AI (a `Game` subclass in `game.ts`), its card rules, settings (`config.ts`), `index.ts`, `decklist.txt`, test lists (`lists/`), real-game logs (`logs/`), tests (`tests/`). Gale also has a kill search (`kills.ts`) and card roles (`roles.ts`). |
 | `data/cards.json` | Oracle data for every card used, shared by all decks. |
 | `sim.ts` | The command line (and the code each worker thread runs). |
@@ -66,7 +66,7 @@ The phases (Meren, Sam & Frodo, Simic landfall, Mike, then Codie) and what each 
 
 ## Adding a deck
 
-Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, cfg, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) at the top of `sim.ts`. The subclass fills in the hooks at the bottom of `engine/game.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`light`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGy`). Gale is the worked example.
+Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, cfg, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) at the top of `sim.ts`. The subclass fills in the hooks listed in the header of `engine/game-core.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`light`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGy`). Gale is the worked example.
 
 The engine handles all five colours, creatures (power / toughness, counters, tokens), enter and death triggers, sacrifice, devotion, life totals and a goldfish combat model (`creatureCombat`: flyers connect, half the ground attackers are blocked, crackback unless blockers stay home or a fog creature is used).
 
