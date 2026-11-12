@@ -2,6 +2,10 @@
 
 Abzan tokens / aristocrats, bracket 2–3. Wins by draining: tokens and Foods are created and sacrificed, and drain payoffs (Mirkwood Bats, Marionette Apprentice and Master, Popular Egotist, Susurian Voidborn, Sanguine Bond, Gollum) turn that into life loss. Run it with `npm run sim -- samfrodo` (see the root README). The phases of the project are in the root `ROADMAP.md` (this is phase 2).
 
+## Files
+
+- `cards.ts`: the card names and facts about them. `game.ts`: `SamFrodoGame` (state, life gain, tokens, sacrifice values, mana, turn steps). `triggers.ts`: enter, death and Food triggers. `candidates.ts`: what the AI may do now, with a score. `actions.ts`: what the abilities do. `combat.ts`: goldfish combat, pod combat, the all-in attack. `index.ts`: deck registration and --diag / --hands measures. `mulligan.ts`, `config.ts`, `tests/`.
+
 ## How the deck wins (Pontus, 2026-11-05)
 
 - Drain with the drain cards: on tokens or creatures created or sacrificed, or with life gain through Gollum (and Sanguine Bond).

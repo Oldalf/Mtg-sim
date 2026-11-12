@@ -12,15 +12,15 @@ import {
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);
-  return (hand: CardDef[]) => hand.some((c) => set.has(c.name));
+  return (hand: CardDef[]) => hand.some((card) => set.has(card.name));
 };
 const lands = (hand: CardDef[]) =>
-  hand.filter((c) => c.land !== null || c.mdfcLand !== null).length;
+  hand.filter((card) => card.land !== null || card.mdfcLand !== null).length;
 /** A game with no win by turn 14 counts as turn 15. */
-const win = (r: DiagRow) => (r.win ?? 15) as number;
+const win = (row: DiagRow) => (row.win ?? 15) as number;
 const THIN = 3; // fewer nonland permanents than this = a thin board
-const slow5 = (r: DiagRow) => win(r) > 5 && (r.spent5 ?? 0) < 9;
-const slow6 = (r: DiagRow) => win(r) > 6 && (r.spent6 ?? 0) < 13;
+const slow5 = (row: DiagRow) => win(row) > 5 && (row.spent5 ?? 0) < 9;
+const slow6 = (row: DiagRow) => win(row) > 6 && (row.spent6 ?? 0) < 13;
 
 export const deck = {
   name: 'samfrodo',
@@ -48,7 +48,9 @@ export const deck = {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
       f: (rows: DiagRow[]) =>
-        rows.map(win).sort((a, b) => a - b)[Math.floor(rows.length * 0.9)],
+        rows.map(win).sort((first, second) => first - second)[
+          Math.floor(rows.length * 0.9)
+        ],
     },
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
@@ -63,15 +65,16 @@ export const deck = {
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => slow5(r) || slow6(r)),
+      f: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => slow5(row) || slow6(row)),
     },
     {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 5),
-          (r) => r.spent5 ?? 0,
+          rows.filter((row) => win(row) > 5),
+          (row) => row.spent5 ?? 0,
         ),
     },
     {
@@ -79,8 +82,8 @@ export const deck = {
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 6),
-          (r) => r.spent6 ?? 0,
+          rows.filter((row) => win(row) > 6),
+          (row) => row.spent6 ?? 0,
         ),
     },
     {
@@ -90,21 +93,23 @@ export const deck = {
         ' nonland permanents at end of turn 5 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => win(r) > 5 && (r.perms5 ?? 0) < THIN),
+        percentOf(rows, (row) => win(row) > 5 && (row.perms5 ?? 0) < THIN),
     },
     {
       label: 'Thin board at end of turn 6 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => win(r) > 6 && (r.perms6 ?? 0) < THIN),
+        percentOf(rows, (row) => win(row) > 6 && (row.perms6 ?? 0) < THIN),
     },
   ],
   // --hands: what to look for in an opening hand
   handFeatures: [
     {
       label: 'sources for white, black and green',
-      f: (h: CardDef[]) =>
-        ['W', 'B', 'G'].every((col) => h.some((c) => landMakes(c, col))),
+      f: (cards: CardDef[]) =>
+        ['W', 'B', 'G'].every((col) =>
+          cards.some((card) => landMakes(card, col)),
+        ),
     },
     {
       label:
@@ -191,8 +196,8 @@ export const deck = {
     },
     {
       label: '2 lands and a ramp piece',
-      f: (h: CardDef[]) =>
-        lands(h) === 2 &&
+      f: (cards: CardDef[]) =>
+        lands(cards) === 2 &&
         anyOf([
           'Sol Ring',
           'Arcane Signet',
@@ -209,7 +214,7 @@ export const deck = {
           'Elanor Gardner',
           'Pristine Talisman',
           'Chromatic Lantern',
-        ])(h),
+        ])(cards),
     },
   ],
 };

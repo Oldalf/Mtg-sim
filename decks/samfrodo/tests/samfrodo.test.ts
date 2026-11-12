@@ -4,15 +4,10 @@ import { Cost } from '../../../engine/cards';
 import { Perm } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
-import {
-  SamFrodoGame,
-  FOOD,
-  TREASURE,
-  CLUE,
-  FRODO,
-  SAM,
-  GOLLUM,
-} from '../game';
+import { SamFrodoGame } from '../game';
+import { FOOD, TREASURE, CLUE, FRODO, SAM, GOLLUM } from '../cards';
+import { activateWitchsOven, returnCauldronFamiliar } from '../actions';
+import { playCombat } from '../combat';
 
 const rep = (n: string, k: number) => new Array(k).fill(n) as string[];
 
@@ -99,8 +94,11 @@ export function runSamFrodoTests(): boolean {
   // Cauldron Familiar + Witch's Oven with Marionette Apprentice: oven eats Familiar (1 each), Food brings it back
   // (Food to the graveyard: 1 each, Familiar enters: 1 each)
   g = board(["Witch's Oven", 'Cauldron Familiar', 'Marionette Apprentice']);
-  g.oven(g.perm("Witch's Oven")!, g.perm('Cauldron Familiar')!);
-  g.returnFamiliar(g.gy.find((c) => c.name === 'Cauldron Familiar')!);
+  activateWitchsOven(g, g.perm("Witch's Oven")!, g.perm('Cauldron Familiar')!);
+  returnCauldronFamiliar(
+    g,
+    g.gy.find((c) => c.name === 'Cauldron Familiar')!,
+  );
   check('Familiar + Oven + Apprentice loop: 3 each', g.life, [37, 37, 37]);
   check('... Familiar is back', g.onBf('Cauldron Familiar'), true);
 
@@ -128,7 +126,7 @@ export function runSamFrodoTests(): boolean {
 
   // Gollum: connects (skulk); at the end step, opponents he has hit lose the life we gained this turn
   g = board([GOLLUM]);
-  g.combat();
+  playCombat(g);
   g.gainLife(3);
   g.endStep();
   check(
@@ -138,13 +136,13 @@ export function runSamFrodoTests(): boolean {
   );
   check(
     "... Gollum's next attack goes to a new opponent",
-    (g.startTurn(), g.combat(), g.gollumHit),
+    (g.startTurn(), playCombat(g), g.gollumHit),
     [true, true, false],
   );
 
   // Frodo with Sam: Sam's Food at combat, eat it ({1} with Sam) for 3 life, the Ring tempts us, Frodo connects
   g = board([FRODO, SAM]);
-  g.combat();
+  playCombat(g);
   check('Frodo + Sam: the Ring tempts once', g.ringTempts, 1);
   check('... Frodo deals 1', g.life, [39, 40, 40]);
 
@@ -152,7 +150,7 @@ export function runSamFrodoTests(): boolean {
   g = board([FRODO, SAM]);
   g.ringTempts = 3;
   const hand0 = g.hand.length;
-  g.combat();
+  playCombat(g);
   check(
     "Ring tempted 4 times: Frodo's hit drains 3 each",
     g.life,
@@ -227,9 +225,9 @@ export function runSamFrodoTests(): boolean {
   // the win: all three opponents dead
   g = board();
   g.life = [0, 0, 5];
-  check('Two opponents dead is not a win', g.won(), false);
+  check('Two opponents dead is not a win', g.hasWon(), false);
   g.life = [0, -2, 0];
-  check('All three dead is a win', g.won(), true);
+  check('All three dead is a win', g.hasWon(), true);
 
   console.log(ok ? 'ALL OK' : 'SOME FAILED');
   // ---- lands with conditions (the shared engine: Game.entersTapped, pain lands)
