@@ -30,10 +30,10 @@ export interface Deck {
   diagMetrics?: {
     label: string;
     unit: '%' | 'turn' | 'n';
-    f: (rows: DiagRow[]) => number;
+    measure: (rows: DiagRow[]) => number;
   }[];
   /** --hands: yes/no questions about an opening hand (per deck), reported next to the outcome. */
-  handFeatures?: { label: string; f: (hand: C.CardDef[]) => boolean }[];
+  handFeatures?: { label: string; matches: (hand: C.CardDef[]) => boolean }[];
   /** Names the player uses in Archidekt logs as trackers, not cards (their counter is read by syncFromLog). */
   logTrackers?: string[];
   /** Tokens that are sacrificed whenever they're tapped (Food, Treasure): a tap in the log means they're gone. */
@@ -42,12 +42,12 @@ export interface Deck {
   podCfg?: (players: number) => Config;
   /** The deck handles drawing from its own empty library itself (Mike: Laboratory Maniac / Living Conundrum). */
   ownsDecking?: boolean;
-  cfg: Config;
+  config: Config;
   Game: new (
     commanders: string[],
     library: string[],
     rng: Rng,
-    cfg: Config,
+    config: Config,
     verbose?: boolean,
     mode?: 'any' | 'protected',
   ) => Game<unknown>;
@@ -67,7 +67,7 @@ export interface Job {
   deck: string;
   list: string;
   seeds: number[];
-  cfg: Config;
+  config: Config;
   what: JobKind;
   /** hands: 7 = the raw opening 7, 6 = draw 7 and bottom the least useful card (a mulligan to 6). */
   size?: number;
@@ -164,18 +164,18 @@ export function runJob(deck: Deck, job: Job): JobResult {
       if (job.what === 'hands') {
         result.hands!.push(playOpeningHand(deck, decklist, seed, job));
       } else if (job.what === 'diag') {
-        const game = newGame(deck, decklist, seed, job.cfg, 'any');
+        const game = newGame(deck, decklist, seed, job.config, 'any');
         const [anyKillTurn] = game.play();
         result.diag!.push({ win: anyKillTurn, ...game.diag() });
       } else if (job.what === 'seen4') {
-        const game = newGame(deck, decklist, seed, job.cfg, 'any');
+        const game = newGame(deck, decklist, seed, job.config, 'any');
         const [anyKillTurn] = game.play();
         if (game.seen4 !== null)
           result.seen4!.push([anyKillTurn, [...game.seen4]]);
       } else {
         // one game gives both kill turns: until the first kill appears the "any" and "protected" games
         // make identical choices, and the protected game records that first kill too
-        const game = newGame(deck, decklist, seed, job.cfg, 'protected');
+        const game = newGame(deck, decklist, seed, job.config, 'protected');
         result.kills!.push(game.play());
       }
     } catch (error) {
@@ -196,7 +196,7 @@ function playOpeningHand(
   seed: number,
   job: Job,
 ): WinTurnAndCards {
-  const game = newGame(deck, decklist, seed, job.cfg, 'any');
+  const game = newGame(deck, decklist, seed, job.config, 'any');
   let handNames: string[] = [];
   game.mulligan = function (this: Game<unknown>) {
     this.hand = this.library.splice(0, 7);
@@ -231,7 +231,7 @@ export async function simulate(
       deck: deck.name,
       list: listFile,
       seeds: seeds.slice(start, start + chunkSize),
-      cfg: config,
+      config: config,
       what,
       size: handSize,
     });
@@ -274,12 +274,14 @@ export async function simulate(
 
 function mergeResults(what: JobKind, results: JobResult[]): JobResult {
   const merged: JobResult = { errors: [] };
-  if (what === 'seen4') merged.seen4 = results.flatMap((r) => r.seen4 ?? []);
-  else if (what === 'diag') merged.diag = results.flatMap((r) => r.diag ?? []);
+  if (what === 'seen4')
+    merged.seen4 = results.flatMap((result) => result.seen4 ?? []);
+  else if (what === 'diag')
+    merged.diag = results.flatMap((result) => result.diag ?? []);
   else if (what === 'hands')
-    merged.hands = results.flatMap((r) => r.hands ?? []);
-  else merged.kills = results.flatMap((r) => r.kills ?? []);
-  merged.errors = results.flatMap((r) => r.errors);
+    merged.hands = results.flatMap((result) => result.hands ?? []);
+  else merged.kills = results.flatMap((result) => result.kills ?? []);
+  merged.errors = results.flatMap((result) => result.errors);
   if (merged.errors.length) {
     console.log(
       `!! ${merged.errors.length} game(s) hit a simulator bug and were skipped (seeds ` +

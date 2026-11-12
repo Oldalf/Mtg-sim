@@ -1,15 +1,16 @@
 /** The report printed after a batch of pod games. */
 import { PodGame, PodSpec } from './pod-types';
 
-const sum = (numbers: number[]) => numbers.reduce((total, x) => total + x, 0);
+const sum = (numbers: number[]) =>
+  numbers.reduce((total, value) => total + value, 0);
 
 /** The report: win rate, win turns (average, 10th and 90th percentile), how the wins came, first out, win rate by seat. */
 export function printPod(spec: PodSpec, games: PodGame[]): void {
   const playerCount = spec.decks.length;
   const total = games.length;
   /** A share as "  12.3%". With no games to divide by it prints "-". */
-  const percent = (part: number, of = total) =>
-    (of ? ((100 * part) / of).toFixed(1) : '-').padStart(6) + '%';
+  const percent = (part: number, whole = total) =>
+    (whole ? ((100 * part) / whole).toFixed(1) : '-').padStart(6) + '%';
   const labels = spec.decks.map(
     (deck, player) =>
       deck + (spec.decks.indexOf(deck) !== player ? `#${player + 1}` : ''),
@@ -44,7 +45,7 @@ interface Report {
   games: PodGame[];
   playerCount: number;
   total: number;
-  percent: (part: number, of?: number) => string;
+  percent: (part: number, whole?: number) => string;
   labels: string[];
   nameWidth: number;
 }
@@ -60,7 +61,9 @@ function printWinTable(report: Report): void {
   );
   for (let player = 0; player < playerCount; player++) {
     const won = games.filter((game) => game.winner === player);
-    const winTurns = won.map((game) => game.turn).sort((a, b) => a - b);
+    const winTurns = won
+      .map((game) => game.turn)
+      .sort((first, second) => first - second);
     const turnAtPercentile = (fraction: number) =>
       winTurns.length
         ? String(

@@ -8,7 +8,7 @@
  *   uncertain(st)      true if a won leaf is only won "on average" (then chance is asked)
  *   chance(root, st)   the probability that such a line really wins (below minChance: rejected)
  * search(root, budget) returns 2 (win with counter backup), 1 (win), 0 (no win found). After a call:
- *   lastLine  the winning line (step descriptions), lastP its chance (null = certain),
+ *   lastLine  the winning line (step descriptions), lastLineProbability its chance (null = certain),
  *   bestMiss  the best chance among rejected lines (or null).
  * Results are cached per position: the search is deterministic, so a repeat costs nothing.
  */
@@ -21,10 +21,10 @@ export interface Snapshot {
 }
 
 export interface KillSearchOptions<S extends Snapshot> {
-  children: (st: S) => S[];
-  protected: (st: S) => boolean;
-  uncertain?: (st: S) => boolean;
-  chance?: (root: S, st: S) => number;
+  children: (state: S) => S[];
+  protected: (state: S) => boolean;
+  uncertain?: (state: S) => boolean;
+  chance?: (root: S, state: S) => number;
   minChance?: number;
   depth?: number;
   prepare?: (root: S) => void;
@@ -35,35 +35,40 @@ export class KillSearch<S extends Snapshot> {
   readonly minChance: number;
   readonly stats = [0, 0]; // cache hits, misses
   lastLine: string[] | null = null;
-  lastP: number | null = null;
+  lastLineProbability: number | null = null;
   bestMiss: number | null = null;
   private cache = new Map<
     string,
     [number, string[] | null, number | null, number | null]
   >();
 
-  constructor(private o: KillSearchOptions<S>) {
-    this.minChance = o.minChance ?? 0.9;
+  constructor(private options: KillSearchOptions<S>) {
+    this.minChance = options.minChance ?? 0.9;
   }
 
   search(root: S, budget = 2500): number {
-    this.o.prepare?.(root);
-    const ck = root.fullKey() + '|' + budget;
-    const hit = this.cache.get(ck);
+    this.options.prepare?.(root);
+    const cacheKey = root.fullKey() + '|' + budget;
+    const hit = this.cache.get(cacheKey);
     if (hit !== undefined) {
       this.stats[0]++;
-      [, this.lastLine, this.lastP, this.bestMiss] = hit;
+      [, this.lastLine, this.lastLineProbability, this.bestMiss] = hit;
       return hit[0];
     }
     this.stats[1]++;
-    const r = this.run(root, budget);
+    const result = this.run(root, budget);
     if (this.cache.size > 300000) this.cache.clear();
-    this.cache.set(ck, [r, this.lastLine, this.lastP, this.bestMiss]);
-    return r;
+    this.cache.set(cacheKey, [
+      result,
+      this.lastLine,
+      this.lastLineProbability,
+      this.bestMiss,
+    ]);
+    return result;
   }
 
   private run(root: S, budget: number): number {
-    const o = this.o;
+    const options = this.options;
     const seen = new Set<string>();
     let best = 0;
     let line: unknown = null;
@@ -71,48 +76,51 @@ export class KillSearch<S extends Snapshot> {
     let miss: number | null = null;
     let nodes = 0;
     root.killLine = null;
-    const uncertain = o.uncertain ?? (() => false);
+    const uncertain = options.uncertain ?? (() => false);
     const minChance = this.minChance;
 
-    const dfs = (st: S, depth: number): void => {
-      if (st.hasWon()) {
-        const r = o.protected(st) ? 2 : 1;
+    const searchFrom = (state: S, depth: number): void => {
+      if (state.hasWon()) {
+        const winLevel = options.protected(state) ? 2 : 1;
         // same level as the best line so far: only worth a look if that one is uncertain
-        const unc = uncertain(st);
-        if (r < best || (r === best && (prob === null || prob >= 0.98 || !unc)))
+        const isUncertain = uncertain(state);
+        if (
+          winLevel < best ||
+          (winLevel === best && (prob === null || prob >= 0.98 || !isUncertain))
+        )
           return;
-        let p: number | null = null;
-        if (unc) {
-          p = o.chance!(root, st);
-          if (p < minChance) {
-            if (miss === null || p > miss) miss = p;
+        let lineProbability: number | null = null;
+        if (isUncertain) {
+          lineProbability = options.chance!(root, state);
+          if (lineProbability < minChance) {
+            if (miss === null || lineProbability > miss) miss = lineProbability;
             return;
           }
-          if (r === best && p <= (prob as number)) return;
+          if (winLevel === best && lineProbability <= (prob as number)) return;
         }
-        best = r;
-        line = st.killLine;
-        prob = p;
+        best = winLevel;
+        line = state.killLine;
+        prob = lineProbability;
         return;
       }
       if (depth === 0 || nodes >= budget) return;
-      const k = st.searchKey();
-      if (seen.has(k)) return;
-      seen.add(k);
+      const stateKey = state.searchKey();
+      if (seen.has(stateKey)) return;
+      seen.add(stateKey);
       nodes++;
-      for (const ch of o.children(st)) {
-        dfs(ch, depth - 1);
+      for (const child of options.children(state)) {
+        searchFrom(child, depth - 1);
         if (best === 2) return;
       }
     };
 
-    dfs(root, o.depth ?? 9);
+    searchFrom(root, options.depth ?? 9);
     this.lastLine = best
-      ? o.render
-        ? o.render(line)
+      ? options.render
+        ? options.render(line)
         : (line as string[])
       : null;
-    this.lastP = prob;
+    this.lastLineProbability = prob;
     this.bestMiss = miss;
     return best;
   }

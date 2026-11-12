@@ -1,28 +1,28 @@
 /** Small helpers for working with lists. */
 
 /** Element with the lowest key. On a tie the first one wins, so results stay the same from run to run. */
-export function firstMin<T>(xs: T[], key: (x: T) => number): T {
-  let best = xs[0],
-    bk = key(best);
-  for (let i = 1; i < xs.length; i++) {
-    const k = key(xs[i]);
-    if (k < bk) {
-      best = xs[i];
-      bk = k;
+export function firstMin<T>(items: T[], key: (x: T) => number): T {
+  let best = items[0],
+    bestKey = key(best);
+  for (let i = 1; i < items.length; i++) {
+    const candidateKey = key(items[i]);
+    if (candidateKey < bestKey) {
+      best = items[i];
+      bestKey = candidateKey;
     }
   }
   return best;
 }
 
 /** Element with the highest key. On a tie the first one wins. */
-export function firstMax<T>(xs: T[], key: (x: T) => number): T {
-  let best = xs[0],
-    bk = key(best);
-  for (let i = 1; i < xs.length; i++) {
-    const k = key(xs[i]);
-    if (k > bk) {
-      best = xs[i];
-      bk = k;
+export function firstMax<T>(items: T[], key: (x: T) => number): T {
+  let best = items[0],
+    bestKey = key(best);
+  for (let i = 1; i < items.length; i++) {
+    const candidateKey = key(items[i]);
+    if (candidateKey > bestKey) {
+      best = items[i];
+      bestKey = candidateKey;
     }
   }
   return best;
@@ -42,8 +42,8 @@ export function removeIfPresent<T>(list: T[], item: T): void {
 }
 
 /** Sorts in place, highest key first. Equal keys keep their order. */
-export function sortDesc<T>(xs: T[], key: (x: T) => number): T[] {
-  const ks = new Map<T, number>();
-  for (const x of xs) ks.set(x, key(x));
-  return xs.sort((a, b) => ks.get(b)! - ks.get(a)!);
+export function sortDesc<T>(items: T[], key: (x: T) => number): T[] {
+  const keys = new Map<T, number>();
+  for (const x of items) keys.set(x, key(x));
+  return items.sort((first, second) => keys.get(second)! - keys.get(first)!);
 }

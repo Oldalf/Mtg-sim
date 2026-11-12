@@ -20,16 +20,18 @@ export interface RegressSpec {
   tests: () => boolean;
 }
 
-function capture(fn: () => void): string {
+function capture(action: () => void): string {
   const out: string[] = [];
   const orig = console.log;
-  console.log = (...a: unknown[]) => {
-    out.push(a.map(String).join(' '));
+  console.log = (...values: unknown[]) => {
+    out.push(values.map(String).join(' '));
   };
   try {
-    fn();
-  } catch (e) {
-    out.push('ERROR ' + (e instanceof Error ? e.message : String(e)));
+    action();
+  } catch (error) {
+    out.push(
+      'ERROR ' + (error instanceof Error ? error.message : String(error)),
+    );
   } finally {
     console.log = orig;
   }
@@ -43,14 +45,14 @@ async function collect(deck: Deck, spec: RegressSpec, workers: number) {
     tests: '',
   };
   for (const listFile of spec.lists) {
-    const r = await simulate(
+    const result = await simulate(
       deck,
       path.join(deck.dir, listFile),
       SEEDS,
-      { ...deck.cfg },
+      { ...deck.config },
       workers,
     );
-    results.games[listFile] = r.kills;
+    results.games[listFile] = result.kills;
     console.log(`  ${listFile}: ${SEEDS} games`);
   }
   const logDir = path.join(deck.dir, 'logs');

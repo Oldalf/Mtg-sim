@@ -26,7 +26,7 @@ export const deck = {
   name: 'samfrodo',
   dir: path.join(ROOT, 'decks', 'samfrodo'),
   defaultList: 'decklist.txt',
-  cfg: CFG,
+  config: CFG,
   podCfg: (players: number) => ({ win_dead: players - 1 }),
   Game: SamFrodoGame,
   metrics: [
@@ -47,7 +47,7 @@ export const deck = {
     {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         rows.map(win).sort((first, second) => first - second)[
           Math.floor(rows.length * 0.9)
         ],
@@ -55,23 +55,23 @@ export const deck = {
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, slow5),
+      measure: (rows: DiagRow[]) => percentOf(rows, slow5),
     },
     {
       label: 'Slow start: under 13 mana spent by turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, slow6),
+      measure: (rows: DiagRow[]) => percentOf(rows, slow6),
     },
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => slow5(row) || slow6(row)),
     },
     {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 5),
           (row) => row.spent5 ?? 0,
@@ -80,7 +80,7 @@ export const deck = {
     {
       label: 'Average mana spent by turn 6 (of 21)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 6),
           (row) => row.spent6 ?? 0,
@@ -92,13 +92,13 @@ export const deck = {
         THIN +
         ' nonland permanents at end of turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 5 && (row.perms5 ?? 0) < THIN),
     },
     {
       label: 'Thin board at end of turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 6 && (row.perms6 ?? 0) < THIN),
     },
   ],
@@ -106,15 +106,15 @@ export const deck = {
   handFeatures: [
     {
       label: 'sources for white, black and green',
-      f: (cards: CardDef[]) =>
-        ['W', 'B', 'G'].every((col) =>
-          cards.some((card) => landMakes(card, col)),
+      matches: (cards: CardDef[]) =>
+        ['W', 'B', 'G'].every((colour) =>
+          cards.some((card) => landMakes(card, colour)),
         ),
     },
     {
       label:
         'a ramp piece (Sol Ring, Signet, Birds, Goose, Cultivate, Innkeeper...)',
-      f: anyOf([
+      matches: anyOf([
         'Sol Ring',
         'Arcane Signet',
         'Birds of Paradise',
@@ -135,7 +135,7 @@ export const deck = {
     {
       label:
         'a token or Food maker (Manufactor, Peregrin, Tippy-Toe, Rosie, Cotton...)',
-      f: anyOf([
+      matches: anyOf([
         'Academy Manufactor',
         'Peregrin Took',
         'Tippy-Toe, Terrific Partner',
@@ -153,7 +153,7 @@ export const deck = {
     {
       label:
         'a drain payoff (Bats, Apprentice, Master, Egotist, Voidborn, Bond, Gollum)',
-      f: anyOf([
+      matches: anyOf([
         'Mirkwood Bats',
         'Marionette Apprentice',
         'Marionette Master',
@@ -167,7 +167,7 @@ export const deck = {
     {
       label:
         "a card-draw piece (Night's Whisper, Harmonize, Belladonna, Gaffer...)",
-      f: anyOf([
+      matches: anyOf([
         "Night's Whisper",
         'Harmonize',
         'Belladonna Took',
@@ -184,7 +184,7 @@ export const deck = {
     {
       label:
         'one of the best (Manufactor, Peregrin, Nuka-Cola, Notary, Bats, Gollum, Sol Ring)',
-      f: anyOf([
+      matches: anyOf([
         'Academy Manufactor',
         'Peregrin Took',
         'Nuka-Cola Vending Machine',
@@ -196,7 +196,7 @@ export const deck = {
     },
     {
       label: '2 lands and a ramp piece',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         lands(cards) === 2 &&
         anyOf([
           'Sol Ring',

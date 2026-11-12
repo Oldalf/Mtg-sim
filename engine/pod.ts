@@ -106,31 +106,31 @@ export function runPodJob(
   all: Record<string, Deck>,
   job: PodJob,
 ): PodJobResult {
-  const r: PodJobResult = { games: [], errors: [] };
-  for (const s of job.seeds) {
+  const result: PodJobResult = { games: [], errors: [] };
+  for (const seed of job.seeds) {
     try {
-      r.games.push(playPod(all, job.pod, s));
-    } catch (e) {
-      r.errors.push([
-        s,
-        e instanceof Error ? (e.stack ?? e.message) : String(e),
+      result.games.push(playPod(all, job.pod, seed));
+    } catch (error) {
+      result.errors.push([
+        seed,
+        error instanceof Error ? (error.stack ?? error.message) : String(error),
       ]);
     }
   }
-  return r;
+  return result;
 }
 
 /** Play seeds 1..n in worker threads (the same bundle runs as each worker; see sim.ts). */
 export async function simulatePod(
   spec: PodSpec,
-  n: number,
+  gameCount: number,
   workers: number,
   duty: number,
 ): Promise<PodJobResult> {
-  const seeds = Array.from({ length: n }, (_, i) => i + 1);
-  const chunk = Math.max(1, Math.floor(n / (workers * 8)));
+  const seeds = Array.from({ length: gameCount }, (_, i) => i + 1);
+  const chunk = Math.max(1, Math.floor(gameCount / (workers * 8)));
   const jobs: PodJob[] = [];
-  for (let i = 0; i < n; i += chunk)
+  for (let i = 0; i < gameCount; i += chunk)
     jobs.push({ pod: spec, seeds: seeds.slice(i, i + chunk) });
   const results: PodJobResult[] = new Array(jobs.length);
   let next = 0;
@@ -140,38 +140,38 @@ export async function simulatePod(
   );
   await Promise.all(
     pool.map(
-      (w) =>
+      (worker) =>
         new Promise<void>((resolve, reject) => {
           const give = () => {
             if (next >= jobs.length) {
-              w.terminate().then(() => resolve());
+              worker.terminate().then(() => resolve());
               return;
             }
-            const idx = next++;
-            const t0 = Date.now();
-            w.once('message', (r: PodJobResult) => {
-              results[idx] = r;
+            const index = next++;
+            const startedAt = Date.now();
+            worker.once('message', (jobResult: PodJobResult) => {
+              results[index] = jobResult;
               const rest =
-                duty < 100 ? (Date.now() - t0) * (100 / duty - 1) : 0;
+                duty < 100 ? (Date.now() - startedAt) * (100 / duty - 1) : 0;
               if (rest > 1) setTimeout(give, rest);
               else give();
             });
-            w.postMessage(jobs[idx]);
+            worker.postMessage(jobs[index]);
           };
-          w.on('error', reject);
+          worker.on('error', reject);
           give();
         }),
     ),
   );
   const all: PodJobResult = {
-    games: results.flatMap((r) => r.games),
-    errors: results.flatMap((r) => r.errors),
+    games: results.flatMap((jobResult) => jobResult.games),
+    errors: results.flatMap((jobResult) => jobResult.errors),
   };
   if (all.errors.length)
     console.log(
       `!! ${all.errors.length} game(s) hit a simulator bug and were skipped (seeds ${all.errors
         .slice(0, 10)
-        .map((e) => e[0])
+        .map((failure) => failure[0])
         .join(', ')}). First error:\n${all.errors[0][1]}`,
     );
   return all;
@@ -192,31 +192,31 @@ export function podSpec(
     );
   const decks: string[] = [],
     files: string[] = [];
-  for (const a of args) {
-    const [d, l] = a.split(':');
-    const deck = all[d];
+  for (const deckArgument of args) {
+    const [deckName, listName] = deckArgument.split(':');
+    const deck = all[deckName];
     if (!deck)
       throw new Error(
-        `unknown deck ${d}; choose from ${Object.keys(all).join(', ')}`,
+        `unknown deck ${deckName}; choose from ${Object.keys(all).join(', ')}`,
       );
-    decks.push(d);
-    files.push(resolveList(deck, l ?? deck.defaultList));
+    decks.push(deckName);
+    files.push(resolveList(deck, listName ?? deck.defaultList));
   }
   if (threat && !['leader', 'spread', 'weakest', 'damage'].includes(threat))
     throw new Error(
       `threat=${threat}: choose leader, spread, weakest or damage`,
     );
   const policy: Record<string, string> = {};
-  for (const p of (policyArg ?? '').split(',').filter(Boolean)) {
-    const [d, v] = p.split(':');
+  for (const policyPair of (policyArg ?? '').split(',').filter(Boolean)) {
+    const [deckName, policyName] = policyPair.split(':');
     if (
-      !decks.includes(d) ||
-      !['any', 'protected', 'mixed', 'window'].includes(v)
+      !decks.includes(deckName) ||
+      !['any', 'protected', 'mixed', 'window'].includes(policyName)
     )
       throw new Error(
-        `policy=${p}: use deck:any|protected|mixed|window (e.g. policy=gale:window)`,
+        `policy=${policyPair}: use deck:any|protected|mixed|window (e.g. policy=gale:window)`,
       );
-    policy[d] = v;
+    policy[deckName] = policyName;
   }
   return { decks, lists: files, cap, set, threat, policy };
 }

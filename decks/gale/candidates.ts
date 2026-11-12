@@ -21,17 +21,17 @@ export function bestGaleRecastTarget(
   game: GaleGame,
   card: CardDef,
 ): CardDef | null {
-  if (!game.onBf(GALE)) return null;
+  if (!game.isOnBattlefield(GALE)) return null;
   const wantSorc = card.isInstant;
   let best: CardDef | null = null,
     bestScore = 0;
-  for (const candidate of game.gy) {
+  for (const candidate of game.graveyard) {
     if (
       candidate === card ||
       !(wantSorc ? candidate.isSorcery : candidate.isInstant)
     )
       continue;
-    const score = game.devValueIS(candidate, true);
+    const score = game.instantOrSorceryDevValue(candidate, true);
     if (
       score > bestScore &&
       game.canPay(game.effCost(candidate, null, true), true)
@@ -51,19 +51,22 @@ export function buildCandidates(game: GaleGame, main2: boolean): Cand[] {
   for (const card of game.hand.slice()) {
     if (seenNames.has(card.name) || card.land !== null) continue;
     seenNames.add(card.name);
-    if (card.isIS) addInstantOrSorceryCandidate(game, card, candidates);
+    if (card.isInstantOrSorcery)
+      addInstantOrSorceryCandidate(game, card, candidates);
     else addPermanentCandidate(game, card, candidates);
   }
   // flashback Deep Analysis
-  const deepAnalysis = game.gy.find((card) => card.name === 'Deep Analysis');
+  const deepAnalysis = game.graveyard.find(
+    (card) => card.name === 'Deep Analysis',
+  );
   if (deepAnalysis)
     candidates.push({
       score: 44,
       cost: game.effCost(deepAnalysis, new Cost(1, 1), true),
-      isIS: true,
-      act: () => game.flashback(deepAnalysis),
+      isInstantOrSorcery: true,
+      action: () => game.flashback(deepAnalysis),
     });
-  if (game.cfg.self_counter_dev ?? true)
+  if (game.config.self_counter_dev ?? true)
     candidates.push(...selfCounterDevelopmentCandidates(game));
   if (main2) candidates.push(...manaSinkCandidates(game));
   return candidates;
@@ -76,15 +79,15 @@ function addCommanderCandidates(game: GaleGame, candidates: Cand[]): void {
     let cost = game.effCost(commander);
     if (commander.name === GALE) {
       score = 95;
-      cost = cost.withGeneric(cost.g + 2 * game.galeCasts);
+      cost = cost.withGeneric(cost.generic + 2 * game.galeCasts);
     } else if (commander.name === SCION) {
-      score = game.onBf(GALE) ? 91 : 18;
+      score = game.isOnBattlefield(GALE) ? 91 : 18;
     }
     candidates.push({
       score,
       cost,
-      isIS: false,
-      act: () => game.castPerm(commander, true),
+      isInstantOrSorcery: false,
+      action: () => game.castPerm(commander, true),
     });
   }
 }
@@ -100,23 +103,23 @@ function addPermanentCandidate(
     candidates.push({
       score: 73,
       cost: game.effCost(card).plus(new Cost(1)),
-      isIS: false,
-      act: () => game.wishclaw(card),
+      isInstantOrSorcery: false,
+      action: () => game.wishclaw(card),
     });
     return;
   }
   let score = permScore(name, 30);
-  if (COMBO_PERMS.has(name) && !game.onBf(name)) {
+  if (COMBO_PERMS.has(name) && !game.isOnBattlefield(name)) {
     const missing = missingPackagePieces(game, name);
     score = missing === 0 ? 88 : missing === 1 && game.turn >= 4 ? 78 : score;
   }
   if (card.rock && name !== 'Sol Ring' && game.manaSources() >= 7) score = 30;
-  if (game.onBf(name) && name in PERM_SCORE) score = 5; // legendary / redundant
+  if (game.isOnBattlefield(name) && name in PERM_SCORE) score = 5; // legendary / redundant
   candidates.push({
     score,
     cost: game.effCost(card),
-    isIS: false,
-    act: () => game.castPerm(card),
+    isInstantOrSorcery: false,
+    action: () => game.castPerm(card),
     rock: card.rock ? card : undefined,
   });
 }
@@ -141,8 +144,8 @@ function addInstantOrSorceryCandidate(
       candidates.push({
         score,
         cost: game.effCost(card, baseCost),
-        isIS: true,
-        act: () => castWithGaleRecast(game, card, baseCost, mode),
+        isInstantOrSorcery: true,
+        action: () => castWithGaleRecast(game, card, baseCost, mode),
       });
     }
     return;
@@ -153,8 +156,8 @@ function addInstantOrSorceryCandidate(
     candidates.push({
       score: countersInHand >= 2 ? 72 : 60,
       cost: new Cost(1, 2),
-      isIS: false,
-      act: () => game.transmute(card),
+      isInstantOrSorcery: false,
+      action: () => game.transmute(card),
     });
     return;
   }
@@ -163,19 +166,19 @@ function addInstantOrSorceryCandidate(
       candidates.push({
         score: 36,
         cost: game.effCost(card),
-        isIS: true,
-        act: () => castWithGaleRecast(game, card),
+        isInstantOrSorcery: true,
+        action: () => castWithGaleRecast(game, card),
       });
     return;
   }
   if (Facts.RITUALS.has(name)) return;
-  const score = game.devValueIS(card);
-  if (score <= 0 && !game.onBf(GALE)) return;
+  const score = game.instantOrSorceryDevValue(card);
+  if (score <= 0 && !game.isOnBattlefield(GALE)) return;
   candidates.push({
     score,
     cost: game.effCost(card),
-    isIS: true,
-    act: () => castWithGaleRecast(game, card),
+    isInstantOrSorcery: true,
+    action: () => castWithGaleRecast(game, card),
   });
 }
 
@@ -183,7 +186,7 @@ function addInstantOrSorceryCandidate(
  *  (untap 3 lands). The counter is an instant, so Gale recasts a sorcery from the graveyard.
  *  Only when another counter stays in hand for protection. */
 export function selfCounterDevelopmentCandidates(game: GaleGame): Cand[] {
-  if (!game.onBf(GALE)) return [];
+  if (!game.isOnBattlefield(GALE)) return [];
   const out: Cand[] = [];
   for (const kname of SELF_COUNTER_DEV) {
     const card = game.hand.find((candidate) => candidate.name === kname);
@@ -194,15 +197,16 @@ export function selfCounterDevelopmentCandidates(game: GaleGame): Cand[] {
       )
     )
       continue;
-    const sorc = game.gy.filter(
+    const sorc = game.graveyard.filter(
       (candidate) =>
-        candidate.isSorcery && game.devValueIS(candidate, true) > 0,
+        candidate.isSorcery &&
+        game.instantOrSorceryDevValue(candidate, true) > 0,
     );
     if (!sorc.length) continue;
     const targets = game.hand.filter(
       (candidate) =>
         candidate !== card &&
-        candidate.isIS && // not a rock or other permanent
+        candidate.isInstantOrSorcery && // not a rock or other permanent
         !Facts.COUNTERS.has(candidate.name) &&
         !COMBO_SORC.has(candidate.name) &&
         !COMBO_PERMS.has(candidate.name) &&
@@ -214,17 +218,19 @@ export function selfCounterDevelopmentCandidates(game: GaleGame): Cand[] {
     const target = firstMin(
       targets,
       (candidate) =>
-        game.effCost(candidate).mv * 1000 + game.cardValue(candidate),
+        game.effCost(candidate).manaValue * 1000 + game.cardValue(candidate),
     );
     const gain = Math.max(
-      ...sorc.map((candidate) => game.devValueIS(candidate, true)),
+      ...sorc.map((candidate) =>
+        game.instantOrSorceryDevValue(candidate, true),
+      ),
     );
     const score = gain - 4 - Math.floor(game.cardValue(target) / 10);
     out.push({
       score: score,
       cost: game.effCost(target).plus(game.effCost(card)),
-      isIS: true,
-      act: () => castSelfCounter(game, card, target),
+      isInstantOrSorcery: true,
+      action: () => castSelfCounter(game, card, target),
     });
   }
   return out;
@@ -235,32 +241,32 @@ export function castSelfCounter(
   card: CardDef,
   targetCard: CardDef,
 ): boolean {
-  const snapshot = game.snap();
+  const snapshot = game.takeSnapshot();
   if (!(
-    game.pay(game.effCost(targetCard), targetCard.isIS) &&
+    game.pay(game.effCost(targetCard), targetCard.isInstantOrSorcery) &&
     game.pay(game.effCost(card), true)
   )) {
     game.restore(snapshot);
     return false;
   }
   game.restore(snapshot);
-  game.pay(game.effCost(targetCard), targetCard.isIS);
+  game.pay(game.effCost(targetCard), targetCard.isInstantOrSorcery);
   removeOrThrow(game.hand, targetCard);
   game.say('cast', targetCard, 'to counter it with your own', card);
-  if (targetCard.isIS) {
+  if (targetCard.isInstantOrSorcery) {
     game.spellsCast += 1;
-    game.onCastIS(false);
+    game.onCastInstantOrSorcery(false);
     const firstRecast = bestGaleRecastTarget(game, targetCard);
     if (firstRecast !== null) {
-      const secondSnapshot = game.snap();
+      const secondSnapshot = game.takeSnapshot();
       if (
         game.pay(game.effCost(firstRecast, null, true), true) &&
         game.canPay(game.effCost(card), true)
       ) {
-        removeOrThrow(game.gy, firstRecast);
+        removeOrThrow(game.graveyard, firstRecast);
         game.say('  Gale recasts', firstRecast);
         game.spellsCast += 1;
-        game.onCastIS(true);
+        game.onCastInstantOrSorcery(true);
         game.resolve(firstRecast, true);
         game.exile.push(firstRecast);
       } else game.restore(secondSnapshot);
@@ -268,25 +274,25 @@ export function castSelfCounter(
   }
   if (!game.hand.includes(card) || !game.pay(game.effCost(card), true)) {
     // e.g. discarded by the recast
-    game.gy.push(targetCard);
+    game.graveyard.push(targetCard);
     return true;
   }
   removeOrThrow(game.hand, card);
   game.spellsCast += 1;
-  game.onCastIS(false);
+  game.onCastInstantOrSorcery(false);
   const secondRecast = bestGaleRecastTarget(game, card);
   if (
     secondRecast !== null &&
     game.pay(game.effCost(secondRecast, null, true), true)
   ) {
-    removeOrThrow(game.gy, secondRecast);
+    removeOrThrow(game.graveyard, secondRecast);
     game.say('  Gale recasts', secondRecast);
     game.spellsCast += 1;
-    game.onCastIS(true);
+    game.onCastInstantOrSorcery(true);
     game.resolve(secondRecast, true);
     game.exile.push(secondRecast);
   }
-  game.gy.push(targetCard, card);
+  game.graveyard.push(targetCard, card);
   if (card.name === "An Offer You Can't Refuse") {
     game.pool.U += 1; // 2 Treasures (used this turn)
     game.pool.B += 1;
@@ -297,12 +303,12 @@ export function castSelfCounter(
 export function missingPackagePieces(game: GaleGame, extra: string): number {
   const have = new Set([
     ...game.hand.map((card) => card.name),
-    ...game.bf.map((permanent) => permanent.cd.name),
+    ...game.battlefield.map((permanent) => permanent.card.name),
     extra,
   ]);
-  if (game.onBf(GALE))
-    for (const candidate of game.gy)
-      if (candidate.isIS) have.add(candidate.name);
+  if (game.isOnBattlefield(GALE))
+    for (const candidate of game.graveyard)
+      if (candidate.isInstantOrSorcery) have.add(candidate.name);
   let fewest = Infinity;
   for (const pkg of PACKAGES) {
     if (!pkg.some((requirement) => requirement.has(extra))) continue;
@@ -320,16 +326,18 @@ export function castWithGaleRecast(
   base: Cost | null = null,
   mode: string | null = null,
 ): boolean {
-  const snapshot = game.snap();
+  const snapshot = game.takeSnapshot();
   if (!game.pay(game.effCost(card, base), true)) return false;
   const tgt = bestGaleRecastTarget(game, card);
   game.restore(snapshot);
-  return game.castIS(card, false, base, mode, { galeTarget: tgt });
+  return game.castInstantOrSorcery(card, false, base, mode, {
+    galeTarget: tgt,
+  });
 }
 
 export function manaSinkCandidates(game: GaleGame): Cand[] {
   const out: Cand[] = [];
-  const lands = game.landsBf().length;
+  const lands = game.landsOnBattlefield().length;
   const cyc = game.hand.find(
     (card) =>
       (card.name === 'Fetid Pools' || card.name === 'Unearth') && lands >= 5,
@@ -338,15 +346,15 @@ export function manaSinkCandidates(game: GaleGame): Cand[] {
     out.push({
       score: 8,
       cost: new Cost(2),
-      isIS: false,
-      act: () => game.cycle(cyc),
+      isInstantOrSorcery: false,
+      action: () => game.cycle(cyc),
     });
-  if (game.perm('Syr Konrad, the Grim') && game.onBf(GALE))
+  if (game.findPermanent('Syr Konrad, the Grim') && game.isOnBattlefield(GALE))
     out.push({
       score: 6,
       cost: new Cost(1, 0, 1),
-      isIS: false,
-      act: () => activateKonradMill(game),
+      isInstantOrSorcery: false,
+      action: () => activateKonradMill(game),
     });
   return out;
 }

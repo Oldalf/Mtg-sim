@@ -19,7 +19,7 @@ export const deck = {
   name: 'mike',
   dir: path.join(ROOT, 'decks', 'mike'),
   defaultList: 'decklist.txt',
-  cfg: CFG,
+  config: CFG,
   ownsDecking: true,
   Game: MikeGame,
   metrics: [
@@ -39,7 +39,7 @@ export const deck = {
     {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         rows.map(win).sort((first, second) => first - second)[
           Math.floor(rows.length * 0.9)
         ],
@@ -47,43 +47,44 @@ export const deck = {
     {
       label: 'Won by milling out (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.how === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.how === 1),
     },
     {
       label: 'Won with the Toad (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.how === 2),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.how === 2),
     },
     {
       label: 'Won by life loss (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => row.how === 3 || row.how === 4),
     },
     {
       label: 'Win with a counterspell in hand and 2 mana untapped (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.backup === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.backup === 1),
     },
     {
       label: 'Library emptied (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.emptied === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.emptied === 1),
     },
     {
       label: 'Library emptied with a win piece / Conundrum / Ormos out (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.emptiedSafe === 1),
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => row.emptiedSafe === 1),
     },
     {
       label: 'Decked ourselves (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.died === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.died === 1),
     },
     {
       label: 'Average turn Vnwxt comes down',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => row.vnwxtOut != null),
           (row) => row.vnwxtOut as number,
@@ -92,7 +93,7 @@ export const deck = {
     {
       label: 'Reaches max speed by turn 8 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(
           rows,
           (row) => row.maxSpeed != null && (row.maxSpeed as number) <= 8,
@@ -101,7 +102,7 @@ export const deck = {
     {
       label: 'Average cards drawn by turn 6',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 6),
           (row) => row.draws6 ?? 0,
@@ -110,7 +111,7 @@ export const deck = {
     {
       label: 'Average cards in hand at end of turn 8',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 8),
           (row) => row.hand8 ?? 0,
@@ -119,7 +120,7 @@ export const deck = {
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 5 && (row.spent5 ?? 0) < 9),
     },
   ],

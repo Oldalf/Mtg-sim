@@ -11,13 +11,13 @@ export function castTreasureCruise(
   delveCount: number,
 ): boolean {
   const base = game.effCost(card);
-  const cost = base.withGeneric(base.g - delveCount);
+  const cost = base.withGeneric(base.generic - delveCount);
   if (!game.pay(cost, true)) return false;
-  for (let i = 0; i < delveCount; i++) game.exile.push(game.gy.pop()!);
+  for (let i = 0; i < delveCount; i++) game.exile.push(game.graveyard.pop()!);
   removeIfPresent(game.hand, card);
   game.say('cast Treasure Cruise (delve', delveCount + ')');
   game.spellsCast += 1;
-  game.onCastIS(false);
+  game.onCastInstantOrSorcery(false);
   game.draw(3);
   game.exile.push(card);
   game.imitate(card, null);
@@ -55,9 +55,9 @@ export function equipTo(
   mark: number,
 ): boolean {
   if (!game.pay(new Cost(2))) return false;
-  for (const holder of game.bf) holder.marks &= ~mark;
+  for (const holder of game.battlefield) holder.marks &= ~mark;
   carrier.marks |= mark;
-  game.say('equip', permanent.cd, 'to', carrier.cd);
+  game.say('equip', permanent.card, 'to', carrier.card);
   return true;
 }
 
@@ -83,7 +83,7 @@ export function activateHarmonizedTrio(
   others[1].tapped = true;
   game.say('Harmonized Trio: a copy of Brainstorm');
   game.spellsCast += 1;
-  game.onCastIS(false);
+  game.onCastInstantOrSorcery(false);
   game.resolve(C.get('Brainstorm'));
   return true;
 }

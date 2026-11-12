@@ -64,7 +64,8 @@ function resolveBasicLandFetcher(
       game.fetchBasic({ tapped: true });
       return true;
     case "Nissa's Pilgrimage": {
-      const spellMastery = game.gy.filter((card) => card.isIS).length >= 2;
+      const spellMastery =
+        game.graveyard.filter((card) => card.isInstantOrSorcery).length >= 2;
       game.fetchBasic({ tapped: true, only: 'Forest' });
       game.fetchBasic({ toHand: true, only: 'Forest' });
       if (spellMastery) game.fetchBasic({ toHand: true, only: 'Forest' });
@@ -131,7 +132,7 @@ function resolveLandMover(
 
 /** The land to sacrifice: a tapped basic, else any tapped land, else any land. */
 function chooseLandToSacrifice(game: AesiGame): Perm | undefined {
-  const lands = game.landsBf();
+  const lands = game.landsOnBattlefield();
   return (
     lands.find((permanent) => permanent.tapped && permanent.land!.basic) ??
     lands.find((permanent) => permanent.tapped) ??
@@ -141,8 +142,8 @@ function chooseLandToSacrifice(game: AesiGame): Perm | undefined {
 
 function sacrificeLand(game: AesiGame, land: Perm | undefined): void {
   if (!land) return;
-  removeIfPresent(game.bf, land);
-  game.gy.push(land.cd);
+  removeIfPresent(game.battlefield, land);
+  game.graveyard.push(land.card);
 }
 
 /** Spells that do something else: extra land drops, untapping, digging, lands as creatures and the epic spells. */
@@ -156,12 +157,12 @@ function resolveOtherSpell(game: AesiGame, spell: CardDef): boolean {
       game.dropsBonus += 3;
       return true;
     case 'Early Harvest':
-      for (const land of game.landsBf())
+      for (const land of game.landsOnBattlefield())
         if (land.land!.basic) land.tapped = false;
       return true;
     case 'Seismic Sense': {
       const lookCount = Math.min(
-        game.landsBf().length,
+        game.landsOnBattlefield().length,
         Math.max(0, game.library.length - game.libraryCardsToKeep()),
       );
       const top = game.library.splice(0, lookCount);

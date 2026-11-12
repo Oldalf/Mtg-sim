@@ -20,12 +20,12 @@ export function sacrificeThenCast(
   permanent: Perm,
 ): boolean {
   if (
-    !game.canPay(game.effCost(card), card.isIS) ||
-    !game.bf.includes(permanent)
+    !game.canPay(game.effCost(card), card.isInstantOrSorcery) ||
+    !game.battlefield.includes(permanent)
   )
     return false;
   game.sacrifice(permanent);
-  return game.castIS(card);
+  return game.castInstantOrSorcery(card);
 }
 
 export function castEldritchEvolution(
@@ -35,15 +35,15 @@ export function castEldritchEvolution(
 ): boolean {
   if (!game.pay(game.effCost(card), true)) return false;
   removeIfPresent(game.hand, card);
-  const maxManaValue = permanent.cd.mv + 2;
+  const maxManaValue = permanent.card.manaValue + 2;
   game.sacrifice(permanent);
   game.say(
     'cast',
     card,
-    `(sacrifice ${permanent.cd.name}: find mana value ${maxManaValue} or less)`,
+    `(sacrifice ${permanent.card.name}: find mana value ${maxManaValue} or less)`,
   );
   const cards = game.library.filter(
-    (candidate) => candidate.isCreature && candidate.mv <= maxManaValue,
+    (candidate) => candidate.isCreature && candidate.manaValue <= maxManaValue,
   );
   if (cards.length) {
     const chosen =
@@ -64,14 +64,15 @@ export function castSawInHalf(
 ): boolean {
   if (!game.pay(game.effCost(card), true)) return false;
   removeIfPresent(game.hand, card);
-  game.say('cast', card, 'on our', permanent.cd);
-  game.onCastIS(false);
+  game.say('cast', card, 'on our', permanent.card);
+  game.onCastInstantOrSorcery(false);
   const half =
     Math.ceil(game.power(permanent) / 2) -
-    (permanent.cd.power + permanent.counters);
+    (permanent.card.power + permanent.counters);
   game.dies(permanent);
-  for (const token of game.createTokens(permanent.cd, 2)) token.powerMod = half;
-  game.gy.push(card);
+  for (const token of game.createTokens(permanent.card, 2))
+    token.powerMod = half;
+  game.graveyard.push(card);
   return true;
 }
 
@@ -84,7 +85,7 @@ export function castBeastWithin(
   removeIfPresent(game.hand, card);
   game.dies(permanent);
   game.createTokens(TOKENS.beast);
-  game.gy.push(card);
+  game.graveyard.push(card);
   return true;
 }
 
@@ -128,7 +129,7 @@ export function activateLiliana(game: MerenGame, permanent: Perm): boolean {
 
 export function castGrist(game: MerenGame, card: CardDef): boolean {
   if (!game.castPerm(card)) return false;
-  const permanent = game.perm(card.name);
+  const permanent = game.findPermanent(card.name);
   if (permanent) permanent.counters = 3; // loyalty
   return true;
 }
@@ -142,8 +143,8 @@ export function activateGrist(game: MerenGame, permanent: Perm): boolean {
       `Grist -5: each opponent loses ${game.creaturesInGraveyard()}, opp life [${game.life.join(', ')}]`,
     );
     if (permanent.counters <= 0) {
-      removeIfPresent(game.bf, permanent);
-      game.gy.push(permanent.cd);
+      removeIfPresent(game.battlefield, permanent);
+      game.graveyard.push(permanent.card);
     }
   } else {
     permanent.counters += 1;
@@ -154,7 +155,7 @@ export function activateGrist(game: MerenGame, permanent: Perm): boolean {
 }
 
 export function castPreparedSpell(game: MerenGame, permanent: Perm): boolean {
-  if (permanent.cd.name === 'Studious First-Year') {
+  if (permanent.card.name === 'Studious First-Year') {
     if (!game.pay(Cost.parse('{1}{G}'), true)) return false;
     game.prepared.delete(permanent);
     game.say('Rampant Growth (Studious First-Year)');
@@ -167,7 +168,7 @@ export function castPreparedSpell(game: MerenGame, permanent: Perm): boolean {
   game.prepared.delete(permanent);
   game.say('Reanimate (Grave Researcher)');
   game.reanimate(card);
-  game.loseLife(card.mv);
+  game.loseLife(card.manaValue);
   return true;
 }
 
@@ -183,7 +184,7 @@ export function activateInsidiousFungus(
     removeIfPresent(game.hand, land);
     const landPermanent = new Perm(land, land.land, true);
     landPermanent.sick = false;
-    game.bf.push(landPermanent);
+    game.battlefield.push(landPermanent);
   }
   return true;
 }
@@ -203,11 +204,13 @@ export function escapeWoeStrider(game: MerenGame, card: CardDef): boolean {
   if (!game.pay(game.effCost(card, Cost.parse('{3}{B}{B}')), false))
     return false;
   const others = sortDesc(
-    game.gy.filter((candidate) => candidate !== card && !candidate.isCreature),
+    game.graveyard.filter(
+      (candidate) => candidate !== card && !candidate.isCreature,
+    ),
     (candidate) => -game.cardValue(candidate),
   ).slice(0, 4);
   for (const exiledCard of others) {
-    removeIfPresent(game.gy, exiledCard);
+    removeIfPresent(game.graveyard, exiledCard);
     game.exile.push(exiledCard);
   }
   const permanent = game.reanimate(card);

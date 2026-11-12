@@ -47,13 +47,13 @@ import { MULLIGAN } from './mulligan';
 
 export class GaleGame extends Game<KillSearchState> {
   override mulliganRule(): MulliganRule | null {
-    return this.cfg.smart_mulligan ? MULLIGAN : null;
+    return this.config.smart_mulligan ? MULLIGAN : null;
   }
-  // (subclass fields are set after the engine's constructor has run, so they can use this.cfg)
+  // (subclass fields are set after the engine's constructor has run, so they can use this.config)
   everySplitWinsNextTurn = false;
   galeCasts = 0;
   opponentCreatureAccumulator: number[] = new Array(
-    this.cfg.opponents as number,
+    this.config.opponents as number,
   ).fill(0);
   guildmageActivations = 0;
   konradActivations = 0;
@@ -66,10 +66,10 @@ export class GaleGame extends Game<KillSearchState> {
   override killReachable(state: KillSearchState): boolean {
     return finisherReachable(state);
   }
-  lightKey(state: KillSearchState): string {
+  killSearchStateKey(state: KillSearchState): string {
     return state.searchKey();
   }
-  override lightPool(state: KillSearchState): Record<string, number> {
+  override killSearchStatePool(state: KillSearchState): Record<string, number> {
     return { ...state.pool };
   }
 
@@ -81,11 +81,14 @@ export class GaleGame extends Game<KillSearchState> {
       ? 1
       : 0;
   }
-  override lightAddMana(state: KillSearchState, amount: number): void {
+  override addManaToKillSearchState(
+    state: KillSearchState,
+    amount: number,
+  ): void {
     state.pool.A += amount;
     state.coloursFromOutsideLands += amount;
   }
-  override lightAddLand(state: KillSearchState): void {
+  override addLandToKillSearchState(state: KillSearchState): void {
     state.pool.A += 1;
     state.landCount += 1;
     state.landMix = [
@@ -98,7 +101,7 @@ export class GaleGame extends Game<KillSearchState> {
 
   // ---------------------------------------------------------------- card rules only Gale uses
   override onToGy(card: CardDef): void {
-    if (card.isCreature && this.onBf('Syr Konrad, the Grim'))
+    if (card.isCreature && this.isOnBattlefield('Syr Konrad, the Grim'))
       this.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, 1]);
   }
 
@@ -106,8 +109,8 @@ export class GaleGame extends Game<KillSearchState> {
     // Scion of Halaster: the first draw each turn looks at the top two, one goes to the graveyard
     if (
       !this.firstDrawDone &&
-      this.onBf(GALE) &&
-      this.onBf(SCION) &&
+      this.isOnBattlefield(GALE) &&
+      this.isOnBattlefield(SCION) &&
       this.library.length >= 2
     ) {
       this.firstDrawDone = true;
@@ -130,17 +133,17 @@ export class GaleGame extends Game<KillSearchState> {
   ): void {
     // Gale: casting an instant/sorcery from hand lets you cast one of the other type from the graveyard
     const target = trig.galeTarget as CardDef | null | undefined;
-    if (target && !fromGy && this.onBf(GALE)) {
+    if (target && !fromGy && this.isOnBattlefield(GALE)) {
       const gcost = this.effCost(
         target,
         (trig.galeBase as Cost | undefined) ?? null,
         true,
       );
       if (this.pay(gcost, true)) {
-        removeOrThrow(this.gy, target);
+        removeOrThrow(this.graveyard, target);
         this.say('  Gale recasts', target);
         this.spellsCast += 1;
-        this.onCastIS(true);
+        this.onCastInstantOrSorcery(true);
         this.resolve(target, true, null);
         this.exile.push(target);
       }
@@ -153,7 +156,9 @@ export class GaleGame extends Game<KillSearchState> {
     const text = this.lastKillLine.join(' | ');
     if (!text) return null;
     const have = new Set(
-      [...this.hand, ...this.gy, ...this.library].map((card) => card.name),
+      [...this.hand, ...this.graveyard, ...this.library].map(
+        (card) => card.name,
+      ),
     );
     const spells: string[] = [];
     for (const match of text.matchAll(
@@ -161,46 +166,55 @@ export class GaleGame extends Game<KillSearchState> {
     ))
       if (have.has(match[1]) && !spells.includes(match[1]))
         spells.push(match[1]);
-    spells.sort((first, second) => C.get(second).mv - C.get(first).mv);
+    spells.sort(
+      (first, second) => C.get(second).manaValue - C.get(first).manaValue,
+    );
     const perms: string[] = [];
-    for (const permanent of this.bf) {
+    for (const permanent of this.battlefield) {
       if (
         permanent.land !== null ||
-        permanent.cd.rock ||
-        perms.includes(permanent.cd.name)
+        permanent.card.rock ||
+        perms.includes(permanent.card.name)
       )
         continue;
       const words = [
-        permanent.cd.name,
-        permanent.cd.name.split(',')[0],
-        ...permanent.cd.name.split(/[ ,]+/).filter((word) => word.length >= 7),
+        permanent.card.name,
+        permanent.card.name.split(',')[0],
+        ...permanent.card.name
+          .split(/[ ,]+/)
+          .filter((word) => word.length >= 7),
       ];
       if (words.some((word) => text.includes(word)))
-        perms.push(permanent.cd.name);
+        perms.push(permanent.card.name);
     }
-    return { spells, perms, backup: this.prot === this.turn ? 1 : 0 };
+    return {
+      spells,
+      perms,
+      backup: this.protectedKillTurn === this.turn ? 1 : 0,
+    };
   }
 
   /** A pod: with The Mindskinner out, damage our creatures would deal to an opponent is prevented and each opponent mills that many. */
   override combatHit(slot: number, amount: number): void {
-    if (this.onBf('The Mindskinner'))
+    if (this.isOnBattlefield('The Mindskinner'))
       this.applyOpponentEvents([OPPONENT_EVENT.DMG, slot, amount]);
     else super.combatHit(slot, amount);
   }
   /** How close to winning the others think we are: Gale out, the kill engines, a big graveyard of instants and sorceries. */
   override podClose(): number {
     let closeness = 0;
-    if (this.onBf(GALE)) closeness += 0.3;
+    if (this.isOnBattlefield(GALE)) closeness += 0.3;
     if (
-      this.onBf('Duskmantle Guildmage') ||
-      this.onBf('The Mindskinner') ||
-      this.onBf('Riverchurn Monument')
+      this.isOnBattlefield('Duskmantle Guildmage') ||
+      this.isOnBattlefield('The Mindskinner') ||
+      this.isOnBattlefield('Riverchurn Monument')
     )
       closeness += 0.3;
-    if (this.gy.filter((card) => card.isIS).length >= 8) closeness += 0.2;
+    if (this.graveyard.filter((card) => card.isInstantOrSorcery).length >= 8)
+      closeness += 0.2;
     if (
-      this.landsBf().length +
-        this.bf.filter((permanent) => permanent.cd.rock).length >=
+      this.landsOnBattlefield().length +
+        this.battlefield.filter((permanent) => permanent.card.rock).length >=
       8
     )
       closeness += 0.2;
@@ -209,7 +223,7 @@ export class GaleGame extends Game<KillSearchState> {
 
   override commanderCost(card: CardDef, cost: Cost): Cost {
     return card.name === GALE
-      ? cost.withGeneric(cost.g + 2 * this.galeCasts)
+      ? cost.withGeneric(cost.generic + 2 * this.galeCasts)
       : cost;
   }
   override onCommanderCast(card: CardDef): void {
@@ -217,10 +231,12 @@ export class GaleGame extends Game<KillSearchState> {
   }
 
   override landWant(card: CardDef): [number, Cost] {
-    let score = card.isIS ? this.devValueIS(card) : permScore(card.name, 30);
+    let score = card.isInstantOrSorcery
+      ? this.instantOrSorceryDevValue(card)
+      : permScore(card.name, 30);
     let cost = this.effCost(card);
     if (card.name === GALE) {
-      cost = new Cost(cost.g + 2 * this.galeCasts, cost.u);
+      cost = new Cost(cost.generic + 2 * this.galeCasts, cost.blue);
       score = 95;
     }
     return [score, cost];
@@ -243,7 +259,7 @@ export class GaleGame extends Game<KillSearchState> {
     return resolveGaleSpell(this, card, _fromGy, _mode);
   }
 
-  light(
+  buildKillSearchState(
     nextTurn = false,
     add: string[] = [],
     remove: string[] = [],
@@ -256,8 +272,8 @@ export class GaleGame extends Game<KillSearchState> {
     const state = buildKillSearchState(this);
     state.resolveOpponentEvents(events);
     this.life = state.opponentLife;
-    this.lib = state.opponentLibrary;
-    this.ogy = state.opponentGraveyard;
+    this.opponentLibrarySizes = state.opponentLibrary;
+    this.opponentGraveyardSizes = state.opponentGraveyard;
     this.opponentCreatureAccumulator = state.opponentCreatureAccumulator;
   }
 
@@ -275,7 +291,7 @@ export class GaleGame extends Game<KillSearchState> {
             : 12;
     }
     if (COMBO_PERMS.has(name) || COMBO_SORC.has(name)) {
-      if (this.onBf(name)) return 10;
+      if (this.isOnBattlefield(name)) return 10;
       return this.hand.some((candidate) => candidate.name === name) ? 30 : 70;
     }
     if (Facts.COUNTERS.has(name)) return this.hasCounterInHand() ? 38 : 58;
@@ -283,12 +299,12 @@ export class GaleGame extends Game<KillSearchState> {
     if (name === 'Sol Ring') return 85;
     if (card.rock) return this.manaSources() < 6 ? 60 : 20;
     if (
-      Facts.REDUCE_IS.has(name) ||
+      Facts.REDUCE_INSTANT_SORCERY_COST.has(name) ||
       Facts.REDUCE_NONCREATURE.has(name) ||
       Facts.REDUCE_BLUE.has(name) ||
       ENGINES.has(name)
     )
-      return this.onBf(name) ? 15 : 55;
+      return this.isOnBattlefield(name) ? 15 : 55;
     if (Facts.RITUALS.has(name)) return 42;
     if (name in Facts.DRAW_SPELLS) return 30 + 6 * Facts.DRAW_SPELLS[name];
     if (card.mdfcLand) return 50;
@@ -297,7 +313,7 @@ export class GaleGame extends Game<KillSearchState> {
 
   override discardValue(card: CardDef): number {
     let value = this.cardValue(card);
-    if (card.isIS && this.onBf(GALE)) value -= 15;
+    if (card.isInstantOrSorcery && this.isOnBattlefield(GALE)) value -= 15;
     return value;
   }
   override tutorTarget(
@@ -309,7 +325,7 @@ export class GaleGame extends Game<KillSearchState> {
     return chooseTutorTarget(this, allowed, toTop, spent, rampOk);
   }
 
-  override devValueIS(card: CardDef, fromGy = false): number {
+  override instantOrSorceryDevValue(card: CardDef, fromGy = false): number {
     const name = card.name;
     if (
       COMBO_SORC.has(name) ||
@@ -321,18 +337,18 @@ export class GaleGame extends Game<KillSearchState> {
     if (name in Facts.DRAW_SPELLS) {
       const value = 38 + 8 * Facts.DRAW_SPELLS[name];
       if (name === 'Windfall' && this.hand.length > 3) {
-        if (!this.onBf(GALE)) return 0;
+        if (!this.isOnBattlefield(GALE)) return 0;
         // with Gale out, discarded instants/sorceries stay castable from the graveyard,
         // so Windfall only really loses the permanents in hand
         const lost = this.hand.filter(
           (candidate) =>
             candidate !== card &&
-            !candidate.isIS &&
+            !candidate.isInstantOrSorcery &&
             candidate.land === null &&
             this.cardValue(candidate) >= 55,
         ).length;
         const binned = this.hand.filter(
-          (candidate) => candidate !== card && candidate.isIS,
+          (candidate) => candidate !== card && candidate.isInstantOrSorcery,
         ).length;
         return lost === 0 ? Math.min(80, 60 + 4 * binned) : lost === 1 ? 45 : 0;
       }
@@ -341,10 +357,10 @@ export class GaleGame extends Game<KillSearchState> {
     }
     if (Facts.TUTORS.has(name)) return 72;
     if (name === 'Unearth')
-      return this.gy.some(
+      return this.graveyard.some(
         (candidate) =>
           candidate.isCreature &&
-          candidate.mv <= 3 &&
+          candidate.manaValue <= 3 &&
           candidate.name in PERM_SCORE,
       )
         ? 60
@@ -359,7 +375,7 @@ export class GaleGame extends Game<KillSearchState> {
 
   override canTapForEnergy(permanent: Perm): boolean {
     return !(
-      permanent.cd.name === 'The Mindskinner' &&
+      permanent.card.name === 'The Mindskinner' &&
       !permanent.sick &&
       !this.attacked
     ); // it would rather attack (Gale never does)
@@ -385,16 +401,19 @@ export class GaleGame extends Game<KillSearchState> {
       value += 150;
       value +=
         6 *
-        this.gy.filter((card) => card.isIS && this.devValueIS(card, true) > 0)
-          .length;
+        this.graveyard.filter(
+          (card) =>
+            card.isInstantOrSorcery &&
+            this.instantOrSorceryDevValue(card, true) > 0,
+        ).length;
     }
     const have = new Set([
       ...this.hand.map((card) => card.name),
-      ...this.bf.map((permanent) => permanent.cd.name),
+      ...this.battlefield.map((permanent) => permanent.card.name),
     ]);
     if (state.hasGale || this.command.length)
-      for (const candidate of this.gy)
-        if (candidate.isIS) have.add(candidate.name);
+      for (const candidate of this.graveyard)
+        if (candidate.isInstantOrSorcery) have.add(candidate.name);
     const miss = Math.min(
       ...PACKAGES.map(
         (pkg) =>
@@ -405,10 +424,10 @@ export class GaleGame extends Game<KillSearchState> {
     // engines / creatures on the battlefield are worth at least as much as in hand
     value +=
       0.6 *
-      this.bf
-        .filter((permanent) => permanent.land === null && !permanent.cd.rock)
+      this.battlefield
+        .filter((permanent) => permanent.land === null && !permanent.card.rock)
         .reduce(
-          (total, permanent) => total + permScore(permanent.cd.name, 0),
+          (total, permanent) => total + permScore(permanent.card.name, 0),
           0,
         );
     value +=
@@ -418,7 +437,7 @@ export class GaleGame extends Game<KillSearchState> {
   }
 
   override combat(): void {
-    const permanent = this.perm('The Mindskinner');
+    const permanent = this.findPermanent('The Mindskinner');
     if (permanent && !permanent.sick && !this.attacked) {
       this.attacked = true;
       const target = buildKillSearchState(this).biggestLibraryOpponent();
@@ -426,7 +445,7 @@ export class GaleGame extends Game<KillSearchState> {
         this.applyOpponentEvents([OPPONENT_EVENT.DMG, target, 10]);
         this.say(
           'Mindskinner attacks: opp libraries',
-          `[${this.lib.join(', ')}]`,
+          `[${this.opponentLibrarySizes.join(', ')}]`,
         );
       }
     }
@@ -434,11 +453,11 @@ export class GaleGame extends Game<KillSearchState> {
       // a pod: the other creatures attack when no blocker can stop or kill them (in a goldfish game Gale never attacks)
       const pool = this.creatures().filter(
         (candidate) =>
-          candidate.cd.name !== 'The Mindskinner' &&
+          candidate.card.name !== 'The Mindskinner' &&
           !candidate.tapped &&
           !candidate.sick &&
           this.power(candidate) > 0 &&
-          !this.srcKind(candidate, true),
+          !this.manaSourceKind(candidate, true),
       );
       if (pool.length) this.arenaCombat(pool);
     }

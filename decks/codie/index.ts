@@ -13,7 +13,7 @@ export const deck = {
   name: 'codie',
   dir: path.join(ROOT, 'decks', 'codie'),
   defaultList: 'decklist.txt',
-  cfg: CFG,
+  config: CFG,
   Game: CodieGame,
   rankProtect: { sections: ['protection', 'removal'], except: [] as string[] },
   rankTurn: 7,
@@ -22,37 +22,38 @@ export const deck = {
     {
       label: 'Won through a Reiterate loop (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.loop === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.loop === 1),
     },
     {
       label: 'Had Reiterate by turn 7 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.reit7 === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.reit7 === 1),
     },
     {
       label: 'Had a loop piece (Will / Geyser / Bounty) by turn 7 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.loopPiece7 === 1),
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => row.loopPiece7 === 1),
     },
     {
       label: 'Had a finisher by turn 7 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.fin7 === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.fin7 === 1),
     },
     {
       label: 'Had a tutor by turn 7 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.tutor7 === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.tutor7 === 1),
     },
     {
       label: 'Had Reiterate + loop piece + finisher by turn 7 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.all3 === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.all3 === 1),
     },
     {
       label: 'Lands on the battlefield on turn 7',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         rows
           .filter((row) => row.lands7)
           .reduce((total, row) => total + (row.lands7 as number), 0) /
@@ -61,7 +62,7 @@ export const deck = {
     {
       label: 'Mana sources on turn 7',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         rows
           .filter((row) => row.mana7)
           .reduce((total, row) => total + (row.mana7 as number), 0) /
@@ -70,7 +71,7 @@ export const deck = {
     {
       label: 'Died (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.died === 1),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => row.died === 1),
     },
   ],
 };

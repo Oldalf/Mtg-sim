@@ -28,21 +28,26 @@ type AddCandidate = (
   score: number,
   cost: Cost,
   isInstantOrSorcery: boolean,
-  act: () => boolean,
+  action: () => boolean,
 ) => void;
 
 /** Everything the AI may do now while it develops its mana and finds pieces, with a score each. */
 export function buildCandidates(game: CodieGame, _main2: boolean): Cand[] {
   game.purgeTreasures();
   const candidates: Cand[] = [];
-  const add: AddCandidate = (score, cost, isIS, act) =>
-    candidates.push({ score, cost, isIS, act });
+  const add: AddCandidate = (score, cost, isInstantOrSorcery, action) =>
+    candidates.push({
+      score,
+      cost,
+      isInstantOrSorcery: isInstantOrSorcery,
+      action: action,
+    });
   addCodieCandidates(game, add);
   addSpiritGuideCandidates(game, add);
   addVaultCandidate(game, add);
   for (const commander of game.command.slice())
     add(
-      game.cfg.codie_early ? 95 : 45,
+      game.config.codie_early ? 95 : 45,
       game.commanderCost(commander, game.effCost(commander)),
       false,
       () => game.castPerm(commander, true),
@@ -58,14 +63,14 @@ export function buildCandidates(game: CodieGame, _main2: boolean): Cand[] {
 
 /** Codie: {4}, T: WUBRG (net +1 mana, all five colours) and the next spell makes a free cheaper instant or sorcery. */
 function addCodieCandidates(game: CodieGame, add: AddCandidate): void {
-  const codie = game.perm(CODIE);
+  const codie = game.findPermanent(CODIE);
   const triggerSpell = TRIGGER_SPELLS.map((name) => game.cardInHand(name)).find(
     (card) => card !== undefined,
   );
   const profaneTutorInLibrary = game.library.some(
     (card) => card.name === PROFANE_TUTOR,
   );
-  if (codie && !codie.tapped && !codie.sick && game.cfg.codie_dev)
+  if (codie && !codie.tapped && !codie.sick && game.config.codie_dev)
     add(
       triggerSpell && profaneTutorInLibrary && game.availMana() >= 5 ? 82 : 58,
       new Cost(4),
@@ -76,13 +81,16 @@ function addCodieCandidates(game: CodieGame, add: AddCandidate): void {
   if (game.codieArmed > 0 && profaneTutorInLibrary)
     for (const name of TRIGGER_SPELLS) {
       const card = game.cardInHand(name);
-      if (card) add(92, game.effCost(card), true, () => game.castIS(card));
+      if (card)
+        add(92, game.effCost(card), true, () =>
+          game.castInstantOrSorcery(card),
+        );
     }
 }
 
 /** Spirit Guides: exile one for mana when that lets us cast a spell we could not cast otherwise this turn. */
 function addSpiritGuideCandidates(game: CodieGame, add: AddCandidate): void {
-  if (!game.cfg.guides_dev) return;
+  if (!game.config.guides_dev) return;
   for (const [guideName, colour] of [
     ['Elvish Spirit Guide', 'G'],
     ['Simian Spirit Guide', 'R'],
@@ -98,7 +106,7 @@ function addSpiritGuideCandidates(game: CodieGame, add: AddCandidate): void {
         (FETCH[card.name] ||
           card.name === 'Manamorphose' ||
           card.name === DEMONIC_TUTOR) &&
-        card.mv === manaAvailable + 1,
+        card.manaValue === manaAvailable + 1,
     );
     if (unlocksSpell)
       add(72, new Cost(), false, () => {
@@ -122,7 +130,7 @@ function addVaultCandidate(game: CodieGame, add: AddCandidate): void {
     ].includes(card.name),
   );
   if (vault && hasCantrip && game.myLife >= 25 && game.library.length >= 30)
-    add(64, game.effCost(vault), true, () => game.castIS(vault));
+    add(64, game.effCost(vault), true, () => game.castInstantOrSorcery(vault));
 }
 
 /** One card in hand: land fetchers, cantrips, tutors and Windfall; the cards only the solver uses are skipped. */
@@ -134,10 +142,10 @@ function addCardInHandCandidate(
   const name = card.name;
   const cost = game.effCost(card);
   const score = game.developmentValue(card);
-  const cast = () => game.castIS(card);
+  const cast = () => game.castInstantOrSorcery(card);
   const fetcher = FETCH[name];
   if (fetcher) {
-    const landsOnBattlefield = game.landsBf().length;
+    const landsOnBattlefield = game.landsOnBattlefield().length;
     if (!game.library.some((candidate) => candidate.land !== null)) return;
     if (fetcher.landsToSacrifice && landsOnBattlefield < 3) return;
     if (name === 'Hour of Promise' && landsOnBattlefield < 5) return;
@@ -146,7 +154,10 @@ function addCardInHandCandidate(
   }
   switch (name) {
     case 'Frantic Search':
-      if (game.landsBf().filter((permanent) => permanent.tapped).length >= 3)
+      if (
+        game.landsOnBattlefield().filter((permanent) => permanent.tapped)
+          .length >= 3
+      )
         add(score + 20, cost, true, cast);
       return;
     case 'Windfall': {
@@ -203,7 +214,7 @@ function addCardInHandCandidate(
     case 'Growth Spiral':
     case 'Sylvan Scrying':
       add(score, cost, true, () =>
-        game.castIS(
+        game.castInstantOrSorcery(
           card,
           false,
           name === 'Manamorphose' ? manamorphoseCost(game) : null,

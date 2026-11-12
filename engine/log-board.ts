@@ -111,10 +111,10 @@ export class Board {
   /** Pay a cost from the pool; whatever can't be paid yet is owed. */
   payFromPool(cost: Cost, isInstantOrSorcery = false): void {
     const pool = this.pool;
-    const missingBlue = this.takeFromPool(['U', 'A'], cost.u);
-    const missingBlack = this.takeFromPool(['B', 'A'], cost.b);
+    const missingBlue = this.takeFromPool(['U', 'A'], cost.blue);
+    const missingBlack = this.takeFromPool(['B', 'A'], cost.black);
     let missingHybrid = 0;
-    for (let i = 0; i < cost.h; i++)
+    for (let i = 0; i < cost.hybrid; i++)
       missingHybrid += this.takeFromPool(
         pool.U >= pool.B ? ['U', 'B', 'A'] : ['B', 'U', 'A'],
         1,
@@ -129,15 +129,15 @@ export class Board {
         lessOfColour,
         'A',
       ],
-      cost.g,
+      cost.generic,
     );
     if (missingBlue || missingBlack || missingHybrid || missingGeneric) {
       const alreadyOwed = this.owed ?? new Cost();
       this.owed = new Cost(
-        alreadyOwed.g + missingGeneric,
-        alreadyOwed.u + missingBlue,
-        alreadyOwed.b + missingBlack,
-        alreadyOwed.h + missingHybrid,
+        alreadyOwed.generic + missingGeneric,
+        alreadyOwed.blue + missingBlue,
+        alreadyOwed.black + missingBlack,
+        alreadyOwed.hybrid + missingHybrid,
       );
     }
   }
@@ -147,7 +147,9 @@ export class Board {
     const cardDef = C.get(card);
     const landInfo =
       cardDef.land ??
-      (cardDef.mdfcLand && !cardDef.isIS ? cardDef.mdfcLand : null);
+      (cardDef.mdfcLand && !cardDef.isInstantOrSorcery
+        ? cardDef.mdfcLand
+        : null);
     let manaKind: string | null =
       landInfo !== null ? landInfo.mana : cardDef.rock;
     if (
@@ -194,12 +196,12 @@ export class Board {
   // ================================================================ events
 
   /** A card moves from one zone to another. */
-  moveCard(card: string, from: string, to: string): void {
+  moveCard(card: string, from: string, destination: string): void {
     const cardDef = C.get(card);
     if (
       from === 'battlefield' &&
       this.stack.includes(card) &&
-      (to === 'graveyard' || to === 'exile')
+      (destination === 'graveyard' || destination === 'exile')
     ) {
       // an instant/sorcery leaving the "stack" has resolved (or was countered: rare for these)
       if (card === 'High Tide') this.highTides += 1;
@@ -219,7 +221,9 @@ export class Board {
     else if (from === 'battlefield') {
       if (this.stack.includes(card)) removeFrom(this.stack);
       else {
-        const index = this.battlefield.findIndex((p) => p.name === card);
+        const index = this.battlefield.findIndex(
+          (boardCard) => boardCard.name === card,
+        );
         if (index >= 0) {
           const [removed] = this.battlefield.splice(index, 1);
           if (removed.token) return; // a token that leaves the battlefield is gone
@@ -227,16 +231,16 @@ export class Board {
       }
     } else if (from === 'library') this.drawOrder.push(card);
     // add to the destination
-    if (to === 'hand') this.hand.push(card);
-    else if (to === 'graveyard') this.graveyard.push(card);
-    else if (to === 'exile') this.exile.push(card);
-    else if (to === 'commandZone') this.command.push(card);
-    else if (to === 'library') {
+    if (destination === 'hand') this.hand.push(card);
+    else if (destination === 'graveyard') this.graveyard.push(card);
+    else if (destination === 'exile') this.exile.push(card);
+    else if (destination === 'commandZone') this.command.push(card);
+    else if (destination === 'library') {
       // put back on top: it will be "drawn" again, so forget the earlier draw
       const index = this.drawOrder.lastIndexOf(card);
       if (index >= 0) this.drawOrder.splice(index, 1);
-    } else if (to === 'battlefield') {
-      if (cardDef.isIS) this.stack.push(card);
+    } else if (destination === 'battlefield') {
+      if (cardDef.isInstantOrSorcery) this.stack.push(card);
       else {
         if (
           (cardDef.land !== null || (cardDef.mdfcLand && from === 'hand')) &&
@@ -257,7 +261,7 @@ export class Board {
 
   setTapped(card: string, tapped: boolean): void {
     const permanent = this.battlefield.find(
-      (p) => p.name === card && p.tapped !== tapped,
+      (boardCard) => boardCard.name === card && boardCard.tapped !== tapped,
     );
     if (!permanent) return;
     permanent.tapped = tapped;
@@ -287,15 +291,15 @@ export class Board {
 
   /** A spell cast (costs mana): onto the battlefield/stack from hand, graveyard (Gale), command zone
    *  or exile. Lands and cards put onto the battlefield from the library aren't casts. */
-  isCast(card: string, from: string, to: string): boolean {
+  isCast(card: string, from: string, destination: string): boolean {
     if (
-      to !== 'battlefield' ||
+      destination !== 'battlefield' ||
       !['hand', 'graveyard', 'commandZone', 'exile'].includes(from)
     )
       return false;
     const cardDef = C.get(card);
     return (
-      cardDef.isIS ||
+      cardDef.isInstantOrSorcery ||
       !(cardDef.land !== null || (cardDef.mdfcLand && from === 'hand'))
     );
   }
@@ -308,10 +312,10 @@ export class Board {
     let cost = gameBeforeCast.effCost(cardDef, null, from === 'graveyard');
     if (from === 'commandZone') {
       const earlierCasts = this.commanderCasts.get(card) ?? 0;
-      cost = cost.withGeneric(cost.g + 2 * earlierCasts);
+      cost = cost.withGeneric(cost.generic + 2 * earlierCasts);
       this.commanderCasts.set(card, earlierCasts + 1);
     }
-    this.payFromPool(cost, cardDef.isIS);
+    this.payFromPool(cost, cardDef.isInstantOrSorcery);
     this.spellsCast += 1;
   }
 
@@ -326,9 +330,9 @@ export class Board {
     game.turn = turn;
     game.command = this.command.map((name) => C.get(name));
     game.hand = this.hand.map((name) => C.get(name));
-    game.gy = this.graveyard.map((name) => C.get(name));
+    game.graveyard = this.graveyard.map((name) => C.get(name));
     game.exile = this.exile.map((name) => C.get(name));
-    game.bf = [];
+    game.battlefield = [];
     for (const permanent of this.battlefield) {
       // tokens: the deck says what they are (e.g. Meren's "Demon" = a stolen 5/5); unknown ones are left out
       const cardDef = permanent.token
@@ -337,13 +341,15 @@ export class Board {
       if (!cardDef) continue;
       const landInfo =
         cardDef.land ??
-        (cardDef.mdfcLand && !cardDef.isIS ? cardDef.mdfcLand : null);
+        (cardDef.mdfcLand && !cardDef.isInstantOrSorcery
+          ? cardDef.mdfcLand
+          : null);
       const gamePermanent = new Perm(cardDef, landInfo, permanent.tapped);
       gamePermanent.sick = permanent.sick;
       gamePermanent.transformed = !!permanent.flipped;
       gamePermanent.token = !!permanent.token;
       gamePermanent.counters = permanent.counters;
-      game.bf.push(gamePermanent);
+      game.battlefield.push(gamePermanent);
     }
     const knownCards = [
       ...this.hand,
@@ -351,7 +357,9 @@ export class Board {
       ...this.exile,
       ...this.command,
       ...this.stack,
-      ...this.battlefield.filter((p) => !p.token).map((p) => p.name),
+      ...this.battlefield
+        .filter((boardCard) => !boardCard.token)
+        .map((boardCard) => boardCard.name),
     ];
     const libraryNames = this.deckCards.slice();
     for (const name of knownCards) {
@@ -359,11 +367,11 @@ export class Board {
       if (index >= 0) libraryNames.splice(index, 1);
     }
     game.library = libraryNames.map((name) => C.get(name));
-    game.lib = new Array(config.opponents as number).fill(
+    game.opponentLibrarySizes = new Array(config.opponents as number).fill(
       (config.opp_library as number) - (turn - 1),
     );
     game.landPlayed = this.landPlayed;
-    game.ht = this.highTides;
+    game.highTidesThisTurn = this.highTides;
     game.muck = this.mucks;
     game.energy = this.energy;
     game.attacked = this.attacked;

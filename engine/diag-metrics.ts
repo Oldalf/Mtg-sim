@@ -19,6 +19,7 @@ export function winByTurnMetrics(
   return turns.map((turn) => ({
     label: `Win by turn ${turn} (%)`,
     unit: '%' as const,
-    f: (rows: DiagRow[]) => percentOf(rows, (row) => winTurnOf(row) <= turn),
+    measure: (rows: DiagRow[]) =>
+      percentOf(rows, (row) => winTurnOf(row) <= turn),
   }));
 }

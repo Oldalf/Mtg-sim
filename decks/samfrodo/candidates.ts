@@ -32,17 +32,23 @@ type AddCandidate = (
   score: number,
   cost: Cost,
   isInstantOrSorcery: boolean,
-  act: () => boolean,
+  action: () => boolean,
   rockCard?: CardDef,
 ) => void;
 
 /** Everything the AI may do now, with a score each (higher first). */
 export function buildCandidates(game: SamFrodoGame, main2: boolean): Cand[] {
   const candidates: Cand[] = [];
-  const add: AddCandidate = (score, cost, isIS, act, rock) =>
-    candidates.push({ score, cost, isIS, act, rock });
+  const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
+    candidates.push({
+      score,
+      cost,
+      isInstantOrSorcery: isInstantOrSorcery,
+      action: action,
+      rock,
+    });
   const isEarly = game.manaSources() < 6;
-  const hasSanguineBond = game.onBf('Sanguine Bond');
+  const hasSanguineBond = game.isOnBattlefield('Sanguine Bond');
   for (const commander of game.command.slice())
     add(
       commander.name === SAM ? 90 : 86,
@@ -68,12 +74,12 @@ function addOwnRemovalOnRapaciousGuest(
   add: AddCandidate,
   main2: boolean,
 ): void {
-  const guest = game.perm('Rapacious Guest');
+  const guest = game.findPermanent('Rapacious Guest');
   if (
     !guest ||
     !main2 ||
-    !game.cfg.own_removal ||
-    game.power(guest) < (game.cfg.own_removal_power as number)
+    !game.config.own_removal ||
+    game.power(guest) < (game.config.own_removal_power as number)
   )
     return;
   const removal = OWN_KILL.map((name) =>
@@ -84,7 +90,7 @@ function addOwnRemovalOnRapaciousGuest(
       Math.min(97, 50 + 4 * game.power(guest)),
       game.effCost(removal),
       true,
-      () => game.castIS(removal),
+      () => game.castInstantOrSorcery(removal),
     );
 }
 
@@ -113,19 +119,20 @@ function addCardInHandCandidate(
     case 'Cultivate':
     case 'Farseek':
       if (game.library.some((candidate) => candidate.land?.basic))
-        add(score, cost, false, () => game.castIS(card));
+        add(score, cost, false, () => game.castInstantOrSorcery(card));
       return;
     case "Night's Whisper":
-      if (game.myLife > 8) add(52, cost, false, () => game.castIS(card));
+      if (game.myLife > 8)
+        add(52, cost, false, () => game.castInstantOrSorcery(card));
       return;
     case 'Harmonize':
-      add(58, cost, false, () => game.castIS(card));
+      add(58, cost, false, () => game.castInstantOrSorcery(card));
       return;
     case 'Farmer Cotton': {
       let xValue = 0;
       while (xValue < 12 && game.canPay(card.cost.withGeneric(xValue + 1)))
         xValue++;
-      if (xValue >= (game.cfg.cotton_min_x as number))
+      if (xValue >= (game.config.cotton_min_x as number))
         add(
           Math.min(95, 35 + 9 * xValue),
           card.cost.withGeneric(xValue),
@@ -135,20 +142,23 @@ function addCardInHandCandidate(
       return;
     }
     case 'Second Harvest': {
-      const tokenCount = game.bf.filter((permanent) => permanent.token).length;
+      const tokenCount = game.battlefield.filter(
+        (permanent) => permanent.token,
+      ).length;
       if (tokenCount >= 4)
         add(Math.min(96, 30 + 6 * tokenCount), cost, true, () =>
-          game.castIS(card),
+          game.castInstantOrSorcery(card),
         );
       return;
     }
     case 'Crypt Incursion': {
-      const creaturesInGraveyard = game.gy.filter(
+      const creaturesInGraveyard = game.graveyard.filter(
         (candidate) => candidate.isCreature,
       ).length;
       const familiarLoop =
-        game.gy.some((candidate) => candidate.name === 'Cauldron Familiar') &&
-        game.onBf("Witch's Oven");
+        game.graveyard.some(
+          (candidate) => candidate.name === 'Cauldron Familiar',
+        ) && game.isOnBattlefield("Witch's Oven");
       if (creaturesInGraveyard >= 2 && !familiarLoop)
         add(
           hasSanguineBond
@@ -156,17 +166,18 @@ function addCardInHandCandidate(
             : 10 + 3 * creaturesInGraveyard,
           cost,
           true,
-          () => game.castIS(card),
+          () => game.castInstantOrSorcery(card),
         );
       return;
     }
   }
   if (name === 'Sanguine Bond') score = 88;
-  if (name === 'Cauldron Familiar' && game.onBf("Witch's Oven")) score = 80;
+  if (name === 'Cauldron Familiar' && game.isOnBattlefield("Witch's Oven"))
+    score = 80;
   if (
     name === "Witch's Oven" &&
     (game.hand.some((candidate) => candidate.name === 'Cauldron Familiar') ||
-      game.onBf('Cauldron Familiar'))
+      game.isOnBattlefield('Cauldron Familiar'))
   )
     score = Math.max(score, 75);
   add(score, cost, false, () => game.castPerm(card));
@@ -180,11 +191,13 @@ function addAbilityCandidates(
   hasSanguineBond: boolean,
 ): void {
   const spareFodder = game.spareSacrifices();
-  const foodCost = new Cost(game.onBf(SAM) ? 1 : 2);
-  const familiar = game.gy.find((card) => card.name === 'Cauldron Familiar');
+  const foodCost = new Cost(game.isOnBattlefield(SAM) ? 1 : 2);
+  const familiar = game.graveyard.find(
+    (card) => card.name === 'Cauldron Familiar',
+  );
   if (familiar && game.foodsOnBattlefield().length)
     add(74, new Cost(), false, () => returnCauldronFamiliar(game, familiar));
-  for (const permanent of game.bf)
+  for (const permanent of game.battlefield)
     addPermanentAbilityCandidate(
       game,
       permanent,
@@ -194,7 +207,7 @@ function addAbilityCandidates(
       spareFodder,
     );
   // crack a Clue (one candidate, whichever Clue)
-  const clue = game.bf.find((permanent) => permanent.cd === CLUE);
+  const clue = game.battlefield.find((permanent) => permanent.card === CLUE);
   if (clue && main2)
     add(38, new Cost(2), false, () =>
       payAndActivate(game, new Cost(2), () => {
@@ -203,7 +216,7 @@ function addAbilityCandidates(
       }),
     );
   // eat a Food: 3 life (drains with Sanguine Bond, feeds Gollum / Frodo / The Gaffer / Gwaihir)
-  const food = spareFodder.find((permanent) => permanent.cd === FOOD);
+  const food = spareFodder.find((permanent) => permanent.card === FOOD);
   if (food && main2) {
     const value = valueOfGainingLife(game, 3);
     if (value > 0)
@@ -220,14 +233,14 @@ function addPermanentAbilityCandidate(
   hasSanguineBond: boolean,
   spareFodder: Perm[],
 ): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   const isReady =
     !permanent.tapped && !(permanent.isCreature && permanent.sick);
   const spareFoodCount = spareFodder.filter(
-    (candidate) => candidate.cd === FOOD,
+    (candidate) => candidate.card === FOOD,
   ).length;
   if (name === "Witch's Oven" && !permanent.tapped) {
-    const familiar = game.perm('Cauldron Familiar');
+    const familiar = game.findPermanent('Cauldron Familiar');
     const victim =
       familiar ?? spareFodder.find((candidate) => candidate.isCreature) ?? null;
     if (victim)
@@ -309,11 +322,11 @@ function addTradingPostCandidate(
         game.draw(1);
       }),
     );
-  else if (deadCard && (hasSanguineBond || game.onBf(GOLLUM)))
+  else if (deadCard && (hasSanguineBond || game.isOnBattlefield(GOLLUM)))
     add(46, new Cost(1), false, () =>
       activateTradingPost(game, tradingPost, () => {
         removeIfPresent(game.hand, deadCard);
-        game.gy.push(deadCard);
+        game.graveyard.push(deadCard);
         game.gainLife(4);
       }),
     );

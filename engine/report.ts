@@ -50,7 +50,9 @@ export function table(results: KillTurns[], maxTurn: number): Table {
 
 /** % of games with a kill by this turn. */
 const percentByTurn = (table: Table, kind: KillKind, turn: number) =>
-  table.percentOnTurn[kind].slice(1, turn + 1).reduce((a, b) => a + b, 0);
+  table.percentOnTurn[kind]
+    .slice(1, turn + 1)
+    .reduce((total, value) => total + value, 0);
 
 /** How far apart two win rates must be, in percentage points, before it is more than luck. */
 const noisePoints = (gameCount: number) =>
@@ -163,7 +165,8 @@ export function printDiag(
   gameCount: number,
 ): void {
   const metrics = deck.diagMetrics ?? [];
-  const labelWidth = Math.max(...metrics.map((m) => m.label.length)) + 2;
+  const labelWidth =
+    Math.max(...metrics.map((metric) => metric.label.length)) + 2;
   console.log(`${gameCount} games each, same seeds. Noise: about +/-2 points for a %, +/-0.1 for a turn.
 `);
   console.log(
@@ -171,7 +174,7 @@ export function printDiag(
       listNames.map((name) => name.slice(0, 18).padStart(18)).join(''),
   );
   for (const metric of metrics) {
-    const values = rowsPerList.map((rows) => metric.f(rows));
+    const values = rowsPerList.map((rows) => metric.measure(rows));
     const decimals = metric.unit === '%' ? 1 : 2;
     const cells = values.map((value, index) => {
       const difference = value - values[0];
@@ -238,7 +241,7 @@ interface OpeningHand {
 
 const mean = (numbers: number[]) =>
   numbers.length
-    ? numbers.reduce((sum, x) => sum + x, 0) / numbers.length
+    ? numbers.reduce((sum, value) => sum + value, 0) / numbers.length
     : NaN;
 const percentWinningBy = (turns: number[], turn: number) =>
   turns.length
@@ -256,7 +259,9 @@ function printHandsByLandCount(
 ): void {
   console.log('lands in the 7   share    avg turn   win by T' + winByTurn);
   for (let lands = 0; lands <= 7; lands++) {
-    const turns = hands.filter((h) => h.lands === lands).map((h) => h.turn);
+    const turns = hands
+      .filter((openingHand) => openingHand.lands === lands)
+      .map((openingHand) => openingHand.turn);
     console.log(
       `  ${lands} lands      ${fixed1((100 * turns.length) / hands.length, 5)}%   ${fixed2(mean(turns), 6)}     ${fixed1(percentWinningBy(turns, winByTurn), 5)}`,
     );
@@ -273,20 +278,26 @@ function printHandFeatures(deck: Deck, keptHands: OpeningHand[]): void {
     card.land === null && card.mdfcLand === null;
   const genericFeatures: {
     label: string;
-    f: (hand: C.CardDef[]) => boolean;
+    matches: (hand: C.CardDef[]) => boolean;
   }[] = [
     {
       label: 'a spell costing 1-2',
-      f: (hand) => hand.some((c) => isSpell(c) && c.mv >= 1 && c.mv <= 2),
+      matches: (hand) =>
+        hand.some(
+          (card) => isSpell(card) && card.manaValue >= 1 && card.manaValue <= 2,
+        ),
     },
     {
       label: 'two or more spells costing 1-3',
-      f: (hand) =>
-        hand.filter((c) => isSpell(c) && c.mv >= 1 && c.mv <= 3).length >= 2,
+      matches: (hand) =>
+        hand.filter(
+          (card) => isSpell(card) && card.manaValue >= 1 && card.manaValue <= 3,
+        ).length >= 2,
     },
     {
       label: 'no spell costing 3 or less',
-      f: (hand) => !hand.some((c) => isSpell(c) && c.mv <= 3),
+      matches: (hand) =>
+        !hand.some((card) => isSpell(card) && card.manaValue <= 3),
     },
   ];
   const features = [...genericFeatures, ...(deck.handFeatures ?? [])];
@@ -298,10 +309,16 @@ function printHandFeatures(deck: Deck, keptHands: OpeningHand[]): void {
   );
   console.log('feature'.padEnd(64) + 'share   with     without  gain');
   for (const feature of features) {
-    const withFeature = keptHands.filter((h) => feature.f(cardsOf(h)));
-    const withoutFeature = keptHands.filter((h) => !feature.f(cardsOf(h)));
-    const turnsWith = mean(withFeature.map((h) => h.turn));
-    const turnsWithout = mean(withoutFeature.map((h) => h.turn));
+    const withFeature = keptHands.filter((openingHand) =>
+      feature.matches(cardsOf(openingHand)),
+    );
+    const withoutFeature = keptHands.filter(
+      (openingHand) => !feature.matches(cardsOf(openingHand)),
+    );
+    const turnsWith = mean(withFeature.map((openingHand) => openingHand.turn));
+    const turnsWithout = mean(
+      withoutFeature.map((openingHand) => openingHand.turn),
+    );
     const gain = turnsWithout - turnsWith;
     console.log(
       feature.label.padEnd(64) +
@@ -320,15 +337,15 @@ function printCardsInOpeningHand(keptHands: OpeningHand[]): void {
   const rows: [string, number, number][] = []; // card, hands with it, turns sooner
   for (const name of cardNames) {
     const turnsWith = keptHands
-      .filter((h) => h.cardNames.includes(name))
-      .map((h) => h.turn);
+      .filter((openingHand) => openingHand.cardNames.includes(name))
+      .map((openingHand) => openingHand.turn);
     const turnsWithout = keptHands
-      .filter((h) => !h.cardNames.includes(name))
-      .map((h) => h.turn);
+      .filter((openingHand) => !openingHand.cardNames.includes(name))
+      .map((openingHand) => openingHand.turn);
     if (turnsWith.length >= MIN_HANDS_WITH_CARD)
       rows.push([name, turnsWith.length, mean(turnsWithout) - mean(turnsWith)]);
   }
-  rows.sort((a, b) => b[2] - a[2]);
+  rows.sort((first, second) => second[2] - first[2]);
   const show = ([name, handCount, turnsSooner]: [string, number, number]) =>
     console.log(
       `  ${name.padEnd(40)} in ${String(handCount).padStart(5)} hands  ${(turnsSooner >= 0 ? '+' : '') + turnsSooner.toFixed(2)} turns sooner`,

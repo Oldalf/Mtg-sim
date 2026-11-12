@@ -120,7 +120,7 @@ export const ROCKS: Record<string, string> = {
 };
 
 // cost reducers (+ Voracious Reader, the transformed Curious Homunculus)
-export const REDUCE_IS = new Set([
+export const REDUCE_INSTANT_SORCERY_COST = new Set([
   'Baral, Chief of Compliance',
   'Case of the Ransacked Lab',
   'Mocking Sprite',
@@ -209,7 +209,7 @@ export const KNOWN = new Set<string>([
   ...Object.keys(LANDS),
   ...Object.keys(MDFC_LAND_BACK),
   ...Object.keys(ROCKS),
-  ...REDUCE_IS,
+  ...REDUCE_INSTANT_SORCERY_COST,
   ...REDUCE_NONCREATURE,
   ...REDUCE_BLUE,
   ...REDUCE_FROM_GY2,

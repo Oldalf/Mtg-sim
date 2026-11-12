@@ -6,10 +6,10 @@ import { Cand, Config, KillSearcher } from '../../engine/game-types';
 import { Game } from '../../engine/game';
 
 class GoldfishGame extends Game<null> {
-  light(): null {
+  buildKillSearchState(): null {
     return null;
   }
-  lightKey(): string {
+  killSearchStateKey(): string {
     return '';
   }
   killSearch(): KillSearcher<null> {
@@ -41,6 +41,6 @@ export const deck = {
   name: 'goldfish',
   dir: path.join(ROOT, 'decks', 'goldfish'),
   defaultList: 'decklist.txt',
-  cfg: CFG,
+  config: CFG,
   Game: GoldfishGame,
 };

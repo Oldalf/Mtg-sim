@@ -34,7 +34,7 @@ export const deck = {
   name: 'meren',
   dir: path.join(ROOT, 'decks', 'meren'),
   defaultList: 'decklist.txt',
-  cfg: CFG,
+  config: CFG,
   // a pod: every other player must be dead (the goldfish rule was two dead or 100 damage)
   podCfg: (players: number) => ({ win_dead: players - 1, win_damage: 1e9 }),
   Game: MerenGame,
@@ -54,7 +54,7 @@ export const deck = {
     {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         rows.map(win).sort((first, second) => first - second)[
           Math.floor(rows.length * 0.9)
         ],
@@ -63,23 +63,23 @@ export const deck = {
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, slow5),
+      measure: (rows: DiagRow[]) => percentOf(rows, slow5),
     },
     {
       label: 'Slow start: under 13 mana spent by turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, slow6),
+      measure: (rows: DiagRow[]) => percentOf(rows, slow6),
     },
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => slow5(row) || slow6(row)),
     },
     {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 5),
           (row) => row.spent5 ?? 0,
@@ -88,7 +88,7 @@ export const deck = {
     {
       label: 'Average mana spent by turn 6 (of 21)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 6),
           (row) => row.spent6 ?? 0,
@@ -97,7 +97,7 @@ export const deck = {
     {
       label: 'Average turn Meren comes down (games where she does)',
       unit: 'turn' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => row.merenOut !== null),
           (row) => turnOf(row, 'merenOut'),
@@ -106,19 +106,19 @@ export const deck = {
     {
       label: 'No Meren by end of turn 4, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => turnOf(row, 'merenOut') > 4 && win(row) > 4),
     },
     {
       label: 'No Meren by end of turn 5, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => turnOf(row, 'merenOut') > 5 && win(row) > 5),
     },
     {
       label: 'No Meren by end of turn 6, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => turnOf(row, 'merenOut') > 6 && win(row) > 6),
     },
     {
@@ -127,25 +127,25 @@ export const deck = {
         THIN +
         ' nonland permanents at end of turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 5 && (row.perms5 ?? 0) < THIN),
     },
     {
       label: 'Nothing reanimated by end of turn 5, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 5 && (row.reanim5 ?? 0) === 0),
     },
     {
       label: 'Nothing reanimated by end of turn 6, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 6 && (row.reanim6 ?? 0) === 0),
     },
     {
       label: 'Average Meren experience at end of turn 5',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 5),
           (row) => row.exp5 ?? 0,
@@ -154,7 +154,7 @@ export const deck = {
     {
       label: 'Average Meren experience at end of turn 6',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 6),
           (row) => row.exp6 ?? 0,
@@ -163,29 +163,29 @@ export const deck = {
     {
       label: 'No impact by turn 5: nothing reanimated and a thin board (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 5)),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 5)),
     },
     {
       label: 'No impact by turn 6: the same (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 6)),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 6)),
     },
   ],
   // --hands: what to look for in an opening hand
   handFeatures: [
     {
       label: 'a black source and a green source',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         cards.some((card) => landMakes(card, 'B')) &&
         cards.some((card) => landMakes(card, 'G')),
     },
     {
       label: 'a green source',
-      f: (cards: CardDef[]) => cards.some((card) => landMakes(card, 'G')),
+      matches: (cards: CardDef[]) => cards.some((card) => landMakes(card, 'G')),
     },
     {
       label: 'a ramp piece (Llanowar, Elder, Sol Ring, Dark Ritual, Solemn...)',
-      f: anyOf([
+      matches: anyOf([
         'Llanowar Elves',
         'Sakura-Tribe Elder',
         'Sol Ring',
@@ -198,7 +198,7 @@ export const deck = {
     {
       label:
         'a graveyard filler or tutor (Buried Alive, Fauna Shaman, Liliana, Wayfinder...)',
-      f: anyOf([
+      matches: anyOf([
         'Buried Alive',
         'Fauna Shaman',
         'Grim Servant',
@@ -213,7 +213,7 @@ export const deck = {
     },
     {
       label: 'a sacrifice outlet (Viscera Seer, Woe Strider, Zealot...)',
-      f: anyOf([
+      matches: anyOf([
         'Viscera Seer',
         'Woe Strider',
         'Umbral Collar Zealot',
@@ -223,7 +223,7 @@ export const deck = {
     },
     {
       label: 'a payoff (Gray Merchant, Lotleth Giant, Diviner, Grave Titan...)',
-      f: anyOf([
+      matches: anyOf([
         'Gray Merchant of Asphodel',
         'Lotleth Giant',
         'Twilight Diviner',
@@ -235,7 +235,7 @@ export const deck = {
     },
     {
       label: 'a card-draw engine (Arena, Priest, Disciple, Haruspex...)',
-      f: anyOf([
+      matches: anyOf([
         'Phyrexian Arena',
         'Priest of Forgotten Gods',
         'Disciple of Bolas',
@@ -246,7 +246,7 @@ export const deck = {
     },
     {
       label: '2 lands and a ramp piece',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         lands(cards) === 2 &&
         anyOf([
           'Llanowar Elves',

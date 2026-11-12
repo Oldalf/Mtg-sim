@@ -40,7 +40,7 @@ function addManaAndLands(
     pool.C += game.pool.C;
     pool.S += game.pool.S;
   }
-  const highTides = nextTurn ? 0 : game.ht;
+  const highTides = nextTurn ? 0 : game.highTidesThisTurn;
   const mucks = nextTurn ? 0 : game.muck;
   const energy = game.energy && !nextTurn;
   let islandsForHighTide = 0;
@@ -49,13 +49,13 @@ function addManaAndLands(
   let free = nextTurn ? 0 : game.pool.U + game.pool.B;
   let freeColourless = nextTurn ? 0 : game.pool.C;
   const landMix = [0, 0, 0, 0]; // dual, island-only, swamp-only, other: all lands, tapped or not
-  for (const permanent of game.bf) {
+  for (const permanent of game.battlefield) {
     if (permanent.land !== null) {
       const isIsland = !!permanent.land.island || energy;
       const isSwamp = !!permanent.land.swamp || energy;
       landMix[isIsland && isSwamp ? 0 : isIsland ? 1 : isSwamp ? 2 : 3] += 1;
     }
-    const kind = game.srcKind(permanent, nextTurn);
+    const kind = game.manaSourceKind(permanent, nextTurn);
     if (kind === null || (permanent.tapped && !nextTurn)) continue;
     if (kind === 'U' || kind === 'B' || kind === 'C' || kind === 'S')
       pool[kind] += 1;
@@ -125,11 +125,11 @@ function addGraveyardAndHand(
   remove: string[],
 ): void {
   state.hand = handAfterChanges(game, add, remove).sort();
-  state.graveyardSpells = game.gy
-    .filter((card) => card.isIS)
+  state.graveyardSpells = game.graveyard
+    .filter((card) => card.isInstantOrSorcery)
     .map((card) => card.name)
     .sort();
-  state.graveyardCreatures = game.gy
+  state.graveyardCreatures = game.graveyard
     .filter((card) => card.isCreature)
     .map((card) => card.name)
     .sort();
@@ -141,55 +141,59 @@ function addBoard(
   state: KillSearchState,
   nextTurn: boolean,
 ): void {
-  state.hasGale = game.onBf(GALE);
-  state.hasGuildmage = game.onBf('Duskmantle Guildmage');
+  state.hasGale = game.isOnBattlefield(GALE);
+  state.hasGuildmage = game.isOnBattlefield('Duskmantle Guildmage');
   state.guildmageActivations = nextTurn ? 0 : game.guildmageActivations;
-  state.hasMindcrank = game.onBf('Mindcrank');
-  state.hasKonrad = game.onBf('Syr Konrad, the Grim');
-  const mindskinner = game.perm('The Mindskinner');
+  state.hasMindcrank = game.isOnBattlefield('Mindcrank');
+  state.hasKonrad = game.isOnBattlefield('Syr Konrad, the Grim');
+  const mindskinner = game.findPermanent('The Mindskinner');
   state.hasMindskinner = mindskinner !== null;
   state.mindskinnerCanAttack =
     mindskinner !== null && (nextTurn || (!mindskinner.sick && !game.attacked));
-  const monument = game.perm('Riverchurn Monument');
+  const monument = game.findPermanent('Riverchurn Monument');
   state.hasMonument = monument !== null && (nextTurn || !monument.tapped);
   state.monumentCanExhaust = monument !== null && !monument.exhausted;
-  state.hasEmetSelch = game.onBf('Emet-Selch of the Third Seat');
+  state.hasEmetSelch = game.isOnBattlefield('Emet-Selch of the Third Seat');
   state.emetSelchUsed = nextTurn ? false : game.emetSelchUsed;
   state.opponentLostLife = false;
-  const creatures = game.bf.filter((permanent) => permanent.cd.isCreature);
+  const creatures = game.battlefield.filter(
+    (permanent) => permanent.card.isCreature,
+  );
   state.creatureCount = creatures.length;
   state.sacrificeFodder = creatures.filter(
     (permanent) =>
-      permanent.cd.power >= 2 && !FODDER_EXCLUDE.has(permanent.cd.name),
+      permanent.card.power >= 2 && !FODDER_EXCLUDE.has(permanent.card.name),
   ).length;
   // Energy Tap targets: untapped creatures that aren't mana sources (Mindskinner only if it can't attack anyway)
-  state.energyTapTargets = game.bf
+  state.energyTapTargets = game.battlefield
     .filter(
       (permanent) =>
-        permanent.cd.isCreature &&
+        permanent.card.isCreature &&
         (nextTurn || !permanent.tapped) &&
-        !game.srcKind(permanent, true) &&
+        !game.manaSourceKind(permanent, true) &&
         !(
-          permanent.cd.name === 'The Mindskinner' && state.mindskinnerCanAttack
+          permanent.card.name === 'The Mindskinner' &&
+          state.mindskinnerCanAttack
         ),
     )
-    .map((permanent) => permanent.cd.mv)
+    .map((permanent) => permanent.card.manaValue)
     .sort((first, second) => second - first);
 }
 
 /** How much cheaper the cost reducers on the battlefield make our spells. */
 function addCostReductions(game: GaleGame, state: KillSearchState): void {
-  state.reductionInstantSorcery = game.redIS();
-  state.reductionNoncreature = game.bf.filter((permanent) =>
-    Facts.REDUCE_NONCREATURE.has(permanent.cd.name),
+  state.reductionInstantSorcery = game.instantOrSorceryCostReduction();
+  state.reductionNoncreature = game.battlefield.filter((permanent) =>
+    Facts.REDUCE_NONCREATURE.has(permanent.card.name),
   ).length;
-  state.reductionBlue = game.bf.filter((permanent) =>
-    Facts.REDUCE_BLUE.has(permanent.cd.name),
+  state.reductionBlue = game.battlefield.filter((permanent) =>
+    Facts.REDUCE_BLUE.has(permanent.card.name),
   ).length;
   state.reductionFromGraveyard =
     2 *
-    game.bf.filter((permanent) => Facts.REDUCE_FROM_GY2.has(permanent.cd.name))
-      .length;
+    game.battlefield.filter((permanent) =>
+      Facts.REDUCE_FROM_GY2.has(permanent.card.name),
+    ).length;
 }
 
 /** The opponents' life, libraries, graveyards and poison, and what we assume about their decks. */
@@ -199,10 +203,10 @@ function addOpponents(
   nextTurn: boolean,
 ): void {
   state.opponentLife = game.life.slice();
-  state.opponentLibrary = game.lib.map((size) =>
+  state.opponentLibrary = game.opponentLibrarySizes.map((size) =>
     Math.max(0, size - (nextTurn && size > 0 ? 1 : 0)),
   );
-  state.opponentGraveyard = game.ogy.slice();
+  state.opponentGraveyard = game.opponentGraveyardSizes.slice();
   state.opponentPoison = game.poison.slice();
   state.opponentCreatureAccumulator = game.opponentCreatureAccumulator.slice();
   state.ownLibrarySize = game.library.length;
@@ -211,13 +215,15 @@ function addOpponents(
     ? game.library.filter((card) => card.isCreature).length /
       game.library.length
     : 0;
-  state.opponentCreatureDensity = game.cfg.opp_creature_density as number;
-  state.opponentHandSize = game.cfg.opp_hand_size as number;
-  state.opponentCreaturesOnBoard = game.cfg.opp_creatures_on_board as number;
+  state.opponentCreatureDensity = game.config.opp_creature_density as number;
+  state.opponentHandSize = game.config.opp_hand_size as number;
+  state.opponentCreaturesOnBoard = game.config.opp_creatures_on_board as number;
   state.opponentLandCount = Math.floor(
     (game.turn + (nextTurn ? 1 : 0)) *
-      ((game.cfg.opp_lands_per_turn as number) ?? 1) *
-      ((game.cfg.opp_lands_untapped as number) ?? 1),
+      ((game.config.opp_lands_per_turn as number) ?? 1) *
+      ((game.config.opp_lands_untapped as number) ?? 1),
   );
-  state.graveyardNonSpellCount = game.gy.filter((card) => !card.isIS).length;
+  state.graveyardNonSpellCount = game.graveyard.filter(
+    (card) => !card.isInstantOrSorcery,
+  ).length;
 }

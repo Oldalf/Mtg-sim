@@ -30,7 +30,7 @@ export function bestRemovalTarget(
 ): { owner: number; target: Target } | null {
   const biggestThreatFirst = table
     .livingOpponents(player)
-    .sort((a, b) => table.threats[b] - table.threats[a]);
+    .sort((first, second) => table.threats[second] - table.threats[first]);
   for (const owner of biggestThreatFirst) {
     const targets = table.games[owner]
       .podTargets(answer)
@@ -66,13 +66,13 @@ export function hitWithRemoval(
     table.stats.shields[owner]++;
     table.sayAs(
       caster,
-      `${cardName} on ${ownerName}'s ${permanent.cd.name} is countered by ${shield}`,
+      `${cardName} on ${ownerName}'s ${permanent.card.name} is countered by ${shield}`,
     );
     return;
   }
   table.sayAs(
     caster,
-    `${cardName} on ${ownerName}'s ${permanent.cd.name} (${answer.how ?? 'destroy'})`,
+    `${cardName} on ${ownerName}'s ${permanent.card.name} (${answer.how ?? 'destroy'})`,
   );
   table.stats.removed[owner]++;
   table.games[owner].podSuffer(permanent, answer);
@@ -87,7 +87,14 @@ export function snipeBestTarget(
   const caster = table.playerOf(game);
   const hit = bestRemovalTarget(table, caster, answer);
   if (!hit) return null;
-  hitWithRemoval(table, caster, 'Shriekmaw', hit.owner, hit.target.p, answer);
+  hitWithRemoval(
+    table,
+    caster,
+    'Shriekmaw',
+    hit.owner,
+    hit.target.permanent,
+    answer,
+  );
   return hit.target.name;
 }
 
@@ -108,7 +115,7 @@ export function makeOpponentsSacrifice(
         ? creature
         : least,
     );
-    table.sayAs(opponent, `sacrifices ${leastValuable.cd.name}`);
+    table.sayAs(opponent, `sacrifices ${leastValuable.card.name}`);
     opponentGame.podRemove(leastValuable, 'sacrifice');
   }
 }
@@ -149,7 +156,7 @@ function castTargetedRemoval(
 ): void {
   const game = table.games[player];
   const minimumValue =
-    (game.cfg.removal_min as number) ?? DEFAULT_REMOVAL_MIN_VALUE;
+    (game.config.removal_min as number) ?? DEFAULT_REMOVAL_MIN_VALUE;
   if (!bestRemovalTarget(table, player, answer, minimumValue)) return;
   if (!game.podCast(card)) return;
   table.stats.removals[player]++;
@@ -162,7 +169,14 @@ function castTargetedRemoval(
       hitNumber === 0 ? minimumValue : 0,
     );
     if (!hit) break;
-    hitWithRemoval(table, player, card.name, hit.owner, hit.target.p, answer);
+    hitWithRemoval(
+      table,
+      player,
+      card.name,
+      hit.owner,
+      hit.target.permanent,
+      answer,
+    );
   }
 }
 
@@ -176,9 +190,11 @@ function castBoardWipe(
   const ownPower = table.boardPower(player);
   const topOpponentPower = Math.max(
     0,
-    ...table.livingOpponents(player).map((p) => table.boardPower(p)),
+    ...table
+      .livingOpponents(player)
+      .map((opponent) => table.boardPower(opponent)),
   );
-  const wipeAtPower = (game.cfg.wipe_at as number) ?? DEFAULT_WIPE_AT_POWER;
+  const wipeAtPower = (game.config.wipe_at as number) ?? DEFAULT_WIPE_AT_POWER;
   if (!(topOpponentPower >= wipeAtPower && ownPower * 2 <= topOpponentPower))
     return;
 
@@ -196,24 +212,32 @@ function castBoardWipe(
     lifeToPay = Math.max(
       0,
       ...everyCreature
-        .filter((c) => c.owner !== player)
-        .map((c) => c.toughness),
+        .filter((creature) => creature.owner !== player)
+        .map((creature) => creature.toughness),
     );
     if (game.myLife - lifeToPay <= TOXIC_DELUGE_SAFE_LIFE) return;
   }
-  const ownCreatures = everyCreature.filter((c) => c.owner === player);
+  const ownCreatures = everyCreature.filter(
+    (creature) => creature.owner === player,
+  );
   // a "bigger" wipe kills everything bigger than our smallest creature (or than anything, if we have none)
   const powerFloor = Math.min(
-    ...(ownCreatures.length ? ownCreatures : everyCreature).map((c) => c.power),
+    ...(ownCreatures.length ? ownCreatures : everyCreature).map(
+      (creature) => creature.power,
+    ),
   );
-  const dying = everyCreature.filter((c) =>
+  const dying = everyCreature.filter((creature) =>
     answer.wipe === 'power3'
-      ? c.power >= 3
+      ? creature.power >= 3
       : answer.wipe === 'bigger'
-        ? c.power > powerFloor
+        ? creature.power > powerFloor
         : true,
   );
-  if (!dying.some((c) => c.owner !== player) || !game.podCast(card)) return;
+  if (
+    !dying.some((creature) => creature.owner !== player) ||
+    !game.podCast(card)
+  )
+    return;
 
   if (lifeToPay) game.loseLife(lifeToPay);
   table.stats.removals[player]++;
@@ -222,8 +246,11 @@ function castBoardWipe(
     player,
     `${card.name}: ${dying.length} creature(s) ${bounces ? 'return to hand' : 'die'}`,
   );
-  for (const c of dying)
-    table.games[c.owner].podRemove(c.creature, bounces ? 'bounce' : 'destroy');
+  for (const creature of dying)
+    table.games[creature.owner].podRemove(
+      creature.creature,
+      bounces ? 'bounce' : 'destroy',
+    );
 }
 
 // ================================================================ answering a win, countering a spell
@@ -235,7 +262,7 @@ interface UsedAnswer {
   target: string;
   how: string;
   shield?: string; // set when the winner's Kira / Rainshaper / Stormtamer countered this answer
-  a: Answer;
+  answer: Answer;
 }
 
 /**
@@ -253,7 +280,8 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
 
   const answersNeeded = attempt.backup + 1; // the winner may hold counterspells as backup
   const used: UsedAnswer[] = [];
-  const answersStanding = () => used.filter((u) => !u.shield).length;
+  const answersStanding = () =>
+    used.filter((usedAnswer) => !usedAnswer.shield).length;
   for (const opponent of table.opponentsOf[player]) {
     if (!table.isAlive[opponent] || answersStanding() >= answersNeeded)
       continue;
@@ -273,21 +301,21 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
       );
     }
   }
-  const unshielded = used.filter((u) => !u.shield);
+  const unshielded = used.filter((usedAnswer) => !usedAnswer.shield);
   // the winner answers back with its own counterspells
   const counteredBack = game.podBurnCounters(
-    unshielded.slice(0, attempt.backup).map((u) => u.card),
+    unshielded.slice(0, attempt.backup).map((usedAnswer) => usedAnswer.card),
   );
-  for (let k = 0; k < counteredBack.length; k++)
+  for (let index = 0; index < counteredBack.length; index++)
     table.say(
-      `R${table.round}: ${table.playerName(unshielded[k].owner)}'s ${unshielded[k].card} is countered by ${table.playerName(player)}'s ${counteredBack[k]}`,
+      `R${table.round}: ${table.playerName(unshielded[index].owner)}'s ${unshielded[index].card} is countered by ${table.playerName(player)}'s ${counteredBack[index]}`,
     );
   const standing = unshielded.slice(counteredBack.length);
   if (!standing.length) return false;
 
   table.stats.stopped[player]++;
   const stopper = standing[0];
-  game.podLose(stopper.target, stopper.how, stopper.a);
+  game.podLose(stopper.target, stopper.how, stopper.answer);
   game.podWinStopped();
   table.say(
     `R${table.round}: ${table.playerName(stopper.owner)} stops it: ${stopper.card} on ${stopper.target}. ${table.playerName(player)} plays on.`,

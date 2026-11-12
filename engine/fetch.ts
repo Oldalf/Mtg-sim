@@ -20,65 +20,69 @@ interface ScryCard extends ScryFace {
 
 async function fetchCard(name: string): Promise<ScryCard> {
   for (let attempt = 0; ; attempt++) {
-    const r = await fetch(
+    const response = await fetch(
       'https://api.scryfall.com/cards/named?exact=' + encodeURIComponent(name),
       { headers: HEADERS },
     );
-    if (r.status === 429 && attempt < 5) {
+    if (response.status === 429 && attempt < 5) {
       // rate limited: wait and try again
       await new Promise((res) => setTimeout(res, 2000 * (attempt + 1)));
       continue;
     }
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return (await r.json()) as ScryCard;
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return (await response.json()) as ScryCard;
   }
 }
 
-function entry(c: ScryCard): Record<string, unknown> {
-  const faces = c.card_faces;
-  const f0 = faces ? faces[0] : c;
-  const e: Record<string, unknown> = {
-    name: f0.name,
-    full_name: c.name,
-    mana_cost: f0.mana_cost ?? c.mana_cost ?? '',
-    type_line: f0.type_line ?? c.type_line ?? '',
-    oracle: f0.oracle_text ?? c.oracle_text ?? '',
-    power: f0.power ?? null,
-    toughness: f0.toughness ?? null,
-    keywords: c.keywords ?? [],
-    layout: c.layout,
+function entry(scryCard: ScryCard): Record<string, unknown> {
+  const faces = scryCard.card_faces;
+  const frontFace = faces ? faces[0] : scryCard;
+  const cardEntry: Record<string, unknown> = {
+    name: frontFace.name,
+    full_name: scryCard.name,
+    mana_cost: frontFace.mana_cost ?? scryCard.mana_cost ?? '',
+    type_line: frontFace.type_line ?? scryCard.type_line ?? '',
+    oracle: frontFace.oracle_text ?? scryCard.oracle_text ?? '',
+    power: frontFace.power ?? null,
+    toughness: frontFace.toughness ?? null,
+    keywords: scryCard.keywords ?? [],
+    layout: scryCard.layout,
   };
   if (faces) {
-    const f1 = faces[1];
-    e.back = {
-      name: f1.name,
-      mana_cost: f1.mana_cost ?? '',
-      type_line: f1.type_line ?? '',
-      oracle: f1.oracle_text ?? '',
+    const backFace = faces[1];
+    cardEntry.back = {
+      name: backFace.name,
+      mana_cost: backFace.mana_cost ?? '',
+      type_line: backFace.type_line ?? '',
+      oracle: backFace.oracle_text ?? '',
     };
   }
-  return e;
+  return cardEntry;
 }
 
 export async function fetchMissing(lists: string[]): Promise<void> {
-  const db = C.db() as Record<string, unknown>;
+  const cardDatabase = C.cardDatabase() as Record<string, unknown>;
   const added: string[] = [];
-  for (const p of lists) {
-    for (const name of C.loadDecklist(p).missing) {
-      if (name in db) continue;
+  for (const listPath of lists) {
+    for (const name of C.loadDecklist(listPath).missing) {
+      if (name in cardDatabase) continue;
       try {
-        const e = entry(await fetchCard(name));
-        db[e.name as string] = e;
-        if (e.name !== name) db[name] = e;
+        const cardEntry = entry(await fetchCard(name));
+        cardDatabase[cardEntry.name as string] = cardEntry;
+        if (cardEntry.name !== name) cardDatabase[name] = cardEntry;
         added.push(name);
-        console.log(`  + ${name}: ${e.mana_cost} ${e.type_line}`);
-        await new Promise((r) => setTimeout(r, 300)); // Scryfall asks for no more than ~10 requests a second
-      } catch (ex) {
-        console.log(`  could not fetch '${name}': ${ex}  (check the spelling)`);
+        console.log(
+          `  + ${name}: ${cardEntry.mana_cost} ${cardEntry.type_line}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 300)); // Scryfall asks for no more than ~10 requests a second
+      } catch (error) {
+        console.log(
+          `  could not fetch '${name}': ${error}  (check the spelling)`,
+        );
       }
     }
   }
-  fs.writeFileSync(C.DATA, JSON.stringify(db, null, 1), 'utf-8');
+  fs.writeFileSync(C.DATA, JSON.stringify(cardDatabase, null, 1), 'utf-8');
   console.log(
     added.length ? `Added ${added.length} card(s).` : 'Nothing to add.',
   );

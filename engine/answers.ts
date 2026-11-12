@@ -39,10 +39,10 @@ const kill = (
   count = 1,
   more: Partial<Answer> = {},
 ): Answer => ({ kind: 'removal', instant, hits, how, count, ...more });
-const wipe = (w: Answer['wipe'], instant = false): Answer => ({
+const wipe = (wipeKind: Answer['wipe'], instant = false): Answer => ({
   kind: 'wipe',
   instant,
-  wipe: w,
+  wipe: wipeKind,
 });
 const NONLAND: Hit[] = ['creature', 'artifact', 'enchantment', 'planeswalker'];
 

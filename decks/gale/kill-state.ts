@@ -1,7 +1,7 @@
 /**
- * Gale kill lines: the state the kill search works on (a light-weight snapshot of the game) and its rules.
+ * Gale kill lines: the state the kill search works on (a stripped-down copy of the game) and its rules.
  *
- * A light-weight snapshot ("Light") of the game is searched depth-first over the actions that
+ * A stripped-down copy of the game ("KillSearchState") is searched depth-first over the actions that
  * matter for killing the table this turn: casting/activating combo pieces, rituals, mill spells
  * and Gale/Emet-Selch graveyard recasts.
  *
@@ -50,7 +50,7 @@ export interface OlogNode {
   crank: boolean;
   konrad: boolean;
   skinner: boolean;
-  op: Op;
+  opponentStep: Op;
 }
 
 /** Linked step description: [parent, text, life, lib, poison] (text is only built for the winning line). */
@@ -242,17 +242,17 @@ export class KillSearchState {
   ): Cost {
     const cost = base ?? card.cost;
     let red = extraRed;
-    if (card.isIS) red += this.reductionInstantSorcery;
+    if (card.isInstantOrSorcery) red += this.reductionInstantSorcery;
     if (!card.isCreature) red += this.reductionNoncreature;
-    if (cost.u || cost.h) red += this.reductionBlue;
+    if (cost.blue || cost.hybrid) red += this.reductionBlue;
     if (fromGy) red += this.reductionFromGraveyard;
-    return cost.withGeneric(Math.max(0, cost.g - red));
+    return cost.withGeneric(Math.max(0, cost.generic - red));
   }
 
-  spendMana(cost: Cost, isIS = false): boolean {
+  spendMana(cost: Cost, isInstantOrSorcery = false): boolean {
     const pool = this.pool;
-    let blueNeeded = cost.u,
-      blackNeeded = cost.b;
+    let blueNeeded = cost.blue,
+      blackNeeded = cost.black;
     let take = Math.min(pool.U, blueNeeded);
     pool.U -= take;
     blueNeeded -= take;
@@ -261,7 +261,7 @@ export class KillSearchState {
     blackNeeded -= take;
     if (blueNeeded + blackNeeded > pool.A) return false;
     pool.A -= blueNeeded + blackNeeded;
-    for (let hybridIndex = 0; hybridIndex < cost.h; hybridIndex++) {
+    for (let hybridIndex = 0; hybridIndex < cost.hybrid; hybridIndex++) {
       const kind: PoolKey | null =
         pool.U >= pool.B && pool.U > 0
           ? 'U'
@@ -273,9 +273,9 @@ export class KillSearchState {
       if (!kind) return false;
       pool[kind] -= 1;
     }
-    let genericLeft = cost.g;
+    let genericLeft = cost.generic;
     const bFirst = pool.B >= pool.U;
-    const order: PoolKey[] = isIS
+    const order: PoolKey[] = isInstantOrSorcery
       ? ['S', 'C', bFirst ? 'B' : 'U', bFirst ? 'U' : 'B', 'A']
       : ['C', bFirst ? 'B' : 'U', bFirst ? 'U' : 'B', 'A'];
     for (const kind of order) {
@@ -291,7 +291,10 @@ export class KillSearchState {
     base: Cost | null = null,
     fromGy = false,
   ): boolean {
-    return this.spendMana(this.costOf(card, base, fromGy), card.isIS);
+    return this.spendMana(
+      this.costOf(card, base, fromGy),
+      card.isInstantOrSorcery,
+    );
   }
 
   /** Resolve opponent events (a flat [kind, i, n, kind, i, n, ...] stack, last event first). One long loop on purpose:
@@ -302,13 +305,13 @@ export class KillSearchState {
       lib = this.opponentLibrary,
       ogy = this.opponentGraveyard,
       poison = this.opponentPoison;
-    const nOpp = life.length;
+    const opponentCount = life.length;
     const gmAct = this.guildmageActivations,
       crank = this.hasMindcrank,
       konrad = this.hasKonrad,
       skinner = this.hasMindskinner;
     const won = (): boolean => {
-      for (let opponent = 0; opponent < nOpp; opponent++)
+      for (let opponent = 0; opponent < opponentCount; opponent++)
         if (life[opponent] > 0 && lib[opponent] > 0 && poison[opponent] < 10)
           return false;
       return true;
@@ -375,11 +378,11 @@ export class KillSearchState {
       } else if (kind === DMG) {
         if (life[i] <= 0) continue;
         if (skinner)
-          for (let opponent = 0; opponent < nOpp; opponent++)
+          for (let opponent = 0; opponent < opponentCount; opponent++)
             events.push(MILL, opponent, amount);
         else events.push(LOSE, i, amount);
       } else if (kind === KONRAD) {
-        for (let opponent = 0; opponent < nOpp; opponent++)
+        for (let opponent = 0; opponent < opponentCount; opponent++)
           events.push(DMG, opponent, amount);
       } else if (kind === SELFMILL) {
         if (this.ownLibrarySize < amount) amount = this.ownLibrarySize;
@@ -426,7 +429,7 @@ export class KillSearchState {
       crank: this.hasMindcrank,
       konrad: this.hasKonrad,
       skinner: this.hasMindskinner,
-      op: step,
+      opponentStep: step,
     };
     this.opponentStepKey += `;${this.guildmageActivations}${+this.hasMindcrank}${+this.hasKonrad}${+this.hasMindskinner}${step.join(',')}`;
     this.applyOpponentStep(step);
@@ -434,15 +437,15 @@ export class KillSearchState {
 
   applyOpponentStep(step: Op): void {
     const kind = step[0];
-    const nOpp = this.opponentLife.length;
-    if (kind === 'ev') {
+    const opponentCount = this.opponentLife.length;
+    if (kind === 'events') {
       // fixed events, e.g. a Konrad trigger from a creature dying
       this.resolveOpponentEvents((step[1] as number[]).slice());
-    } else if (kind === 'each') {
-      // each opponent mills: a number, "half", "halfup" or "ogy"
+    } else if (kind === 'eachOpponentMills') {
+      // each opponent mills: a number, "half", "halfup" or "graveyardSize"
       const how = step[1];
       const events: number[] = [];
-      for (let i = 0; i < nOpp; i++) {
+      for (let i = 0; i < opponentCount; i++) {
         if (!this.isOpponentAlive(i)) continue;
         const amount =
           typeof how === 'number'
@@ -455,40 +458,44 @@ export class KillSearchState {
         events.push(MILL, i, amount);
       }
       this.resolveOpponentEvents(events);
-    } else if (kind === 'tmill' || kind === 'tdmg' || kind === 'thalf') {
+    } else if (
+      kind === 'millBiggestLibrary' ||
+      kind === 'damageBiggestLibrary' ||
+      kind === 'halveBiggestLibrary'
+    ) {
       // the opponent with the biggest library
       const target = this.biggestLibraryOpponent();
       if (target !== null) {
-        if (kind === 'tdmg')
+        if (kind === 'damageBiggestLibrary')
           this.resolveOpponentEvents([DMG, target, step[1] as number]);
         else
           this.resolveOpponentEvents([
             MILL,
             target,
-            kind === 'thalf'
+            kind === 'halveBiggestLibrary'
               ? Math.floor(this.opponentLibrary[target] / 2)
               : (step[1] as number),
           ]);
       }
     } else if (kind === 'dmg_each') {
       const events: number[] = [];
-      for (let i = 0; i < nOpp; i++)
+      for (let i = 0; i < opponentCount; i++)
         if (this.isOpponentAlive(i)) events.push(DMG, i, step[1] as number);
       this.resolveOpponentEvents(events);
     } else if (kind === 'konact') {
       // Konrad {1}{B}: each player mills 1
       const events: number[] = [];
-      for (let i = 0; i < nOpp; i++)
+      for (let i = 0; i < opponentCount; i++)
         if (this.isOpponentAlive(i)) events.push(MILL, i, 1);
       events.push(SELFMILL, -1, 1);
       this.resolveOpponentEvents(events);
     } else if (kind === 'poison') {
       // Prologue to Phyresis: each opponent gets a poison counter
-      for (let i = 0; i < nOpp; i++)
+      for (let i = 0; i < opponentCount; i++)
         if (this.isOpponentAlive(i)) this.opponentPoison[i] += 1;
     } else if (kind === 'prolif') {
       // Expansion Algorithm: proliferate X times (only poison matters)
-      for (let i = 0; i < nOpp; i++)
+      for (let i = 0; i < opponentCount; i++)
         if (this.isOpponentAlive(i) && this.opponentPoison[i] > 0)
           this.opponentPoison[i] += step[1] as number;
     } else if (kind === 'windfall') {
@@ -496,16 +503,16 @@ export class KillSearchState {
       const oppHand = step[1] as number,
         nDraw = step[2] as number;
       const events: number[] = [];
-      for (let i = 0; i < nOpp; i++)
+      for (let i = 0; i < opponentCount; i++)
         if (this.isOpponentAlive(i)) events.push(PUTGY, i, oppHand);
       this.resolveOpponentEvents(events);
-      for (let i = 0; i < nOpp; i++)
+      for (let i = 0; i < opponentCount; i++)
         if (this.isOpponentAlive(i)) this.opponentDraws(i, nDraw);
     }
   }
 
   millEach(how: number | string): void {
-    this.recordOpponentStep('each', how);
+    this.recordOpponentStep('eachOpponentMills', how);
   }
 
   biggestLibraryOpponent(): number | null {
@@ -540,7 +547,7 @@ export class KillSearchState {
           (name) => name !== variant,
         );
       this.creatureCount += 1;
-      if (this.hasKonrad) this.recordOpponentStep('ev', [KONRAD, -1, 1]);
+      if (this.hasKonrad) this.recordOpponentStep('events', [KONRAD, -1, 1]);
     }
   }
 
@@ -558,11 +565,11 @@ export class KillSearchState {
         if (this.sacrificeFodder > 0) this.sacrificeFodder -= 1;
         else this.hasGuildmage = false;
         this.creatureCount -= 1;
-        if (this.hasKonrad) this.recordOpponentStep('ev', [KONRAD, -1, 1]);
+        if (this.hasKonrad) this.recordOpponentStep('events', [KONRAD, -1, 1]);
       }
       for (let copyNumber = 0; copyNumber < copies; copyNumber++) {
         if (this.biggestLibraryOpponent() === null) break;
-        this.recordOpponentStep('thalf', 0);
+        this.recordOpponentStep('halveBiggestLibrary', 0);
       }
     } else if (name === 'Singularity Rupture') {
       let alive = 0;
@@ -579,14 +586,14 @@ export class KillSearchState {
       this.millEach('half');
       if (hadKonrad && dead > 0) {
         this.hasKonrad = true; // LKI: triggers resolve with Konrad's damage, Konrad itself is gone
-        this.recordOpponentStep('ev', [KONRAD, -1, dead]);
+        this.recordOpponentStep('events', [KONRAD, -1, dead]);
         this.hasKonrad = false;
       }
     } else if (name === 'Windfall') {
       const nDraw = Math.max(this.opponentHandSize, this.hand.length);
       this.recordOpponentStep('windfall', this.opponentHandSize, nDraw);
       // our own hand is discarded: instants/sorceries become Gale targets
-      const add = this.hand.filter((name) => C.get(name).isIS);
+      const add = this.hand.filter((name) => C.get(name).isInstantOrSorcery);
       if (add.length)
         this.graveyardSpells = addSorted(this.graveyardSpells, add);
       this.hand = [];
@@ -636,7 +643,7 @@ export class KillSearchState {
       // the untapped lands that weren't Islands / Swamps before. Its {2} (after reducers) comes from
       // rocks if possible, otherwise from lands (assumed to be the ones that would gain the new types).
       let paid = 0;
-      const genericCost = this.costOf(C.get('Energybending')).g;
+      const genericCost = this.costOf(C.get('Energybending')).generic;
       for (let payment = 0; payment < genericCost; payment++) {
         if (this.colourlessFromOutsideLands > 0)
           this.colourlessFromOutsideLands -= 1;

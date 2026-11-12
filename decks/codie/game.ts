@@ -54,7 +54,7 @@ import { MULLIGAN } from './mulligan';
 
 export class CodieGame extends Game<CodieGame> {
   override mulliganRule(): MulliganRule | null {
-    return this.cfg.smart_mulligan ? MULLIGAN : null;
+    return this.config.smart_mulligan ? MULLIGAN : null;
   }
   override colors = ['W', 'U', 'B', 'R', 'G'];
   commanderCasts = 0;
@@ -88,33 +88,33 @@ export class CodieGame extends Game<CodieGame> {
         fetchCardFromLibrary(this, chooseTutorTarget(this), false);
       }
     }
-    if (this.cfg.mana_drain_flat && this.turn >= 2) {
+    if (this.config.mana_drain_flat && this.turn >= 2) {
       const card = this.cardInHand('Mana Drain');
       if (card) {
         removeIfPresent(this.hand, card);
-        this.gy.push(card);
+        this.graveyard.push(card);
         this.pool.C += 2 + Math.floor(this.rng.random() * 4);
       }
     }
   }
   override startTurn(): void {
     super.startTurn();
-    const decayPerTurn = this.cfg.opp_decay as number;
+    const decayPerTurn = this.config.opp_decay as number;
     if (decayPerTurn > 0)
       for (let i = 0; i < this.life.length; i++)
         this.life[i] = Math.min(
           this.life[i],
           Math.max(
             10,
-            (this.cfg.opp_life as number) - decayPerTurn * (this.turn - 1),
+            (this.config.opp_life as number) - decayPerTurn * (this.turn - 1),
           ),
         );
   }
   /** Torment of Hailfire: how many times each opponent pays (sacrifice / discard) before losing life. */
   tormentPayments(): number {
-    return this.cfg.opp_payments_decay
+    return this.config.opp_payments_decay
       ? Math.max(1, 7 - (this.turn - 1))
-      : (this.cfg.opp_payments as number);
+      : (this.config.opp_payments as number);
   }
   override diag(): Record<string, number | null> {
     const had = (names: string[]) =>
@@ -139,13 +139,13 @@ export class CodieGame extends Game<CodieGame> {
 
   // ================================================================ rules of the cards
   opponentHandSize(): number {
-    return this.cfg.opp_hand as number;
+    return this.config.opp_hand as number;
   }
   opponentTappedLands(): number {
-    const fixed = this.cfg.opp_tapped_lands as number;
+    const fixed = this.config.opp_tapped_lands as number;
     return fixed > 0
       ? fixed
-      : Math.round((this.cfg.opp_tapped_per_turn as number) * this.turn);
+      : Math.round((this.config.opp_tapped_per_turn as number) * this.turn);
   }
   inHand(name: string): boolean {
     return this.hand.some((card) => card.name === name);
@@ -154,7 +154,7 @@ export class CodieGame extends Game<CodieGame> {
     return this.hand.find((card) => card.name === name);
   }
   override commanderCost(_cd: CardDef, cost: Cost): Cost {
-    return cost.withGeneric(cost.g + 2 * this.commanderCasts);
+    return cost.withGeneric(cost.generic + 2 * this.commanderCasts);
   }
   override onCommanderCast(_cd: CardDef): void {
     this.commanderCasts += 1;
@@ -174,11 +174,11 @@ export class CodieGame extends Game<CodieGame> {
     if (base === undefined) return rank;
     if (!this.keepColours().has(kind)) return base;
     // a colour we still need: tap the one we have the most sources of first (keep the single Plains, spend the Mountains)
-    const sourceCount = this.bf.filter(
+    const sourceCount = this.battlefield.filter(
       (permanent) =>
         !permanent.tapped &&
         permanent.land !== null &&
-        this.srcKind(permanent) === kind,
+        this.manaSourceKind(permanent) === kind,
     ).length;
     return 6 + 1 / Math.max(1, sourceCount);
   }
@@ -199,20 +199,21 @@ export class CodieGame extends Game<CodieGame> {
       if (name === AD_NAUSEAM) colours.add('W'); // Ad Nauseam comes with Teferi's Protection ({2}{W})
       const backup = BACKUP[name];
       if (backup)
-        for (const col of backup[0].match(/[WUBRG]/g) ?? []) colours.add(col);
+        for (const colour of backup[0].match(/[WUBRG]/g) ?? [])
+          colours.add(colour);
       if (name === TEFERIS_PROTECTION) colours.add('W');
     }
     return colours;
   }
-  override srcKind(permanent: Perm, ignoreSick = false): string | null {
-    if (permanent.cd === TREASURE) return 'A';
-    return super.srcKind(permanent, ignoreSick);
+  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+    if (permanent.card === TREASURE) return 'A';
+    return super.manaSourceKind(permanent, ignoreSick);
   }
   /** A Treasure that was tapped for mana is gone (done outside pay(): the engine pays speculatively). */
   purgeTreasures(): void {
-    for (const permanent of this.bf.slice())
-      if (permanent.cd === TREASURE && permanent.tapped)
-        this.bf.splice(this.bf.indexOf(permanent), 1);
+    for (const permanent of this.battlefield.slice())
+      if (permanent.card === TREASURE && permanent.tapped)
+        this.battlefield.splice(this.battlefield.indexOf(permanent), 1);
   }
   override ritualCandidates(_cands: Cand[]): Cand[] {
     return [];
@@ -275,12 +276,12 @@ export class CodieGame extends Game<CodieGame> {
     const card = this.cardInHand(AD_NAUSEAM);
     if (
       card &&
-      this.cfg.ad_end_step &&
+      this.config.ad_end_step &&
       this.myLife >= 33 &&
       this.library.length > 30 &&
       this.canPay(this.effCost(card), true)
     )
-      this.castIS(card);
+      this.castInstantOrSorcery(card);
   }
   override playLand(): void {
     // Glacial Chasm and Maze of Ith are never played (no mana, and Chasm sacrifices a land)
@@ -308,12 +309,14 @@ export class CodieGame extends Game<CodieGame> {
     value += 22 * Math.min(14, this.manaSources());
     value +=
       0.5 * this.hand.reduce((total, card) => total + this.cardValue(card), 0);
-    if (this.onBf(CODIE)) value += 40;
+    if (this.isOnBattlefield(CODIE)) value += 40;
     if (this.inHand(REITERATE)) value += 30;
     for (const name of [JESKAS_WILL, MANA_GEYSER, BRASS_BOUNTY])
       if (this.inHand(name)) value += 15;
     if (FINISHERS.some((name) => this.inHand(name))) value += 20;
-    value += 3 * this.landsBf().filter((permanent) => !permanent.tapped).length;
+    value +=
+      3 *
+      this.landsOnBattlefield().filter((permanent) => !permanent.tapped).length;
     return value;
   }
 
@@ -323,15 +326,20 @@ export class CodieGame extends Game<CodieGame> {
       for (const card of this.hand) this.seenBy7.add(card.name);
       if (this.turn === 7) {
         this.mana7 = this.manaSources();
-        this.lands7 = this.landsBf().length;
+        this.lands7 = this.landsOnBattlefield().length;
       }
     }
     if (this.died) return 2;
-    const was = this.unprot;
+    const was = this.unprotectedKillTurn;
     const result = super.checkKill();
-    if (was === null && this.unprot !== null && this.nextTurnKillFound) {
-      this.unprot = this.turn + 1;
-      if (this.prot !== null) this.prot = this.turn + 1;
+    if (
+      was === null &&
+      this.unprotectedKillTurn !== null &&
+      this.nextTurnKillFound
+    ) {
+      this.unprotectedKillTurn = this.turn + 1;
+      if (this.protectedKillTurn !== null)
+        this.protectedKillTurn = this.turn + 1;
     }
     return result;
   }
@@ -342,22 +350,22 @@ export class CodieGame extends Game<CodieGame> {
       this.died ? null : protectedKillTurn,
     ];
   }
-  light(): CodieGame {
+  buildKillSearchState(): CodieGame {
     const copy = this.clone();
     copy.verbose = false;
     copy.inRollout = true;
     copy.log = [];
     return copy;
   }
-  lightKey(): string {
+  killSearchStateKey(): string {
     const hand = this.hand
       .map((card) => card.name)
       .sort()
       .join(',');
-    const open = this.bf.filter(
-      (permanent) => !permanent.tapped && this.srcKind(permanent),
+    const open = this.battlefield.filter(
+      (permanent) => !permanent.tapped && this.manaSourceKind(permanent),
     ).length;
-    return `${hand}|${open}|${this.landsBf().length}|${JSON.stringify(this.pool)}|${this.bf.filter((permanent) => permanent.cd === TREASURE).length}`;
+    return `${hand}|${open}|${this.landsOnBattlefield().length}|${JSON.stringify(this.pool)}|${this.battlefield.filter((permanent) => permanent.card === TREASURE).length}`;
   }
   /** A kill is conceivable at all: a finisher, a tutor or Ad Nauseam is in hand. */
   override killReachable(_st: CodieGame): boolean {
@@ -374,7 +382,7 @@ export class CodieGame extends Game<CodieGame> {
   killSearch(): KillSearcher<CodieGame> {
     const killSearcher: KillSearcher<CodieGame> = {
       lastLine: null,
-      lastP: null,
+      lastLineProbability: null,
       bestMiss: null,
       minChance: 1,
       search: (game: CodieGame) => {
@@ -403,9 +411,9 @@ export class CodieGame extends Game<CodieGame> {
       this.pool.W +
       this.pool.R +
       this.pool.G;
-    for (const permanent of this.bf) {
+    for (const permanent of this.battlefield) {
       if (permanent.tapped) continue;
-      if (this.srcKind(permanent)) mana += 1;
+      if (this.manaSourceKind(permanent)) mana += 1;
     }
     return mana;
   }
@@ -422,7 +430,10 @@ export class CodieGame extends Game<CodieGame> {
       let found: CardDef | null = null;
       while (this.library.length) {
         const exiledCard = this.library.shift()!;
-        if (exiledCard.isIS && exiledCard.mv < card.mv) {
+        if (
+          exiledCard.isInstantOrSorcery &&
+          exiledCard.manaValue < card.manaValue
+        ) {
           found = exiledCard;
           break;
         }
@@ -444,12 +455,14 @@ export class CodieGame extends Game<CodieGame> {
           );
           this.loopUsed = found.name;
           beginReiterateLoop(this, found.name, found, false, first);
-          this.gy = this.gy.filter((candidate) => candidate !== found);
-          this.gy.push(found);
+          this.graveyard = this.graveyard.filter(
+            (candidate) => candidate !== found,
+          );
+          this.graveyard.push(found);
           continue;
         }
         this.resolve(found);
-        this.gy.push(found);
+        this.graveyard.push(found);
       }
     }
   }

@@ -74,7 +74,7 @@ import { MULLIGAN } from './mulligan';
 
 export class MikeGame extends GameWithoutKillSearch {
   override mulliganRule(): MulliganRule | null {
-    return this.cfg.smart_mulligan ? MULLIGAN : null;
+    return this.config.smart_mulligan ? MULLIGAN : null;
   }
   override colors = ['U'];
 
@@ -117,10 +117,10 @@ export class MikeGame extends GameWithoutKillSearch {
   /** Permanents with this name, counting Aurora Shifter if it is a copy of it. */
   countOnBattlefield(name: string): number {
     let count = 0;
-    for (const permanent of this.bf) {
-      if (permanent.cd.name === name) count++;
+    for (const permanent of this.battlefield) {
+      if (permanent.card.name === name) count++;
       else if (
-        permanent.cd.name === AURORA_SHIFTER &&
+        permanent.card.name === AURORA_SHIFTER &&
         this.shifterCopy?.name === name
       )
         count++;
@@ -132,29 +132,29 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   hasNoMaximumHandSize(): boolean {
     return (
-      this.onBf(VNWXT) ||
-      this.onBf('Thought Vessel') ||
-      this.onBf('Reliquary Tower') ||
-      this.onBf(WIZARD_CLASS) ||
-      this.onBf('Body of Knowledge') ||
-      this.onBf(FOLIO_OF_FANCIES)
+      this.isOnBattlefield(VNWXT) ||
+      this.isOnBattlefield('Thought Vessel') ||
+      this.isOnBattlefield('Reliquary Tower') ||
+      this.isOnBattlefield(WIZARD_CLASS) ||
+      this.isOnBattlefield('Body of Knowledge') ||
+      this.isOnBattlefield(FOLIO_OF_FANCIES)
     );
   }
   /** Effective card of a permanent (Aurora Shifter may be a copy of something). */
   effectiveCard(permanent: Perm): CardDef {
-    return permanent.cd.name === AURORA_SHIFTER && this.shifterCopy
+    return permanent.card.name === AURORA_SHIFTER && this.shifterCopy
       ? this.shifterCopy
-      : permanent.cd;
+      : permanent.card;
   }
 
   // ================================================================ the win conditions
-  override oppsBeaten(): boolean {
-    return this.milled || this.toadWon || super.oppsBeaten();
+  override areOpponentsBeaten(): boolean {
+    return this.milled || this.toadWon || super.areOpponentsBeaten();
   }
   toadReady(): boolean {
-    return this.bf.some(
+    return this.battlefield.some(
       (permanent) =>
-        permanent.cd.name === TWENTY_TOED_TOAD &&
+        permanent.card.name === TWENTY_TOED_TOAD &&
         !permanent.sick &&
         !permanent.tapped &&
         (this.hand.length >= 20 || permanent.counters >= 20),
@@ -169,7 +169,7 @@ export class MikeGame extends GameWithoutKillSearch {
   override winAttempt(): WinAttempt | null {
     const perms =
       this.winHow === 'mill'
-        ? [LABORATORY_MANIAC, JACE].filter((name) => this.onBf(name))
+        ? [LABORATORY_MANIAC, JACE].filter((name) => this.isOnBattlefield(name))
         : this.winHow === 'Toad'
           ? [TWENTY_TOED_TOAD]
           : [];
@@ -188,7 +188,8 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   /** How close to winning the others think we are: a win piece out and a small library, or a Toad near twenty. */
   override podClose(): number {
-    const piece = this.onBf(LABORATORY_MANIAC) || this.onBf(JACE);
+    const piece =
+      this.isOnBattlefield(LABORATORY_MANIAC) || this.isOnBattlefield(JACE);
     const lib = this.library.length;
     let closeness = piece
       ? lib <= 15
@@ -199,7 +200,7 @@ export class MikeGame extends GameWithoutKillSearch {
       : lib <= 15
         ? 0.3
         : 0;
-    const toad = this.perm(TWENTY_TOED_TOAD);
+    const toad = this.findPermanent(TWENTY_TOED_TOAD);
     if (toad)
       closeness = Math.max(
         closeness,
@@ -213,13 +214,13 @@ export class MikeGame extends GameWithoutKillSearch {
       this.toadWon = true;
       this.winHow = 'Toad';
     }
-    if (this.oppsBeaten()) {
+    if (this.areOpponentsBeaten()) {
       if (this.winHow === null)
         this.winHow =
           this.crawlerDrain * 2 >= this.damageDealt ? 'Crawler' : 'combat';
-      if (this.unprot === null) {
-        this.unprot = this.turn;
-        this.prot =
+      if (this.unprotectedKillTurn === null) {
+        this.unprotectedKillTurn = this.turn;
+        this.protectedKillTurn =
           this.hasCounterInHand() && this.availMana() >= 2 ? this.turn : null;
         this.say(
           `WIN (${this.winHow ?? 'damage'}): opp life [${this.life.join(', ')}], hand ${this.hand.length}, library ${this.library.length}`,
@@ -232,7 +233,10 @@ export class MikeGame extends GameWithoutKillSearch {
   override play(): [number | null, number | null] {
     super.play();
     this.noteTurnEnd();
-    return [this.died ? null : this.unprot, this.firstOppDead];
+    return [
+      this.died ? null : this.unprotectedKillTurn,
+      this.firstOpponentDeadTurn,
+    ];
   }
   // ---------------------------------------------------------------- log analyzer hooks
   /** Pontus keeps two trackers in Archidekt's misc zone: "Start Your Engines! // Max Speed" (its +1/+1 counters = speed) and
@@ -240,8 +244,8 @@ export class MikeGame extends GameWithoutKillSearch {
   override syncFromLog(board: { trackers: Record<string, number> }): void {
     this.speed = board.trackers['Start Your Engines! // Max Speed'] ?? 0;
     this.energyCounters = board.trackers['Energy Reserve'] ?? 0;
-    const hand = this.perm(HAND_OF_VECNA),
-      permanent = this.perm(VNWXT);
+    const hand = this.findPermanent(HAND_OF_VECNA),
+      permanent = this.findPermanent(VNWXT);
     if (hand && permanent && hand.counters > 0)
       permanent.marks |= MARK_HAND_OF_VECNA;
     if (hand) hand.counters = 0;
@@ -253,7 +257,7 @@ export class MikeGame extends GameWithoutKillSearch {
     if (lowerCaseName.includes('spawn')) return TOK.spawn;
     if (lowerCaseName.includes('faerie')) return TOK.faerie;
     // a marker named after a card (Aurora Shifter's copy of Psychosis Crawler): a token copy of that creature
-    const cardData = C.db()[name];
+    const cardData = C.cardDatabase()[name];
     return cardData && (cardData.type_line ?? '').includes('Creature')
       ? C.get(name)
       : null;
@@ -282,7 +286,7 @@ export class MikeGame extends GameWithoutKillSearch {
       died: this.died ? 1 : 0,
       emptied: this.emptiedTurn !== null ? 1 : 0,
       emptiedSafe: this.emptiedTurn !== null && this.emptiedSafe ? 1 : 0,
-      backup: this.prot !== null ? 1 : 0,
+      backup: this.protectedKillTurn !== null ? 1 : 0,
       how:
         this.winHow === 'mill'
           ? 1
@@ -303,8 +307,8 @@ export class MikeGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ speed
-  override hurtOpp(i: number, amount: number): number {
-    const lost = super.hurtOpp(i, amount);
+  override damageOpponent(i: number, amount: number): number {
+    const lost = super.damageOpponent(i, amount);
     if (lost > 0) this.noteOpponentLostLife();
     return lost;
   }
@@ -322,15 +326,15 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   /** Speed pods: opponents lose life on our turn from the table itself (config speed_free). */
   applyTableLifeLoss(): void {
-    if (this.cfg.speed_free && !this.opponentLostLifeThisTurn)
+    if (this.config.speed_free && !this.opponentLostLifeThisTurn)
       this.noteOpponentLostLife();
   }
 
   // ================================================================ drawing
   /** How many cards one "draw a card" event gives, with Vnwxt at max speed and Teferi's Ageless Insight. */
   cardsPerDrawEvent(exempt: boolean): number {
-    const vnwxtAtMaxSpeed = this.speed >= 4 && this.onBf(VNWXT);
-    const hasTeferi = this.onBf(TEFERIS_AGELESS_INSIGHT);
+    const vnwxtAtMaxSpeed = this.speed >= 4 && this.isOnBattlefield(VNWXT);
+    const hasTeferi = this.isOnBattlefield(TEFERIS_AGELESS_INSIGHT);
     if (vnwxtAtMaxSpeed)
       return (exempt ? 1 : hasTeferi ? 2 : 1) + (hasTeferi ? 2 : 1);
     return hasTeferi && !exempt ? 2 : 1;
@@ -351,16 +355,19 @@ export class MikeGame extends GameWithoutKillSearch {
   /** One card actually drawn (or the empty-library replacement). */
   drawOne(): void {
     if (!this.library.length) {
-      if (this.countOnBattlefield(LABORATORY_MANIAC) > 0 || this.onBf(JACE)) {
+      if (
+        this.countOnBattlefield(LABORATORY_MANIAC) > 0 ||
+        this.isOnBattlefield(JACE)
+      ) {
         this.milled = true;
         this.winHow = 'mill';
         this.say('draw from an empty library: WIN');
       } else if (this.countOnBattlefield(ORMOS_ARCHIVE_KEEPER) > 0) {
-        const permanent = this.bf.find(
-          (candidate) => candidate.cd.name === ORMOS_ARCHIVE_KEEPER,
+        const permanent = this.battlefield.find(
+          (candidate) => candidate.card.name === ORMOS_ARCHIVE_KEEPER,
         )!;
         permanent.counters += 5;
-      } else if (this.onBf(LIVING_CONUNDRUM)) {
+      } else if (this.isOnBattlefield(LIVING_CONUNDRUM)) {
         // the draw is skipped
       } else {
         this.died = true;
@@ -383,12 +390,12 @@ export class MikeGame extends GameWithoutKillSearch {
     for (let triggerNumber = 0; triggerNumber < triggerCount; triggerNumber++) {
       const crawlers = this.countOnBattlefield(PSYCHOSIS_CRAWLER);
       if (crawlers) this.crawlerDrain += this.drainEach(crawlers);
-      for (const permanent of this.bf) {
+      for (const permanent of this.battlefield) {
         const name = this.effectiveCard(permanent).name;
         if (name === CLINQUANT_SKYMAGE || name === ONEIROPHAGE)
           permanent.counters += 1;
       }
-      const seas = this.perm(OMINOUS_SEAS);
+      const seas = this.findPermanent(OMINOUS_SEAS);
       if (seas) {
         seas.counters += 1;
         while (seas.counters >= 8) {
@@ -397,12 +404,12 @@ export class MikeGame extends GameWithoutKillSearch {
           this.say('Ominous Seas: an 8/8 Kraken');
         }
       }
-      if (this.perm(WIZARD_CLASS)?.counters === 3) {
+      if (this.findPermanent(WIZARD_CLASS)?.counters === 3) {
         const counterRecipient = this.counterTarget();
         if (counterRecipient) counterRecipient.counters += 1;
       }
       if (second) {
-        for (const battlefieldPermanent of this.bf.slice()) {
+        for (const battlefieldPermanent of this.battlefield.slice()) {
           const name = this.effectiveCard(battlefieldPermanent).name;
           if (name === EMRAKULS_MESSENGER) this.createTokens(TOK.spawn, 1);
           else if (name === MISCHIEVOUS_MYSTIC)
@@ -411,8 +418,8 @@ export class MikeGame extends GameWithoutKillSearch {
       }
     }
     if (second) {
-      for (const battlefieldPermanent of this.bf)
-        if (battlefieldPermanent.cd.name === KRANG)
+      for (const battlefieldPermanent of this.battlefield)
+        if (battlefieldPermanent.card.name === KRANG)
           battlefieldPermanent.counters += triggerCount;
     }
   }
@@ -442,20 +449,23 @@ export class MikeGame extends GameWithoutKillSearch {
   isSafeToEmptyLibrary(): boolean {
     return (
       this.countOnBattlefield(LABORATORY_MANIAC) > 0 ||
-      this.onBf(JACE) ||
-      this.onBf(LIVING_CONUNDRUM) ||
+      this.isOnBattlefield(JACE) ||
+      this.isOnBattlefield(LIVING_CONUNDRUM) ||
       this.countOnBattlefield(ORMOS_ARCHIVE_KEEPER) > 0
     );
   }
   hasMillWinPiece(): boolean {
-    return this.countOnBattlefield(LABORATORY_MANIAC) > 0 || this.onBf(JACE);
+    return (
+      this.countOnBattlefield(LABORATORY_MANIAC) > 0 ||
+      this.isOnBattlefield(JACE)
+    );
   }
   /** May the AI start an effect that draws k cards (events: k)? */
   mayDraw(events: number): boolean {
     if (this.isSafeToEmptyLibrary()) return true;
     return (
       this.library.length - this.cardsDrawnBy(events) >=
-      (this.cfg.keep_library as number)
+      (this.config.keep_library as number)
     );
   }
   /** The biggest number of draw events an effect may have (X spells). */
@@ -465,7 +475,7 @@ export class MikeGame extends GameWithoutKillSearch {
     return Math.max(
       0,
       Math.floor(
-        (this.library.length - (this.cfg.keep_library as number)) / per,
+        (this.library.length - (this.config.keep_library as number)) / per,
       ),
     );
   }
@@ -490,10 +500,10 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   override powerBonus(permanent: Perm): number {
     const card = this.effectiveCard(permanent);
-    let bonus = card.power - permanent.cd.power;
+    let bonus = card.power - permanent.card.power;
     if (card.name === PSYCHOSIS_CRAWLER || card.name === 'Body of Knowledge')
       bonus += this.hand.length;
-    if (permanent.cd.name === LIVING_CONUNDRUM && !this.library.length)
+    if (permanent.card.name === LIVING_CONUNDRUM && !this.library.length)
       bonus += 8;
     if (permanent.marks & MARK_HAND_OF_VECNA && this.inCombat)
       bonus += this.vecnaX;
@@ -504,24 +514,27 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   override toughnessBonus(permanent: Perm): number {
     const card = this.effectiveCard(permanent);
-    let bonus = card.toughness - permanent.cd.toughness;
+    let bonus = card.toughness - permanent.card.toughness;
     if (card.name === PSYCHOSIS_CRAWLER || card.name === 'Body of Knowledge')
       bonus += this.hand.length;
-    if (permanent.cd.name === LIVING_CONUNDRUM && !this.library.length)
+    if (permanent.card.name === LIVING_CONUNDRUM && !this.library.length)
       bonus += 5;
     if (permanent.marks & MARK_HAND_OF_VECNA && this.inCombat)
       bonus += this.vecnaX;
     return bonus;
   }
   override canAttack(permanent: Perm): boolean {
-    if (permanent.cd.name === VNWXT && !(permanent.marks & MARK_HAND_OF_VECNA))
+    if (
+      permanent.card.name === VNWXT &&
+      !(permanent.marks & MARK_HAND_OF_VECNA)
+    )
       return false;
     return super.canAttack(permanent);
   }
 
   // ================================================================ entering
   override onEnter(permanent: Perm, _from: Zone): void {
-    const name = permanent.cd.name;
+    const name = permanent.card.name;
     if (name === VNWXT) {
       this.startEngines();
       if (this.vnwxtOut === null) this.vnwxtOut = this.turn;
@@ -541,19 +554,20 @@ export class MikeGame extends GameWithoutKillSearch {
   override entersTapped(card: CardDef): boolean {
     if (card.name === MYSTIC_SANCTUARY)
       return (
-        this.landsBf().filter((permanent) => permanent.land?.island).length < 3
+        this.landsOnBattlefield().filter((permanent) => permanent.land?.island)
+          .length < 3
       );
     return super.entersTapped(card);
   }
   override onLandEnter(permanent: Perm, gone: boolean): void {
-    const name = permanent.cd.name;
+    const name = permanent.card.name;
     if (
       name === AVISHKAR_RACEWAY ||
       name === MURAGANDA_RACEWAY ||
       name === AMONKHET_RACEWAY
     )
       this.startEngines();
-    if (this.onBf(ROIL_CARTOGRAPHER) && !gone)
+    if (this.isOnBattlefield(ROIL_CARTOGRAPHER) && !gone)
       this.energyCounters += this.countOnBattlefield(ROIL_CARTOGRAPHER);
     if (name === MYSTIC_SANCTUARY && !permanent.tapped) {
       const order = [
@@ -565,30 +579,34 @@ export class MikeGame extends GameWithoutKillSearch {
         'Consider',
       ];
       const card = order
-        .map((name) => this.gy.find((candidate) => candidate.name === name))
+        .map((name) =>
+          this.graveyard.find((candidate) => candidate.name === name),
+        )
         .find((found) => found !== undefined);
       if (card) {
-        removeIfPresent(this.gy, card);
+        removeIfPresent(this.graveyard, card);
         this.library.unshift(card);
         this.say('Mystic Sanctuary: put', card, 'on top');
       }
     }
   }
   override onDies(permanent: Perm): void {
-    if (permanent.cd.name === AURORA_SHIFTER) this.shifterCopy = null;
+    if (permanent.card.name === AURORA_SHIFTER) this.shifterCopy = null;
   }
 
   // ================================================================ mana
-  override srcKind(permanent: Perm, ignoreSick = false): string | null {
-    if (permanent.cd === TOK.spawn) return 'C';
-    if (permanent.cd.name === MURAGANDA_RACEWAY && this.speed >= 4) return 'C2';
-    return super.srcKind(permanent, ignoreSick);
+  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+    if (permanent.card === TOK.spawn) return 'C';
+    if (permanent.card.name === MURAGANDA_RACEWAY && this.speed >= 4)
+      return 'C2';
+    return super.manaSourceKind(permanent, ignoreSick);
   }
   /** A Spawn that was tapped for mana is gone (sacrificed). Done later, not inside pay(): the engine pays
    *  speculatively and restores the tapped flags afterwards, which can not bring a sacrificed token back. */
   purgeSpawns(): void {
-    for (const permanent of this.bf.slice())
-      if (permanent.cd === TOK.spawn && permanent.tapped) this.dies(permanent);
+    for (const permanent of this.battlefield.slice())
+      if (permanent.card === TOK.spawn && permanent.tapped)
+        this.dies(permanent);
   }
   override effCost(
     card: CardDef,
@@ -596,22 +614,22 @@ export class MikeGame extends GameWithoutKillSearch {
     fromGy = false,
   ): Cost {
     const cost = super.effCost(card, base, fromGy);
-    if (card.isBlue && this.onBf(WATER_CRYSTAL) && cost.g > 0)
-      return cost.withGeneric(cost.g - 1);
+    if (card.isBlue && this.isOnBattlefield(WATER_CRYSTAL) && cost.generic > 0)
+      return cost.withGeneric(cost.generic - 1);
     return cost;
   }
   override onCommanderCast(_cd: CardDef): void {
     this.commanderCasts += 1;
   }
   override commanderCost(_cd: CardDef, cost: Cost): Cost {
-    return cost.withGeneric(cost.g + 2 * this.commanderCasts);
+    return cost.withGeneric(cost.generic + 2 * this.commanderCasts);
   }
   /** Mana we could pay now (without the pool). */
   availMana(): number {
     let mana = this.pool.U + this.pool.C + this.pool.S;
-    for (const permanent of this.bf) {
+    for (const permanent of this.battlefield) {
       if (permanent.tapped) continue;
-      const kind = this.srcKind(permanent);
+      const kind = this.manaSourceKind(permanent);
       if (kind === null) continue;
       mana += kind === 'C2' ? 2 : 1;
     }
@@ -659,7 +677,7 @@ export class MikeGame extends GameWithoutKillSearch {
     this.inCombat = false;
     this.nerdRageAttackedThisTurn = false;
     this.vecnaX = 0;
-    for (const permanent of this.bf) {
+    for (const permanent of this.battlefield) {
       permanent.marks &= ~MARK_UNBLOCKABLE_THIS_TURN;
       permanent.exhausted = false;
     }
@@ -677,7 +695,7 @@ export class MikeGame extends GameWithoutKillSearch {
     this.endStep();
     const max = this.hasNoMaximumHandSize()
       ? 999
-      : this.onBf(TWENTY_TOED_TOAD)
+      : this.isOnBattlefield(TWENTY_TOED_TOAD)
         ? 20
         : 7;
     if (this.hand.length > max) this.discard(this.hand.length - max);
@@ -689,8 +707,9 @@ export class MikeGame extends GameWithoutKillSearch {
     this.inCombat = true;
     this.vecnaX = this.hand.length;
     // beginning of combat
-    for (const permanent of this.bf.slice()) {
-      if (permanent.cd.name === 'Loyal Drake' && this.onBf(VNWXT)) this.draw(1);
+    for (const permanent of this.battlefield.slice()) {
+      if (permanent.card.name === 'Loyal Drake' && this.isOnBattlefield(VNWXT))
+        this.draw(1);
     }
     this.shifterCopyNow();
     if (this.checkKill() === 2) return;
@@ -699,7 +718,7 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   /** Aurora Shifter: pay {E}{E} to become a copy of another creature (not legendary). */
   shifterCopyNow(): void {
-    const permanent = this.perm(AURORA_SHIFTER);
+    const permanent = this.findPermanent(AURORA_SHIFTER);
     if (!permanent || this.shifterCopy || this.energyCounters < 2) return;
     const want = [
       PSYCHOSIS_CRAWLER,
@@ -710,24 +729,24 @@ export class MikeGame extends GameWithoutKillSearch {
       EMRAKULS_MESSENGER,
       MISCHIEVOUS_MYSTIC,
     ];
-    const pickable = this.bf.filter(
+    const pickable = this.battlefield.filter(
       (candidate) =>
         candidate !== permanent &&
         candidate.isCreature &&
-        !candidate.cd.types.has('legendary') &&
-        want.includes(candidate.cd.name),
+        !candidate.card.types.has('legendary') &&
+        want.includes(candidate.card.name),
     );
     if (!pickable.length) return;
     const target = firstMin(pickable, (candidate) =>
-      want.indexOf(candidate.cd.name),
+      want.indexOf(candidate.card.name),
     );
     this.energyCounters -= 2;
-    this.shifterCopy = target.cd;
-    this.say('Aurora Shifter becomes a copy of', target.cd);
+    this.shifterCopy = target.card;
+    this.say('Aurora Shifter becomes a copy of', target.card);
   }
   override onAttack(attackers: Perm[]): Perm[] {
     const toad = attackers.find(
-      (permanent) => permanent.cd.name === TWENTY_TOED_TOAD,
+      (permanent) => permanent.card.name === TWENTY_TOED_TOAD,
     );
     if (
       attackers.some((permanent) => permanent.marks & MARK_NERD_RAGE) &&
@@ -751,22 +770,22 @@ export class MikeGame extends GameWithoutKillSearch {
       const name = this.effectiveCard(permanent).name;
       if (name === SHORELINE_LOOTER) {
         this.draw(1);
-        if (this.gy.length < 7) this.discard(1);
+        if (this.graveyard.length < 7) this.discard(1);
       } else if (name === LOOTER_IL_KOR) {
         this.draw(1);
         this.discard(1);
       } else if (name === AURORA_SHIFTER)
         this.energyCounters += this.power(permanent);
     }
-    const fblthp = this.perm(FBLTHP);
+    const fblthp = this.findPermanent(FBLTHP);
     if (fblthp && connected.length) {
       this.draw(2);
       if (!this.library.length && !this.died) {
         this.milled = true;
         this.winHow = 'mill';
       }
-      removeIfPresent(this.bf, fblthp);
-      this.library.push(fblthp.cd);
+      removeIfPresent(this.battlefield, fblthp);
+      this.library.push(fblthp.card);
       this.shuffle();
       this.say('Fblthp shuffles into the library');
     }
@@ -783,7 +802,7 @@ export class MikeGame extends GameWithoutKillSearch {
           permanents,
           (permanent) =>
             (this.evasive(permanent) ? 100 : 0) +
-            permanent.cd.mv +
+            permanent.card.manaValue +
             this.power(permanent),
         )
       : null;
@@ -843,23 +862,24 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   /** Slick Imitator at max speed: {1}, sacrifice it: copy a spell we cast (a copy of a draw spell draws again). */
   imitatorReady(): boolean {
-    return this.speed >= 4 && this.onBf(SLICK_IMITATOR);
+    return this.speed >= 4 && this.isOnBattlefield(SLICK_IMITATOR);
   }
   imitate(card: CardDef, mode: string | null): void {
-    const permanent = this.perm(SLICK_IMITATOR);
+    const permanent = this.findPermanent(SLICK_IMITATOR);
     if (!permanent || this.speed < 4 || !this.pay(new Cost(1), true)) return;
     this.dies(permanent);
     this.say('Slick Imitator copies', card);
     this.resolve(card, false, mode);
   }
-  override castIS(
+  override castInstantOrSorcery(
     card: CardDef,
     fromGy = false,
     base: Cost | null = null,
     mode: string | null = null,
     trig: Record<string, unknown> = {},
   ): boolean {
-    if (!super.castIS(card, fromGy, base, mode, trig)) return false;
+    if (!super.castInstantOrSorcery(card, fromGy, base, mode, trig))
+      return false;
     if (DRAW_SPELLS_WORTH_COPYING.has(card.name)) {
       for (let i = 0; i < this.drakeCopies; i++)
         this.resolve(card, false, mode);
@@ -890,7 +910,7 @@ export class MikeGame extends GameWithoutKillSearch {
     if (this.died) return -5000;
     this.purgeSpawns();
     let value = 0;
-    const start = this.cfg.opp_life as number;
+    const start = this.config.opp_life as number;
     for (const life of this.life)
       value += 3 * (start - Math.max(0, life)) + (life <= 0 ? 40 : 0);
     value += 12 * this.speed;
@@ -898,24 +918,25 @@ export class MikeGame extends GameWithoutKillSearch {
     value +=
       3 * this.hand.length +
       0.3 * this.hand.reduce((total, card) => total + this.cardValue(card), 0);
-    for (const permanent of this.bf) {
+    for (const permanent of this.battlefield) {
       if (permanent.land !== null) continue;
       if (permanent.token) {
-        value += permanent.cd === TOK.spawn ? 3 : 4 + 2 * this.power(permanent);
+        value +=
+          permanent.card === TOK.spawn ? 3 : 4 + 2 * this.power(permanent);
         continue;
       }
-      value += 0.8 * this.value(permanent.cd) + 2 * permanent.counters;
+      value += 0.8 * this.value(permanent.card) + 2 * permanent.counters;
       if (this.evasive(permanent)) value += 2 * this.power(permanent);
     }
-    const seas = this.perm(OMINOUS_SEAS);
+    const seas = this.findPermanent(OMINOUS_SEAS);
     if (seas) value += 3 * seas.counters;
     // the mill: progress is good only when it is safe (a win piece on the battlefield)
     const lib = this.library.length;
     if (this.hasMillWinPiece()) value += 120 + 2 * (60 - lib);
     else if (this.isSafeToEmptyLibrary())
       value += 2 * Math.max(0, 40 - lib) * 0.5;
-    else if (lib < (this.cfg.keep_library as number) + 2) value -= 150;
-    if (this.onBf(TWENTY_TOED_TOAD))
+    else if (lib < (this.config.keep_library as number) + 2) value -= 150;
+    if (this.isOnBattlefield(TWENTY_TOED_TOAD))
       value += 6 * Math.max(0, this.hand.length - 8);
     if (this.countOnBattlefield(PSYCHOSIS_CRAWLER) && this.cardsDrawnBy(1) > 1)
       value += 25;

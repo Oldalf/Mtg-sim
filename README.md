@@ -66,7 +66,7 @@ The phases (Meren, Sam & Frodo, Simic landfall, Mike, then Codie) and what each 
 
 ## Adding a deck
 
-Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, cfg, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) in `decks/index.ts`. The subclass fills in the hooks listed in the header of `engine/game-core.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`light`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGy`). Gale is the worked example.
+Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, config, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) in `decks/index.ts`. The subclass fills in the hooks listed in the header of `engine/game-core.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`buildKillSearchState`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGy`). Gale is the worked example.
 
 The engine handles all five colours, creatures (power / toughness, counters, tokens), enter and death triggers, sacrifice, devotion, life totals and a goldfish combat model (`creatureCombat`: flyers connect, half the ground attackers are blocked, crackback unless blockers stay home or a fog creature is used).
 

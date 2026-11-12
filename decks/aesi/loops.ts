@@ -45,13 +45,13 @@ export interface Loops {
 // ================================================================ the loop solver
 /** A creature that can put a land onto the battlefield over and over (Retreat untaps it). */
 export function findLoopPutter(game: AesiGame): Perm | null {
-  const permanents = game.bf.filter(
+  const permanents = game.battlefield.filter(
     (permanent) =>
-      PUTTERS.has(permanent.cd.name) &&
+      PUTTERS.has(permanent.card.name) &&
       !permanent.sick &&
       !(
-        permanent.cd.name === BUDOKA &&
-        (permanent.transformed || game.landsBf().length >= 9)
+        permanent.card.name === BUDOKA &&
+        (permanent.transformed || game.landsOnBattlefield().length >= 9)
       ),
   );
   const otherPermanent = permanents.find((permanent) => !permanent.tapped);
@@ -64,9 +64,11 @@ export function findLoopPutter(game: AesiGame): Perm | null {
 
 /** The best instant or sorcery for Uyo to copy that we can cast with this much mana. */
 export function uyoTarget(game: AesiGame, budget: number): CardDef | null {
-  const cards = game.hand.filter((card) => card.isIS && !HOLD.has(card.name));
+  const cards = game.hand.filter(
+    (card) => card.isInstantOrSorcery && !HOLD.has(card.name),
+  );
   const cost = (card: CardDef) =>
-    card.name === BSZ ? 4 : game.effCost(card).mv;
+    card.name === BSZ ? 4 : game.effCost(card).manaValue;
   const otherCards = cards.filter((card) => cost(card) <= budget);
   if (!otherCards.length) return null;
   const priority = (card: CardDef) =>
@@ -109,15 +111,16 @@ export function findLoops(game: AesiGame): Loops {
     how: [],
   };
   const context: LoopContext = {
-    cobraBonus: game.onBf(COBRA) ? 1 : 0,
+    cobraBonus: game.isOnBattlefield(COBRA) ? 1 : 0,
     abilityReduction: game.reduction(),
     manaPerReplayedLand: game.replayMana(),
     untappedLands: game
-      .landsBf()
-      .filter((permanent) => game.untappedLand(permanent.cd)).length,
+      .landsOnBattlefield()
+      .filter((permanent) => game.untappedLand(permanent.card)).length,
     availableMana: game.availMana(),
     putter: game.hasUntapper() ? findLoopPutter(game) : null,
-    hasKodamaAndMeloku: game.onBf(KODAMA) && game.onBf(MELOKU),
+    hasKodamaAndMeloku:
+      game.isOnBattlefield(KODAMA) && game.isOnBattlefield(MELOKU),
   };
   loops.replay = context.putter !== null || context.hasKodamaAndMeloku;
   findOmniscienceDrawLoop(game, loops);
@@ -147,10 +150,10 @@ function recordLandfallLoop(
 function findOmniscienceDrawLoop(game: AesiGame, loops: Loops): void {
   const inHand = (name: string) => game.hand.some((card) => card.name === name);
   if (
-    game.onBf(OMNI) &&
+    game.isOnBattlefield(OMNI) &&
     (inHand(KIRI) || inHand(HARU)) &&
-    (inHand(KIRI) || game.onBf(KIRI)) &&
-    (inHand(HARU) || game.onBf(HARU))
+    (inHand(KIRI) || game.isOnBattlefield(KIRI)) &&
+    (inHand(HARU) || game.isOnBattlefield(HARU))
   ) {
     loops.draw = true;
     loops.start = 0;
@@ -168,7 +171,7 @@ function findRetreatLoops(
 ): void {
   const { putter } = context;
   if (!putter) return;
-  const putterName = putter.cd.name.split(',')[0];
+  const putterName = putter.card.name.split(',')[0];
   const chamber = game.hand.find((card) => card.land?.special === 'chamber');
   if (chamber)
     recordLandfallLoop(
@@ -179,8 +182,8 @@ function findRetreatLoops(
       0,
       true,
     );
-  for (const permanent of game.bf) {
-    const returner = RETURNERS[permanent.cd.name];
+  for (const permanent of game.battlefield) {
+    const returner = RETURNERS[permanent.card.name];
     if (!returner || returner[2] === 'counter') continue;
     const [abilityMana, landsReturned, effect] = returner;
     const cost = Math.max(1, abilityMana - context.abilityReduction);
@@ -196,7 +199,7 @@ function findRetreatLoops(
     recordLandfallLoop(
       loops,
       context,
-      `Retreat + ${putterName} + ${permanent.cd.name.split(',')[0]}`,
+      `Retreat + ${putterName} + ${permanent.card.name.split(',')[0]}`,
       netMana,
       cost,
       true,
@@ -205,7 +208,7 @@ function findRetreatLoops(
     else if (effect === 'mill') loops.mill = true;
     else if (effect === 'copy') loops.copy = true;
     else if (
-      permanent.cd.name === 'Soratami Mirror-Mage' &&
+      permanent.card.name === 'Soratami Mirror-Mage' &&
       game.landsCreatures()
     )
       loops.lock = true;
@@ -246,10 +249,10 @@ function completeLoops(
     // endless mana: every moonfolk can be the land returner
     loops.landfall = true;
     if (context.putter && !loops.putter) loops.putter = context.putter;
-    if (game.onBf(MINDSWEEPER)) loops.mill = true;
-    if (game.onBf(MELOKU)) loops.tokens = true;
-    if (game.onBf(UYO) && uyoTarget(game, 99)) loops.copy = true;
-    if (game.onBf('Soratami Mirror-Mage') && game.landsCreatures())
+    if (game.isOnBattlefield(MINDSWEEPER)) loops.mill = true;
+    if (game.isOnBattlefield(MELOKU)) loops.tokens = true;
+    if (game.isOnBattlefield(UYO) && uyoTarget(game, 99)) loops.copy = true;
+    if (game.isOnBattlefield('Soratami Mirror-Mage') && game.landsCreatures())
       loops.lock = true;
   }
   // Omniscience + Onnas with lands as creatures: Kiri-Onna bounces a land every time
@@ -261,7 +264,10 @@ function completeLoops(
       game.hand.some((card) => card.name === AFFINITY || card.name === REVOLT))
   )
     loops.lock = true;
-  if (loops.landfall && (game.onBf(AESI) || game.onBf(TATYOVA)))
+  if (
+    loops.landfall &&
+    (game.isOnBattlefield(AESI) || game.isOnBattlefield(TATYOVA))
+  )
     loops.draw = true;
 }
 
@@ -270,8 +276,8 @@ export function isLoopConceivable(game: AesiGame): boolean {
   return (
     game.infMana ||
     game.hasUntapper() ||
-    game.onBf(OMNI) ||
-    (game.onBf(KODAMA) && game.onBf(MELOKU))
+    game.isOnBattlefield(OMNI) ||
+    (game.isOnBattlefield(KODAMA) && game.isOnBattlefield(MELOKU))
   );
 }
 
@@ -280,8 +286,8 @@ export function isLoopConceivable(game: AesiGame): boolean {
 export function solveLoops(game: AesiGame): boolean {
   if (!isLoopConceivable(game)) return false;
   const key =
-    game.bf
-      .map((permanent) => permanent.cd.name + (permanent.tapped ? 't' : ''))
+    game.battlefield
+      .map((permanent) => permanent.card.name + (permanent.tapped ? 't' : ''))
       .join('|') +
     '#' +
     game.hand.map((card) => card.name).join('|') +
@@ -329,21 +335,21 @@ export function solveLoops(game: AesiGame): boolean {
     copy: copy || loops.copy,
   });
   game.comboKey =
-    game.bf
-      .map((permanent) => permanent.cd.name + (permanent.tapped ? 't' : ''))
+    game.battlefield
+      .map((permanent) => permanent.card.name + (permanent.tapped ? 't' : ''))
       .join('|') +
     '#' +
     game.hand.map((card) => card.name).join('|') +
     '#' +
     game.availMana() +
     game.dropsUsed;
-  return game.oppsBeaten();
+  return game.areOpponentsBeaten();
 }
 
 /** A win this turn from the loops: Mindsweeper, Uyo copying Blue Sun's Zenith, or endless mana +
  *  Blue Sun's Zenith (drawn again each time with endless draws). */
 export function winFromLoops(game: AesiGame, loops: Loops): boolean {
-  if (loops.lock && game.cfg.land_lock_win) {
+  if (loops.lock && game.config.land_lock_win) {
     const otherCard =
       !game.revolt && !game.affinity
         ? game.hand.find(
@@ -353,15 +359,16 @@ export function winFromLoops(game: AesiGame, loops: Loops): boolean {
     if (otherCard) {
       if (
         otherCard.name === AFFINITY
-          ? game.castIS(otherCard)
+          ? game.castInstantOrSorcery(otherCard)
           : game.castPerm(otherCard)
       )
         game.say(`(${otherCard.name}: lands are creatures)`);
     }
     if (game.revolt || game.affinity) {
       game.locked = true;
-      for (let i = 0; i < game.lib.length; i++)
-        if (game.firstOppDead === null) game.firstOppDead = game.turn;
+      for (let i = 0; i < game.opponentLibrarySizes.length; i++)
+        if (game.firstOpponentDeadTurn === null)
+          game.firstOpponentDeadTurn = game.turn;
       game.loopWinHow = "land lock: every opponent's land bounced";
       game.say(
         "LOOP WIN: lands are creatures, every opponent's land is bounced over and over (land lock)",
@@ -395,10 +402,11 @@ export function winFromLoops(game: AesiGame, loops: Loops): boolean {
     }
     // one huge Zenith: one opponent
     let target: number | null = null;
-    for (let i = 0; i < game.lib.length; i++)
+    for (let i = 0; i < game.opponentLibrarySizes.length; i++)
       if (
-        game.oppAlive(i) &&
-        (target === null || game.lib[i] > game.lib[target])
+        game.isOpponentAlive(i) &&
+        (target === null ||
+          game.opponentLibrarySizes[i] > game.opponentLibrarySizes[target])
       )
         target = i;
     if (target !== null && bszHand) {
@@ -408,7 +416,7 @@ export function winFromLoops(game: AesiGame, loops: Loops): boolean {
       game.millOut(target);
       game.say(`endless mana: Blue Sun's Zenith mills opponent ${target + 1}`);
     }
-    return game.oppsBeaten();
+    return game.areOpponentsBeaten();
   }
   return false;
 }
@@ -438,13 +446,13 @@ export function dumpLandsFromHand(game: AesiGame): boolean {
   for (const otherCard of lands) {
     removeIfPresent(game.hand, otherCard);
     if (otherCard.land!.special === 'wilds') {
-      game.gy.push(otherCard);
+      game.graveyard.push(otherCard);
       const anotherCard = game.library.find((card) => card.land?.basic);
       if (anotherCard && game.library.length > game.libraryCardsToKeep()) {
         removeIfPresent(game.library, anotherCard);
         const permanent = new Perm(anotherCard, anotherCard.land, true);
         permanent.sick = false;
-        game.bf.push(permanent);
+        game.battlefield.push(permanent);
       }
     } else {
       const otherPermanent = new Perm(
@@ -453,12 +461,12 @@ export function dumpLandsFromHand(game: AesiGame): boolean {
         otherCard.land!.etb === 'tapped',
       );
       otherPermanent.sick = false;
-      game.bf.push(otherPermanent);
+      game.battlefield.push(otherPermanent);
     }
     landCount++;
   }
-  for (const anotherPermanent of game.bf)
-    if (anotherPermanent.cd.name === KHALNI)
+  for (const anotherPermanent of game.battlefield)
+    if (anotherPermanent.card.name === KHALNI)
       anotherPermanent.counters += landCount;
   game.say(`LOOP: ${landCount} land(s) from hand onto the battlefield`);
   return true;
@@ -467,7 +475,9 @@ export function dumpLandsFromHand(game: AesiGame): boolean {
 // (the trace names a loop once a turn)
 export function canPayKeepingReserve(game: AesiGame, cost: Cost): boolean {
   if (game.infMana || game.loopReserve === 0) return game.canPay(cost);
-  return game.availMana() - cost.mv >= game.loopReserve && game.canPay(cost);
+  return (
+    game.availMana() - cost.manaValue >= game.loopReserve && game.canPay(cost)
+  );
 }
 
 export function castForLoops(game: AesiGame): boolean {
@@ -488,7 +498,8 @@ export function castForLoops(game: AesiGame): boolean {
     if (!otherCard) continue;
     if (name === 'Graceful Adept' && game.hand.length <= 8) continue;
     if (name === OMNI && !game.canPay(game.effCost(otherCard))) continue;
-    if (game.onBf(name) && otherCard.types.has('legendary')) continue;
+    if (game.isOnBattlefield(name) && otherCard.types.has('legendary'))
+      continue;
     if (
       canPayKeepingReserve(game, game.effCost(otherCard)) &&
       game.castPerm(otherCard)
@@ -496,16 +507,16 @@ export function castForLoops(game: AesiGame): boolean {
       return true;
   }
   // with Omniscience everything else is free too (permanents only; spells could end the loops' value)
-  if (game.onBf(OMNI)) {
+  if (game.isOnBattlefield(OMNI)) {
     // (not the Onnas: they are the draw loop, cast and returned over and over)
     const anotherCard = game.hand.find(
       (card) =>
         card.land === null &&
-        !card.isIS &&
+        !card.isInstantOrSorcery &&
         !HOLD.has(card.name) &&
         card.name !== KIRI &&
         card.name !== HARU &&
-        !(card.types.has('legendary') && game.onBf(card.name)),
+        !(card.types.has('legendary') && game.isOnBattlefield(card.name)),
     );
     if (anotherCard && game.castPerm(anotherCard)) return true;
   }
@@ -514,12 +525,12 @@ export function castForLoops(game: AesiGame): boolean {
 
 /** Wins that land on the next turn: endless Illusions (summoning sick now), Uyo copying an epic spell. */
 export function setUpNextTurnWin(game: AesiGame, loops: Loops): void {
-  if (game.oppsBeaten()) return;
-  const hasArmy = game.bf.some(
+  if (game.areOpponentsBeaten()) return;
+  const hasArmy = game.battlefield.some(
     (permanent) =>
-      permanent.cd === TOK.illusionArmy || permanent.cd === TOK.snakeArmy,
+      permanent.card === TOK.illusionArmy || permanent.card === TOK.snakeArmy,
   );
-  if (hasArmy || game.dominionCopies >= (game.cfg.dominion_win as number))
+  if (hasArmy || game.dominionCopies >= (game.config.dominion_win as number))
     return;
   if (loops.tokens) {
     game.enter(TOK.illusionArmy, 'token', { token: true });
@@ -532,7 +543,7 @@ export function setUpNextTurnWin(game: AesiGame, loops: Loops): void {
     if (
       card &&
       (card.name === SWARM || card.name === DOMINION) &&
-      game.castIS(card)
+      game.castInstantOrSorcery(card)
     ) {
       if (card.name === SWARM) {
         game.enter(TOK.snakeArmy, 'token', { token: true });

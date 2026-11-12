@@ -32,17 +32,20 @@ export function fightOpponent(
     `${defenderPlayer}|${attackerPlayer}|${attacker.name}`;
   const isLethal = (unblocked: Fighter[]) =>
     !table.fogActive &&
-    (unblocked.reduce((total, a) => total + a.power, 0) >= defenderLife ||
+    (unblocked.reduce((total, fighter) => total + fighter.power, 0) >=
+      defenderLife ||
       unblocked.some(
-        (a) =>
-          a.commander &&
-          (table.commanderDamage.get(commanderKey(a)) ?? 0) + a.power >=
+        (fighter) =>
+          fighter.commander &&
+          (table.commanderDamage.get(commanderKey(fighter)) ?? 0) +
+            fighter.power >=
             COMMANDER_DAMAGE_TO_KILL,
       ));
   const blockers = defender
     .blockers()
-    .filter((blocker) => !table.creaturesThatBlocked.has(blocker.p));
-  const chumpLife = (defender.cfg.chump_life as number) ?? DEFAULT_CHUMP_LIFE;
+    .filter((blocker) => !table.creaturesThatBlocked.has(blocker.permanent));
+  const chumpLife =
+    (defender.config.chump_life as number) ?? DEFAULT_CHUMP_LIFE;
 
   let attackers = attackersIn;
   if (apply && table.answersEnabled && !table.fogActive)
@@ -69,37 +72,45 @@ export function fightOpponent(
     const outcome =
       blocker && !table.fogActive
         ? duel(attacker, blocker)
-        : { aDies: false, bDies: false };
+        : { attackerDies: false, blockerDies: false };
     return {
-      a: attacker,
-      b: blocker,
-      aDies: outcome.aDies,
-      bDies: outcome.bDies,
+      attacker,
+      blocker,
+      attackerDies: outcome.attackerDies,
+      blockerDies: outcome.blockerDies,
     };
   });
-  const unblocked = rows.filter((row) => row.b === null).map((row) => row.a);
+  const unblocked = rows
+    .filter((row) => row.blocker === null)
+    .map((row) => row.attacker);
   // trample: what the blocker doesn't soak up goes through
   const trampleDamage = rows.reduce(
     (total, row) =>
       total +
-      (row.b && row.a.trample
-        ? Math.max(0, row.a.power - (row.a.deathtouch ? 1 : row.b.toughness))
+      (row.blocker && row.attacker.trample
+        ? Math.max(
+            0,
+            row.attacker.power -
+              (row.attacker.deathtouch ? 1 : row.blocker.toughness),
+          )
         : 0),
     0,
   );
   let damage = table.fogActive
     ? 0
-    : unblocked.reduce((total, a) => total + a.power, 0) + trampleDamage;
+    : unblocked.reduce((total, fighter) => total + fighter.power, 0) +
+      trampleDamage;
   let isKill = isLethal(unblocked);
-  if (!apply) return { rows, dmg: damage, kills: isKill };
+  if (!apply) return { rows, damage: damage, kills: isKill };
 
-  for (const row of rows) if (row.b) table.creaturesThatBlocked.add(row.b.p);
+  for (const row of rows)
+    if (row.blocker) table.creaturesThatBlocked.add(row.blocker.permanent);
   const defence = defendAgainstDamage(table, defenderPlayer, damage, isKill);
   if (defence === 'fog') {
     table.fogActive = true;
     damage = 0;
     isKill = false;
-    for (const row of rows) row.aDies = row.bDies = false;
+    for (const row of rows) row.attackerDies = row.blockerDies = false;
     table.sayAs(defenderPlayer, 'prevents all combat damage this turn');
   } else if (defence === 'bounce') {
     table.sayAs(
@@ -108,25 +119,32 @@ export function fightOpponent(
     );
     table.stats.removals[defenderPlayer]++;
     return {
-      rows: rows.map((row) => ({ ...row, aDies: false, bDies: false })),
-      dmg: 0,
+      rows: rows.map((row) => ({
+        ...row,
+        attackerDies: false,
+        blockerDies: false,
+      })),
+      damage: 0,
       kills: false,
       bounced: true,
     };
   }
 
   for (const row of rows) {
-    if (!row.b) continue;
+    if (!row.blocker) continue;
     const outcome =
-      row.aDies && row.bDies
+      row.attackerDies && row.blockerDies
         ? ' (both die)'
-        : row.aDies
+        : row.attackerDies
           ? ' and kills it'
-          : row.bDies
+          : row.blockerDies
             ? ' and dies'
             : '';
-    table.sayAs(defenderPlayer, `${row.b.name} blocks ${row.a.name}${outcome}`);
-    if (row.bDies) defender.dies(row.b.p);
+    table.sayAs(
+      defenderPlayer,
+      `${row.blocker.name} blocks ${row.attacker.name}${outcome}`,
+    );
+    if (row.blockerDies) defender.dies(row.blocker.permanent);
   }
   if (damage > 0)
     for (const attacker of unblocked)
@@ -138,7 +156,7 @@ export function fightOpponent(
         );
   if (isKill && damage < defenderLife)
     table.commanderKilled.add(defenderPlayer);
-  return { rows, dmg: damage, kills: isKill };
+  return { rows, damage: damage, kills: isKill };
 }
 
 /** What the defender's own deck does about the damage: 'fog' (prevent it), 'bounce' (return the attackers) or 'none'. */
@@ -180,21 +198,26 @@ function removeAttackersWithInstants(
       chumpLife,
     );
     const unblocked = attackers.filter((_, index) => !blocks[index]);
-    const damage = unblocked.reduce((total, a) => total + a.power, 0);
+    const damage = unblocked.reduce(
+      (total, fighter) => total + fighter.power,
+      0,
+    );
     const hitIsDangerous =
       isLethal(unblocked) || (damage > 0 && defenderLife - damage <= chumpLife);
     if (!hitIsDangerous) break;
 
     let castRemoval = false;
-    const biggestFirst = unblocked.slice().sort((a, b) => b.power - a.power);
+    const biggestFirst = unblocked
+      .slice()
+      .sort((first, second) => second.power - first.power);
     for (const attacker of biggestFirst) {
       const removalCard = defender.hand.find((card) => {
         const answer = defender.answer(card);
         return (
           answer?.kind === 'removal' &&
           answer.instant &&
-          Game.permOk(answer, attacker.p.cd.types) &&
-          attackingGame.podCanTarget(attacker.p, answer) &&
+          Game.permOk(answer, attacker.permanent.card.types) &&
+          attackingGame.podCanTarget(attacker.permanent, answer) &&
           defender.canPay(defender.answerCost(card), true)
         );
       });
@@ -207,11 +230,11 @@ function removeAttackersWithInstants(
         defenderPlayer,
         removalCard.name,
         attackerPlayer,
-        attacker.p,
+        attacker.permanent,
         answer,
       );
-      if (!attackingGame.bf.includes(attacker.p))
-        attackers = attackers.filter((a) => a !== attacker);
+      if (!attackingGame.battlefield.includes(attacker.permanent))
+        attackers = attackers.filter((fighter) => fighter !== attacker);
       castRemoval = true;
       break;
     }

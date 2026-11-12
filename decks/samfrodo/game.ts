@@ -54,7 +54,7 @@ type Phase = 'main1' | 'combat' | 'main2' | 'end';
 
 export class SamFrodoGame extends GameWithoutKillSearch {
   override mulliganRule(): MulliganRule | null {
-    return this.cfg.smart_mulligan ? MULLIGAN : null;
+    return this.config.smart_mulligan ? MULLIGAN : null;
   }
   override colors = ['W', 'B', 'G'];
   phase: Phase = 'main1';
@@ -73,17 +73,17 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   hasWon(): boolean {
     return (
       this.life.filter((life) => life <= 0).length >=
-      (this.cfg.win_dead as number)
+      (this.config.win_dead as number)
     );
   }
-  override oppsBeaten(): boolean {
+  override areOpponentsBeaten(): boolean {
     return this.hasWon();
   }
   override checkKill(): number {
     if (this.died) return 2;
     if (this.hasWon()) {
-      if (this.unprot === null) {
-        this.unprot = this.turn;
+      if (this.unprotectedKillTurn === null) {
+        this.unprotectedKillTurn = this.turn;
         this.say(`WIN: opp life [${this.life.join(', ')}]`);
       }
       return 2;
@@ -92,7 +92,10 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
   override play(): [number | null, number | null] {
     super.play();
-    return [this.died ? null : this.unprot, this.firstOppDead];
+    return [
+      this.died ? null : this.unprotectedKillTurn,
+      this.firstOpponentDeadTurn,
+    ];
   }
   // ---------------------------------------------------------------- log analyzer hooks
   override syncFromLog(board: { trackers: Record<string, number> }): void {
@@ -123,13 +126,16 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   opponentWithMostLife(): number | null {
     let best: number | null = null;
     for (let i = 0; i < this.life.length; i++)
-      if (this.oppAlive(i) && (best === null || this.life[i] > this.life[best]))
+      if (
+        this.isOpponentAlive(i) &&
+        (best === null || this.life[i] > this.life[best])
+      )
         best = i;
     return best;
   }
   drainTargetOpponent(amount: number): void {
     const target = this.opponentWithMostLife();
-    if (target !== null && amount > 0) this.hurtOpp(target, amount);
+    if (target !== null && amount > 0) this.damageOpponent(target, amount);
   }
 
   override gainLife(amount: number): void {
@@ -138,15 +144,15 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     this.lifeGainedThisTurn += amount;
     if (!this.firstLifeGainHappened) {
       this.firstLifeGainHappened = true;
-      for (const permanent of this.bf.filter(
-        (candidate) => candidate.cd.name === 'Cat Collector',
+      for (const permanent of this.battlefield.filter(
+        (candidate) => candidate.card.name === 'Cat Collector',
       ))
-        if (this.bf.includes(permanent)) this.makeTokens([TOK.cat]);
+        if (this.battlefield.includes(permanent)) this.makeTokens([TOK.cat]);
     }
-    for (const battlefieldPermanent of this.bf)
-      if (battlefieldPermanent.cd.name === 'Sanguine Bond')
+    for (const battlefieldPermanent of this.battlefield)
+      if (battlefieldPermanent.card.name === 'Sanguine Bond')
         this.drainTargetOpponent(amount);
-    const pig = this.perm('Prize Pig');
+    const pig = this.findPermanent('Prize Pig');
     if (pig) {
       this.pigRibbonCounters += amount;
       if (this.pigRibbonCounters >= 3) {
@@ -155,11 +161,11 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       }
     }
     if (this.phase !== 'main1') {
-      if (this.onBf('Dawn of Hope') && this.pay(new Cost(2))) {
+      if (this.isOnBattlefield('Dawn of Hope') && this.pay(new Cost(2))) {
         this.say('Dawn of Hope: pay 2, draw');
         this.draw(1);
       }
-      if (this.onBf('Well of Lost Dreams')) {
+      if (this.isOnBattlefield('Well of Lost Dreams')) {
         let payableAmount = 0;
         while (
           payableAmount < amount &&
@@ -177,12 +183,12 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   // ================================================================ tokens
   /** Create tokens as one event: Peregrin Took and Tippy-Toe add a Food each, Academy Manufactor turns each
    *  Food / Clue / Treasure into one of each. Then each token enters (and "create" triggers fire). */
-  makeTokens(cds: CardDef[], opts: { tapped?: boolean } = {}): Perm[] {
+  makeTokens(cds: CardDef[], options: { tapped?: boolean } = {}): Perm[] {
     if (!cds.length) return [];
     const list = cds.slice();
-    if (this.onBf('Peregrin Took')) list.push(FOOD);
-    if (this.onBf('Tippy-Toe, Terrific Partner')) list.push(FOOD);
-    const all = this.onBf('Academy Manufactor')
+    if (this.isOnBattlefield('Peregrin Took')) list.push(FOOD);
+    if (this.isOnBattlefield('Tippy-Toe, Terrific Partner')) list.push(FOOD);
+    const all = this.isOnBattlefield('Academy Manufactor')
       ? list.flatMap((card) =>
           ART_TOKENS.has(card) ? [FOOD, CLUE, TREASURE] : [card],
         )
@@ -191,14 +197,15 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     for (const tokenCard of all) {
       const permanent = this.enter(tokenCard, 'token', {
         token: true,
-        tapped: opts.tapped,
+        tapped: options.tapped,
       });
       out.push(permanent);
       // "whenever you create a token"
-      for (const battlefieldPermanent of this.bf.slice()) {
-        if (battlefieldPermanent.cd.name === 'Mirkwood Bats') this.drainEach(1);
+      for (const battlefieldPermanent of this.battlefield.slice()) {
+        if (battlefieldPermanent.card.name === 'Mirkwood Bats')
+          this.drainEach(1);
         else if (
-          battlefieldPermanent.cd.name === 'Rosie Cotton of South Lane'
+          battlefieldPermanent.card.name === 'Rosie Cotton of South Lane'
         ) {
           const counterRecipient = this.bestCounterTarget(battlefieldPermanent);
           if (counterRecipient) counterRecipient.counters += 1;
@@ -215,13 +222,13 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     );
     if (!permanents.length) return null;
     const pri = (permanent: Perm) =>
-      permanent.cd.name === 'Marionette Master'
+      permanent.card.name === 'Marionette Master'
         ? 5
-        : permanent.cd.name === 'Rapacious Guest'
+        : permanent.card.name === 'Rapacious Guest'
           ? 4
-          : permanent.cd.name === FRODO
+          : permanent.card.name === FRODO
             ? 3
-            : permanent.cd.name === GOLLUM
+            : permanent.card.name === GOLLUM
               ? 2
               : permanent.token
                 ? 0
@@ -230,11 +237,11 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   foodsOnBattlefield(): Perm[] {
-    return this.bf.filter((permanent) => permanent.cd === FOOD);
+    return this.battlefield.filter((permanent) => permanent.card === FOOD);
   }
 
   halflingCount(): number {
-    return this.creatures().filter((permanent) => isHalfling(permanent.cd))
+    return this.creatures().filter((permanent) => isHalfling(permanent.card))
       .length;
   }
   override onEnter(permanent: Perm, _from: Zone): void {
@@ -243,15 +250,15 @@ export class SamFrodoGame extends GameWithoutKillSearch {
 
   // ================================================================ leaving
   override sacrifice(permanent: Perm): void {
-    if (!this.bf.includes(permanent)) return;
-    const food = permanent.cd === FOOD;
+    if (!this.battlefield.includes(permanent)) return;
+    const food = permanent.card === FOOD;
     super.sacrifice(permanent); // -> dies -> onDies
-    for (const battlefieldPermanent of this.bf) {
-      if (battlefieldPermanent.cd.name === 'Popular Egotist') {
+    for (const battlefieldPermanent of this.battlefield) {
+      if (battlefieldPermanent.card.name === 'Popular Egotist') {
         this.drainTargetOpponent(1);
         this.gainLife(1);
       } else if (
-        battlefieldPermanent.cd.name === 'Mirkwood Bats' &&
+        battlefieldPermanent.card.name === 'Mirkwood Bats' &&
         permanent.token
       )
         this.drainEach(1);
@@ -265,13 +272,15 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   /** Opponents' total life loss if this permanent were sacrificed now (the payoffs on the battlefield). */
   sacrificeValue(permanent: Perm): number {
     const key = permanent.token
-      ? permanent.cd === FOOD
+      ? permanent.card === FOOD
         ? 'F'
-        : permanent.cd === TREASURE
+        : permanent.card === TREASURE
           ? 'T'
-          : permanent.cd === CLUE
+          : permanent.card === CLUE
             ? 'L'
-            : 't' + +permanent.isCreature + +permanent.cd.types.has('artifact')
+            : 't' +
+              +permanent.isCreature +
+              +permanent.card.types.has('artifact')
       : null;
     if (key !== null && this.sacrificeValueCache) {
       const cached = this.sacrificeValueCache.get(key);
@@ -289,16 +298,16 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   computeSacrificeValue(permanent: Perm): number {
-    const alive = this.oppsAlive();
-    const art = permanent.cd.types.has('artifact'),
-      cre = permanent.cd.isCreature;
-    const bond = this.bf.filter(
-      (candidate) => candidate.cd.name === 'Sanguine Bond',
+    const alive = this.countOpponentsAlive();
+    const art = permanent.card.types.has('artifact'),
+      cre = permanent.card.isCreature;
+    const bond = this.battlefield.filter(
+      (candidate) => candidate.card.name === 'Sanguine Bond',
     ).length;
     let total = 0;
-    for (const battlefieldPermanent of this.bf) {
+    for (const battlefieldPermanent of this.battlefield) {
       if (battlefieldPermanent === permanent) continue;
-      const name = battlefieldPermanent.cd.name;
+      const name = battlefieldPermanent.card.name;
       if (name === 'Popular Egotist') total += 1 + bond;
       else if (name === 'Mirkwood Bats' && permanent.token) total += alive;
       else if (name === 'Marionette Apprentice' && (art || cre)) total += alive;
@@ -314,33 +323,35 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   spareSacrifices(): Perm[] {
     const foods = this.foodsOnBattlefield();
     const keepFood =
-      (this.onBf(SAM) ? 0 : 1) +
-      (this.gy.some((card) => card.name === 'Cauldron Familiar') ? 1 : 0);
+      (this.isOnBattlefield(SAM) ? 0 : 1) +
+      (this.graveyard.some((card) => card.name === 'Cauldron Familiar')
+        ? 1
+        : 0);
     const keepTreasure = this.turn >= 7 ? 0 : 2;
     let foodLeft = foods.length - keepFood;
     let treasureLeft =
-      this.bf.filter((permanent) => permanent.cd === TREASURE).length -
-      keepTreasure;
+      this.battlefield.filter((permanent) => permanent.card === TREASURE)
+        .length - keepTreasure;
     const out: Perm[] = [];
-    for (const battlefieldPermanent of this.bf) {
+    for (const battlefieldPermanent of this.battlefield) {
       if (!battlefieldPermanent.token) continue;
-      if (battlefieldPermanent.cd === FOOD) {
+      if (battlefieldPermanent.card === FOOD) {
         if (foodLeft-- <= 0) continue;
-      } else if (battlefieldPermanent.cd === TREASURE) {
+      } else if (battlefieldPermanent.card === TREASURE) {
         if (treasureLeft-- <= 0) continue;
-      } else if (battlefieldPermanent.cd.name === 'The Notary Hobbits')
+      } else if (battlefieldPermanent.card.name === 'The Notary Hobbits')
         continue;
-      else if (battlefieldPermanent.cd === TOK.bird) continue;
+      else if (battlefieldPermanent.card === TOK.bird) continue;
       out.push(battlefieldPermanent);
     }
     const rank = (permanent: Perm) =>
-      permanent.cd === CLUE
+      permanent.card === CLUE
         ? 0
-        : permanent.cd === TOK.goat
+        : permanent.card === TOK.goat
           ? 1
           : permanent.isCreature
             ? 2 + this.power(permanent)
-            : permanent.cd === FOOD
+            : permanent.card === FOOD
               ? 3
               : 4;
     return out.sort((first, second) => rank(first) - rank(second));
@@ -348,12 +359,12 @@ export class SamFrodoGame extends GameWithoutKillSearch {
 
   // ================================================================ lands
   override onLandEnter(permanent: Perm, _gone: boolean): void {
-    for (const battlefieldPermanent of this.bf.slice())
-      if (battlefieldPermanent.cd.name === 'Tireless Provisioner')
+    for (const battlefieldPermanent of this.battlefield.slice())
+      if (battlefieldPermanent.card.name === 'Tireless Provisioner')
         this.makeTokens([this.manaSources() < 6 ? TREASURE : FOOD]);
     if (
-      permanent.cd.name === 'Graypelt Refuge' ||
-      permanent.cd.name === 'Scoured Barrens'
+      permanent.card.name === 'Graypelt Refuge' ||
+      permanent.card.name === 'Scoured Barrens'
     )
       this.gainLife(1);
   }
@@ -363,18 +374,20 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     toHand = false,
     only: string[] = ['Plains', 'Swamp', 'Forest'],
   ): boolean {
-    const src = (col: string) =>
-      this.landsBf().filter((permanent) => {
-        const kind = this.srcKind(permanent, true) ?? '';
+    const source = (colour: string) =>
+      this.landsOnBattlefield().filter((permanent) => {
+        const kind = this.manaSourceKind(permanent, true) ?? '';
         return (
-          kind === col ||
+          kind === colour ||
           kind === 'A' ||
-          (kind.length === 3 && kind.includes(col))
+          (kind.length === 3 && kind.includes(colour))
         );
       }).length;
     const order = only
       .slice()
-      .sort((first, second) => src(BASIC_COL[first]) - src(BASIC_COL[second]));
+      .sort(
+        (first, second) => source(BASIC_COL[first]) - source(BASIC_COL[second]),
+      );
     for (const name of order) {
       const card = this.library.find((candidate) => candidate.name === name);
       if (!card) continue;
@@ -384,7 +397,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       else {
         const landPermanent = new Perm(card, card.land, true);
         landPermanent.sick = false;
-        this.bf.push(landPermanent);
+        this.battlefield.push(landPermanent);
         this.say('basic land onto the battlefield:', card);
         this.onLandEnter(landPermanent, false);
       }
@@ -394,9 +407,9 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ mana
-  override srcKind(permanent: Perm, ignoreSick = false): string | null {
-    if (permanent.cd === TREASURE) return 'A';
-    const name = permanent.cd.name;
+  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+    if (permanent.card === TREASURE) return 'A';
+    const name = permanent.card.name;
     if (name === 'Gilded Goose')
       return (ignoreSick || !permanent.sick) && this.foodsOnBattlefield().length
         ? 'A'
@@ -407,23 +420,25 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       const halflingCount = this.halflingCount();
       return halflingCount > 0 ? `C${halflingCount}` : null;
     }
-    if (permanent.land !== null && this.onBf('Chromatic Lantern')) return 'A';
-    return super.srcKind(permanent, ignoreSick);
+    if (permanent.land !== null && this.isOnBattlefield('Chromatic Lantern'))
+      return 'A';
+    return super.manaSourceKind(permanent, ignoreSick);
   }
 
   /** Sources with a side effect when tapped for mana: Treasures are sacrificed, Gilded Goose eats a Food,
    *  Pristine Talisman gains 1 life. */
-  override pay(cost: Cost, isIS = false, commit = true): boolean {
-    if (!commit) return super.pay(cost, isIS, false);
-    const before = this.bf.filter((permanent) => !permanent.tapped);
-    if (!super.pay(cost, isIS, true)) return false;
+  override pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
+    if (!commit) return super.pay(cost, isInstantOrSorcery, false);
+    const before = this.battlefield.filter((permanent) => !permanent.tapped);
+    if (!super.pay(cost, isInstantOrSorcery, true)) return false;
     for (const tappedSource of before) {
       if (!tappedSource.tapped) continue;
-      if (tappedSource.cd === TREASURE) this.sacrifice(tappedSource);
-      else if (tappedSource.cd.name === 'Gilded Goose') {
+      if (tappedSource.card === TREASURE) this.sacrifice(tappedSource);
+      else if (tappedSource.card.name === 'Gilded Goose') {
         const food = this.foodsOnBattlefield()[0];
         if (food) this.sacrifice(food);
-      } else if (tappedSource.cd.name === 'Pristine Talisman') this.gainLife(1);
+      } else if (tappedSource.card.name === 'Pristine Talisman')
+        this.gainLife(1);
     }
     return true;
   }
@@ -473,7 +488,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
 
   override startTurn(): void {
     if (this.turn >= 4 && this.turn <= 6)
-      this.permanentsAtTurnEnd[this.turn] = this.bf.filter(
+      this.permanentsAtTurnEnd[this.turn] = this.battlefield.filter(
         (permanent) => permanent.land === null,
       ).length;
     super.startTurn();
@@ -488,8 +503,8 @@ export class SamFrodoGame extends GameWithoutKillSearch {
 
   override upkeep(): void {
     // the saga's next chapter (really after the draw step; close enough)
-    for (const permanent of this.bf.filter(
-      (candidate) => candidate.cd.name === SAGA,
+    for (const permanent of this.battlefield.filter(
+      (candidate) => candidate.card.name === SAGA,
     )) {
       permanent.counters += 1;
       if (permanent.counters === 2) {
@@ -512,18 +527,18 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   override endStep(): void {
     this.phase = 'end';
     const gainedThisTurn = () => this.lifeGainedThisTurn;
-    for (const permanent of this.bf.slice())
+    for (const permanent of this.battlefield.slice())
       if (
-        permanent.cd.name === 'Gwaihir, Greatest of the Eagles' &&
+        permanent.card.name === 'Gwaihir, Greatest of the Eagles' &&
         gainedThisTurn() >= 3
       )
         this.makeTokens([TOK.bird]);
-    if (this.onBf(GOLLUM) && gainedThisTurn() > 0)
+    if (this.isOnBattlefield(GOLLUM) && gainedThisTurn() > 0)
       for (let i = 0; i < this.life.length; i++)
-        if (this.gollumHit[i] && this.oppAlive(i))
-          this.hurtOpp(i, gainedThisTurn());
-    for (const battlefieldPermanent of this.bf.slice()) {
-      const name = battlefieldPermanent.cd.name;
+        if (this.gollumHit[i] && this.isOpponentAlive(i))
+          this.damageOpponent(i, gainedThisTurn());
+    for (const battlefieldPermanent of this.battlefield.slice()) {
+      const name = battlefieldPermanent.card.name;
       if (name === 'The Gaffer' && gainedThisTurn() >= 3) this.draw(1);
       else if (name === 'Tippy-Toe, Terrific Partner' && gainedThisTurn() > 0)
         this.draw(1);
@@ -539,16 +554,16 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   /** How close to winning the others think we are: the Ring's tempts, Sam and Frodo out, a pile of Food. */
   override podClose(): number {
     let closeness = Math.min(0.5, this.ringTempts * 0.15);
-    if (this.onBf(SAM)) closeness += 0.2;
-    if (this.onBf(FRODO)) closeness += 0.2;
+    if (this.isOnBattlefield(SAM)) closeness += 0.2;
+    if (this.isOnBattlefield(FRODO)) closeness += 0.2;
     if (this.foodsOnBattlefield().length >= 4) closeness += 0.1;
     return Math.min(1, closeness);
   }
   /** Skulk (Gollum) and the Ring-bearer (Frodo, once the Ring has tempted us): creatures with greater power can't block them. */
   override evasion(permanent: Perm): Evasion {
     if (
-      permanent.cd.name === GOLLUM ||
-      (permanent.cd.name === FRODO && this.ringTempts >= 1)
+      permanent.card.name === GOLLUM ||
+      (permanent.card.name === FRODO && this.ringTempts >= 1)
     )
       return 'skulk';
     return super.evasion(permanent);
@@ -583,23 +598,25 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     } else if (name === 'Farseek') this.putBasic(false, ['Plains', 'Swamp']);
     else if (name === 'Second Harvest')
       this.makeTokens(
-        this.bf
+        this.battlefield
           .filter((permanent) => permanent.token)
-          .map((permanent) => permanent.cd),
+          .map((permanent) => permanent.card),
       );
     else if (name === 'Crypt Incursion') {
-      const cards = this.gy.filter((candidate) => candidate.isCreature);
-      this.gy = this.gy.filter((candidate) => !candidate.isCreature);
+      const cards = this.graveyard.filter((candidate) => candidate.isCreature);
+      this.graveyard = this.graveyard.filter(
+        (candidate) => !candidate.isCreature,
+      );
       this.exile.push(...cards);
       this.gainLife(3 * cards.length);
     } else if (OWN_KILL.includes(name)) {
-      const guest = this.perm('Rapacious Guest');
+      const guest = this.findPermanent('Rapacious Guest');
       if (!guest) return;
       const power = this.power(guest);
       this.say(`${name} on our own Rapacious Guest (power ${power})`);
       if (OWN_KILL_EXILES.has(name)) {
-        removeIfPresent(this.bf, guest);
-        this.exile.push(guest.cd);
+        removeIfPresent(this.battlefield, guest);
+        this.exile.push(guest.card);
         this.drainTargetOpponent(power); // leaves the battlefield: target opponent loses its power
         if (name === 'Swords to Plowshares') this.gainLife(power);
         else if (name === 'Path to Exile') this.putBasic();
@@ -621,18 +638,18 @@ export class SamFrodoGame extends GameWithoutKillSearch {
 
   positionValueRaw(): number {
     let value = 0;
-    const start = this.cfg.opp_life as number;
+    const start = this.config.opp_life as number;
     for (const life of this.life)
       value += 4 * (start - Math.max(0, life)) + (life <= 0 ? 40 : 0);
-    for (const permanent of this.bf) {
+    for (const permanent of this.battlefield) {
       if (permanent.land !== null) continue;
-      if (permanent.cd === FOOD) value += 9;
-      else if (permanent.cd === TREASURE) value += 8;
-      else if (permanent.cd === CLUE) value += 7;
+      if (permanent.card === FOOD) value += 9;
+      else if (permanent.card === TREASURE) value += 8;
+      else if (permanent.card === CLUE) value += 7;
       else if (permanent.token) value += 6 + 2 * this.power(permanent);
       else
         value +=
-          0.8 * this.battlefieldValue(permanent.cd) + 2 * permanent.counters;
+          0.8 * this.battlefieldValue(permanent.card) + 2 * permanent.counters;
     }
     value += 22 * Math.min(10, this.manaSources());
     value +=

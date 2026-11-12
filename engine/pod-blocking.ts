@@ -24,24 +24,24 @@ function wouldKill(attacker: Fighter, victim: Fighter): boolean {
 export function duel(
   attacker: Fighter,
   blocker: Fighter,
-): { aDies: boolean; bDies: boolean } {
+): { attackerDies: boolean; blockerDies: boolean } {
   const attackerKills = wouldKill(attacker, blocker);
   const blockerKills = wouldKill(blocker, attacker);
   if (attacker.first && !blocker.first && attackerKills)
-    return { aDies: false, bDies: true };
+    return { attackerDies: false, blockerDies: true };
   if (blocker.first && !attacker.first && blockerKills)
-    return { aDies: true, bDies: false };
-  return { aDies: blockerKills, bDies: attackerKills };
+    return { attackerDies: true, blockerDies: false };
+  return { attackerDies: blockerKills, blockerDies: attackerKills };
 }
 
 /** Does the blocker survive the block (and so is a "safe" block)? */
 function survivesBlock(blocker: Fighter, attacker: Fighter): boolean {
-  return !duel(attacker, blocker).bDies;
+  return !duel(attacker, blocker).blockerDies;
 }
 
 function cheapestOf(fighters: Fighter[]): Fighter {
-  return fighters.reduce((cheapest, f) =>
-    f.value < cheapest.value ? f : cheapest,
+  return fighters.reduce((cheapest, fighter) =>
+    fighter.value < cheapest.value ? fighter : cheapest,
   );
 }
 
@@ -87,19 +87,22 @@ export function assignBlocks(
 
   const biggestAttackerFirst = attackers
     .map((_, index) => index)
-    .sort((a, b) => attackers[b].power - attackers[a].power);
+    .sort((first, second) => attackers[second].power - attackers[first].power);
   const unblockedAttackers = () => attackers.filter((_, i) => !blockerFor[i]);
   const unblockedDamage = () =>
-    unblockedAttackers().reduce((total, a) => total + a.power, 0);
+    unblockedAttackers().reduce((total, fighter) => total + fighter.power, 0);
 
   // 1. safe blocks
   for (const index of biggestAttackerFirst) {
     const attacker = attackers[index];
     const safe = freeBlockers.filter(
-      (b) => canBlock(b, attacker) && survivesBlock(b, attacker),
+      (fighter) =>
+        canBlock(fighter, attacker) && survivesBlock(fighter, attacker),
     );
     if (!safe.length) continue;
-    const killers = safe.filter((b) => duel(attacker, b).aDies);
+    const killers = safe.filter(
+      (fighter) => duel(attacker, fighter).attackerDies,
+    );
     assign(index, cheapestOf(killers.length ? killers : safe));
   }
 
@@ -108,21 +111,24 @@ export function assignBlocks(
     if (blockerFor[index]) continue;
     const attacker = attackers[index];
     const trades = freeBlockers.filter(
-      (b) =>
-        canBlock(b, attacker) &&
-        duel(attacker, b).aDies &&
-        b.value < attacker.value,
+      (fighter) =>
+        canBlock(fighter, attacker) &&
+        duel(attacker, fighter).attackerDies &&
+        fighter.value < attacker.value,
     );
     if (trades.length) assign(index, cheapestOf(trades));
   }
 
   /** Chump the biggest attackers with the cheapest allowed blockers until `enough()`. */
-  const chump = (isAllowed: (b: Fighter) => boolean, enough: () => boolean) => {
+  const chump = (
+    isAllowed: (fighter: Fighter) => boolean,
+    enough: () => boolean,
+  ) => {
     for (const index of biggestAttackerFirst) {
       if (enough()) return;
       if (blockerFor[index] || attackers[index].power <= 0) continue;
       const candidates = freeBlockers.filter(
-        (b) => isAllowed(b) && canBlock(b, attackers[index]),
+        (fighter) => isAllowed(fighter) && canBlock(fighter, attackers[index]),
       );
       if (candidates.length) assign(index, cheapestOf(candidates));
     }
@@ -136,7 +142,7 @@ export function assignBlocks(
     );
 
   // 4. the damage leaves us low: chump with cheap creatures only
-  const isCheap = (b: Fighter) => b.value <= CHEAP_BLOCKER_VALUE;
+  const isCheap = (fighter: Fighter) => fighter.value <= CHEAP_BLOCKER_VALUE;
   if (!isLethal(unblockedAttackers()) && life - unblockedDamage() <= chumpLife)
     chump(isCheap, () => life - unblockedDamage() > chumpLife);
 
@@ -145,7 +151,7 @@ export function assignBlocks(
     if (blockerFor[index] || attackers[index].power < HUGE_ATTACKER_POWER)
       continue;
     const candidates = freeBlockers.filter(
-      (b) => isCheap(b) && canBlock(b, attackers[index]),
+      (fighter) => isCheap(fighter) && canBlock(fighter, attackers[index]),
     );
     if (candidates.length) assign(index, cheapestOf(candidates));
   }

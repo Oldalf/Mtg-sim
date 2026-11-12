@@ -34,16 +34,22 @@ type AddCandidate = (
   score: number,
   cost: Cost,
   isInstantOrSorcery: boolean,
-  act: () => boolean,
+  action: () => boolean,
   rockCard?: CardDef,
 ) => void;
 
 /** Everything the AI may do now, with a score each (higher first). */
 export function buildCandidates(game: MerenGame, main2: boolean): Cand[] {
   const candidates: Cand[] = [];
-  const add: AddCandidate = (score, cost, isIS, act, rock) =>
-    candidates.push({ score, cost, isIS, act, rock });
-  const merenOut = game.onBf(MEREN);
+  const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
+    candidates.push({
+      score,
+      cost,
+      isInstantOrSorcery: isInstantOrSorcery,
+      action: action,
+      rock,
+    });
+  const merenOut = game.isOnBattlefield(MEREN);
   const sacrificeOrder = game.sacrificeOrder();
   for (const commander of game.command.slice())
     add(95, game.commanderCost(commander, game.effCost(commander)), false, () =>
@@ -94,7 +100,7 @@ function addCreatureCandidate(
     !(
       merenOut &&
       sacrificeOrder.some(
-        (permanent) => permanent.token || DEATH_VALUE.has(permanent.cd.name),
+        (permanent) => permanent.token || DEATH_VALUE.has(permanent.card.name),
       )
     )
   )
@@ -123,7 +129,8 @@ function addNonCreatureCandidate(
   if (addRampAndDrawCandidate(game, card, add, merenOut, sacrificeOrder))
     return;
   if (addReanimationCandidate(game, card, add, sacrificeOrder)) return;
-  if (card.isIS) add(30, game.effCost(card), true, () => game.castIS(card));
+  if (card.isInstantOrSorcery)
+    add(30, game.effCost(card), true, () => game.castInstantOrSorcery(card));
   else if (card.types.has('artifact') || card.types.has('enchantment'))
     add(40, game.effCost(card), false, () => game.castPerm(card));
 }
@@ -157,25 +164,27 @@ function addRampAndDrawCandidate(
         card.name === 'Songs of the Damned' &&
         game.creaturesInGraveyard() >= 4
       )
-        add(50, cost, true, () => game.castIS(card));
+        add(50, cost, true, () => game.castInstantOrSorcery(card));
       return true;
     case 'Decode Transmissions':
     case 'Diresight':
-      add(game.myLife > 12 ? 55 : 25, cost, true, () => game.castIS(card));
+      add(game.myLife > 12 ? 55 : 25, cost, true, () =>
+        game.castInstantOrSorcery(card),
+      );
       return true;
     case 'Village Rites': {
       const toSacrifice = sacrificeOrder.find(
-        (permanent) => permanent.token || DEATH_VALUE.has(permanent.cd.name),
+        (permanent) => permanent.token || DEATH_VALUE.has(permanent.card.name),
       );
       if (toSacrifice)
         add(52, cost, true, () => sacrificeThenCast(game, card, toSacrifice));
       return true;
     }
     case 'Breach the Multiverse':
-      add(88, cost, false, () => game.castIS(card));
+      add(88, cost, false, () => game.castInstantOrSorcery(card));
       return true;
     case 'Grisly Salvage':
-      add(45, cost, true, () => game.castIS(card));
+      add(45, cost, true, () => game.castInstantOrSorcery(card));
       return true;
     case 'Buried Alive':
       add(
@@ -187,12 +196,12 @@ function addRampAndDrawCandidate(
           : 40,
         cost,
         false,
-        () => game.castIS(card),
+        () => game.castInstantOrSorcery(card),
       );
       return true;
     case "Dina's Guidance":
       add(60, cost, true, () =>
-        game.castIS(
+        game.castInstantOrSorcery(
           card,
           false,
           null,
@@ -218,16 +227,16 @@ function addReanimationCandidate(
     case 'Persist':
     case 'Unearth': {
       const target = game.bestCreatureInGraveyard(
-        (candidate) => name === 'Persist' || candidate.mv <= 3,
+        (candidate) => name === 'Persist' || candidate.manaValue <= 3,
       );
       if (target)
         add(Math.min(90, game.battlefieldValue(target)), cost, false, () =>
-          game.castIS(card),
+          game.castInstantOrSorcery(card),
         );
       return true;
     }
     case 'Victimize': {
-      const creaturesInGraveyard = game.gy.filter(
+      const creaturesInGraveyard = game.graveyard.filter(
         (candidate) => candidate.isCreature,
       ).length;
       const toSacrifice = sacrificeOrder[0];
@@ -244,16 +253,17 @@ function addReanimationCandidate(
       return true;
     }
     case 'Saw in Half': {
-      const target = game.perm(GRAY_MERCHANT) ?? game.perm('Grave Titan');
+      const target =
+        game.findPermanent(GRAY_MERCHANT) ?? game.findPermanent('Grave Titan');
       if (target)
-        add(target.cd.name === GRAY_MERCHANT ? 92 : 60, cost, true, () =>
+        add(target.card.name === GRAY_MERCHANT ? 92 : 60, cost, true, () =>
           castSawInHalf(game, card, target),
         );
       return true;
     }
     case 'Deadly Brew':
       if (sacrificeOrder.some((permanent) => permanent.token))
-        add(45, cost, false, () => game.castIS(card));
+        add(45, cost, false, () => game.castInstantOrSorcery(card));
       return true;
     case 'Beast Within': {
       const target = sacrificeOrder.find(
@@ -275,8 +285,8 @@ function addPermanentAbilityCandidates(
   main2: boolean,
   sacrificeOrder: Perm[],
 ): void {
-  for (const permanent of game.bf) {
-    const name = permanent.cd.name;
+  for (const permanent of game.battlefield) {
+    const name = permanent.card.name;
     const isReady = !permanent.tapped && !permanent.sick;
     if (name === 'Priest of Forgotten Gods' && isReady) {
       const expendable = game
@@ -284,8 +294,8 @@ function addPermanentAbilityCandidates(
         .filter(
           (candidate) =>
             candidate.token ||
-            DEATH_VALUE.has(candidate.cd.name) ||
-            game.battlefieldValue(candidate.cd) < 50,
+            DEATH_VALUE.has(candidate.card.name) ||
+            game.battlefieldValue(candidate.card) < 50,
         );
       if (expendable.length >= 2)
         add(78, new Cost(), false, () =>
@@ -313,7 +323,7 @@ function addPermanentAbilityCandidates(
       if (
         best &&
         game.battlefieldValue(best) >= 60 &&
-        best.mv < game.myLife - 10
+        best.manaValue < game.myLife - 10
       )
         add(74, Cost.parse('{B}'), false, () =>
           castPreparedSpell(game, permanent),
@@ -330,7 +340,7 @@ function addPermanentAbilityCandidates(
       );
     else if (main2 && name === 'Vampiric Rites') {
       const token = sacrificeOrder.find(
-        (candidate) => candidate.token && candidate.cd !== TOKENS.stolen,
+        (candidate) => candidate.token && candidate.card !== TOKENS.stolen,
       );
       if (token)
         add(30, Cost.parse('{1}{B}'), false, () =>
@@ -346,9 +356,9 @@ function addGraveyardAndMillCandidates(
   add: AddCandidate,
 ): void {
   // Skull Prophet: {T}: mill two cards (its mana, B or G, is "any colour" here: the deck only uses those two)
-  const skullProphet = game.bf.find(
+  const skullProphet = game.battlefield.find(
     (permanent) =>
-      permanent.cd.name === 'Skull Prophet' &&
+      permanent.card.name === 'Skull Prophet' &&
       !permanent.tapped &&
       !permanent.sick,
   );
@@ -359,7 +369,7 @@ function addGraveyardAndMillCandidates(
       return true;
     });
   // Reassembling Skeleton: {1}{B} returns it from the graveyard tapped (only worth it with mana to spare)
-  const skeleton = game.gy.find(
+  const skeleton = game.graveyard.find(
     (card) => card.name === 'Reassembling Skeleton',
   );
   if (skeleton)
@@ -370,11 +380,11 @@ function addGraveyardAndMillCandidates(
       return true;
     });
   // Woe Strider: escape from the graveyard
-  const woeStrider = game.gy.find((card) => card.name === 'Woe Strider');
+  const woeStrider = game.graveyard.find((card) => card.name === 'Woe Strider');
   if (
     woeStrider &&
-    game.gy.filter((card) => card !== woeStrider && !card.isCreature).length >=
-      4
+    game.graveyard.filter((card) => card !== woeStrider && !card.isCreature)
+      .length >= 4
   )
     add(40, game.effCost(woeStrider, Cost.parse('{3}{B}{B}')), false, () =>
       escapeWoeStrider(game, woeStrider),

@@ -1,7 +1,7 @@
 /**
  * Gale kill lines: the kill search and its pre-filter. The state is in kill-state.ts, the moves in kill-moves.ts.
  *
- * A light-weight snapshot ("Light") of the game is searched depth-first over the actions that
+ * A stripped-down copy of the game ("KillSearchState") is searched depth-first over the actions that
  * matter for killing the table this turn: casting/activating combo pieces, rituals, mill spells
  * and Gale/Emet-Selch graveyard recasts.
  *

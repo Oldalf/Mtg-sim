@@ -43,23 +43,26 @@ export const DEFAULT_MULLIGAN: MulliganRule = {
   alwaysKeep: 5,
 };
 
-const isLand = (c: C.CardDef) => c.land !== null || c.mdfcLand !== null;
+const isLand = (card: C.CardDef) =>
+  card.land !== null || card.mdfcLand !== null;
 
 /** Does this hand satisfy one "need" item? */
 function meets(rule: MulliganRule, hand: C.CardDef[], need: string): boolean {
-  const m = /^([A-Za-z0-9]+)(?:>=(\d+))?$/.exec(need);
-  if (!m) throw new Error(`bad mulligan need "${need}"`);
-  const min = m[2] ? parseInt(m[2], 10) : 1;
-  const name = m[1];
+  const match = /^([A-Za-z0-9]+)(?:>=(\d+))?$/.exec(need);
+  if (!match) throw new Error(`bad mulligan need "${need}"`);
+  const min = match[2] ? parseInt(match[2], 10) : 1;
+  const name = match[1];
   if (/^[WUBRG]$/.test(name))
-    return hand.filter((c) => C.landMakes(c, name)).length >= min;
+    return hand.filter((card) => C.landMakes(card, name)).length >= min;
   if (name === 'cheap')
     return (
-      hand.filter((c) => !isLand(c) && c.mv >= 1 && c.mv <= 2).length >= min
+      hand.filter(
+        (card) => !isLand(card) && card.manaValue >= 1 && card.manaValue <= 2,
+      ).length >= min
     );
   const names = rule.tags?.[name];
   if (!names) throw new Error(`mulligan need "${need}": no tag called ${name}`);
-  return hand.filter((c) => names.includes(c.name)).length >= min;
+  return hand.filter((card) => names.includes(card.name)).length >= min;
 }
 
 /** Keep this opening hand (attempt 0, 1, 2, ...)? */
@@ -71,9 +74,9 @@ export function keepsHand(
   const clauses = rule.keep[Math.min(attempt, rule.keep.length - 1)];
   const lands = hand.filter(isLand).length;
   return clauses.some(
-    (c) =>
-      lands >= c.lands[0] &&
-      lands <= c.lands[1] &&
-      (c.need ?? []).every((n) => meets(rule, hand, n)),
+    (clause) =>
+      lands >= clause.lands[0] &&
+      lands <= clause.lands[1] &&
+      (clause.need ?? []).every((need) => meets(rule, hand, need)),
   );
 }

@@ -17,13 +17,13 @@ export function onPermanentEntered(
 
 /** Merry, Belladonna Took, Prosperous Innkeeper and Mentor of the Meek react to something entering. */
 function triggerOtherPermanents(game: SamFrodoGame, permanent: Perm): void {
-  const card = permanent.cd;
+  const card = permanent.card;
   if (
     card.types.has('artifact') &&
     !game.merryUsed &&
-    game.bf.some(
+    game.battlefield.some(
       (other) =>
-        other !== permanent && other.cd.name === 'Merry, Warden of Isengard',
+        other !== permanent && other.card.name === 'Merry, Warden of Isengard',
     )
   ) {
     game.merryUsed = true;
@@ -31,7 +31,7 @@ function triggerOtherPermanents(game: SamFrodoGame, permanent: Perm): void {
   }
   if (
     permanent.token &&
-    game.onBf('Belladonna Took') &&
+    game.isOnBattlefield('Belladonna Took') &&
     game.belladonnaTriggers < 3
   ) {
     game.belladonnaTriggers++;
@@ -40,14 +40,14 @@ function triggerOtherPermanents(game: SamFrodoGame, permanent: Perm): void {
     else for (const creature of game.creatures()) creature.counters += 1;
   }
   if (card.isCreature) {
-    for (const other of game.bf)
-      if (other !== permanent && other.cd.name === 'Prosperous Innkeeper')
+    for (const other of game.battlefield)
+      if (other !== permanent && other.card.name === 'Prosperous Innkeeper')
         game.gainLife(1);
     if (game.power(permanent) <= 2 && game.phase !== 'main1')
-      for (const other of game.bf)
+      for (const other of game.battlefield)
         if (
           other !== permanent &&
-          other.cd.name === 'Mentor of the Meek' &&
+          other.card.name === 'Mentor of the Meek' &&
           game.pay(new Cost(1))
         )
           game.draw(1);
@@ -56,7 +56,7 @@ function triggerOtherPermanents(game: SamFrodoGame, permanent: Perm): void {
 
 /** Partner with: Merry fetches Pippin from the library and the other way round. */
 function tutorPartner(game: SamFrodoGame, permanent: Perm): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   const partner =
     name === 'Merry, Warden of Isengard'
       ? 'Pippin, Warden of Isengard'
@@ -75,7 +75,7 @@ function tutorPartner(game: SamFrodoGame, permanent: Perm): void {
 
 /** The permanent's own enter trigger (tokens, Food, counters, the Saga's first chapter). */
 function resolveOwnEnterTrigger(game: SamFrodoGame, permanent: Perm): void {
-  const card = permanent.cd;
+  const card = permanent.card;
   const name = card.name;
   if (name === 'Cauldron Familiar') {
     game.drainEach(1);
@@ -120,11 +120,11 @@ function resolveOwnEnterTrigger(game: SamFrodoGame, permanent: Perm): void {
 
 /** Put into the graveyard from the battlefield (sacrificed, destroyed; tokens too). */
 export function onPermanentDied(game: SamFrodoGame, permanent: Perm): void {
-  const art = permanent.cd.types.has('artifact'),
-    cre = permanent.cd.isCreature;
+  const art = permanent.card.types.has('artifact'),
+    cre = permanent.card.isCreature;
   if (!art && !cre) return;
-  for (const battlefieldPermanent of game.bf.slice()) {
-    const name = battlefieldPermanent.cd.name;
+  for (const battlefieldPermanent of game.battlefield.slice()) {
+    const name = battlefieldPermanent.card.name;
     if (name === 'Marionette Apprentice') game.drainEach(1);
     else if (name === 'Marionette Master' && art)
       game.drainTargetOpponent(game.power(battlefieldPermanent));
@@ -133,29 +133,29 @@ export function onPermanentDied(game: SamFrodoGame, permanent: Perm): void {
       game.gainLife(1);
     }
   }
-  if (permanent.cd.name === 'Susurian Voidborn') {
+  if (permanent.card.name === 'Susurian Voidborn') {
     game.drainTargetOpponent(1);
     game.gainLife(1);
   }
-  if (permanent.cd.name === 'Rapacious Guest')
+  if (permanent.card.name === 'Rapacious Guest')
     game.drainTargetOpponent(game.power(permanent));
 }
 
 export function onFoodSacrificed(game: SamFrodoGame): void {
   game.foodSacrificedThisTurn = true;
-  for (const permanent of game.bf.slice()) {
-    const name = permanent.cd.name;
+  for (const permanent of game.battlefield.slice()) {
+    const name = permanent.card.name;
     if (name === 'Nuka-Cola Vending Machine')
       game.makeTokens([TREASURE], { tapped: true });
     else if (name === 'Rapacious Guest') permanent.counters += 1;
     else if (
       name === 'Unlucky Cabbage Merchant' &&
-      game.landsBf().length < 7 &&
-      game.bf.includes(permanent)
+      game.landsOnBattlefield().length < 7 &&
+      game.battlefield.includes(permanent)
     ) {
       if (game.putBasic()) {
-        removeIfPresent(game.bf, permanent);
-        game.library.push(permanent.cd);
+        removeIfPresent(game.battlefield, permanent);
+        game.library.push(permanent.card);
       }
     }
   }

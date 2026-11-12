@@ -60,16 +60,22 @@ export type AddCandidate = (
   score: number,
   cost: Cost,
   isInstantOrSorcery: boolean,
-  act: () => boolean,
+  action: () => boolean,
   rockCard?: CardDef,
 ) => void;
 
 /** Everything the AI may do now, with a score each (higher first). */
 export function buildCandidates(game: AesiGame, main2: boolean): Cand[] {
   const candidates: Cand[] = [];
-  const add: AddCandidate = (score, cost, isIS, act, rock) =>
-    candidates.push({ score, cost, isIS, act, rock });
-  const isEarly = game.landsBf().length < 8;
+  const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
+    candidates.push({
+      score,
+      cost,
+      isInstantOrSorcery: isInstantOrSorcery,
+      action: action,
+      rock,
+    });
+  const isEarly = game.landsOnBattlefield().length < 8;
   addLandCandidate(game, add);
   if (game.epic) {
     // an epic spell resolved: only abilities from now on
@@ -112,10 +118,11 @@ function addCardsInHandCandidates(
     if (seenNames.has(card.name) || card.land !== null || HOLD.has(card.name))
       continue;
     seenNames.add(card.name);
-    if (card.types.has('legendary') && game.onBf(card.name)) continue;
+    if (card.types.has('legendary') && game.isOnBattlefield(card.name))
+      continue;
     if (card.name === 'Sol Ring') {
       add(100, game.effCost(card), false, () => game.castPerm(card), card);
-    } else if (card.isIS) {
+    } else if (card.isInstantOrSorcery) {
       spellCandidates(game, card, add, main2, isEarly);
     } else if (card.name === BEANSTALK) {
       // the adventure first: Fertile Footsteps (a basic onto the battlefield, untapped)
@@ -144,12 +151,12 @@ function permanentCandidate(
   if (name === COBRA && hasLandInHand) score = 93;
   if (
     (name === RETREAT || name === RAFT) &&
-    game.bf.some((permanent) => PUTTERS.has(permanent.cd.name))
+    game.battlefield.some((permanent) => PUTTERS.has(permanent.card.name))
   )
     score = 94;
   if (
     (name === 'Training Grounds' || name === 'Heartstone') &&
-    !game.bf.some((permanent) => RETURNERS[permanent.cd.name])
+    !game.battlefield.some((permanent) => RETURNERS[permanent.card.name])
   )
     score = 35;
   if (
@@ -160,12 +167,12 @@ function permanentCandidate(
     )
   )
     score = 70;
-  if (game.onBf(OMNI)) score = Math.max(score, 60);
+  if (game.isOnBattlefield(OMNI)) score = Math.max(score, 60);
   if (name === 'Graceful Adept' && game.hand.length < 7) score = 25;
   if (name === 'Kira, Great Glass-Spinner' && !main2) return;
   if (name === REVOLT) {
     // it makes replayed lands summoning sick (no mana): only for a lethal attack with our lands now
-    if (!main2 && isLandAttackLethal(game, game.effCost(card).mv, false))
+    if (!main2 && isLandAttackLethal(game, game.effCost(card).manaValue, false))
       add(98, game.effCost(card), false, () => game.castPerm(card));
     return;
   }
@@ -174,8 +181,8 @@ function permanentCandidate(
     const fodder = chooseOfferingFodder(game);
     if (fodder) {
       const offeringCost = new Cost(
-        Math.max(0, 5 - fodder.cd.cost.g),
-        Math.max(0, 2 - fodder.cd.cost.u),
+        Math.max(0, 5 - fodder.card.cost.generic),
+        Math.max(0, 2 - fodder.card.cost.blue),
       );
       add(score + 2, offeringCost, false, () =>
         castPatronWithOffering(game, card, fodder, offeringCost),
@@ -196,7 +203,7 @@ export function spellCandidates(
   if (rampSpellCandidates(game, spell, add, isEarly)) return;
   if (otherSpellCandidates(game, spell, add, main2, isEarly)) return;
   add(game.battlefieldValue(spell), game.effCost(spell), true, () =>
-    game.castIS(spell),
+    game.castInstantOrSorcery(spell),
   );
 }
 
@@ -214,7 +221,7 @@ function rampSpellCandidates(
   ).length;
   const landsInHand = game.landsInHand().length;
   const rampScore = isEarly ? 86 : 42;
-  const cast = () => game.castIS(spell);
+  const cast = () => game.castInstantOrSorcery(spell);
   switch (name) {
     case LORE:
     case THREE:
@@ -256,7 +263,7 @@ function rampSpellCandidates(
       const kickedCost = cost.plus(new Cost(2));
       if (basicsInLibrary >= 2 && game.canPay(kickedCost))
         add(rampScore + 2, kickedCost, true, () =>
-          game.castIS(spell, false, kickedCost, 'kicked'),
+          game.castInstantOrSorcery(spell, false, kickedCost, 'kicked'),
         );
       else if (basicsInLibrary) add(rampScore - 2, cost, true, cast);
       return true;
@@ -265,7 +272,12 @@ function rampSpellCandidates(
       add(76, cost, true, cast);
       return true;
     case 'Explore':
-      add(landsInHand >= 1 || game.onBf(AESI) ? 70 : 55, cost, true, cast);
+      add(
+        landsInHand >= 1 || game.isOnBattlefield(AESI) ? 70 : 55,
+        cost,
+        true,
+        cast,
+      );
       return true;
     case 'Summer Bloom': {
       const extraDrops = Math.min(
@@ -280,7 +292,9 @@ function rampSpellCandidates(
       return true;
     case 'Bushwhack':
       if (basicsInLibrary && landsInHand === 0 && game.canDrop())
-        add(50, cost, true, () => game.castIS(spell, false, null, 'basic'));
+        add(50, cost, true, () =>
+          game.castInstantOrSorcery(spell, false, null, 'basic'),
+        );
       return true;
     default:
       return false;
@@ -296,12 +310,12 @@ function otherSpellCandidates(
   isEarly: boolean,
 ): boolean {
   const cost = game.effCost(spell);
-  const cast = () => game.castIS(spell);
+  const cast = () => game.castInstantOrSorcery(spell);
   switch (spell.name) {
     case 'Early Harvest': {
       // untap the basics: worth it when it pays for something big we couldn't cast otherwise
       const tappedBasics = game
-        .landsBf()
+        .landsOnBattlefield()
         .filter(
           (permanent) => permanent.tapped && permanent.land!.basic,
         ).length;
@@ -311,9 +325,9 @@ function otherSpellCandidates(
           card !== spell &&
           card.land === null &&
           !HOLD.has(card.name) &&
-          !card.isIS &&
-          game.effCost(card).mv > game.availMana() &&
-          game.effCost(card).mv <= manaAfterCasting + tappedBasics,
+          !card.isInstantOrSorcery &&
+          game.effCost(card).manaValue > game.availMana() &&
+          game.effCost(card).manaValue <= manaAfterCasting + tappedBasics,
       );
       if (tappedBasics >= 4 && hasBigSpell) add(80, cost, true, cast);
       return true;
@@ -335,11 +349,11 @@ function otherSpellCandidates(
       if (isSwarmLethal(game)) add(97, cost, true, cast);
       return true;
     case AWAKENING:
-      if (!main2 && isLandAttackLethal(game, cost.mv, true))
+      if (!main2 && isLandAttackLethal(game, cost.manaValue, true))
         add(98, cost, true, cast);
       return true;
     case AFFINITY:
-      if (!main2 && isLandAttackLethal(game, cost.mv, false))
+      if (!main2 && isLandAttackLethal(game, cost.manaValue, false))
         add(98, cost, true, cast);
       return true;
     case SCRYING:
@@ -348,7 +362,7 @@ function otherSpellCandidates(
       return true;
     case CROP:
       // sacrifice a land, put a land onto the battlefield: only for the Retreat loop's Simic Growth Chamber
-      if (wantsComboLand(game) && game.landsBf().length >= 2)
+      if (wantsComboLand(game) && game.landsOnBattlefield().length >= 2)
         add(95, cost, true, cast);
       return true;
     case DOMINION:
@@ -374,11 +388,11 @@ export function isSwarmLethal(game: AesiGame): boolean {
   const ground = game
     .creatures()
     .filter(
-      (permanent) => !permanent.cd.flying && game.power(permanent) > 0,
+      (permanent) => !permanent.card.flying && game.power(permanent) > 0,
     ).length;
   const flyerPower = game
     .creatures()
-    .filter((permanent) => permanent.cd.flying)
+    .filter((permanent) => permanent.card.flying)
     .reduce((total, permanent) => total + game.power(permanent), 0);
   const groundAttackerCount = ground + 2 * otherCardsInHand;
   const damage =
@@ -395,7 +409,7 @@ export function abilityCandidates(
   const landsInHand = game.landsInHand().length;
   addBounceReplayCandidate(game, add, main2, landsInHand);
   addMelokuEndOfTurnCandidate(game, add, main2, landsInHand);
-  for (const permanent of game.bf)
+  for (const permanent of game.battlefield)
     addPermanentAbilityCandidate(game, permanent, add, main2, landsInHand);
 }
 
@@ -406,16 +420,16 @@ function addBounceReplayCandidate(
   main2: boolean,
   landsInHand: number,
 ): void {
-  if (landsInHand !== 0 || game.landsBf().length < 3) return;
+  if (landsInHand !== 0 || game.landsOnBattlefield().length < 3) return;
   const way = game.landWay();
   if (!way || way.kind === 'patron') return;
-  const moonfolk = game.bf.filter((permanent) => {
-    const returner = RETURNERS[permanent.cd.name];
+  const moonfolk = game.battlefield.filter((permanent) => {
+    const returner = RETURNERS[permanent.card.name];
     return returner && returner[1] === 1 && returner[2] !== 'counter';
   });
   if (!moonfolk.length) return;
   const abilityMana = (permanent: Perm) =>
-    game.abilityCost(new Cost(RETURNERS[permanent.cd.name][0])).mv;
+    game.abilityCost(new Cost(RETURNERS[permanent.card.name][0])).manaValue;
   const effectBonus: Record<string, number> = {
     token: 6,
     loot: 3,
@@ -427,14 +441,14 @@ function addBounceReplayCandidate(
     moonfolk,
     (permanent) =>
       -10 * abilityMana(permanent) +
-      effectBonus[RETURNERS[permanent.cd.name][2]],
+      effectBonus[RETURNERS[permanent.card.name][2]],
   );
   const mana = abilityMana(best);
   const hasLandfallPayoff =
-    game.onBf(AESI) ||
-    game.onBf(COBRA) ||
-    game.onBf(KHALNI) ||
-    game.onBf(KODAMA);
+    game.isOnBattlefield(AESI) ||
+    game.isOnBattlefield(COBRA) ||
+    game.isOnBattlefield(KHALNI) ||
+    game.isOnBattlefield(KODAMA);
   if (hasLandfallPayoff && (mana <= 1 || main2))
     add(mana <= 1 ? 66 : 34, new Cost(mana), false, () =>
       bounceAndReplayLand(game, best),
@@ -449,13 +463,13 @@ function addMelokuEndOfTurnCandidate(
   landsInHand: number,
 ): void {
   if (
-    game.perm(MELOKU) &&
+    game.findPermanent(MELOKU) &&
     main2 &&
     landsInHand + 1 < game.dropsAllowed() &&
     game
-      .landsBf()
+      .landsOnBattlefield()
       .some((permanent) => permanent.tapped && permanent.land!.basic) &&
-    game.landsBf().length >= 6
+    game.landsOnBattlefield().length >= 6
   )
     add(30, game.abilityCost(new Cost(1)), false, () => melokuEndOfTurn(game));
 }
@@ -468,7 +482,7 @@ function addPermanentAbilityCandidate(
   main2: boolean,
   landsInHand: number,
 ): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   const isReady =
     !permanent.tapped && !(permanent.isCreature && permanent.sick);
   const basicLandInLibrary = game.library.some((card) => card.land?.basic);
@@ -510,7 +524,7 @@ function addPermanentAbilityCandidate(
   else if (
     name === DRUID &&
     permanent.counters === 2 &&
-    game.landsBf().length >= 8 &&
+    game.landsOnBattlefield().length >= 8 &&
     !main2
   )
     add(48, Cost.parse('{4}{G}'), false, () =>
@@ -532,11 +546,14 @@ export function isLandAttackLethal(
   costMv: number,
   haste: boolean,
 ): boolean {
-  const lands = game.landsBf().filter((permanent) => !permanent.tapped);
+  const lands = game
+    .landsOnBattlefield()
+    .filter((permanent) => !permanent.tapped);
   const landMana = lands.reduce(
     (total, permanent) =>
       total +
-      (game.srcKind(permanent) === 'GU' || game.srcKind(permanent) === 'C2'
+      (game.manaSourceKind(permanent) === 'GU' ||
+      game.manaSourceKind(permanent) === 'C2'
         ? 2
         : 1),
     0,
@@ -552,7 +569,7 @@ export function isLandAttackLethal(
     .creatures()
     .filter(
       (permanent) =>
-        permanent.cd.flying && !permanent.tapped && !permanent.sick,
+        permanent.card.flying && !permanent.tapped && !permanent.sick,
     )
     .reduce((total, permanent) => total + game.power(permanent), 0);
   const groundPowers: number[] = [
@@ -560,7 +577,7 @@ export function isLandAttackLethal(
       .creatures()
       .filter(
         (permanent) =>
-          !permanent.cd.flying &&
+          !permanent.card.flying &&
           !permanent.tapped &&
           !permanent.sick &&
           game.power(permanent) > 0,
@@ -580,8 +597,8 @@ export function isLandAttackLethal(
 export function wantsComboLand(game: AesiGame): boolean {
   return (
     game.hasUntapper() &&
-    game.bf.some(
-      (permanent) => PUTTERS.has(permanent.cd.name) && !permanent.sick,
+    game.battlefield.some(
+      (permanent) => PUTTERS.has(permanent.card.name) && !permanent.sick,
     ) &&
     !game.hand.some((card) => card.land?.special === 'chamber') &&
     game.library.some((card) => card.land?.special === 'chamber')
@@ -631,8 +648,8 @@ export function useExpeditionMap(game: AesiGame, permanent: Perm): boolean {
 
 export function useMyriadLandscape(game: AesiGame, permanent: Perm): boolean {
   if (!game.pay(new Cost(2))) return false;
-  removeIfPresent(game.bf, permanent);
-  game.gy.push(permanent.cd);
+  removeIfPresent(game.battlefield, permanent);
+  game.graveyard.push(permanent.card);
   const want = game.wantColour() === 'U' ? 'Island' : 'Forest';
   const type =
     game.library.filter((card) => card.name === want).length >= 2

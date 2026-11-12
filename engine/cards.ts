@@ -26,71 +26,87 @@ export const DATA = path.join(ROOT, 'data', 'cards.json');
  *  X counts as 0. */
 export class Cost {
   constructor(
-    public g = 0,
-    public u = 0,
-    public b = 0,
-    public h = 0,
-    public w = 0,
-    public r = 0,
-    public gn = 0,
+    public generic = 0,
+    public blue = 0,
+    public black = 0,
+    public hybrid = 0,
+    public white = 0,
+    public red = 0,
+    public green = 0,
   ) {}
 
-  static parse(s: string | undefined | null): Cost {
-    const c = new Cost();
-    for (const m of (s ?? '').matchAll(/\{([^}]+)\}/g)) {
-      const sym = m[1];
-      if (/^\d+$/.test(sym)) c.g += parseInt(sym, 10);
-      else if (sym === 'U') c.u += 1;
-      else if (sym === 'B') c.b += 1;
-      else if (sym === 'W') c.w += 1;
-      else if (sym === 'R') c.r += 1;
-      else if (sym === 'G') c.gn += 1;
-      else if (sym.includes('/')) c.h += 1;
-      else if (sym === 'C') c.g += 1;
+  static parse(costText: string | undefined | null): Cost {
+    const cost = new Cost();
+    for (const match of (costText ?? '').matchAll(/\{([^}]+)\}/g)) {
+      const sym = match[1];
+      if (/^\d+$/.test(sym)) cost.generic += parseInt(sym, 10);
+      else if (sym === 'U') cost.blue += 1;
+      else if (sym === 'B') cost.black += 1;
+      else if (sym === 'W') cost.white += 1;
+      else if (sym === 'R') cost.red += 1;
+      else if (sym === 'G') cost.green += 1;
+      else if (sym.includes('/')) cost.hybrid += 1;
+      else if (sym === 'C') cost.generic += 1;
       else if (sym === 'X') {
         /* X = 0 in the library */
-      } else c.g += 1; // anything else (snow, phyrexian...): treat as generic
+      } else cost.generic += 1; // anything else (snow, phyrexian...): treat as generic
     }
-    return c;
+    return cost;
   }
 
-  plus(o: Cost): Cost {
+  plus(cost: Cost): Cost {
     return new Cost(
-      this.g + o.g,
-      this.u + o.u,
-      this.b + o.b,
-      this.h + o.h,
-      this.w + o.w,
-      this.r + o.r,
-      this.gn + o.gn,
+      this.generic + cost.generic,
+      this.blue + cost.blue,
+      this.black + cost.black,
+      this.hybrid + cost.hybrid,
+      this.white + cost.white,
+      this.red + cost.red,
+      this.green + cost.green,
     );
   }
 
   /** The same coloured pips with a different generic part (cost reducers, commander tax). */
-  withGeneric(g: number): Cost {
-    return new Cost(g, this.u, this.b, this.h, this.w, this.r, this.gn);
+  withGeneric(generic: number): Cost {
+    return new Cost(
+      generic,
+      this.blue,
+      this.black,
+      this.hybrid,
+      this.white,
+      this.red,
+      this.green,
+    );
   }
 
-  get mv(): number {
-    return this.g + this.u + this.b + this.h + this.w + this.r + this.gn;
+  get manaValue(): number {
+    return (
+      this.generic +
+      this.blue +
+      this.black +
+      this.hybrid +
+      this.white +
+      this.red +
+      this.green
+    );
   }
 
   toString(): string {
     return (
-      `{${this.g}}` +
-      'W'.repeat(this.w) +
-      'U'.repeat(this.u) +
-      'B'.repeat(this.b) +
-      'R'.repeat(this.r) +
-      'G'.repeat(this.gn) +
-      'H'.repeat(this.h)
+      `{${this.generic}}` +
+      'W'.repeat(this.white) +
+      'U'.repeat(this.blue) +
+      'B'.repeat(this.black) +
+      'R'.repeat(this.red) +
+      'G'.repeat(this.green) +
+      'H'.repeat(this.hybrid)
     );
   }
 }
 
 /** A deck tells the engine which extra cards it has rules for (they skip the generic model). */
 export function registerKnown(names: Iterable<string>): void {
-  for (const n of names) KNOWN.add(n);
+  for (const name of names) KNOWN.add(name);
   CACHE.clear();
 }
 
@@ -119,7 +135,7 @@ const TYPE_WORDS = [
 export class CardDef {
   readonly types: Set<string>;
   readonly cost: Cost;
-  readonly mv: number;
+  readonly manaValue: number;
   readonly power: number;
   readonly toughness: number;
   /** Scryfall keywords, lower case (flying, menace, deathtouch, haste, ...). */
@@ -135,7 +151,7 @@ export class CardDef {
   readonly mdfcLand: LandInfo | null;
   readonly adventure: [string, string, string] | null;
   readonly rock: string | null;
-  readonly isIS: boolean;
+  readonly isInstantOrSorcery: boolean;
   readonly isInstant: boolean;
   readonly isSorcery: boolean;
   readonly isCreature: boolean;
@@ -144,25 +160,35 @@ export class CardDef {
     readonly name: string,
     data: CardData | undefined,
   ) {
-    const d = data ?? {};
-    const tl = (d.type_line ?? '').toLowerCase();
-    this.types = new Set(TYPE_WORDS.filter((t) => tl.includes(t)));
-    this.cost = Cost.parse(d.mana_cost);
-    this.mv = this.cost.mv;
-    const p = d.power;
-    this.power = p && /^\d+$/.test(String(p)) ? parseInt(String(p), 10) : 0;
-    const t = d.toughness;
-    this.toughness = t && /^\d+$/.test(String(t)) ? parseInt(String(t), 10) : 0;
-    this.keywords = new Set((d.keywords ?? []).map((k) => k.toLowerCase()));
+    const cardData = data ?? {};
+    const typeLine = (cardData.type_line ?? '').toLowerCase();
+    this.types = new Set(
+      TYPE_WORDS.filter((typeWord) => typeLine.includes(typeWord)),
+    );
+    this.cost = Cost.parse(cardData.mana_cost);
+    this.manaValue = this.cost.manaValue;
+    const powerText = cardData.power;
+    this.power =
+      powerText && /^\d+$/.test(String(powerText))
+        ? parseInt(String(powerText), 10)
+        : 0;
+    const toughnessText = cardData.toughness;
+    this.toughness =
+      toughnessText && /^\d+$/.test(String(toughnessText))
+        ? parseInt(String(toughnessText), 10)
+        : 0;
+    this.keywords = new Set(
+      (cardData.keywords ?? []).map((keyword) => keyword.toLowerCase()),
+    );
     this.flying = this.keywords.has('flying');
     this.haste = this.keywords.has('haste');
-    this.isToken = !!(d as { token?: boolean }).token;
-    this.isBlue = this.cost.u > 0 || this.cost.h > 0;
-    this.oracle = d.oracle ?? '';
+    this.isToken = !!(cardData as { token?: boolean }).token;
+    this.isBlue = this.cost.blue > 0 || this.cost.hybrid > 0;
+    this.oracle = cardData.oracle ?? '';
     this.known = KNOWN.has(name);
     let land: LandInfo | null = LANDS[name] ?? null;
     if (land === null && this.types.has('land'))
-      land = readLandFromText(this.oracle, tl); // unknown land -> generic
+      land = readLandFromText(this.oracle, typeLine); // unknown land -> generic
     this.land = land;
     this.mdfcLand = MDFC_LAND_BACK[name] ?? null;
     this.adventure = ADVENTURE[name] ?? null;
@@ -180,7 +206,7 @@ export class CardDef {
     this.rock = rock;
     this.isInstant = this.types.has('instant');
     this.isSorcery = this.types.has('sorcery');
-    this.isIS = this.isInstant || this.isSorcery;
+    this.isInstantOrSorcery = this.isInstant || this.isSorcery;
     this.isCreature = this.types.has('creature');
   }
 
@@ -198,9 +224,9 @@ export function makeToken(
   keywords: string[] = [],
 ): CardDef {
   const key = `token:${name}:${power}/${toughness}:${keywords.join(',')}`;
-  let c = CACHE.get(key);
-  if (c === undefined) {
-    c = new CardDef(name, {
+  let card = CACHE.get(key);
+  if (card === undefined) {
+    card = new CardDef(name, {
       name,
       type_line: `Token Creature — ${name} ${colour}`.trim(),
       power: String(power),
@@ -208,43 +234,46 @@ export function makeToken(
       keywords,
       token: true,
     } as CardData);
-    CACHE.set(key, c);
+    CACHE.set(key, card);
   }
-  return c;
+  return card;
 }
 
-let DB: Record<string, CardData> | null = null;
+let cardDatabaseCache: Record<string, CardData> | null = null;
 
-export function db(): Record<string, CardData> {
-  if (DB === null)
-    DB = JSON.parse(fs.readFileSync(DATA, 'utf-8')) as Record<string, CardData>;
-  return DB;
+export function cardDatabase(): Record<string, CardData> {
+  if (cardDatabaseCache === null)
+    cardDatabaseCache = JSON.parse(fs.readFileSync(DATA, 'utf-8')) as Record<
+      string,
+      CardData
+    >;
+  return cardDatabaseCache;
 }
 
 const CACHE = new Map<string, CardDef>();
 
 /** The card definition for a name ("Front // Back" names use the front face). Fast: cached. */
 export function get(name: string): CardDef {
-  let c = CACHE.get(name);
-  if (c !== undefined) return c;
+  let card = CACHE.get(name);
+  if (card !== undefined) return card;
   const key = name.split(' // ')[0].trim();
-  c = CACHE.get(key);
-  if (c === undefined) {
-    c = new CardDef(key, db()[key]);
-    CACHE.set(key, c);
+  card = CACHE.get(key);
+  if (card === undefined) {
+    card = new CardDef(key, cardDatabase()[key]);
+    CACHE.set(key, card);
   }
-  CACHE.set(name, c);
-  return c;
+  CACHE.set(name, card);
+  return card;
 }
 
 /** Does a land card make this colour? Fetch lands count for every colour (they find a basic), "A" lands make all. */
-export function landMakes(cd: CardDef, colour: string): boolean {
-  const l = cd.land ?? cd.mdfcLand;
-  if (!l) return false;
-  const m = l.mana;
-  if (m === 'A' || m === '') return m === 'A' || !!l.special; // any colour / a fetch land
-  if (m === 'F') return colour === 'U' || colour === 'B';
-  return m.split(/[/]|(?=[A-Z])/).includes(colour) || m.includes(colour);
+export function landMakes(card: CardDef, colour: string): boolean {
+  const land = card.land ?? card.mdfcLand;
+  if (!land) return false;
+  const mana = land.mana;
+  if (mana === 'A' || mana === '') return mana === 'A' || !!land.special; // any colour / a fetch land
+  if (mana === 'F') return colour === 'U' || colour === 'B';
+  return mana.split(/[/]|(?=[A-Z])/).includes(colour) || mana.includes(colour);
 }
 
 export interface Decklist {
@@ -264,23 +293,23 @@ export function loadDecklist(file: string): Decklist {
   for (const raw of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line.startsWith('#')) continue;
-    const m = /^(\d+)\s*x?\s+(.+)$/.exec(line);
-    if (!m) {
+    const match = /^(\d+)\s*x?\s+(.+)$/.exec(line);
+    if (!match) {
       section = line.toLowerCase();
       continue;
     }
-    const n = parseInt(m[1], 10);
-    const name = m[2].split(' // ')[0].trim();
+    const count = parseInt(match[1], 10);
+    const name = match[2].split(' // ')[0].trim();
     const target =
       section && section.startsWith('commander') ? commanders : library;
     if (section) sections[name] = section;
-    for (let i = 0; i < n; i++) target.push(name);
+    for (let i = 0; i < count; i++) target.push(name);
   }
   const all = [...commanders, ...library];
-  const data = db();
-  const missing = [...new Set(all.filter((n) => !(n in data)))].sort();
+  const data = cardDatabase();
+  const missing = [...new Set(all.filter((name) => !(name in data)))].sort();
   const generic = [
-    ...new Set(all.filter((n) => n in data && !KNOWN.has(n))),
+    ...new Set(all.filter((name) => name in data && !KNOWN.has(name))),
   ].sort();
   return { commanders, library, missing, generic, sections };
 }

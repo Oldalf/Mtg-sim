@@ -113,14 +113,15 @@ export class PodTable {
     this.opponentsOf = this.decks.map((_, player) =>
       Array.from(
         { length: playerCount - 1 },
-        (_, k) => this.turnOrder[(this.seatOf[player] + 1 + k) % playerCount],
+        (_, offset) =>
+          this.turnOrder[(this.seatOf[player] + 1 + offset) % playerCount],
       ),
     );
 
     this.games = this.decks.map((deck, player) => {
       const decklist = loadDecklistOnce(spec.lists[player]);
       const config: Config = {
-        ...deck.cfg,
+        ...deck.config,
         opponents: playerCount - 1,
         ...(deck.podCfg ? deck.podCfg(playerCount) : {}),
         ...spec.set,
@@ -294,7 +295,7 @@ export class PodTable {
     game.life = opponents.map((other) =>
       this.isAlive[other] ? this.games[other].myLife : 0,
     );
-    game.lib = library.slice();
+    game.opponentLibrarySizes = library.slice();
     game.poison = opponents.map((other) => this.poison[other]);
     this.opponentViews[player] = {
       life: game.life.slice(),
@@ -310,7 +311,7 @@ export class PodTable {
     kind: ViewKind,
     amount: number,
   ): void {
-    const arrayName = kind === 'library' ? 'lib' : kind;
+    const arrayName = kind === 'library' ? 'opponentLibrarySizes' : kind;
     for (let other = 0; other < this.playerCount; other++) {
       if (other === source || other === target) continue;
       const slot = this.opponentsOf[other].indexOf(target);
@@ -335,7 +336,7 @@ export class PodTable {
       }
       const targetGame = this.games[target];
       const milled = Math.min(
-        before.library[slot] - game.lib[slot],
+        before.library[slot] - game.opponentLibrarySizes[slot],
         targetGame.library.length,
       );
       if (milled > 0) {
@@ -351,7 +352,7 @@ export class PodTable {
     });
     this.opponentViews[player] = {
       life: game.life.slice(),
-      library: game.lib.slice(),
+      library: game.opponentLibrarySizes.slice(),
       poison: game.poison.slice(),
     };
   }
@@ -393,7 +394,7 @@ export class PodTable {
     this.refreshView(player);
     // the engine takes 1 off each living opponent's library at the start of a turn
     if (game.turn >= 1)
-      game.lib = game.lib.map((size, slot) =>
+      game.opponentLibrarySizes = game.opponentLibrarySizes.map((size, slot) =>
         this.isAlive[this.opponentsOf[player][slot]] ? size + 1 : size,
       );
     game.podHold =

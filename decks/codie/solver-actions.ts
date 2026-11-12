@@ -35,13 +35,13 @@ export function castManaSpell(
   const cost = Cost.parse('{1}{R}{R}').plus(new Cost(copy === 2 ? 3 : 0));
   const total = copy ? card.cost.plus(cost) : card.cost;
   if (!game.canPay(total, true)) return false;
-  if (!game.castIS(card)) return false;
+  if (!game.castInstantOrSorcery(card)) return false;
   if (copy) {
     const reiterateCard = game.cardInHand(REITERATE);
     if (!reiterateCard || !game.pay(cost, true)) return false;
     if (copy === 1) {
       removeIfPresent(game.hand, reiterateCard);
-      game.gy.push(reiterateCard);
+      game.graveyard.push(reiterateCard);
     } // (with buyback it stays in hand)
     game.spellsCast += 1;
     game.resolve(card);
@@ -56,7 +56,7 @@ export function manaPerLoopCopy(
 ): [number, 'R' | 'any'] {
   if (spell === JESKAS_WILL) return [game.opponentHandSize(), 'R'];
   if (spell === MANA_GEYSER) return [game.opponentTappedLands(), 'R'];
-  return [game.landsBf().length, 'any']; // Brass's Bounty: a Treasure for each land
+  return [game.landsOnBattlefield().length, 'any']; // Brass's Bounty: a Treasure for each land
 }
 
 /** The loop: cast s, then Reiterate (with buyback) copies it again and again. It grows when a copy makes more than the 6 it costs. */
@@ -66,7 +66,7 @@ export function tryReiterateLoop(
   viaFlashback = false,
 ): boolean {
   const spellCard = viaFlashback
-    ? game.gy.find((card) => card.name === spell)
+    ? game.graveyard.find((card) => card.name === spell)
     : game.cardInHand(spell);
   if (!spellCard) return false;
   const [yieldPerCopy] = manaPerLoopCopy(game, spell);
@@ -92,16 +92,16 @@ export function beginReiterateLoop(
   first: Cost,
 ): void {
   if (viaFlashback) {
-    removeIfPresent(game.gy, card);
+    removeIfPresent(game.graveyard, card);
     game.exile.push(card);
     const flashbackCard = game.cardInHand(FLASHBACK);
     if (flashbackCard) {
       removeIfPresent(game.hand, flashbackCard);
-      game.gy.push(flashbackCard);
+      game.graveyard.push(flashbackCard);
     }
   } else {
     removeIfPresent(game.hand, card);
-    game.gy.push(card);
+    game.graveyard.push(card);
   }
   game.pay(first, true);
   if (manaPerLoopCopy(game, spell)[1] === 'R') game.pool.R += 99;
@@ -113,14 +113,14 @@ export function beginReiterateLoop(
     game.pool.G += 99;
   }
   // Jeska's Will with a commander out: each copy also exiles the top three cards, which may be played this turn: the whole library
-  if (spell === JESKAS_WILL && game.onBf(CODIE)) game.digAll = true;
+  if (spell === JESKAS_WILL && game.isOnBattlefield(CODIE)) game.digAll = true;
 }
 
 /** Flashback (R) on a spell in the graveyard: it may be cast again for its mana cost. */
 export function flashbackCast(game: CodieGame, name: string): boolean {
-  const card = game.gy.find((candidate) => candidate.name === name);
+  const card = game.graveyard.find((candidate) => candidate.name === name);
   if (!card || !spendSpell(game, FLASHBACK)) return false;
-  return game.castIS(card, true);
+  return game.castInstantOrSorcery(card, true);
 }
 
 export function flashbackTutor(
@@ -128,13 +128,13 @@ export function flashbackTutor(
   name: string,
   target: string,
 ): boolean {
-  const card = game.gy.find((candidate) => candidate.name === name);
+  const card = game.graveyard.find((candidate) => candidate.name === name);
   const targetCard = game.library.find(
     (candidate) => candidate.name === target,
   );
   if (!card || !targetCard || !spendSpell(game, FLASHBACK)) return false;
   if (!game.pay(game.effCost(card, null, true), true)) return false;
-  removeIfPresent(game.gy, card);
+  removeIfPresent(game.graveyard, card);
   game.exile.push(card);
   removeIfPresent(game.library, targetCard);
   game.hand.push(targetCard);
@@ -161,7 +161,7 @@ export function spendSpell(
   const cost = game.effCost(card, base);
   if (!game.pay(cost, true)) return null;
   removeIfPresent(game.hand, card);
-  game.gy.push(card);
+  game.graveyard.push(card);
   game.spellsCast += 1;
   return card;
 }
@@ -173,7 +173,7 @@ export function castUntapSpell(game: CodieGame, name: string): boolean {
 }
 
 export function activateCodie(game: CodieGame): boolean {
-  const permanent = game.perm(CODIE);
+  const permanent = game.findPermanent(CODIE);
   if (
     !permanent ||
     permanent.tapped ||
@@ -262,7 +262,7 @@ export function windowWeight(game: CodieGame, card: CardDef): number {
   if (game.inHand(name)) return 0;
   if (name === TEFERIS_PROTECTION || name === AD_NAUSEAM) return 10;
   if (name === REITERATE) return 9;
-  if (name === PROFANE_TUTOR) return game.onBf(CODIE) ? 8 : 3;
+  if (name === PROFANE_TUTOR) return game.isOnBattlefield(CODIE) ? 8 : 3;
   if (
     name === JESKAS_WILL ||
     name === MANA_GEYSER ||
@@ -340,7 +340,7 @@ export function activateCodieForTutor(
   removeIfPresent(game.library, profaneTutor);
   removeIfPresent(game.library, card);
   game.hand.push(card);
-  game.gy.push(profaneTutor);
+  game.graveyard.push(profaneTutor);
   return true;
 }
 
@@ -354,7 +354,7 @@ export function castAdNauseamWithTeferi(game: CodieGame): boolean {
     return false;
   spendSpell(game, TEFERIS_PROTECTION);
   spendSpell(game, AD_NAUSEAM);
-  const keep = Math.min(game.library.length, game.cfg.ad_keep as number); // the bottom cards stay in the library (Pontus: all but the last 5)
+  const keep = Math.min(game.library.length, game.config.ad_keep as number); // the bottom cards stay in the library (Pontus: all but the last 5)
   game.hand.push(...game.library.splice(0, game.library.length - keep));
   game.libraryInHand = true;
   return true;

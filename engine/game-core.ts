@@ -16,8 +16,8 @@
  * for, and lets the planner pick between the best few by playing them out on copies of the game.
  *
  * A deck subclasses Game (see decks/goldfish/index.ts for the smallest one, decks/gale for a full one) and fills in:
- *   must have:    light / lightKey / killSearch (or extend GameWithoutKillSearch), candidates
- *   what it wants: cardValue, discardValue, devValueIS, tutorTarget, positionValue, landWant, landBias
+ *   must have:    buildKillSearchState / killSearchStateKey / killSearch (or extend GameWithoutKillSearch), candidates
+ *   what it wants: cardValue, discardValue, instantOrSorceryDevValue, tutorTarget, positionValue, landWant, landBias
  *   card effects: resolveOther, castTriggers, beforeDraw, onToGy, onEnter, onDies, onLandEnter, powerBonus,
  *                 toughnessBonus, upkeep, endStep, commanderCost, onCommanderCast
  *   combat:       canAttack, fogBlocker, evasive, winsWith, onAttack, onCombatDamage (or combat() itself)
@@ -81,20 +81,22 @@ const RANK: Record<string, Record<string, number>> = {
 };
 
 /** Ranks for source kinds not in RANK: a two-colour land ("G/W"), n colourless ("C3"), {G}{U} ("GU"). */
-function extraRank(short: string, k: string): number | null {
-  if (k.length === 3 && k[1] === '/') {
+function extraRank(short: string, sourceKind: string): number | null {
+  if (sourceKind.length === 3 && sourceKind[1] === '/') {
     if (short === 'N') return 5.5;
-    if (short === 'H') return k.includes('U') || k.includes('B') ? 1.5 : null;
-    return k.includes(short) ? 1 : null;
+    if (short === 'H')
+      return sourceKind.includes('U') || sourceKind.includes('B') ? 1.5 : null;
+    return sourceKind.includes(short) ? 1 : null;
   }
-  if (/^[WUBRG](\/[WUBRG]){2}$/.test(k)) {
+  if (/^[WUBRG](\/[WUBRG]){2}$/.test(sourceKind)) {
     // a three-colour land ("W/U/B")
     if (short === 'N') return 5.6;
-    if (short === 'H') return k.includes('U') || k.includes('B') ? 1.6 : null;
-    return k.includes(short) ? 1.2 : null;
+    if (short === 'H')
+      return sourceKind.includes('U') || sourceKind.includes('B') ? 1.6 : null;
+    return sourceKind.includes(short) ? 1.2 : null;
   }
-  if (/^C\d+$/.test(k)) return short === 'N' ? 0.5 : null;
-  if (k === 'GU')
+  if (/^C\d+$/.test(sourceKind)) return short === 'N' ? 0.5 : null;
+  if (sourceKind === 'GU')
     return short === 'G' || short === 'U' ? 1 : short === 'N' ? 5 : null; // Simic Growth Chamber: both
   return null;
 }
@@ -109,24 +111,24 @@ export abstract class GameCore<S = unknown> {
   /** Our commanders' names (this.command only holds the ones in the command zone right now). */
   commanderNames: string[] = [];
   hand: CardDef[] = [];
-  gy: CardDef[] = [];
+  graveyard: CardDef[] = [];
   exile: CardDef[] = [];
-  bf: Perm[] = [];
+  battlefield: Perm[] = [];
   pool: ManaPool = emptyPool();
   /** The deck's colours: what an "either colour" source (Command Tower, a dual land) makes. */
   colors: string[] = ['U', 'B'];
   turn = 0;
   life: number[];
-  lib: number[];
-  ogy: number[];
+  opponentLibrarySizes: number[];
+  opponentGraveyardSizes: number[];
   poison: number[];
   myLife = 40;
-  unprot: number | null = null;
-  prot: number | null = null;
+  unprotectedKillTurn: number | null = null;
+  protectedKillTurn: number | null = null;
   caseSolved = false;
   onPlay: boolean;
   lastKey: string | null = null;
-  ht = 0; // High Tides resolved this turn
+  highTidesThisTurn = 0; // High Tides resolved this turn
   muck = 0; // Bubbling Mucks resolved this turn
   energy = false;
   spellsCast = 0;
@@ -143,7 +145,7 @@ export abstract class GameCore<S = unknown> {
   /** Total life opponents have lost (damage, drains). */
   damageDealt = 0;
   /** The turn the first opponent died (null = none yet). */
-  firstOppDead: number | null = null;
+  firstOpponentDeadTurn: number | null = null;
   /** We lost: our life reached 0. */
   died = false;
 
@@ -155,20 +157,22 @@ export abstract class GameCore<S = unknown> {
     commanders: string[],
     library: string[],
     public rng: Rng,
-    public cfg: Config,
+    public config: Config,
     public verbose = false,
     public mode: 'any' | 'protected' = 'any',
   ) {
-    this.library = library.map((n) => C.get(n));
+    this.library = library.map((cardName) => C.get(cardName));
     rng.shuffle(this.library);
-    this.command = commanders.map((n) => C.get(n));
+    this.command = commanders.map((cardName) => C.get(cardName));
     this.commanderNames = commanders.slice();
-    const n = cfg.opponents as number;
-    this.life = new Array(n).fill(cfg.opp_life);
-    this.lib = new Array(n).fill(cfg.opp_library);
-    this.ogy = new Array(n).fill(0);
-    this.poison = new Array(n).fill(0);
-    this.onPlay = rng.random() < (cfg.on_play_chance as number);
+    const opponentCount = config.opponents as number;
+    this.life = new Array(opponentCount).fill(config.opp_life);
+    this.opponentLibrarySizes = new Array(opponentCount).fill(
+      config.opp_library,
+    );
+    this.opponentGraveyardSizes = new Array(opponentCount).fill(0);
+    this.poison = new Array(opponentCount).fill(0);
+    this.onPlay = rng.random() < (config.on_play_chance as number);
     this.initDeck();
   }
 
@@ -177,149 +181,165 @@ export abstract class GameCore<S = unknown> {
 
   /** A copy of the game: lists and permanents are copied, the random numbers continue the same. */
   clone(): this {
-    const g = Object.create(Object.getPrototypeOf(this)) as this;
-    for (const k of Object.keys(this)) {
-      const v = (this as Record<string, unknown>)[k];
-      (g as Record<string, unknown>)[k] = Array.isArray(v) ? v.slice() : v;
+    const copy = Object.create(Object.getPrototypeOf(this)) as this;
+    for (const fieldName of Object.keys(this)) {
+      const fieldValue = (this as Record<string, unknown>)[fieldName];
+      (copy as Record<string, unknown>)[fieldName] = Array.isArray(fieldValue)
+        ? fieldValue.slice()
+        : fieldValue;
     }
-    g.bf = this.bf.map((p) => p.copy());
-    g.pool = { ...this.pool };
-    g.rng = this.rng.clone();
-    return g;
+    copy.battlefield = this.battlefield.map((permanent) => permanent.copy());
+    copy.pool = { ...this.pool };
+    copy.rng = this.rng.clone();
+    return copy;
   }
 
-  say(...a: unknown[]): void {
-    if (this.verbose) this.log.push(`T${this.turn}: ` + a.map(fmt).join(' '));
+  say(...parts: unknown[]): void {
+    if (this.verbose)
+      this.log.push(`T${this.turn}: ` + parts.map(fmt).join(' '));
   }
 
   // ================================================================ helpers
-  onBf(name: string): boolean {
-    for (const p of this.bf) if (p.cd.name === name) return true;
+  isOnBattlefield(name: string): boolean {
+    for (const permanent of this.battlefield)
+      if (permanent.card.name === name) return true;
     return false;
   }
 
-  perm(name: string): Perm | null {
-    for (const p of this.bf) if (p.cd.name === name) return p;
+  findPermanent(name: string): Perm | null {
+    for (const permanent of this.battlefield)
+      if (permanent.card.name === name) return permanent;
     return null;
   }
 
-  landsBf(): Perm[] {
-    return this.bf.filter((p) => p.land !== null);
+  landsOnBattlefield(): Perm[] {
+    return this.battlefield.filter((permanent) => permanent.land !== null);
   }
 
   countLandsHand(): number {
-    return this.hand.filter((c) => c.land !== null).length;
+    return this.hand.filter((card) => card.land !== null).length;
   }
 
   manaSources(): number {
     return (
-      this.bf.filter((p) => this.srcKind(p, true)).length +
-      (this.onBf('Sol Ring') ? 1 : 0)
+      this.battlefield.filter((permanent) =>
+        this.manaSourceKind(permanent, true),
+      ).length + (this.isOnBattlefield('Sol Ring') ? 1 : 0)
     );
   }
 
   hasCounterInHand(): boolean {
-    return this.hand.some((c) => Facts.COUNTERS.has(c.name));
+    return this.hand.some((card) => Facts.COUNTERS.has(card.name));
   }
 
-  redIS(): number {
-    let n = 0;
-    for (const p of this.bf) {
-      if (Facts.REDUCE_IS.has(p.cd.name)) n++;
-      if (p.cd.name === 'Curious Homunculus' && p.transformed) n++;
+  instantOrSorceryCostReduction(): number {
+    let reduction = 0;
+    for (const permanent of this.battlefield) {
+      if (Facts.REDUCE_INSTANT_SORCERY_COST.has(permanent.card.name))
+        reduction++;
+      if (permanent.card.name === 'Curious Homunculus' && permanent.transformed)
+        reduction++;
     }
-    return n;
+    return reduction;
   }
 
-  effCost(cd: CardDef, base: Cost | null = null, fromGy = false): Cost {
-    const cost = base ?? cd.cost;
+  effCost(card: CardDef, base: Cost | null = null, fromGy = false): Cost {
+    const cost = base ?? card.cost;
     let red = 0;
-    if (cd.isIS) red += this.redIS();
-    if (!cd.isCreature)
-      for (const p of this.bf)
-        if (Facts.REDUCE_NONCREATURE.has(p.cd.name)) red++;
-    if (cost.u || cost.h)
-      for (const p of this.bf) if (Facts.REDUCE_BLUE.has(p.cd.name)) red++;
+    if (card.isInstantOrSorcery) red += this.instantOrSorceryCostReduction();
+    if (!card.isCreature)
+      for (const permanent of this.battlefield)
+        if (Facts.REDUCE_NONCREATURE.has(permanent.card.name)) red++;
+    if (cost.blue || cost.hybrid)
+      for (const otherPermanent of this.battlefield)
+        if (Facts.REDUCE_BLUE.has(otherPermanent.card.name)) red++;
     if (fromGy)
-      for (const p of this.bf)
-        if (Facts.REDUCE_FROM_GY2.has(p.cd.name)) red += 2;
-    if (cd.name === 'Focus the Mind' && this.spellsCast > 0) red += 2;
-    return cost.withGeneric(Math.max(0, cost.g - red));
+      for (const anotherPermanent of this.battlefield)
+        if (Facts.REDUCE_FROM_GY2.has(anotherPermanent.card.name)) red += 2;
+    if (card.name === 'Focus the Mind' && this.spellsCast > 0) red += 2;
+    return cost.withGeneric(Math.max(0, cost.generic - red));
   }
 
   // ================================================================ mana
-  srcKind(p: Perm, ignoreSick = false): string | null {
-    if (p.land !== null) {
+  manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+    if (permanent.land !== null) {
       // "Activate only if you control a Swamp" (Tainted Wood): colourless without one
-      const need = p.land.colourIf;
+      const need = permanent.land.colourIf;
       if (
         need &&
-        !this.bf.some(
-          (q) =>
-            q !== p &&
-            q.land !== null &&
-            (q.land as unknown as Record<string, boolean>)[need],
+        !this.battlefield.some(
+          (otherPermanent) =>
+            otherPermanent !== permanent &&
+            otherPermanent.land !== null &&
+            (otherPermanent.land as unknown as Record<string, boolean>)[need],
         )
       )
         return 'C';
-      const m = p.land.mana;
-      if (m.length === 3 && m[1] === '/')
-        return this.colors.length <= 2 ? 'A' : m; // a two-colour land
-      return m || null;
+      const landMana = permanent.land.mana;
+      if (landMana.length === 3 && landMana[1] === '/')
+        return this.colors.length <= 2 ? 'A' : landMana; // a two-colour land
+      return landMana || null;
     }
-    if (p.cd.rock) return p.cd.rock;
+    if (permanent.card.rock) return permanent.card.rock;
     if (
-      p.cd.name === 'Curious Homunculus' &&
-      !p.transformed &&
-      (ignoreSick || !p.sick)
+      permanent.card.name === 'Curious Homunculus' &&
+      !permanent.transformed &&
+      (ignoreSick || !permanent.sick)
     )
       return 'S';
-    const mc = Facts.MANA_CREATURES[p.cd.name];
-    if (mc && (ignoreSick || !p.sick)) return mc;
+    const manaCreatureKind = Facts.MANA_CREATURES[permanent.card.name];
+    if (manaCreatureKind && (ignoreSick || !permanent.sick))
+      return manaCreatureKind;
     return null;
   }
 
-  islandTyped(p: Perm): boolean {
-    return p.land !== null && (!!p.land.island || this.energy);
+  islandTyped(permanent: Perm): boolean {
+    return permanent.land !== null && (!!permanent.land.island || this.energy);
   }
 
-  swampTyped(p: Perm): boolean {
-    return p.land !== null && (!!p.land.swamp || this.energy);
+  swampTyped(permanent: Perm): boolean {
+    return permanent.land !== null && (!!permanent.land.swamp || this.energy);
   }
 
   /** What the pool is still short of to pay cost (null = enough). With mutate, pays it. */
-  private short(cost: Cost, isIS: boolean, mutate = false): string | null {
-    const p = mutate ? this.pool : { ...this.pool };
-    if (p.U < cost.u) return 'U';
-    p.U -= cost.u;
-    if (p.B < cost.b) return 'B';
-    p.B -= cost.b;
-    if (p.G < cost.gn) return 'G';
-    p.G -= cost.gn;
-    if (p.W < cost.w) return 'W';
-    p.W -= cost.w;
-    if (p.R < cost.r) return 'R';
-    p.R -= cost.r;
-    for (let h = 0; h < cost.h; h++) {
-      if (p.U >= p.B && p.U > 0) p.U -= 1;
-      else if (p.B > 0) p.B -= 1;
+  private short(
+    cost: Cost,
+    isInstantOrSorcery: boolean,
+    mutate = false,
+  ): string | null {
+    const poolLeft = mutate ? this.pool : { ...this.pool };
+    if (poolLeft.U < cost.blue) return 'U';
+    poolLeft.U -= cost.blue;
+    if (poolLeft.B < cost.black) return 'B';
+    poolLeft.B -= cost.black;
+    if (poolLeft.G < cost.green) return 'G';
+    poolLeft.G -= cost.green;
+    if (poolLeft.W < cost.white) return 'W';
+    poolLeft.W -= cost.white;
+    if (poolLeft.R < cost.red) return 'R';
+    poolLeft.R -= cost.red;
+    for (let hybridPip = 0; hybridPip < cost.hybrid; hybridPip++) {
+      if (poolLeft.U >= poolLeft.B && poolLeft.U > 0) poolLeft.U -= 1;
+      else if (poolLeft.B > 0) poolLeft.B -= 1;
       else return 'H';
     }
-    let g = cost.g;
+    let genericLeft = cost.generic;
     const order: (keyof ManaPool)[] = [
-      ...(isIS ? ['S' as const] : []),
+      ...(isInstantOrSorcery ? ['S' as const] : []),
       'C',
-      ...(p.B >= p.U ? (['B', 'U'] as const) : (['U', 'B'] as const)),
+      ...(poolLeft.B >= poolLeft.U
+        ? (['B', 'U'] as const)
+        : (['U', 'B'] as const)),
       'G',
       'W',
       'R',
     ];
-    for (const k of order) {
-      const t = Math.min(p[k], g);
-      p[k] -= t;
-      g -= t;
+    for (const manaType of order) {
+      const spent = Math.min(poolLeft[manaType], genericLeft);
+      poolLeft[manaType] -= spent;
+      genericLeft -= spent;
     }
-    return g > 0 ? 'N' : null;
+    return genericLeft > 0 ? 'N' : null;
   }
 
   /** Which source to tap first for a generic cost (N) can be adjusted by a deck: lower = tapped first. */
@@ -327,36 +347,36 @@ export abstract class GameCore<S = unknown> {
     return rank;
   }
 
-  private pick(short: string, isIS: boolean): Perm | null {
+  private pick(short: string, isInstantOrSorcery: boolean): Perm | null {
     const rank = RANK[short];
     let best: Perm | null = null,
-      br = 99;
+      bestRank = 99;
     const feed = this.pool.U + this.pool.B + this.pool.C;
-    for (const p of this.bf) {
-      if (p.tapped) continue;
-      const k = this.srcKind(p);
-      if (k === null) continue;
-      if (!(k in rank)) {
-        const r2 = extraRank(short, k);
-        if (r2 === null) continue;
-        if (r2 < br) {
-          best = p;
-          br = r2;
+    for (const permanent of this.battlefield) {
+      if (permanent.tapped) continue;
+      const sourceKind = this.manaSourceKind(permanent);
+      if (sourceKind === null) continue;
+      if (!(sourceKind in rank)) {
+        const fallbackRank = extraRank(short, sourceKind);
+        if (fallbackRank === null) continue;
+        if (fallbackRank < bestRank) {
+          best = permanent;
+          bestRank = fallbackRank;
         }
         continue;
       }
-      if (k === 'S' && !isIS) continue;
-      if (k === 'F' && feed < 1) continue;
-      let r = this.rankAdjust(short, k, rank[k]);
+      if (sourceKind === 'S' && !isInstantOrSorcery) continue;
+      if (sourceKind === 'F' && feed < 1) continue;
+      let adjustedRank = this.rankAdjust(short, sourceKind, rank[sourceKind]);
       if (
-        this.ht &&
-        this.islandTyped(p) &&
+        this.highTidesThisTurn &&
+        this.islandTyped(permanent) &&
         (short === 'U' || short === 'N' || short === 'H')
       )
-        r -= 0.5;
-      if (r < br) {
-        best = p;
-        br = r;
+        adjustedRank -= 0.5;
+      if (adjustedRank < bestRank) {
+        best = permanent;
+        bestRank = adjustedRank;
       }
     }
     return best;
@@ -364,47 +384,47 @@ export abstract class GameCore<S = unknown> {
 
   /** A pain land: the colour we need costs 1 life, {C} (for generic costs) is free. The engine taps lands to test a
    *  payment and then undoes it, so the damage is only counted here (painTaps) and dealt when pay() commits. */
-  private tapPain(p: Perm, short: string): void {
-    p.tapped = true;
-    const l = p.land!;
-    const pain = l.pain ?? '';
-    const makes = (col: string) => C.landMakes(p.cd, col);
-    let col: string | null = null;
-    if (COLOURS.includes(short) && makes(short)) col = short;
-    else if (short === 'H') col = ['U', 'B'].find(makes) ?? null;
+  private tapPain(permanent: Perm, short: string): void {
+    permanent.tapped = true;
+    const land = permanent.land!;
+    const pain = land.pain ?? '';
+    const makes = (colour: string) => C.landMakes(permanent.card, colour);
+    let colour: string | null = null;
+    if (COLOURS.includes(short) && makes(short)) colour = short;
+    else if (short === 'H') colour = ['U', 'B'].find(makes) ?? null;
     else {
       // a generic cost: colourless if the land can, else a colour that costs no life, else any
-      if (l.colourless) {
+      if (land.colourless) {
         this.pool.C += 1;
         return;
       }
-      col =
-        this.colors.find((c) => makes(c) && !pain.includes(c)) ??
+      colour =
+        this.colors.find((colour) => makes(colour) && !pain.includes(colour)) ??
         this.colors.find(makes) ??
         null;
     }
-    if (col === null) {
+    if (colour === null) {
       this.pool.C += 1;
       return;
     }
-    this.pool[col as keyof ManaPool] += 1;
-    if (pain.includes(col)) this.painTaps += 1;
+    this.pool[colour as keyof ManaPool] += 1;
+    if (pain.includes(colour)) this.painTaps += 1;
   }
 
-  tap(p: Perm, short: string): void {
-    if (p.land?.pain) {
-      this.tapPain(p, short);
+  tap(permanent: Perm, short: string): void {
+    if (permanent.land?.pain) {
+      this.tapPain(permanent, short);
       return;
     }
-    const k = this.srcKind(p);
-    p.tapped = true;
+    const sourceKind = this.manaSourceKind(permanent);
+    permanent.tapped = true;
     const pool = this.pool;
-    if (k === 'U') pool.U += 1;
-    else if (k === 'B') pool.B += 1;
-    else if (k === 'G') pool.G += 1;
-    else if (k === 'W') pool.W += 1;
-    else if (k === 'R') pool.R += 1;
-    else if (k === 'A') {
+    if (sourceKind === 'U') pool.U += 1;
+    else if (sourceKind === 'B') pool.B += 1;
+    else if (sourceKind === 'G') pool.G += 1;
+    else if (sourceKind === 'W') pool.W += 1;
+    else if (sourceKind === 'R') pool.R += 1;
+    else if (sourceKind === 'A') {
       // either of the deck's colours: the one we're short of; for generic, black if the deck plays it
       if (COLOURS.includes(short)) pool[short as keyof ManaPool] += 1;
       else if (short === 'N')
@@ -415,141 +435,172 @@ export abstract class GameCore<S = unknown> {
         pool[
           (this.colors.includes('U') ? 'U' : this.colors[0]) as keyof ManaPool
         ] += 1;
-    } else if (k === 'UB') {
+    } else if (sourceKind === 'UB') {
       pool.U += 1;
       pool.B += 1;
-    } else if (k === 'GU') {
+    } else if (sourceKind === 'GU') {
       pool.G += 1;
       pool.U += 1;
-    } else if (k === 'C') pool.C += 1;
-    else if (k === 'C2') pool.C += 2;
-    else if (k !== null && /^C\d+$/.test(k)) pool.C += parseInt(k.slice(1), 10);
-    else if (k !== null && k.length === 3 && k[1] === '/') {
+    } else if (sourceKind === 'C') pool.C += 1;
+    else if (sourceKind === 'C2') pool.C += 2;
+    else if (sourceKind !== null && /^C\d+$/.test(sourceKind))
+      pool.C += parseInt(sourceKind.slice(1), 10);
+    else if (
+      sourceKind !== null &&
+      sourceKind.length === 3 &&
+      sourceKind[1] === '/'
+    ) {
       // a two-colour land: the colour we're short of if it makes it, else its first colour
-      const col =
-        k.includes(short) && COLOURS.includes(short)
+      const colour =
+        sourceKind.includes(short) && COLOURS.includes(short)
           ? short
-          : short === 'H' && k.includes('B')
+          : short === 'H' && sourceKind.includes('B')
             ? 'B'
-            : k[0];
-      pool[col as keyof ManaPool] += 1;
-    } else if (k === 'S') pool.S += 1;
-    else if (k === 'F') {
-      for (const c of ['C', 'B', 'U'] as const)
-        if (pool[c] > 0) {
-          pool[c] -= 1;
+            : sourceKind[0];
+      pool[colour as keyof ManaPool] += 1;
+    } else if (sourceKind === 'S') pool.S += 1;
+    else if (sourceKind === 'F') {
+      for (const manaType of ['C', 'B', 'U'] as const)
+        if (pool[manaType] > 0) {
+          pool[manaType] -= 1;
           break;
         }
       pool.U += 1;
       pool.B += 1;
     }
-    if (p.land !== null) {
-      if (this.ht && this.islandTyped(p)) pool.U += this.ht;
-      if (this.muck && this.swampTyped(p)) pool.B += this.muck;
+    if (permanent.land !== null) {
+      if (this.highTidesThisTurn && this.islandTyped(permanent))
+        pool.U += this.highTidesThisTurn;
+      if (this.muck && this.swampTyped(permanent)) pool.B += this.muck;
     }
   }
 
-  snap(): Snap {
-    return [{ ...this.pool }, this.bf.map((p) => p.tapped)];
+  takeSnapshot(): Snap {
+    return [
+      { ...this.pool },
+      this.battlefield.map((permanent) => permanent.tapped),
+    ];
   }
 
-  restore(s: Snap): void {
-    this.pool = { ...s[0] };
-    const n = Math.min(this.bf.length, s[1].length);
-    for (let i = 0; i < n; i++) this.bf[i].tapped = s[1][i];
+  restore(snapshot: Snap): void {
+    this.pool = { ...snapshot[0] };
+    const permanentCount = Math.min(
+      this.battlefield.length,
+      snapshot[1].length,
+    );
+    for (let i = 0; i < permanentCount; i++)
+      this.battlefield[i].tapped = snapshot[1][i];
   }
 
-  pay(cost: Cost, isIS = false, commit = true): boolean {
+  pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
     // undo = untap what this payment tapped and restore the pool (cheaper than a snapshot of a big board)
     const pool0 = { ...this.pool };
     const tapped: Perm[] = [];
     const undo = () => {
       this.pool = pool0;
-      for (const p of tapped) p.tapped = false;
+      for (const permanent of tapped) permanent.tapped = false;
     };
     this.painTaps = 0;
     for (;;) {
-      const short = this.short(cost, isIS);
+      const short = this.short(cost, isInstantOrSorcery);
       if (short === null) {
-        this.short(cost, isIS, true);
+        this.short(cost, isInstantOrSorcery, true);
         if (!commit) undo();
         else {
-          this.spent += cost.mv;
+          this.spent += cost.manaValue;
           if (this.painTaps) this.loseLife(this.painTaps);
         }
         this.painTaps = 0;
         return true;
       }
-      const src = this.pick(short, isIS);
-      if (src === null) {
+      const source = this.pick(short, isInstantOrSorcery);
+      if (source === null) {
         undo();
         this.painTaps = 0;
         return false;
       }
-      this.tap(src, short);
-      tapped.push(src);
+      this.tap(source, short);
+      tapped.push(source);
     }
   }
 
-  canPay(cost: Cost, isIS = false): boolean {
-    return this.pay(cost, isIS, false);
+  canPay(cost: Cost, isInstantOrSorcery = false): boolean {
+    return this.pay(cost, isInstantOrSorcery, false);
   }
 
-  oppsBeaten(): boolean {
+  areOpponentsBeaten(): boolean {
     for (let i = 0; i < this.life.length; i++)
-      if (!(this.life[i] <= 0 || this.lib[i] <= 0 || this.poison[i] >= 10))
+      if (!(
+        this.life[i] <= 0 ||
+        this.opponentLibrarySizes[i] <= 0 ||
+        this.poison[i] >= 10
+      ))
         return false;
     return true;
   }
 
   checkKill(): number {
-    if (this.prot !== null || (this.mode === 'any' && this.unprot !== null))
+    if (
+      this.protectedKillTurn !== null ||
+      (this.mode === 'any' && this.unprotectedKillTurn !== null)
+    )
       return 2;
-    const st = this.light();
-    const k = this.lightKey(st);
-    if (k === this.lastKey) return 0;
-    this.lastKey = k;
-    if (!this.killReachable(st)) return 0;
-    const ks = this.killSearch();
-    const r = ks.search(st, this.cfg.search_budget as number);
-    if (r >= 1 && this.verbose && (this.unprot === null || r === 2)) {
+    const killState = this.buildKillSearchState();
+    const stateKey = this.killSearchStateKey(killState);
+    if (stateKey === this.lastKey) return 0;
+    this.lastKey = stateKey;
+    if (!this.killReachable(killState)) return 0;
+    const search = this.killSearch();
+    const killLevel = search.search(
+      killState,
+      this.config.search_budget as number,
+    );
+    if (
+      killLevel >= 1 &&
+      this.verbose &&
+      (this.unprotectedKillTurn === null || killLevel === 2)
+    ) {
       this.say(
-        `--- state: mana ${fmtPool(this.lightPool(this.light()))}, hand ${fmtList(this.hand.map((c) => c.name))}`,
+        `--- state: mana ${fmtPool(this.killSearchStatePool(this.buildKillSearchState()))}, hand ${fmtList(this.hand.map((card) => card.name))}`,
       );
       this.say(
-        `--- battlefield ${fmtList(this.bf.filter((p) => p.land === null).map((p) => p.name))}, ` +
-          `lands ${this.landsBf().length}, graveyard ${fmtList(this.gy.map((c) => c.name))}`,
+        `--- battlefield ${fmtList(this.battlefield.filter((permanent) => permanent.land === null).map((permanent) => permanent.name))}, ` +
+          `lands ${this.landsOnBattlefield().length}, graveyard ${fmtList(this.graveyard.map((card) => card.name))}`,
       );
-      for (const step of ks.lastLine ?? []) this.say('      > ' + step);
+      for (const step of search.lastLine ?? []) this.say('      > ' + step);
     }
-    if (r >= 1) this.lastKillLine = (ks.lastLine ?? []).slice();
-    if (r >= 1 && this.unprot === null) this.unprot = this.turn;
-    if (r === 2) this.prot = this.turn;
-    this.killNow = r >= 1;
-    if (r === 2 || (r === 1 && this.mode === 'any' && this.podAllowsKill())) {
+    if (killLevel >= 1) this.lastKillLine = (search.lastLine ?? []).slice();
+    if (killLevel >= 1 && this.unprotectedKillTurn === null)
+      this.unprotectedKillTurn = this.turn;
+    if (killLevel === 2) this.protectedKillTurn = this.turn;
+    this.killNow = killLevel >= 1;
+    if (
+      killLevel === 2 ||
+      (killLevel === 1 && this.mode === 'any' && this.podAllowsKill())
+    ) {
       this.say(
         'KILL -> WIN' +
-          (r === 2 ? ' (with counter backup)' : ' (no counter backup)'),
+          (killLevel === 2 ? ' (with counter backup)' : ' (no counter backup)'),
       );
       return 2;
     }
-    if (r === 1) {
+    if (killLevel === 1) {
       this.podWaits++;
       this.say(
         'kill available but no counter backup: keep the kill intact and look for protection',
       );
     }
-    return r;
+    return killLevel;
   }
 
   // ================================================================ zones / drawing
-  toGy(cd: CardDef, _fromLib = false): void {
-    this.gy.push(cd);
-    this.onToGy(cd);
+  toGy(card: CardDef, _fromLib = false): void {
+    this.graveyard.push(card);
+    this.onToGy(card);
   }
 
-  draw(n = 1): void {
-    for (let i = 0; i < n; i++) {
+  draw(count = 1): void {
+    for (let i = 0; i < count; i++) {
       if (!this.library.length) return;
       this.beforeDraw();
       this.firstDrawDone = true;
@@ -557,28 +608,30 @@ export abstract class GameCore<S = unknown> {
     }
   }
 
-  discard(n: number): void {
-    for (let i = 0; i < n; i++) {
+  discard(count: number): void {
+    for (let i = 0; i < count; i++) {
       if (!this.hand.length) return;
-      const c = firstMin(this.hand, (x) => this.discardValue(x));
-      removeOrThrow(this.hand, c);
-      this.toGy(c);
-      this.say('discard', c);
+      const card = firstMin(this.hand, (otherCard) =>
+        this.discardValue(otherCard),
+      );
+      removeOrThrow(this.hand, card);
+      this.toGy(card);
+      this.say('discard', card);
     }
   }
 
-  scry(n: number, surveil = false): void {
-    const top = this.library.splice(0, n);
+  scry(count: number, surveil = false): void {
+    const top = this.library.splice(0, count);
     const keep: CardDef[] = [],
       away: CardDef[] = [];
-    for (const c of top)
-      ((surveil ? this.discardValue(c) : this.cardValue(c)) >= 40
+    for (const card of top)
+      ((surveil ? this.discardValue(card) : this.cardValue(card)) >= 40
         ? keep
         : away
-      ).push(c);
-    sortDesc(keep, (c) => this.cardValue(c));
+      ).push(card);
+    sortDesc(keep, (card) => this.cardValue(card));
     this.library.unshift(...keep);
-    if (surveil) for (const c of away) this.toGy(c);
+    if (surveil) for (const otherCard of away) this.toGy(otherCard);
     else this.library.push(...away);
   }
 
@@ -587,34 +640,36 @@ export abstract class GameCore<S = unknown> {
   }
 
   doTutor(
-    allowed: (c: CardDef) => boolean,
+    allowed: (card: CardDef) => boolean,
     toTop: boolean,
     spentCard: string | null = null,
   ): void {
-    const t = this.tutorTarget(allowed, toTop, spentCard, true);
-    if (t === null) return;
-    removeOrThrow(this.library, t);
+    const otherCard = this.tutorTarget(allowed, toTop, spentCard, true);
+    if (otherCard === null) return;
+    removeOrThrow(this.library, otherCard);
     this.shuffle();
-    if (toTop) this.library.unshift(t);
-    else this.hand.push(t);
-    this.say('tutor ->', t, toTop ? '(top)' : '');
+    if (toTop) this.library.unshift(otherCard);
+    else this.hand.push(otherCard);
+    this.say('tutor ->', otherCard, toTop ? '(top)' : '');
   }
 
   // ================================================================ effects of common cards
   /** What a spell does when it resolves, for the cards the engine knows. Other cards go to the deck's resolveOther(). */
-  resolve(cd: CardDef, fromGy = false, mode: string | null = null): void {
-    if (this.resolveCardSelection(cd, fromGy)) return;
-    if (this.resolveManaOrTutor(cd, mode)) return;
-    this.resolveOther(cd, fromGy, mode);
+  resolve(card: CardDef, fromGy = false, mode: string | null = null): void {
+    if (this.resolveCardSelection(card, fromGy)) return;
+    if (this.resolveManaOrTutor(card, mode)) return;
+    this.resolveOther(card, fromGy, mode);
   }
 
   /** Draw, scry and "look at the top cards" spells. Returns false if this isn't one of them. */
-  private resolveCardSelection(cd: CardDef, fromGy: boolean): boolean {
-    switch (cd.name) {
+  private resolveCardSelection(otherCard: CardDef, fromGy: boolean): boolean {
+    switch (otherCard.name) {
       case 'Brainstorm': {
         this.draw(3);
         for (let i = 0; i < Math.min(2, this.hand.length); i++) {
-          const card = firstMin(this.hand, (x) => this.cardValue(x));
+          const card = firstMin(this.hand, (anotherCard) =>
+            this.cardValue(anotherCard),
+          );
           removeOrThrow(this.hand, card);
           this.library.unshift(card);
         }
@@ -639,7 +694,7 @@ export abstract class GameCore<S = unknown> {
         return true;
       case 'Pieces of the Puzzle':
       case 'Fact or Fiction':
-        this.resolveTopFiveSplit(cd.name);
+        this.resolveTopFiveSplit(otherCard.name);
         return true;
       case 'Ponder':
         this.ponder();
@@ -684,11 +739,11 @@ export abstract class GameCore<S = unknown> {
   /** Look at the top three: shuffle them away if none is good, otherwise put them back best first. Then draw. */
   private ponder(): void {
     const top = this.library.slice(0, 3);
-    if (top.length && Math.max(...top.map((c) => this.cardValue(c))) < 40)
+    if (top.length && Math.max(...top.map((card) => this.cardValue(card))) < 40)
       this.shuffle();
     else {
       this.library.splice(0, 3);
-      sortDesc(top, (c) => this.cardValue(c));
+      sortDesc(top, (card) => this.cardValue(card));
       this.library.unshift(...top);
     }
     this.draw(1);
@@ -697,7 +752,7 @@ export abstract class GameCore<S = unknown> {
   /** Take the two best of the top five; the rest go to the bottom. */
   private stockUp(): void {
     const top = this.library.splice(0, 5);
-    sortDesc(top, (c) => this.cardValue(c));
+    sortDesc(top, (card) => this.cardValue(card));
     this.hand.push(...top.slice(0, 2));
     this.library.push(...top.slice(2));
   }
@@ -707,7 +762,7 @@ export abstract class GameCore<S = unknown> {
     const top = this.library.splice(0, 3);
     if (fromGraveyard || !top.length) this.hand.push(...top);
     else {
-      sortDesc(top, (c) => this.cardValue(c));
+      sortDesc(top, (card) => this.cardValue(card));
       this.hand.push(top[0]);
       this.library.push(...top.slice(1));
     }
@@ -722,17 +777,17 @@ export abstract class GameCore<S = unknown> {
     if (spell === 'Pieces of the Puzzle') {
       // up to two instants/sorceries to hand, the rest to the graveyard
       keep = sortDesc(
-        top.filter((c) => c.isIS),
-        (c) => this.cardValue(c),
+        top.filter((card) => card.isInstantOrSorcery),
+        (card) => this.cardValue(card),
       ).slice(0, 2);
     } else {
       // opponent splits: the best card alone vs the other four
-      sortDesc(top, (c) => this.cardValue(c));
+      sortDesc(top, (card) => this.cardValue(card));
       const rest = top.slice(1);
       keep =
         top.length &&
         this.cardValue(top[0]) >
-          rest.reduce((s, c) => s + this.cardValue(c), 0) * 0.6
+          rest.reduce((total, card) => total + this.cardValue(card), 0) * 0.6
           ? top.slice(0, 1)
           : rest;
     }
@@ -743,8 +798,8 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** Rituals, untap spells and tutors. Returns false if this isn't one of them. */
-  private resolveManaOrTutor(cd: CardDef, mode: string | null): boolean {
-    switch (cd.name) {
+  private resolveManaOrTutor(card: CardDef, mode: string | null): boolean {
+    switch (card.name) {
       case 'Snap':
         this.untapLands(2);
         return true;
@@ -761,12 +816,12 @@ export abstract class GameCore<S = unknown> {
         const target = this.energyTapTarget();
         if (target) {
           target.tapped = true;
-          this.pool.C += target.cd.mv;
+          this.pool.C += target.card.manaValue;
         }
         return true;
       }
       case 'High Tide':
-        this.ht += 1;
+        this.highTidesThisTurn += 1;
         return true;
       case 'Bubbling Muck':
         this.muck += 1;
@@ -775,13 +830,13 @@ export abstract class GameCore<S = unknown> {
         this.doTutor(() => true, false);
         return true;
       case 'Solve the Equation':
-        this.doTutor((c) => c.isIS, false);
+        this.doTutor((otherCard) => otherCard.isInstantOrSorcery, false);
         return true;
       case 'Personal Tutor':
-        this.doTutor((c) => c.isSorcery, true);
+        this.doTutor((otherCard) => otherCard.isSorcery, true);
         return true;
       case 'Waterlogged Teachings':
-        this.doTutor((c) => c.isInstant, false);
+        this.doTutor((otherCard) => otherCard.isInstant, false);
         return true;
       case 'Insatiable Avarice':
         if (mode === 'tutor' || mode === 'both') this.doTutor(() => true, true);
@@ -795,188 +850,216 @@ export abstract class GameCore<S = unknown> {
     }
   }
 
-  untapLands(k: number): void {
-    const tapped = this.bf.filter((p) => p.land !== null && p.tapped);
-    const key = (p: Perm) =>
-      (!(this.ht && this.islandTyped(p)) ? 2 : 0) +
-      (p.land!.mana !== 'UB' ? 1 : 0);
-    tapped.sort((a, b) => key(a) - key(b));
-    for (const p of tapped.slice(0, k)) p.tapped = false;
+  untapLands(count: number): void {
+    const tapped = this.battlefield.filter(
+      (permanent) => permanent.land !== null && permanent.tapped,
+    );
+    const key = (permanent: Perm) =>
+      (!(this.highTidesThisTurn && this.islandTyped(permanent)) ? 2 : 0) +
+      (permanent.land!.mana !== 'UB' ? 1 : 0);
+    tapped.sort((first, second) => key(first) - key(second));
+    for (const otherPermanent of tapped.slice(0, count))
+      otherPermanent.tapped = false;
   }
 
   enter(
-    cd: CardDef,
+    card: CardDef,
     from: Zone = 'hand',
-    opts: { token?: boolean; tapped?: boolean } = {},
+    options: { token?: boolean; tapped?: boolean } = {},
   ): Perm {
-    const p = new Perm(cd);
-    if (opts.token || cd.isToken) p.token = true;
-    if (opts.tapped) p.tapped = true;
-    this.bf.push(p);
-    if (cd.name === 'Baleful Strix') this.draw(1);
-    const untap = Facts.UNTAP_ON_ETB[cd.name];
+    const permanent = new Perm(card);
+    if (options.token || card.isToken) permanent.token = true;
+    if (options.tapped) permanent.tapped = true;
+    this.battlefield.push(permanent);
+    if (card.name === 'Baleful Strix') this.draw(1);
+    const untap = Facts.UNTAP_ON_ETB[card.name];
     if (untap) this.untapLands(untap);
-    this.onEnter(p, from);
-    return p;
+    this.onEnter(permanent, from);
+    return permanent;
   }
 
   /** Create n tokens (each one "enters" and triggers onEnter). */
-  createTokens(cd: CardDef, n = 1, opts: { tapped?: boolean } = {}): Perm[] {
+  createTokens(
+    card: CardDef,
+    count = 1,
+    options: { tapped?: boolean } = {},
+  ): Perm[] {
     const out: Perm[] = [];
-    for (let i = 0; i < n; i++)
-      out.push(this.enter(cd, 'token', { token: true, tapped: opts.tapped }));
+    for (let i = 0; i < count; i++)
+      out.push(
+        this.enter(card, 'token', { token: true, tapped: options.tapped }),
+      );
     return out;
   }
 
   // ================================================================ creatures
   creatures(): Perm[] {
-    return this.bf.filter((p) => p.cd.isCreature);
+    return this.battlefield.filter((permanent) => permanent.card.isCreature);
   }
 
-  power(p: Perm): number {
+  power(permanent: Perm): number {
     return Math.max(
       0,
-      p.cd.power + p.counters + p.powerMod + this.powerBonus(p),
+      permanent.card.power +
+        permanent.counters +
+        permanent.powerMod +
+        this.powerBonus(permanent),
     );
   }
 
-  toughness(p: Perm): number {
-    return p.cd.toughness + p.counters + this.toughnessBonus(p);
+  toughness(permanent: Perm): number {
+    return (
+      permanent.card.toughness +
+      permanent.counters +
+      this.toughnessBonus(permanent)
+    );
   }
 
   /** A creature dies (destroyed or sacrificed): tokens are gone, cards go to the graveyard. */
-  dies(p: Perm): void {
-    const i = this.bf.indexOf(p);
+  dies(permanent: Perm): void {
+    const i = this.battlefield.indexOf(permanent);
     if (i < 0) return;
-    this.bf.splice(i, 1);
-    if (!p.token) this.toGy(p.cd);
-    this.onDies(p);
+    this.battlefield.splice(i, 1);
+    if (!permanent.token) this.toGy(permanent.card);
+    this.onDies(permanent);
   }
 
-  sacrifice(p: Perm): void {
-    this.say('sacrifice', p.cd);
-    this.dies(p);
+  sacrifice(permanent: Perm): void {
+    this.say('sacrifice', permanent.card);
+    this.dies(permanent);
   }
 
   /** Devotion to a colour: its pips in the mana costs of our permanents (token copies count too). */
   devotion(colour: 'W' | 'U' | 'B' | 'R' | 'G'): number {
-    const pip = { W: 'w', U: 'u', B: 'b', R: 'r', G: 'gn' }[colour] as
-      'w' | 'u' | 'b' | 'r' | 'gn';
-    let n = 0;
-    for (const p of this.bf) n += p.cd.cost[pip];
-    return n;
+    const pip = { W: 'white', U: 'blue', B: 'black', R: 'red', G: 'green' }[
+      colour
+    ] as 'white' | 'blue' | 'black' | 'red' | 'green';
+    let totalDevotion = 0;
+    for (const permanent of this.battlefield)
+      totalDevotion += permanent.card.cost[pip];
+    return totalDevotion;
   }
 
   // ================================================================ life and damage
   /** Opponent i loses n life (damage or life loss). Returns the life actually lost. */
-  hurtOpp(i: number, n: number): number {
-    if (n <= 0 || this.life[i] <= 0) return 0;
-    const lost = Math.min(n, this.life[i]);
-    this.life[i] -= n;
+  damageOpponent(i: number, amount: number): number {
+    if (amount <= 0 || this.life[i] <= 0) return 0;
+    const lost = Math.min(amount, this.life[i]);
+    this.life[i] -= amount;
     this.damageDealt += lost;
-    if (this.life[i] <= 0 && this.firstOppDead === null)
-      this.firstOppDead = this.turn;
+    if (this.life[i] <= 0 && this.firstOpponentDeadTurn === null)
+      this.firstOpponentDeadTurn = this.turn;
     return lost;
   }
 
   /** Each opponent still alive loses n. Returns the total lost. */
-  drainEach(n: number): number {
-    let t = 0;
+  drainEach(amount: number): number {
+    let totalLost = 0;
     for (let i = 0; i < this.life.length; i++)
-      if (this.oppAlive(i)) t += this.hurtOpp(i, n);
-    return t;
+      if (this.isOpponentAlive(i)) totalLost += this.damageOpponent(i, amount);
+    return totalLost;
   }
 
-  oppAlive(i: number): boolean {
-    return this.life[i] > 0 && this.lib[i] > 0 && this.poison[i] < 10;
+  isOpponentAlive(i: number): boolean {
+    return (
+      this.life[i] > 0 &&
+      this.opponentLibrarySizes[i] > 0 &&
+      this.poison[i] < 10
+    );
   }
 
-  oppsAlive(): number {
-    let n = 0;
-    for (let i = 0; i < this.life.length; i++) if (this.oppAlive(i)) n++;
-    return n;
+  countOpponentsAlive(): number {
+    let aliveCount = 0;
+    for (let i = 0; i < this.life.length; i++)
+      if (this.isOpponentAlive(i)) aliveCount++;
+    return aliveCount;
   }
 
   /** The opponent to focus single-target damage on: the one closest to dead. */
-  focusOpp(): number | null {
+  chooseTargetOpponent(): number | null {
     let best: number | null = null;
     for (let i = 0; i < this.life.length; i++)
-      if (this.oppAlive(i) && (best === null || this.life[i] < this.life[best]))
+      if (
+        this.isOpponentAlive(i) &&
+        (best === null || this.life[i] < this.life[best])
+      )
         best = i;
     return best;
   }
 
-  loseLife(n: number): void {
-    this.myLife -= n;
+  loseLife(amount: number): void {
+    this.myLife -= amount;
     if (this.myLife <= 0 && !this.died) {
       this.died = true;
       this.say('we die');
     }
   }
 
-  gainLife(n: number): void {
-    this.myLife += n;
+  gainLife(amount: number): void {
+    this.myLife += amount;
   }
 
   // ================================================================ casting
-  castIS(
-    cd: CardDef,
+  castInstantOrSorcery(
+    card: CardDef,
     fromGy = false,
     base: Cost | null = null,
     mode: string | null = null,
     trig: Record<string, unknown> = {},
   ): boolean {
-    const cost = this.effCost(cd, base, fromGy);
+    const cost = this.effCost(card, base, fromGy);
     if (!this.pay(cost, true)) return false;
-    removeOrThrow(fromGy ? this.gy : this.hand, cd);
+    removeOrThrow(fromGy ? this.graveyard : this.hand, card);
     this.say(
       'cast',
-      cd,
+      card,
       fromGy ? '(from graveyard)' : '',
       mode ? `[${mode}]` : '',
     );
     this.spellsCast += 1;
-    this.onCastIS(fromGy);
-    this.castTriggers(cd, fromGy, trig);
-    if (this.podCounters(cd)) {
-      (fromGy ? this.exile : this.gy).push(cd);
+    this.onCastInstantOrSorcery(fromGy);
+    this.castTriggers(card, fromGy, trig);
+    if (this.podCounters(card)) {
+      (fromGy ? this.exile : this.graveyard).push(card);
       return true;
     }
-    this.resolve(cd, fromGy, mode);
-    (fromGy ? this.exile : this.gy).push(cd);
+    this.resolve(card, fromGy, mode);
+    (fromGy ? this.exile : this.graveyard).push(card);
     return true;
   }
 
-  onCastIS(fromGy: boolean): void {
+  onCastInstantOrSorcery(fromGy: boolean): void {
     this.isCast += 1;
-    for (const p of this.bf.slice()) {
-      const n = p.cd.name;
-      if (n === 'Archmage Emeritus' || n === 'Archmage of Runes') this.draw(1);
-      else if (n === 'Academy Wall' && !this.wallUsed) {
+    for (const permanent of this.battlefield.slice()) {
+      const cardName = permanent.card.name;
+      if (cardName === 'Archmage Emeritus' || cardName === 'Archmage of Runes')
+        this.draw(1);
+      else if (cardName === 'Academy Wall' && !this.wallUsed) {
         this.wallUsed = true;
         this.draw(1);
         this.discard(1);
-      } else if (n === 'Secrets of the Dead' && fromGy) this.draw(1);
+      } else if (cardName === 'Secrets of the Dead' && fromGy) this.draw(1);
     }
-    if (this.caseSolved && this.onBf('Case of the Ransacked Lab')) this.draw(1);
+    if (this.caseSolved && this.isOnBattlefield('Case of the Ransacked Lab'))
+      this.draw(1);
   }
 
-  castPerm(cd: CardDef, fromCommand = false): boolean {
-    let cost = this.effCost(cd);
-    if (fromCommand) cost = this.commanderCost(cd, cost);
+  castPerm(card: CardDef, fromCommand = false): boolean {
+    let cost = this.effCost(card);
+    if (fromCommand) cost = this.commanderCost(card, cost);
     if (!this.pay(cost, false)) return false;
     if (fromCommand) {
-      removeOrThrow(this.command, cd);
-      this.onCommanderCast(cd);
-    } else removeOrThrow(this.hand, cd);
+      removeOrThrow(this.command, card);
+      this.onCommanderCast(card);
+    } else removeOrThrow(this.hand, card);
     this.spellsCast += 1;
-    this.say('cast', cd);
-    if (this.podCounters(cd)) {
+    this.say('cast', card);
+    if (this.podCounters(card)) {
       // countered: a commander goes back to the command zone (its tax still counts this cast)
-      (fromCommand ? this.command : this.gy).push(cd);
+      (fromCommand ? this.command : this.graveyard).push(card);
       return true;
     }
-    this.enter(cd);
+    this.enter(card);
     return true;
   }
 
@@ -985,34 +1068,47 @@ export abstract class GameCore<S = unknown> {
    *  snarls (a Forest or Island card in hand to reveal); check lands (control a land of those types); fast lands
    *  (two or fewer other lands); slow lands (two or more other lands); battle lands and Sunken Hollow (two or
    *  more basic lands). Evaluate it before the land is on the battlefield; a land in hand doesn't count itself. */
-  entersTapped(cd: CardDef): boolean {
-    const i = (cd.land ?? cd.mdfcLand)!;
-    const e = i.etb ?? 'untapped';
-    if (e === 'tapped') return true;
-    const flag = (l: LandInfo | null, t: string) =>
-      !!(l && (l as unknown as Record<string, boolean>)[t]);
-    const lands = this.landsBf();
-    if (e === 'catacomb')
-      return !lands.some((p) => p.land && (p.land.island || p.land.swamp));
-    if (e === 'hollow')
-      return lands.filter((p) => p.land && p.land.basic).length < 2;
-    if (e.startsWith('reveal:')) {
-      const types = e.slice(7).split(',');
+  entersTapped(card: CardDef): boolean {
+    const landInfo = (card.land ?? card.mdfcLand)!;
+    const etbRule = landInfo.etb ?? 'untapped';
+    if (etbRule === 'tapped') return true;
+    const flag = (land: LandInfo | null, landType: string) =>
+      !!(land && (land as unknown as Record<string, boolean>)[landType]);
+    const lands = this.landsOnBattlefield();
+    if (etbRule === 'catacomb')
+      return !lands.some(
+        (permanent) =>
+          permanent.land && (permanent.land.island || permanent.land.swamp),
+      );
+    if (etbRule === 'hollow')
+      return (
+        lands.filter((permanent) => permanent.land && permanent.land.basic)
+          .length < 2
+      );
+    if (etbRule.startsWith('reveal:')) {
+      const types = etbRule.slice(7).split(',');
       return !this.hand.some(
-        (c) =>
-          c !== cd && c.land !== null && types.some((t) => flag(c.land, t)),
+        (otherCard) =>
+          otherCard !== card &&
+          otherCard.land !== null &&
+          types.some((landType) => flag(otherCard.land, landType)),
       );
     }
-    const cond = i.cond;
+    const cond = landInfo.cond;
     if (!cond) return false;
     if (cond.startsWith('check:')) {
       const types = cond.slice(6).split(',');
-      return !lands.some((q) => types.some((t) => flag(q.land, t)));
+      return !lands.some((permanent) =>
+        types.some((landType) => flag(permanent.land, landType)),
+      );
     }
     if (cond === 'fast') return lands.length > 2;
     if (cond === 'slow') return lands.length < 2;
     if (cond === 'basics2')
-      return lands.filter((p) => p.land && p.land.basic).length < 2;
+      return (
+        lands.filter((permanent) => permanent.land && permanent.land.basic)
+          .length < 2
+      );
     return false;
   }
 
@@ -1021,7 +1117,7 @@ export abstract class GameCore<S = unknown> {
     if (this.landPlayed) return;
     const lands = this.landsWeCouldPlay();
     if (!lands.length) return;
-    const landsOnBattlefield = this.landsBf().length;
+    const landsOnBattlefield = this.landsOnBattlefield().length;
     const needManaNow = this.needsManaThisTurn();
 
     const land = firstMax(lands, (candidate) =>
@@ -1042,15 +1138,19 @@ export abstract class GameCore<S = unknown> {
       permanent.tapped ? '(tapped)' : '',
     );
     if (landInfo.special === 'bounce') this.returnLandToHand();
-    this.bf.push(permanent);
+    this.battlefield.push(permanent);
     this.onLandEnter(permanent, false);
   }
 
   /** The lands in hand. A land-on-the-back-side card counts only when we have no real land and few lands out. */
   private landsWeCouldPlay(): CardDef[] {
-    const lands = this.hand.filter((c) => c.land !== null);
-    const mdfcLands = this.hand.filter((c) => c.mdfcLand);
-    if (!lands.length && mdfcLands.length && this.landsBf().length < 5)
+    const lands = this.hand.filter((card) => card.land !== null);
+    const mdfcLands = this.hand.filter((card) => card.mdfcLand);
+    if (
+      !lands.length &&
+      mdfcLands.length &&
+      this.landsOnBattlefield().length < 5
+    )
       return mdfcLands;
     return lands;
   }
@@ -1062,7 +1162,9 @@ export abstract class GameCore<S = unknown> {
   /** Would a land that enters untapped let us cast a spell we want this turn? (Then a tapped land is bad.) */
   private needsManaThisTurn(): boolean {
     const manaAvailable =
-      this.bf.filter((p) => !p.tapped && this.srcKind(p)).length +
+      this.battlefield.filter(
+        (permanent) => !permanent.tapped && this.manaSourceKind(permanent),
+      ).length +
       this.pool.U +
       this.pool.B +
       this.pool.C +
@@ -1071,7 +1173,7 @@ export abstract class GameCore<S = unknown> {
       if (card.land !== null) continue;
       // only spells the AI would actually cast proactively (not counters, rituals, combo sorceries)
       const [wantScore, cost] = this.landWant(card);
-      if (wantScore >= 50 && cost.mv === manaAvailable + 1) return true;
+      if (wantScore >= 50 && cost.manaValue === manaAvailable + 1) return true;
     }
     return false;
   }
@@ -1113,10 +1215,12 @@ export abstract class GameCore<S = unknown> {
 
   private colourNeededByBlueBlackDeck(): string {
     const sourcesOf = (kinds: string[]) =>
-      this.bf.filter((p) => kinds.includes(this.srcKind(p, true) ?? '')).length;
+      this.battlefield.filter((permanent) =>
+        kinds.includes(this.manaSourceKind(permanent, true) ?? ''),
+      ).length;
     const blueSources = sourcesOf(['U', 'A', 'UB', 'F']);
     const blackSources = sourcesOf(['B', 'A', 'UB', 'F']);
-    const blackNeeded = this.hand.some((c) => c.cost.b);
+    const blackNeeded = this.hand.some((card) => card.cost.black);
     return (blackSources === 0 && blackNeeded) ||
       (blueSources >= blackSources + 3 && blackNeeded)
       ? 'B'
@@ -1126,37 +1230,55 @@ export abstract class GameCore<S = unknown> {
   /** First, a colour that lets us cast a spell this turn with the new land (e.g. a turn-1 Llanowar Elves);
    *  otherwise the colour with the most pips in hand per source we already have. */
   private colourNeededByOtherDeck(): string {
-    const pipsOf: Record<string, (c: CardDef) => number> = {
-      W: (c) => c.cost.w,
-      U: (c) => c.cost.u,
-      B: (c) => c.cost.b,
-      R: (c) => c.cost.r,
-      G: (c) => c.cost.gn,
+    const pipsOf: Record<string, (card: CardDef) => number> = {
+      W: (card) => card.cost.white,
+      U: (card) => card.cost.blue,
+      B: (card) => card.cost.black,
+      R: (card) => card.cost.red,
+      G: (card) => card.cost.green,
     };
-    const makesColour = (p: Perm, colour: string) => {
-      const kind = this.srcKind(p, true) ?? '';
+    const makesColour = (permanent: Perm, colour: string) => {
+      const kind = this.manaSourceKind(permanent, true) ?? '';
       return kind === colour || kind === 'A';
     };
     const manaWithNewLand =
-      this.bf.filter((p) => !p.tapped && this.srcKind(p)).length + 1;
+      this.battlefield.filter(
+        (permanent) => !permanent.tapped && this.manaSourceKind(permanent),
+      ).length + 1;
     const castable = this.hand
-      .filter((c) => c.land === null && c.mv > 0 && c.mv <= manaWithNewLand)
-      .sort((x, y) => y.mv - x.mv || this.cardValue(y) - this.cardValue(x));
+      .filter(
+        (card) =>
+          card.land === null &&
+          card.manaValue > 0 &&
+          card.manaValue <= manaWithNewLand,
+      )
+      .sort(
+        (first, second) =>
+          second.manaValue - first.manaValue ||
+          this.cardValue(second) - this.cardValue(first),
+      );
     for (const spell of castable) {
-      const coloursNeeded = this.colors.filter((col) => pipsOf[col](spell) > 0);
+      const coloursNeeded = this.colors.filter(
+        (colour) => pipsOf[colour](spell) > 0,
+      );
       const missing = coloursNeeded.filter(
-        (col) => !this.bf.some((p) => makesColour(p, col)),
+        (colour) =>
+          !this.battlefield.some((permanent) => makesColour(permanent, colour)),
       );
       if (missing.length === 1) return missing[0];
     }
     let bestColour = this.colors[0];
     let bestPipsPerSource = -1;
     for (const colour of this.colors) {
-      const pips = this.hand.reduce((sum, c) => sum + pipsOf[colour](c), 0);
-      const sources = this.bf.filter((p) => {
-        const kind = this.srcKind(p, true) ?? '';
+      const pips = this.hand.reduce(
+        (sum, card) => sum + pipsOf[colour](card),
+        0,
+      );
+      const sources = this.battlefield.filter((permanent) => {
+        const kind = this.manaSourceKind(permanent, true) ?? '';
         return (
-          makesColour(p, colour) || (kind.length === 2 && kind.includes(colour))
+          makesColour(permanent, colour) ||
+          (kind.length === 2 && kind.includes(colour))
         );
       }).length;
       const pipsPerSource = pips / (sources + 1);
@@ -1172,15 +1294,15 @@ export abstract class GameCore<S = unknown> {
   private crackEvolvingWilds(wilds: CardDef, wildsInfo: LandInfo): void {
     const colour = this.colourNeededFromNewLand();
     const basic =
-      this.library.find((c) => c.name === BASIC_OF[colour]) ??
-      this.library.find((c) => c.land && c.land.basic) ??
+      this.library.find((card) => card.name === BASIC_OF[colour]) ??
+      this.library.find((card) => card.land && card.land.basic) ??
       null;
-    this.gy.push(wilds);
+    this.graveyard.push(wilds);
     if (basic) {
       removeOrThrow(this.library, basic);
       this.shuffle();
       const basicPermanent = new Perm(basic, basic.land, true);
-      this.bf.push(basicPermanent);
+      this.battlefield.push(basicPermanent);
       this.onLandEnter(new Perm(wilds, wildsInfo), true);
       this.onLandEnter(basicPermanent, false);
     }
@@ -1190,99 +1312,112 @@ export abstract class GameCore<S = unknown> {
   /** A land that returns another land to hand (a bounce land): returns the best one, preferring a nonbasic and a tapped
    *  one. An untapped one is tapped for mana first, so the mana isn't lost. */
   private returnLandToHand(): void {
-    const others = this.bf.filter((q) => q.land !== null);
+    const others = this.battlefield.filter(
+      (permanent) => permanent.land !== null,
+    );
     if (!others.length) return;
     others.sort(
-      (a, b) => +!a.land!.basic - +!b.land!.basic || +!a.tapped - +!b.tapped,
+      (first, second) =>
+        +!first.land!.basic - +!second.land!.basic ||
+        +!first.tapped - +!second.tapped,
     );
     const returned = others[0];
-    if (!returned.tapped && this.srcKind(returned)) this.tap(returned, 'N');
-    removeOrThrow(this.bf, returned);
-    this.hand.push(returned.cd);
+    if (!returned.tapped && this.manaSourceKind(returned))
+      this.tap(returned, 'N');
+    removeOrThrow(this.battlefield, returned);
+    this.hand.push(returned.card);
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */
-  onLandEnter(_p: Perm, _gone: boolean): void {}
+  onLandEnter(permanent: Perm, _gone: boolean): void {}
 
   // ================================================================ card actions
-  flashback(cd: CardDef): boolean {
-    if (!this.pay(this.effCost(cd, new Cost(1, 1), true), true)) return false;
-    removeOrThrow(this.gy, cd);
+  flashback(card: CardDef): boolean {
+    if (!this.pay(this.effCost(card, new Cost(1, 1), true), true)) return false;
+    removeOrThrow(this.graveyard, card);
     this.myLife -= 3;
-    this.say('flashback', cd);
+    this.say('flashback', card);
     this.spellsCast += 1;
-    this.onCastIS(true);
-    this.resolve(cd, true);
-    this.exile.push(cd);
+    this.onCastInstantOrSorcery(true);
+    this.resolve(card, true);
+    this.exile.push(card);
     return true;
   }
 
-  wishclaw(cd: CardDef): boolean {
-    if (!this.pay(this.effCost(cd).plus(new Cost(1)), false)) return false;
-    removeOrThrow(this.hand, cd);
+  wishclaw(card: CardDef): boolean {
+    if (!this.pay(this.effCost(card).plus(new Cost(1)), false)) return false;
+    removeOrThrow(this.hand, card);
     this.say('Wishclaw Talisman (cast + activate)');
     this.doTutor(() => true, false);
     return true;
   }
 
-  transmute(cd: CardDef): boolean {
+  transmute(card: CardDef): boolean {
     if (!this.pay(new Cost(1, 2), false)) return false;
-    removeOrThrow(this.hand, cd);
-    this.gy.push(cd);
-    this.say('transmute', cd.name);
-    this.doTutor((c) => c.mv === cd.mv && c.land === null, false);
+    removeOrThrow(this.hand, card);
+    this.graveyard.push(card);
+    this.say('transmute', card.name);
+    this.doTutor(
+      (otherCard) =>
+        otherCard.manaValue === card.manaValue && otherCard.land === null,
+      false,
+    );
     return true;
   }
 
-  cycle(cd: CardDef): boolean {
+  cycle(card: CardDef): boolean {
     if (!this.pay(new Cost(2))) return false;
-    removeOrThrow(this.hand, cd);
-    this.gy.push(cd);
-    this.say('cycle', cd);
+    removeOrThrow(this.hand, card);
+    this.graveyard.push(card);
+    this.say('cycle', card);
     this.draw(1);
     return true;
   }
 
   // ================================================================ choosing what to do
   /** Use a ritual only if it lets us cast something good we otherwise can't. */
-  ritualCandidates(cands: Cand[]): Cand[] {
+  ritualCandidates(candidates: Cand[]): Cand[] {
     const out: Cand[] = [];
     const bestAffordable = () =>
       Math.max(
         0,
-        ...cands.filter((c) => this.canPay(c.cost, c.isIS)).map((c) => c.score),
+        ...candidates
+          .filter((candidate) =>
+            this.canPay(candidate.cost, candidate.isInstantOrSorcery),
+          )
+          .map((candidate) => candidate.score),
       );
     let affordableBest: number | null = null; // (worked out only if there is a ritual in hand)
-    for (const cd of this.hand) {
-      const n = cd.name;
+    for (const card of this.hand) {
+      const cardName = card.name;
       if (
-        n !== 'Dark Ritual' &&
-        n !== 'High Tide' &&
-        n !== 'Cabal Ritual' &&
-        n !== 'Drain Power' &&
-        n !== 'Energy Tap'
+        cardName !== 'Dark Ritual' &&
+        cardName !== 'High Tide' &&
+        cardName !== 'Cabal Ritual' &&
+        cardName !== 'Drain Power' &&
+        cardName !== 'Energy Tap'
       )
         continue;
       if (affordableBest === null) affordableBest = bestAffordable();
-      const s = this.snap();
-      if (!this.pay(this.effCost(cd), true)) {
-        this.restore(s);
+      const snapshot = this.takeSnapshot();
+      if (!this.pay(this.effCost(card), true)) {
+        this.restore(snapshot);
         continue;
       }
-      if (n === 'Dark Ritual') this.pool.B += 3;
-      else if (n === 'High Tide') this.ht += 1;
-      else if (n === 'Cabal Ritual') this.pool.B += this.cabalMana();
-      else if (n === 'Drain Power') this.pool.C += this.drainPowerMana();
-      else this.pool.C += this.energyTapTarget()?.cd.mv ?? 0;
+      if (cardName === 'Dark Ritual') this.pool.B += 3;
+      else if (cardName === 'High Tide') this.highTidesThisTurn += 1;
+      else if (cardName === 'Cabal Ritual') this.pool.B += this.cabalMana();
+      else if (cardName === 'Drain Power') this.pool.C += this.drainPowerMana();
+      else this.pool.C += this.energyTapTarget()?.card.manaValue ?? 0;
       const gain = bestAffordable();
-      if (n === 'High Tide') this.ht -= 1;
-      this.restore(s);
+      if (cardName === 'High Tide') this.highTidesThisTurn -= 1;
+      this.restore(snapshot);
       if (gain >= 60 && gain > affordableBest!)
         out.push({
           score: gain - 1,
-          cost: this.effCost(cd),
-          isIS: true,
-          act: () => this.castRitual(cd),
+          cost: this.effCost(card),
+          isInstantOrSorcery: true,
+          action: () => this.castRitual(card),
         });
     }
     return out;
@@ -1290,72 +1425,79 @@ export abstract class GameCore<S = unknown> {
 
   /** Cabal Ritual: {B}{B}{B}, or five with threshold (seven or more cards in the graveyard). */
   cabalMana(): number {
-    return this.gy.length >= 7 ? 5 : 3;
+    return this.graveyard.length >= 7 ? 5 : 3;
   }
 
-  /** Drain Power: a goldfish opponent has about one land per turn, and part of them (cfg.opp_lands_untapped,
+  /** Drain Power: a goldfish opponent has about one land per turn, and part of them (config.opp_lands_untapped,
    *  rounded down) is still untapped during our turn. */
   drainPowerMana(): number {
     return Math.floor(
       this.turn *
-        ((this.cfg.opp_lands_per_turn as number) ?? 1) *
-        ((this.cfg.opp_lands_untapped as number) ?? 1),
+        ((this.config.opp_lands_per_turn as number) ?? 1) *
+        ((this.config.opp_lands_untapped as number) ?? 1),
     );
   }
 
   /** Energy Tap: the untapped creature with the highest mana value that isn't a mana source and isn't about to
    *  attack (a deck can refine this). */
   energyTapTarget(): Perm | null {
-    const cs = this.bf.filter(
-      (p) =>
-        p.cd.isCreature &&
-        !p.tapped &&
-        !this.srcKind(p, true) &&
-        this.canTapForEnergy(p),
+    const permanents = this.battlefield.filter(
+      (permanent) =>
+        permanent.card.isCreature &&
+        !permanent.tapped &&
+        !this.manaSourceKind(permanent, true) &&
+        this.canTapForEnergy(permanent),
     );
-    return cs.length ? firstMax(cs, (p) => p.cd.mv) : null;
+    return permanents.length
+      ? firstMax(permanents, (permanent) => permanent.card.manaValue)
+      : null;
   }
 
-  canTapForEnergy(_p: Perm): boolean {
+  canTapForEnergy(permanent: Perm): boolean {
     return true;
   }
 
   /** How a ritual from ritualCandidates is cast (a deck may add its cast triggers). */
-  castRitual(cd: CardDef): boolean {
-    return this.castIS(cd);
+  castRitual(card: CardDef): boolean {
+    return this.castInstantOrSorcery(card);
   }
 
   /** If casting a mana rock first still leaves enough (with the rock's own mana) for the best play,
    *  move the rock to the front: e.g. Waterskin, tap it, then Scion with the rest. */
-  rockFirst(cands: Cand[]): void {
-    const top = cands.find((c) => c.score > 0 && this.canPay(c.cost, c.isIS));
+  rockFirst(candidates: Cand[]): void {
+    const top = candidates.find(
+      (candidate) =>
+        candidate.score > 0 &&
+        this.canPay(candidate.cost, candidate.isInstantOrSorcery),
+    );
     if (!top) return;
-    for (let i = 0; i < cands.length; i++) {
-      const c = cands[i];
-      if (c.score < 50 || !c.rock || c === top) continue;
-      const s = this.snap();
-      let ok = false;
-      if (this.pay(c.cost, false)) {
-        const p = new Perm(c.rock);
-        this.bf.push(p);
-        ok = this.canPay(top.cost, top.isIS);
-        this.bf.pop();
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      if (candidate.score < 50 || !candidate.rock || candidate === top)
+        continue;
+      const snapshot = this.takeSnapshot();
+      let topSpellPayable = false;
+      if (this.pay(candidate.cost, false)) {
+        const permanent = new Perm(candidate.rock);
+        this.battlefield.push(permanent);
+        topSpellPayable = this.canPay(top.cost, top.isInstantOrSorcery);
+        this.battlefield.pop();
       }
-      this.restore(s);
-      if (ok) {
-        cands.splice(i, 1);
-        cands.unshift(c);
+      this.restore(snapshot);
+      if (topSpellPayable) {
+        candidates.splice(i, 1);
+        candidates.unshift(candidate);
         return;
       }
     }
   }
 
   orderedCands(main2: boolean): Cand[] {
-    const cands = this.candidates(main2);
-    cands.push(...this.ritualCandidates(cands));
-    sortDesc(cands, (c) => c.score);
-    this.rockFirst(cands);
-    return cands;
+    const candidates = this.candidates(main2);
+    candidates.push(...this.ritualCandidates(candidates));
+    sortDesc(candidates, (candidate) => candidate.score);
+    this.rockFirst(candidates);
+    return candidates;
   }
 
   // ---------------------------------------------------------------- turn planner
@@ -1363,32 +1505,32 @@ export abstract class GameCore<S = unknown> {
    *  turn greedily, and score where it ends up. Returns the best index. */
   plan(options: number[], main2: boolean): number {
     let best = options[0];
-    let bv: number | null = null;
-    const nRoll = (this.cfg.planner_rollouts as number) ?? 2;
-    for (const idx of options) {
+    let bestValue: number | null = null;
+    const nRoll = (this.config.planner_rollouts as number) ?? 2;
+    for (const index of options) {
       let tot: number | null = 0;
-      for (let r = 0; r < nRoll; r++) {
-        const cl = this.clone();
-        cl.verbose = false;
-        cl.inRollout = true;
-        cl.mode = 'any';
-        cl.killNow = false;
-        cl.cfg = {
-          ...this.cfg,
-          search_budget: (this.cfg.planner_budget as number) ?? 600,
+      for (let rolloutIndex = 0; rolloutIndex < nRoll; rolloutIndex++) {
+        const rolloutCopy = this.clone();
+        rolloutCopy.verbose = false;
+        rolloutCopy.inRollout = true;
+        rolloutCopy.mode = 'any';
+        rolloutCopy.killNow = false;
+        rolloutCopy.config = {
+          ...this.config,
+          search_budget: (this.config.planner_budget as number) ?? 600,
         };
-        cl.rng = new Rng(Math.floor(this.rng.random() * 4294967296));
-        cl.rng.shuffle(cl.library);
-        if (cl.orderedCands(main2)[idx].act() === false) {
+        rolloutCopy.rng = new Rng(Math.floor(this.rng.random() * 4294967296));
+        rolloutCopy.rng.shuffle(rolloutCopy.library);
+        if (rolloutCopy.orderedCands(main2)[index].action() === false) {
           tot = null;
           break;
         }
-        tot += cl.rolloutValue(main2);
+        tot += rolloutCopy.rolloutValue(main2);
       }
       if (tot === null) continue;
-      if (bv === null || tot > bv) {
-        best = idx;
-        bv = tot;
+      if (bestValue === null || tot > bestValue) {
+        best = index;
+        bestValue = tot;
       }
     }
     return best;
@@ -1400,21 +1542,22 @@ export abstract class GameCore<S = unknown> {
    *  results from one game). */
   rolloutValue(main2: boolean): number {
     const killScore = (): number | null => {
-      if (this.prot !== null) return 10000;
-      if (this.unprot !== null) return 9000;
-      if (this.oppsBeaten()) return 10000; // e.g. Mindskinner combat kill
+      if (this.protectedKillTurn !== null) return 10000;
+      if (this.unprotectedKillTurn !== null) return 9000;
+      if (this.areOpponentsBeaten()) return 10000; // e.g. Mindskinner combat kill
       return null;
     };
     let won = this.develop(main2);
     if (!won && !main2) {
       this.combat();
-      if (!this.oppsBeaten()) this.develop(true);
+      if (!this.areOpponentsBeaten()) this.develop(true);
     }
-    let k = killScore();
-    if (k !== null) return k;
+    let killResult = killScore();
+    if (killResult !== null) return killResult;
     this.endTurn();
-    const v0 = this.positionValue();
-    if (this.turn >= (this.cfg.max_turn as number) + 1) return v0;
+    const valueAtTurnEnd = this.positionValue();
+    if (this.turn >= (this.config.max_turn as number) + 1)
+      return valueAtTurnEnd;
     this.startTurn();
     this.upkeep();
     this.draw(1);
@@ -1422,44 +1565,46 @@ export abstract class GameCore<S = unknown> {
     won = this.develop();
     if (!won) {
       this.combat();
-      if (!this.oppsBeaten()) this.develop(true);
+      if (!this.areOpponentsBeaten()) this.develop(true);
     }
-    k = killScore();
-    if (k !== null) return k / 2 + 0.2 * v0;
-    return v0 + 0.3 * this.positionValue();
+    killResult = killScore();
+    if (killResult !== null) return killResult / 2 + 0.2 * valueAtTurnEnd;
+    return valueAtTurnEnd + 0.3 * this.positionValue();
   }
 
   develop(main2 = false): boolean {
     for (let step = 0; step < 40; step++) {
       if (this.checkKill() === 2) return true;
-      const cands = this.orderedCands(main2);
+      const candidates = this.orderedCands(main2);
       const afford: number[] = [];
       const reserve = this.podReserve();
-      cands.forEach((c, i) => {
+      candidates.forEach((candidate, i) => {
         if (
-          c.score > 0 &&
-          this.canPay(c.cost, c.isIS) &&
-          (reserve === 0 || this.openMana() - c.cost.mv >= reserve)
+          candidate.score > 0 &&
+          this.canPay(candidate.cost, candidate.isInstantOrSorcery) &&
+          (reserve === 0 ||
+            this.openMana() - candidate.cost.manaValue >= reserve)
         )
           afford.push(i);
       });
       if (!afford.length) return false;
       if (this.mode === 'protected' && this.killNow) {
         let done = false;
-        for (const idx of afford) {
+        for (const index of afford) {
           // try the action on a copy; keep it only if the kill survives
-          const cl = this.clone();
-          if (cl.orderedCands(main2)[idx].act() === false) continue;
+          const rolloutCopy = this.clone();
+          if (rolloutCopy.orderedCands(main2)[index].action() === false)
+            continue;
           if (
             this.killSearch().search(
-              cl.light(),
-              this.cfg.search_budget as number,
+              rolloutCopy.buildKillSearchState(),
+              this.config.search_budget as number,
             ) === 0
           )
             continue;
           const log = this.log;
-          Object.assign(this, cl);
-          this.log = [...log, ...cl.log.slice(log.length)];
+          Object.assign(this, rolloutCopy);
+          this.log = [...log, ...rolloutCopy.log.slice(log.length)];
           done = true;
           break;
         }
@@ -1468,18 +1613,21 @@ export abstract class GameCore<S = unknown> {
       }
       let order = afford;
       if (
-        this.cfg.planner &&
+        this.config.planner &&
         !this.inRollout &&
         afford.length > 1 &&
         this.turn >= 2
       ) {
-        const opts = afford.slice(0, (this.cfg.planner_width as number) ?? 4);
-        const pick = this.plan(opts, main2);
+        const options = afford.slice(
+          0,
+          (this.config.planner_width as number) ?? 4,
+        );
+        const pick = this.plan(options, main2);
         order = [pick, ...afford.filter((i) => i !== pick)];
       }
       let done = false;
-      for (const idx of order) {
-        if (cands[idx].act() !== false) {
+      for (const index of order) {
+        if (candidates[index].action() !== false) {
           done = true;
           break;
         }
@@ -1509,9 +1657,11 @@ export abstract class GameCore<S = unknown> {
         keepsHand(rule, attempt, this.hand)
       ) {
         for (let i = 0; i < 7 - size; i++) {
-          const c = firstMin(this.hand, (x) => this.cardValue(x));
-          removeOrThrow(this.hand, c);
-          this.library.push(c);
+          const card = firstMin(this.hand, (otherCard) =>
+            this.cardValue(otherCard),
+          );
+          removeOrThrow(this.hand, card);
+          this.library.push(card);
         }
         return;
       }
@@ -1521,12 +1671,12 @@ export abstract class GameCore<S = unknown> {
   startTurn(): void {
     if (this.turn > 0) this.spentEnd[this.turn] = this.spent;
     this.turn += 1;
-    for (const p of this.bf) {
-      p.tapped = false;
-      p.sick = false;
+    for (const permanent of this.battlefield) {
+      permanent.tapped = false;
+      permanent.sick = false;
     }
     this.pool = emptyPool();
-    this.ht = this.muck = 0;
+    this.highTidesThisTurn = this.muck = 0;
     this.energy = false;
     this.spellsCast = this.isCast = 0;
     this.firstDrawDone = false;
@@ -1535,16 +1685,16 @@ export abstract class GameCore<S = unknown> {
     this.wallUsed = false;
     this.lastKey = null;
     if (this.turn > 1)
-      this.lib = this.lib.map((x, i) =>
+      this.opponentLibrarySizes = this.opponentLibrarySizes.map((x, i) =>
         this.life[i] > 0 ? Math.max(0, x - 1) : x,
       );
-    for (const p of this.bf) {
+    for (const otherPermanent of this.battlefield) {
       if (
-        p.cd.name === 'Curious Homunculus' &&
-        !p.transformed &&
-        this.gy.filter((c) => c.isIS).length >= 3
+        otherPermanent.card.name === 'Curious Homunculus' &&
+        !otherPermanent.transformed &&
+        this.graveyard.filter((card) => card.isInstantOrSorcery).length >= 3
       ) {
-        p.transformed = true;
+        otherPermanent.transformed = true;
         this.say('Curious Homunculus transforms');
       }
     }
@@ -1552,16 +1702,16 @@ export abstract class GameCore<S = unknown> {
 
   endTurn(): void {
     this.endStep();
-    if (this.isCast >= 4 && this.onBf('Case of the Ransacked Lab'))
+    if (this.isCast >= 4 && this.isOnBattlefield('Case of the Ransacked Lab'))
       this.caseSolved = true;
-    if (this.hand.length > 7 && !this.onBf('Reliquary Tower'))
+    if (this.hand.length > 7 && !this.isOnBattlefield('Reliquary Tower'))
       this.discard(this.hand.length - 7);
   }
 
   /** Before the first turn: the opening hand and mulligans. */
   setup(): void {
     this.energy = false;
-    this.ht = this.muck = 0;
+    this.highTidesThisTurn = this.muck = 0;
     this.spellsCast = 0;
     this.mulligan();
   }
@@ -1574,24 +1724,28 @@ export abstract class GameCore<S = unknown> {
     this.playLand();
     if (this.developWin()) return true;
     this.combat();
-    if (this.oppsBeaten()) {
-      if (this.unprot === null) this.unprot = this.turn;
-      this.prot = this.turn;
+    if (this.areOpponentsBeaten()) {
+      if (this.unprotectedKillTurn === null)
+        this.unprotectedKillTurn = this.turn;
+      this.protectedKillTurn = this.turn;
       this.say('Opponents beaten in combat');
       return true;
     }
     this.lastKey = null;
     if (this.developWin(true)) return true;
-    if (this.inArena() && this.cfg.pod_defence !== false) this.podDefence();
+    if (this.inArena() && this.config.pod_defence !== false) this.podDefence();
     this.endTurn();
     if (this.turn === 4) {
       // for the card ranking: every card seen by the end of turn 4
       this.seen4 = new Set(
-        [...this.hand, ...this.gy, ...this.exile].map((c) => c.name),
+        [...this.hand, ...this.graveyard, ...this.exile].map(
+          (card) => card.name,
+        ),
       );
-      for (const p of this.bf) this.seen4.add(p.cd.name);
+      for (const permanent of this.battlefield)
+        this.seen4.add(permanent.card.name);
     }
-    this.say('end: hand', fmtList(this.hand.map((c) => c.name)));
+    this.say('end: hand', fmtList(this.hand.map((card) => card.name)));
     return false;
   }
 
@@ -1600,7 +1754,7 @@ export abstract class GameCore<S = unknown> {
     for (let tries = 0; tries < 4; tries++) {
       if (!this.develop(main2)) return false;
       if (this.died || !this.podAnswersWin()) return true;
-      this.unprot = this.prot = null;
+      this.unprotectedKillTurn = this.protectedKillTurn = null;
       this.killNow = false;
       this.lastKey = null;
     }
@@ -1610,18 +1764,22 @@ export abstract class GameCore<S = unknown> {
   /** Play the game. Returns [first turn with any kill, first turn with a kill + counter backup]. */
   play(): [number | null, number | null] {
     this.setup();
-    const maxt = this.cfg.max_turn as number;
+    const maxt = this.config.max_turn as number;
     while (this.turn < maxt) if (this.takeTurn()) break;
-    return [this.unprot, this.prot];
+    return [this.unprotectedKillTurn, this.protectedKillTurn];
   }
 
   // ================================================================ deck hooks
   /** The snapshot of this game that the deck's kill search works on. */
-  abstract light(nextTurn?: boolean, add?: string[], remove?: string[]): S;
+  abstract buildKillSearchState(
+    nextTurn?: boolean,
+    add?: string[],
+    remove?: string[],
+  ): S;
   /** A de-duplication key of a snapshot (the main kill check skips a search if nothing changed). */
-  abstract lightKey(st: S): string;
+  abstract killSearchStateKey(state: S): string;
   /** The snapshot's mana pool (for the verbose log). */
-  lightPool(_st: S): Record<string, number> {
+  killSearchStatePool(_st: S): Record<string, number> {
     return {};
   }
   /** Cheap pre-filter: is a kill conceivable at all? */
@@ -1633,23 +1791,25 @@ export abstract class GameCore<S = unknown> {
   abstract candidates(main2: boolean): Cand[];
 
   /** How much we want this card in hand (used for discards, scry, tutors, mulligans). */
-  cardValue(cd: CardDef): number {
-    return cd.land !== null ? 60 : 30;
+  cardValue(card: CardDef): number {
+    return card.land !== null ? 60 : 30;
   }
-  discardValue(cd: CardDef): number {
-    return this.cardValue(cd);
+  discardValue(card: CardDef): number {
+    return this.cardValue(card);
   }
-  devValueIS(_cd: CardDef, _fromGy = false): number {
+  instantOrSorceryDevValue(_cd: CardDef, _fromGy = false): number {
     return 0;
   }
   tutorTarget(
-    allowed: (c: CardDef) => boolean,
+    allowed: (card: CardDef) => boolean,
     _toTop: boolean,
     _spent: string | null = null,
     _rampOk = false,
   ): CardDef | null {
-    const cands = this.library.filter(allowed);
-    return cands.length ? firstMax(cands, (c) => this.cardValue(c)) : null;
+    const candidates = this.library.filter(allowed);
+    return candidates.length
+      ? firstMax(candidates, (card) => this.cardValue(card))
+      : null;
   }
   /** Rough value of a position when no kill is in sight (higher is better). */
   positionValue(): number {
@@ -1658,14 +1818,14 @@ export abstract class GameCore<S = unknown> {
   /** Attack (the default goldfish deals no combat damage). */
   combat(): void {}
   /** Something entered the battlefield (ETB triggers, "whenever a creature enters"). */
-  onEnter(_p: Perm, _from: Zone): void {}
+  onEnter(permanent: Perm, _from: Zone): void {}
   /** A creature died (death triggers). It's already off the battlefield (and in the graveyard if a card). */
-  onDies(_p: Perm): void {}
+  onDies(permanent: Perm): void {}
   /** Extra power / toughness from static effects (e.g. +1/+1 per creature card in the graveyard). */
-  powerBonus(_p: Perm): number {
+  powerBonus(permanent: Perm): number {
     return 0;
   }
-  toughnessBonus(_p: Perm): number {
+  toughnessBonus(permanent: Perm): number {
     return 0;
   }
   /** At the beginning of our end step (before cleanup). */
@@ -1675,12 +1835,12 @@ export abstract class GameCore<S = unknown> {
 
   // ================================================================ goldfish combat for creature decks
   /** Can this creature attack now? (A deck may keep some home, e.g. Spore Frog.) */
-  canAttack(p: Perm): boolean {
+  canAttack(permanent: Perm): boolean {
     return (
-      p.cd.isCreature &&
-      !p.tapped &&
-      (!p.sick || p.cd.haste) &&
-      this.power(p) > 0
+      permanent.card.isCreature &&
+      !permanent.tapped &&
+      (!permanent.sick || permanent.card.haste) &&
+      this.power(permanent) > 0
     );
   }
 
@@ -1693,7 +1853,7 @@ export abstract class GameCore<S = unknown> {
   winsWith(damage: number): boolean {
     let left = damage;
     for (let i = 0; i < this.life.length; i++)
-      if (this.oppAlive(i)) left -= this.life[i];
+      if (this.isOpponentAlive(i)) left -= this.life[i];
     return left >= 0;
   }
 
@@ -1709,70 +1869,82 @@ export abstract class GameCore<S = unknown> {
    * - crackback: we take back what we dealt, minus a third for each untapped creature kept home
    *   (none if a fog creature such as Spore Frog stays home; it is sacrificed before our next turn);
    * - if attacking with everything wins, do it; otherwise the biggest attack that keeps us above
-   *   cfg.combat_safety life (default 10).
+   *   config.combat_safety life (default 10).
    * Damage goes to the opponent closest to dead first, the rest to the next one.
    */
   creatureCombat(): void {
     if (this.attacked) return;
-    const cands = this.creatures().filter((p) => this.canAttack(p));
-    if (!cands.length) return;
+    const candidates = this.creatures().filter((permanent) =>
+      this.canAttack(permanent),
+    );
+    if (!candidates.length) return;
     if (this.inArena()) {
-      this.arenaCombat(cands);
+      this.arenaCombat(candidates);
       return;
     }
     const fog = this.fogBlocker();
-    const pool = fog ? cands.filter((p) => p !== fog) : cands;
-    pool.sort((a, b) => this.power(b) - this.power(a));
+    const pool = fog
+      ? candidates.filter((permanent) => permanent !== fog)
+      : candidates;
+    pool.sort((first, second) => this.power(second) - this.power(first));
     const untappedOthers = (attacking: Set<Perm>) =>
-      this.creatures().filter((p) => !p.tapped && !attacking.has(p)).length;
-    const connecting = (att: Perm[]) => {
-      const fly = att.filter((p) => this.evasive(p)),
-        ground = att.filter((p) => !this.evasive(p));
+      this.creatures().filter(
+        (permanent) => !permanent.tapped && !attacking.has(permanent),
+      ).length;
+    const connecting = (attackers: Perm[]) => {
+      const fly = attackers.filter((permanent) => this.evasive(permanent)),
+        ground = attackers.filter((permanent) => !this.evasive(permanent));
       const blocked = Math.floor(ground.length / 2);
       // opponents block the biggest ground attackers
-      const g = ground
+      const permanents = ground
         .slice()
-        .sort((a, b) => this.power(b) - this.power(a))
+        .sort((first, second) => this.power(second) - this.power(first))
         .slice(blocked);
-      return [...fly, ...g];
+      return [...fly, ...permanents];
     };
-    const deal = (att: Perm[]) =>
-      connecting(att).reduce((s, p) => s + this.power(p), 0);
-    const crackback = (att: Perm[], dmg: number) => {
+    const deal = (attackers: Perm[]) =>
+      connecting(attackers).reduce(
+        (total, permanent) => total + this.power(permanent),
+        0,
+      );
+    const crackback = (attackers: Perm[], damage: number) => {
       if (fog) return 0;
-      const home = untappedOthers(new Set(att));
-      return Math.round(dmg * Math.max(0, 1 - home / 3));
+      const home = untappedOthers(new Set(attackers));
+      return Math.round(damage * Math.max(0, 1 - home / 3));
     };
-    const safety = (this.cfg.combat_safety as number) ?? 10;
+    const safety = (this.config.combat_safety as number) ?? 10;
     let best: Perm[] = [],
       bestDmg = 0;
-    for (let k = 1; k <= pool.length; k++) {
-      const att = pool.slice(0, k);
-      const dmg = deal(att);
-      if (this.winsWith(dmg)) {
-        best = att;
-        bestDmg = dmg;
+    for (let attackerCount = 1; attackerCount <= pool.length; attackerCount++) {
+      const attackers = pool.slice(0, attackerCount);
+      const damage = deal(attackers);
+      if (this.winsWith(damage)) {
+        best = attackers;
+        bestDmg = damage;
         break;
       } // a winning attack: always take it
-      if (this.myLife - crackback(att, dmg) > safety && dmg > bestDmg) {
-        best = att;
-        bestDmg = dmg;
+      if (
+        this.myLife - crackback(attackers, damage) > safety &&
+        damage > bestDmg
+      ) {
+        best = attackers;
+        bestDmg = damage;
       }
     }
     if (!best.length) return;
     this.attacked = true;
-    for (const p of best) p.tapped = true;
-    const all = [...best, ...this.onAttack(best)].filter((p) =>
-      this.bf.includes(p),
+    for (const otherPermanent of best) otherPermanent.tapped = true;
+    const all = [...best, ...this.onAttack(best)].filter((permanent) =>
+      this.battlefield.includes(permanent),
     );
-    let dmg = deal(all);
-    const total = dmg;
-    while (dmg > 0) {
-      const t = this.focusOpp();
-      if (t === null) break;
-      const hit = Math.min(dmg, this.life[t]);
-      this.hurtOpp(t, hit);
-      dmg -= hit;
+    let damage = deal(all);
+    const total = damage;
+    while (damage > 0) {
+      const targetIndex = this.chooseTargetOpponent();
+      if (targetIndex === null) break;
+      const hit = Math.min(damage, this.life[targetIndex]);
+      this.damageOpponent(targetIndex, hit);
+      damage -= hit;
     }
     this.onCombatDamage(connecting(all), total);
     this.pendingCrackback += crackback(best, total);
@@ -1780,14 +1952,14 @@ export abstract class GameCore<S = unknown> {
     this.say(
       `attack with ${all.length} creature(s): ${total} damage, opp life [${this.life.join(', ')}]` +
         (fog
-          ? ` (${fog.cd.name} stays home)`
+          ? ` (${fog.card.name} stays home)`
           : `, crackback ${crackback(best, total)}`),
     );
   }
 
   /** Can this attacker not be blocked (flying, shadow, "can't be blocked")? Decks override it. */
-  evasive(p: Perm): boolean {
-    return p.cd.flying;
+  evasive(permanent: Perm): boolean {
+    return permanent.card.flying;
   }
   /** After combat damage: the attackers that connected and the total damage dealt. */
   onCombatDamage(_connected: Perm[], _damage: number): void {}
@@ -1819,8 +1991,8 @@ export abstract class GameCore<S = unknown> {
   /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage. */
   arenaCombat(
     _pool: Perm[],
-    _power?: (p: Perm) => number,
-    _toughness?: (p: Perm) => number,
+    _power?: (permanent: Perm) => number,
+    _toughness?: (permanent: Perm) => number,
   ): void {}
   /** The steps of the kill the search found (Gale), for winAttempt(). */
   lastKillLine: string[] = [];
@@ -1828,9 +2000,10 @@ export abstract class GameCore<S = unknown> {
   podWaits = 0;
   /** Untapped mana sources. */
   openMana(): number {
-    let n = 0;
-    for (const p of this.bf) if (!p.tapped && this.srcKind(p)) n++;
-    return n;
+    let count = 0;
+    for (const permanent of this.battlefield)
+      if (!permanent.tapped && this.manaSourceKind(permanent)) count++;
+    return count;
   }
 
   /** Combat damage we'll take on the opponents' turns (applied at our next upkeep). */
@@ -1849,17 +2022,17 @@ export abstract class GameCore<S = unknown> {
     _trig: Record<string, unknown>,
   ): void {}
   /** Commander tax: {2} more for each earlier cast from the command zone. */
-  commanderCost(cd: CardDef, cost: Cost): Cost {
-    const n = this.commandCasts.filter((x) => x === cd.name).length;
-    return n ? cost.withGeneric(cost.g + 2 * n) : cost;
+  commanderCost(card: CardDef, cost: Cost): Cost {
+    const castCount = this.commandCasts.filter((x) => x === card.name).length;
+    return castCount ? cost.withGeneric(cost.generic + 2 * castCount) : cost;
   }
-  onCommanderCast(cd: CardDef): void {
-    this.commandCasts.push(cd.name);
+  onCommanderCast(card: CardDef): void {
+    this.commandCasts.push(card.name);
   }
   commandCasts: string[] = [];
   /** [how much we want to cast c, its cost], to decide if a tapped land costs us mana now. */
-  landWant(c: CardDef): [number, Cost] {
-    return [30, this.effCost(c)];
+  landWant(card: CardDef): [number, Cost] {
+    return [30, this.effCost(card)];
   }
   landBias(_cd: CardDef): number {
     return 0;
@@ -1878,6 +2051,6 @@ export abstract class GameCore<S = unknown> {
   logToken(_name: string): CardDef | null {
     return null;
   }
-  lightAddMana(_st: S, _n: number): void {}
-  lightAddLand(_st: S): void {}
+  addManaToKillSearchState(_st: S, _n: number): void {}
+  addLandToKillSearchState(_st: S): void {}
 }

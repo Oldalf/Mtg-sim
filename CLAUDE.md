@@ -22,7 +22,7 @@ A goldfish simulator for Commander decks, written in TypeScript and run on Node.
 
 Readability and ease of use come first. Keep it simple (KISS).
 
-- Rule 0: names carry the meaning, so the code almost documents itself. Every variable, parameter, function, method and type gets a descriptive name that says what it is or does (`manaAvailable`, `chooseLandToPlay`, `creatureToSacrifice`). No one- or two-letter names (`p`, `c`, `xs`, `bk`, `n0`) except a plain loop index (`i`) or `x`/`y` for coordinates. No cryptic abbreviations or card nicknames (`eff`, `cnt`, `krang`, `light`). Name functions with a verb, booleans like questions (`isTapped`, `hasHaste`), and give the same thing the same name everywhere. If a name needs a comment to explain it, rename it instead.
+- Rule 0: names carry the meaning, so the code almost documents itself. Every variable, parameter, function, method and type gets a descriptive name that says what it is or does (`manaAvailable`, `chooseLandToPlay`, `creatureToSacrifice`). No one- or two-letter names (`p`, `c`, `xs`, `bk`, `n0`) except a plain loop index (`i`) or `x`/`y` for coordinates. No cryptic abbreviations or card nicknames (`eff`, `cnt`, `krang`). Name functions with a verb, booleans like questions (`isTapped`, `hasHaste`), and give the same thing the same name everywhere. If a name needs a comment to explain it, rename it instead.
 - Write code a newcomer can read top to bottom. Pick clear names over short or clever ones.
 - Prefer small, plain functions with one job. Avoid abstractions, options and generics that nothing needs yet.
 - Rule of three: duplicating something once or twice is fine. When it appears a third time, pull it out into a shared helper.

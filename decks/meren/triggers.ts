@@ -18,10 +18,10 @@ export function onPermanentEntered(
   permanent: Perm,
   from: Zone,
 ): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   if (name === MEREN && game.merenOut === null) game.merenOut = game.turn;
   if (from === 'graveyard' && !permanent.token) game.reanimated++;
-  if (permanent.cd.isCreature || name === 'Grist, the Hunger Tide')
+  if (permanent.card.isCreature || name === 'Grist, the Hunger Tide')
     triggerLilianaAndPackleader(game, permanent);
   triggerTwilightDiviner(game, permanent, from);
   // enters-the-battlefield effects (token copies have them too)
@@ -33,13 +33,16 @@ export function onPermanentEntered(
 
 /** Liliana the Repentant (another creature or planeswalker enters: mill two) and Garruk's Packleader (power 3+: draw). */
 function triggerLilianaAndPackleader(game: MerenGame, permanent: Perm): void {
-  const name = permanent.cd.name;
-  if (name !== 'Liliana the Repentant' && game.onBf('Liliana the Repentant'))
+  const name = permanent.card.name;
+  if (
+    name !== 'Liliana the Repentant' &&
+    game.isOnBattlefield('Liliana the Repentant')
+  )
     game.millOurselves(2);
   if (
-    permanent.cd.isCreature &&
+    permanent.card.isCreature &&
     name !== "Garruk's Packleader" &&
-    game.onBf("Garruk's Packleader") &&
+    game.isOnBattlefield("Garruk's Packleader") &&
     game.power(permanent) >= 3
   )
     game.draw(1);
@@ -53,20 +56,20 @@ function triggerTwilightDiviner(
 ): void {
   if (
     from === 'graveyard' &&
-    permanent.cd.isCreature &&
-    permanent.cd.name !== 'Twilight Diviner' &&
+    permanent.card.isCreature &&
+    permanent.card.name !== 'Twilight Diviner' &&
     !game.divinerUsed &&
-    game.onBf('Twilight Diviner')
+    game.isOnBattlefield('Twilight Diviner')
   ) {
     game.divinerUsed = true;
-    game.say('  Twilight Diviner copies', permanent.cd);
-    game.enter(permanent.cd, 'token', { token: true });
+    game.say('  Twilight Diviner copies', permanent.card);
+    game.enter(permanent.card, 'token', { token: true });
   }
 }
 
 /** Gray Merchant and Lotleth Giant. Returns true if the permanent was one of them. */
 function resolveDrainOnEnter(game: MerenGame, permanent: Perm): boolean {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   if (name === GRAY_MERCHANT) {
     const devotion = game.devotion('B');
     const drained = game.drainEach(devotion);
@@ -77,8 +80,9 @@ function resolveDrainOnEnter(game: MerenGame, permanent: Perm): boolean {
     return true;
   }
   if (name === 'Lotleth Giant') {
-    const target = game.focusOpp();
-    if (target !== null) game.hurtOpp(target, game.creaturesInGraveyard());
+    const target = game.chooseTargetOpponent();
+    if (target !== null)
+      game.damageOpponent(target, game.creaturesInGraveyard());
     game.say(
       `  Lotleth Giant deals ${game.creaturesInGraveyard()}, opp life [${game.life.join(', ')}]`,
     );
@@ -92,7 +96,7 @@ function resolveCardAdvantageOnEnter(
   game: MerenGame,
   permanent: Perm,
 ): boolean {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   if (name === 'Twilight Diviner') {
     game.scry(2, true);
   } else if (name === 'Disciple of Bolas') {
@@ -112,18 +116,18 @@ function resolveCardAdvantageOnEnter(
   } else if (LAND_ETB.has(name)) {
     game.fetchBasic();
   } else if (name === 'Eternal Witness' || name === 'Timeless Witness') {
-    if (game.gy.length) {
+    if (game.graveyard.length) {
       const best = firstMax(
-        game.gy,
+        game.graveyard,
         (card) => game.cardValue(card) + (card.isCreature ? 0 : 10),
       );
-      removeIfPresent(game.gy, best);
+      removeIfPresent(game.graveyard, best);
       game.hand.push(best);
     }
   } else if (name === 'Gravedigger') {
     const best = game.bestCreatureInGraveyard(() => true);
     if (best) {
-      removeIfPresent(game.gy, best);
+      removeIfPresent(game.graveyard, best);
       game.hand.push(best);
     }
   } else if (name === "Stitcher's Supplier") {
@@ -134,7 +138,7 @@ function resolveCardAdvantageOnEnter(
     game.tutorToGraveyard(() => true);
   } else if (name === 'Grim Servant') {
     const devotion = game.devotion('B');
-    game.doTutor((card) => card.mv <= devotion, false);
+    game.doTutor((card) => card.manaValue <= devotion, false);
     game.loseLife(3);
   } else if (name === 'Studious First-Year') {
     game.prepared.add(permanent);
@@ -146,7 +150,7 @@ function resolveCardAdvantageOnEnter(
 
 /** Creatures that make tokens when they enter. Returns true if handled. */
 function resolveTokensOnEnter(game: MerenGame, permanent: Perm): boolean {
-  switch (permanent.cd.name) {
+  switch (permanent.card.name) {
     case 'Puppeteer Clique': {
       const stolen = game.enter(TOKENS.stolen, 'graveyard', { token: true });
       stolen.sick = false; // it gains haste
@@ -154,7 +158,7 @@ function resolveTokensOnEnter(game: MerenGame, permanent: Perm): boolean {
       return true;
     }
     case 'Sepulchral Primordial':
-      for (let i = 0; i < game.oppsAlive(); i++)
+      for (let i = 0; i < game.countOpponentsAlive(); i++)
         game.enter(TOKENS.stolen, 'graveyard', { token: true });
       return true;
     case 'Woe Strider':
@@ -170,7 +174,7 @@ function resolveTokensOnEnter(game: MerenGame, permanent: Perm): boolean {
 
 /** Shriekmaw and the edicts (each player sacrifices a creature). */
 function resolveRemovalOnEnter(game: MerenGame, permanent: Perm): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   if (name === 'Shriekmaw') {
     // a pod: destroy the biggest threat's best creature (nonartifact, nonblack isn't checked)
     if (game.inArena()) game.arena!.snipe(game, SHRIEKMAW);
@@ -191,56 +195,60 @@ function resolveRemovalOnEnter(game: MerenGame, permanent: Perm): void {
 
 // ================================================================ dying
 export function onPermanentDied(game: MerenGame, permanent: Perm): void {
-  const name = permanent.cd.name;
-  if (!permanent.cd.land) game.leftThisTurn = true;
-  if (permanent.cd.isCreature) triggerCreatureDeathPayoffs(game, permanent);
+  const name = permanent.card.name;
+  if (!permanent.card.land) game.leftThisTurn = true;
+  if (permanent.card.isCreature) triggerCreatureDeathPayoffs(game, permanent);
   game.prepared.delete(permanent);
-  if (name === 'Zulaport Cutthroat' || game.onBf('Zulaport Cutthroat'))
+  if (
+    name === 'Zulaport Cutthroat' ||
+    game.isOnBattlefield('Zulaport Cutthroat')
+  )
     game.drainEach(1);
   if (name === "Stitcher's Supplier") game.millOurselves(3);
   resolveDeathEffect(game, permanent);
   // persist: comes back with a -1/-1 counter if it had none
   if (
     !permanent.token &&
-    permanent.cd.keywords.has('persist') &&
+    permanent.card.keywords.has('persist') &&
     permanent.counters >= 0 &&
-    game.gy.includes(permanent.cd)
+    game.graveyard.includes(permanent.card)
   ) {
-    const returned = game.reanimate(permanent.cd);
+    const returned = game.reanimate(permanent.card);
     returned.counters -= 1;
   }
 }
 
 /** Butcher of Malakir, Meren's experience, Morbid Opportunist and Grim Haruspex when a creature dies. */
 function triggerCreatureDeathPayoffs(game: MerenGame, permanent: Perm): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   // a pod: Butcher of Malakir (it or another creature of ours dies: each opponent sacrifices a creature)
   if (
     game.inArena() &&
-    (name === 'Butcher of Malakir' || game.onBf('Butcher of Malakir'))
+    (name === 'Butcher of Malakir' ||
+      game.isOnBattlefield('Butcher of Malakir'))
   )
     game.arena!.edict(game, false);
-  if (name !== MEREN && game.onBf(MEREN)) game.experience++;
-  if (game.onBf('Morbid Opportunist') && !game.morbidUsed) {
+  if (name !== MEREN && game.isOnBattlefield(MEREN)) game.experience++;
+  if (game.isOnBattlefield('Morbid Opportunist') && !game.morbidUsed) {
     game.morbidUsed = true;
     game.draw(1);
   }
   if (
     !permanent.token &&
     name !== 'Grim Haruspex' &&
-    game.onBf('Grim Haruspex')
+    game.isOnBattlefield('Grim Haruspex')
   )
     game.draw(1);
 }
 
 /** What the creature itself does when it dies (draw, drain, reanimate, put creatures onto the battlefield). */
 function resolveDeathEffect(game: MerenGame, permanent: Perm): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   if (DRAW_ON_DEATH.has(name)) {
     game.draw(1);
   } else if (name === 'Vindictive Lich') {
-    const target = game.focusOpp();
-    if (target !== null) game.hurtOpp(target, 5);
+    const target = game.chooseTargetOpponent();
+    if (target !== null) game.damageOpponent(target, 5);
   } else if (name === 'Junji, the Midnight Sky') {
     const best = game.bestCreatureInGraveyard(
       (card) => card.name !== name && game.battlefieldValue(card) >= 60,
@@ -254,12 +262,12 @@ function resolveDeathEffect(game: MerenGame, permanent: Perm): void {
     let budget = 6;
     for (;;) {
       const choices = game.library.filter(
-        (card) => card.isCreature && card.mv <= budget,
+        (card) => card.isCreature && card.manaValue <= budget,
       );
       if (!choices.length) break;
       const best = firstMax(choices, (card) => game.battlefieldValue(card));
       removeIfPresent(game.library, best);
-      budget -= best.mv;
+      budget -= best.manaValue;
       game.enter(best, 'library');
     }
     game.shuffle();

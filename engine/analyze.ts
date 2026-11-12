@@ -39,18 +39,22 @@ function checkForKill(
   isNextTurn: boolean,
   budget: number,
 ): KillCheck {
-  const snapshot = game.light(isNextTurn);
-  if (!isNextTurn) game.lightAddMana(snapshot, game.floatA ?? 0); // floating mana of either colour (Signet, Hollow...)
-  if (!isNextTurn && !game.landPlayed && game.hand.some((c) => c.land !== null))
-    game.lightAddLand(snapshot); // land drop still available
+  const snapshot = game.buildKillSearchState(isNextTurn);
+  if (!isNextTurn) game.addManaToKillSearchState(snapshot, game.floatA ?? 0); // floating mana of either colour (Signet, Hollow...)
+  if (
+    !isNextTurn &&
+    !game.landPlayed &&
+    game.hand.some((card) => card.land !== null)
+  )
+    game.addLandToKillSearchState(snapshot); // land drop still available
   if (!game.killReachable(snapshot))
     return { killLevel: 0, line: null, note: '' };
   const search = game.killSearch();
   const killLevel = search.search(snapshot, budget);
   let note = '';
   // uncertain lines (e.g. Gale's Konrad chains) are checked against real shuffles
-  if (killLevel && search.lastP !== null)
-    note = ` (${game.chanceName} wins ${percentText(search.lastP)} with real shuffles)`;
+  if (killLevel && search.lastLineProbability !== null)
+    note = ` (${game.chanceName} wins ${percentText(search.lastLineProbability)} with real shuffles)`;
   else if (!killLevel && search.bestMiss !== null)
     note = ` (a ${game.chanceName} kills on average, but only ${percentText(search.bestMiss)} with real shuffles; needs ${percentText(search.minChance)})`;
   return {
@@ -73,18 +77,18 @@ function describeFloatingMana(board: Board): string {
     )
     .join(' ');
   const owedText = board.owed
-    ? `, ${board.owed.g + board.owed.u + board.owed.b + board.owed.h} mana of a cast still unpaid in the log`
+    ? `, ${board.owed.generic + board.owed.blue + board.owed.black + board.owed.hybrid} mana of a cast still unpaid in the log`
     : '';
   return `estimated floating mana: ${manaText || 'none'}${owedText}`;
 }
 
 function describeBoard(board: Board): string {
   const nonlands = board.battlefield
-    .filter((p) => C.get(p.name).land === null)
-    .map((p) => p.name);
+    .filter((boardCard) => C.get(boardCard.name).land === null)
+    .map((boardCard) => boardCard.name);
   const lands = board.battlefield
-    .filter((p) => C.get(p.name).land !== null)
-    .map((p) => p.name);
+    .filter((boardCard) => C.get(boardCard.name).land !== null)
+    .map((boardCard) => boardCard.name);
   return (
     `    hand:        ${board.hand.join(', ') || '-'}\n` +
     `    permanents:  ${nonlands.join(', ') || '-'}\n` +
@@ -108,7 +112,7 @@ function analyzeLog(
 ): [Board, number | null] {
   const board = new Board(commanders, cards, deck);
   const turns = [...new Set(events.map((event) => event[0]))].sort(
-    (a, b) => a - b,
+    (first, second) => first - second,
   );
   let firstKillTurn: number | null = null;
   for (const turn of turns) {
@@ -207,8 +211,8 @@ function applyEvent(
   config: Config,
 ): boolean {
   if (move) {
-    const [, from, to] = move;
-    if (to === 'opponentsCards') {
+    const [, from, destination] = move;
+    if (destination === 'opponentsCards') {
       console.log(`  (opponent: ${card})`);
       return false;
     }
@@ -216,7 +220,7 @@ function applyEvent(
       // not a card from the deck: a tracker the player keeps (an emblem / counter) or one of our tokens
       if ((deck.logTrackers ?? []).includes(card))
         board.trackers[card] = board.trackers[card] ?? 0;
-      else if (to === 'battlefield') {
+      else if (destination === 'battlefield') {
         board.battlefield.push({
           name: card,
           tapped: false,
@@ -228,8 +232,9 @@ function applyEvent(
       }
       return false;
     }
-    if (board.isCast(card, from, to)) board.payCast(card, from, turn, config);
-    board.moveCard(card, from, to);
+    if (board.isCast(card, from, destination))
+      board.payCast(card, from, turn, config);
+    board.moveCard(card, from, destination);
   } else if (action === 'tapped' || action === 'untapped') {
     board.setTapped(card, action === 'tapped');
     if (card === 'The Mindskinner' && action === 'tapped')
@@ -315,7 +320,7 @@ export function run(
   const decklist = C.loadDecklist(listFile);
   if (decklist.missing.length)
     throw new Error('missing card data: ' + decklist.missing.join(', '));
-  const config: Config = { ...deck.cfg, max_turn: 10 };
+  const config: Config = { ...deck.config, max_turn: 10 };
   const events = parseLog(logFile);
   printCardsMissingFromList(events, decklist);
   const [board, firstKillTurn] = analyzeLog(

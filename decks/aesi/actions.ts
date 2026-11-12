@@ -6,23 +6,23 @@ import { firstMax, firstMin, removeIfPresent } from '../../engine/lists';
 
 // ---------------------------------------------------------------- actions
 export function bounceAndReplayLand(game: AesiGame, permanent: Perm): boolean {
-  const [abilityMana, , kind] = RETURNERS[permanent.cd.name];
+  const [abilityMana, , kind] = RETURNERS[permanent.card.name];
   const cost = game.abilityCost(new Cost(abilityMana));
   const basics = game
-    .landsBf()
-    .filter((otherPermanent) => game.untappedLand(otherPermanent.cd));
+    .landsOnBattlefield()
+    .filter((otherPermanent) => game.untappedLand(otherPermanent.card));
   if (!basics.length) return false;
   let land = basics.find((otherPermanent) => otherPermanent.tapped) ?? null;
   if (!land) {
     land = basics[0];
-    if (game.srcKind(land)) game.tap(land, 'N'); // float its mana first
+    if (game.manaSourceKind(land)) game.tap(land, 'N'); // float its mana first
   }
   if (!game.pay(cost)) return false;
-  removeIfPresent(game.bf, land);
-  game.hand.push(land.cd);
-  game.say(`${permanent.cd.name.split(',')[0]}: return ${land.cd.name}`);
+  removeIfPresent(game.battlefield, land);
+  game.hand.push(land.card);
+  game.say(`${permanent.card.name.split(',')[0]}: return ${land.card.name}`);
   applyMoonfolkEffect(game, kind);
-  return game.playLandVia(null, land.cd);
+  return game.playLandVia(null, land.card);
 }
 
 export function applyMoonfolkEffect(game: AesiGame, kind: string): void {
@@ -32,33 +32,40 @@ export function applyMoonfolkEffect(game: AesiGame, kind: string): void {
     game.discard(1);
   } else if (kind === 'untap') {
     const otherPermanent = game
-      .landsBf()
-      .find((permanent) => permanent.tapped && game.srcKind(permanent));
+      .landsOnBattlefield()
+      .find((permanent) => permanent.tapped && game.manaSourceKind(permanent));
     if (otherPermanent) otherPermanent.tapped = false;
   } else if (kind === 'mill') {
     let target: number | null = null;
-    for (let i = 0; i < game.lib.length; i++)
+    for (let i = 0; i < game.opponentLibrarySizes.length; i++)
       if (
-        game.oppAlive(i) &&
-        (target === null || game.lib[i] > game.lib[target])
+        game.isOpponentAlive(i) &&
+        (target === null ||
+          game.opponentLibrarySizes[i] > game.opponentLibrarySizes[target])
       )
         target = i;
     if (target !== null) {
-      game.lib[target] = Math.max(0, game.lib[target] - 2);
-      if (game.lib[target] === 0 && game.firstOppDead === null)
-        game.firstOppDead = game.turn;
+      game.opponentLibrarySizes[target] = Math.max(
+        0,
+        game.opponentLibrarySizes[target] - 2,
+      );
+      if (
+        game.opponentLibrarySizes[target] === 0 &&
+        game.firstOpponentDeadTurn === null
+      )
+        game.firstOpponentDeadTurn = game.turn;
     }
   }
 }
 
 export function melokuEndOfTurn(game: AesiGame): boolean {
   const otherPermanent = game
-    .landsBf()
+    .landsOnBattlefield()
     .find((permanent) => permanent.tapped && permanent.land!.basic);
   if (!otherPermanent || !game.pay(game.abilityCost(new Cost(1)))) return false;
-  removeIfPresent(game.bf, otherPermanent);
-  game.hand.push(otherPermanent.cd);
-  game.say(`Meloku: return ${otherPermanent.cd.name} -> Illusion`);
+  removeIfPresent(game.battlefield, otherPermanent);
+  game.hand.push(otherPermanent.card);
+  game.say(`Meloku: return ${otherPermanent.card.name} -> Illusion`);
   game.enter(TOK.illusion, 'token', { token: true });
   return true;
 }
@@ -66,12 +73,12 @@ export function melokuEndOfTurn(game: AesiGame): boolean {
 /** Moonfolk offering: the least useful moonfolk (not a loop piece). */
 export function chooseOfferingFodder(game: AesiGame): Perm | null {
   const keepers = new Set([MELOKU, UYO, MINDSWEEPER, 'Oboro Breezecaller']);
-  const permanents = game.bf.filter(
+  const permanents = game.battlefield.filter(
     (permanent) =>
-      RETURNERS[permanent.cd.name] && !keepers.has(permanent.cd.name),
+      RETURNERS[permanent.card.name] && !keepers.has(permanent.card.name),
   );
   return permanents.length
-    ? firstMin(permanents, (permanent) => game.battlefieldValue(permanent.cd))
+    ? firstMin(permanents, (permanent) => game.battlefieldValue(permanent.card))
     : null;
 }
 
@@ -81,9 +88,9 @@ export function castPatronWithOffering(
   permanent: Perm,
   cost: Cost,
 ): boolean {
-  if (!game.bf.includes(permanent) || !game.pay(cost)) return false;
+  if (!game.battlefield.includes(permanent) || !game.pay(cost)) return false;
   game.say(
-    `moonfolk offering: sacrifice ${permanent.cd.name} for Patron of the Moon`,
+    `moonfolk offering: sacrifice ${permanent.card.name} for Patron of the Moon`,
   );
   game.sacrifice(permanent);
   removeIfPresent(game.hand, card);
@@ -134,8 +141,8 @@ export function sacrificeKhalni(game: AesiGame, permanent: Perm): boolean {
 export function useDemolitionField(game: AesiGame, permanent: Perm): boolean {
   if (!game.pay(new Cost(2))) return false;
   permanent.tapped = true;
-  removeIfPresent(game.bf, permanent);
-  game.gy.push(permanent.cd);
+  removeIfPresent(game.battlefield, permanent);
+  game.graveyard.push(permanent.card);
   game.say(
     "Demolition Field: destroy an opponent's nonbasic land, fetch a basic",
   );
@@ -161,12 +168,12 @@ export function useLootDig(
   if (!game.pay(cost)) return false;
   permanent.tapped = true;
   const top = game.library.splice(0, 6);
-  const landCount = game.landsBf().length;
+  const landCount = game.landsOnBattlefield().length;
   const cards = top.filter(
     (card) =>
       card.isCreature &&
-      card.mv <= landCount &&
-      !(card.types.has('legendary') && game.onBf(card.name)),
+      card.manaValue <= landCount &&
+      !(card.types.has('legendary') && game.isOnBattlefield(card.name)),
   );
   const pick = cards.length
     ? firstMax(cards, (card) => game.battlefieldValue(card))
@@ -181,7 +188,7 @@ export function useLootDig(
 export function useDokai(game: AesiGame, permanent: Perm, cost: Cost): boolean {
   if (!game.pay(cost)) return false;
   permanent.tapped = true;
-  const size = game.landsBf().length;
+  const size = game.landsOnBattlefield().length;
   game.enter(makeToken('Elemental', size, size, 'green'), 'token', {
     token: true,
   });

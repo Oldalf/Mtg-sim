@@ -101,7 +101,7 @@ export function chainProb(
       world.hasMindcrank = step.crank;
       world.hasKonrad = step.konrad;
       world.hasMindskinner = step.skinner;
-      world.applyOpponentStep(step.op);
+      world.applyOpponentStep(step.opponentStep);
     }
     return world.hasWon();
   };

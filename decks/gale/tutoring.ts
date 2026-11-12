@@ -63,7 +63,7 @@ function findCardThatKills(
 ): CardDef | null {
   if (game.inRollout) return null; // rollouts: the quick rule instead
   const removedFromHand = spent ? [spent] : [];
-  const budget = Math.floor((game.cfg.search_budget as number) / 3);
+  const budget = Math.floor((game.config.search_budget as number) / 3);
   let bestCard: CardDef | null = null;
   let bestScore = -1;
   for (const [name, card] of candidates) {
@@ -104,15 +104,15 @@ function findRampTutorTarget(
   candidates: Map<string, CardDef>,
 ): CardDef | null {
   if (
-    !game.cfg.ramp_tutor ||
-    game.turn > ((game.cfg.ramp_tutor_until as number) ?? 4) ||
-    game.manaSources() >= ((game.cfg.ramp_tutor_below as number) ?? 5)
+    !game.config.ramp_tutor ||
+    game.turn > ((game.config.ramp_tutor_until as number) ?? 4) ||
+    game.manaSources() >= ((game.config.ramp_tutor_below as number) ?? 5)
   )
     return null;
   for (const name of RAMP_PREFS)
     if (
       candidates.has(name) &&
-      !game.onBf(name) &&
+      !game.isOnBattlefield(name) &&
       !game.hand.some((card) => card.name === name)
     )
       return candidates.get(name)!;
@@ -127,10 +127,11 @@ function choosePackageCard(
 ): CardDef | null {
   const have = new Set([
     ...game.hand.map((card) => card.name),
-    ...game.bf.map((permanent) => permanent.cd.name),
+    ...game.battlefield.map((permanent) => permanent.card.name),
   ]);
-  if (game.onBf(GALE) || game.command.length)
-    for (const card of game.gy) if (card.isIS) have.add(card.name);
+  if (game.isOnBattlefield(GALE) || game.command.length)
+    for (const card of game.graveyard)
+      if (card.isInstantOrSorcery) have.add(card.name);
   let bestPackage: Set<string>[] | null = null;
   let bestMissing = 99;
   let hasCompletePackage = false;
@@ -183,7 +184,7 @@ function choosePackageCard(
   const options = [...neededNames]
     .filter((name) => candidates.has(name))
     .map((name) => candidates.get(name)!);
-  return firstMin(options, (card) => card.mv);
+  return firstMin(options, (card) => card.manaValue);
 }
 
 /** Kill-next-turn score if toHand goes to hand and toGy to the graveyard. */
@@ -200,7 +201,7 @@ export function valueOfGiftsSplit(
   );
   state.graveyardSpells = [
     ...state.graveyardSpells,
-    ...toGy.filter((card) => card.isIS).map((card) => card.name),
+    ...toGy.filter((card) => card.isInstantOrSorcery).map((card) => card.name),
   ].sort();
   state.graveyardCreatures = [
     ...state.graveyardCreatures,
@@ -247,7 +248,7 @@ function shortlistGiftsCards(
       second.killValue - first.killValue || second.cardValue - first.cardValue,
   );
   return scored
-    .slice(0, (game.cfg.gifts_shortlist as number) ?? 6)
+    .slice(0, (game.config.gifts_shortlist as number) ?? 6)
     .map((entry) => entry.card);
 }
 
@@ -281,7 +282,7 @@ export function chooseGiftsPile(game: GaleGame): [CardDef[], CardDef[]] | null {
   game.everySplitWinsNextTurn = false;
   const comboCards = comboCardsInLibrary(game);
   if (comboCards.length < 2) return null;
-  const budget = (game.cfg.gifts_budget as number) ?? 250;
+  const budget = (game.config.gifts_budget as number) ?? 250;
   const shortlist = shortlistGiftsCards(game, comboCards, budget);
   const splitValue = cachedSplitValue(game, budget);
   let best: [CardDef[], CardDef[]] | null = null;
@@ -308,10 +309,10 @@ export function chooseGiftsPile(game: GaleGame): [CardDef[], CardDef[]] | null {
       bestValue = [worst, total];
     }
   }
-  if (game.onBf(GALE)) {
+  if (game.isOnBattlefield(GALE)) {
     // two instants/sorceries, both to the graveyard
     for (const pile of combinations(
-      shortlist.filter((card) => card.isIS),
+      shortlist.filter((card) => card.isInstantOrSorcery),
       2,
     )) {
       const value = splitValue([], pile);

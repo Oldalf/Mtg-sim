@@ -58,7 +58,7 @@ export function findKillLine(game: CodieGame): Line | null {
 export function searchForKill(
   game: CodieGame,
   needBackup: boolean,
-  maxNodes = game.cfg.solver_nodes as number,
+  maxNodes = game.config.solver_nodes as number,
 ): Line | null {
   game.searchedStates = new Set<string>();
   game.searchedNodeCount = 0;
@@ -73,7 +73,7 @@ export function exploreMoves(
   depth: number,
   needBackup: boolean,
 ): Line | null {
-  const key = state.lightKey() + (state.loopUsed ?? '');
+  const key = state.killSearchStateKey() + (state.loopUsed ?? '');
   if (game.searchedStates.has(key)) return null;
   game.searchedStates.add(key);
   if (++game.searchedNodeCount > game.searchNodeLimit) return null; // a search budget: a rich hand can have a huge tree
@@ -161,7 +161,7 @@ function addReiterateLoopMoves(game: CodieGame, moves: SolverMove[]): void {
 function addFlashbackMoves(game: CodieGame, moves: SolverMove[]): void {
   if (!game.inHand(FLASHBACK)) return;
   const inGraveyard = (name: string) =>
-    game.gy.some((card) => card.name === name);
+    game.graveyard.some((card) => card.name === name);
   for (const tutor of [DEMONIC_TUTOR])
     if (inGraveyard(tutor))
       for (const target of wantedLibraryCards(game))
@@ -202,7 +202,7 @@ function addManaMoves(game: CodieGame, moves: SolverMove[]): void {
       'Manamorphose',
       (copy) => {
         const card = copy.cardInHand('Manamorphose')!;
-        return copy.castIS(card, false, manamorphoseCost(copy));
+        return copy.castInstantOrSorcery(card, false, manamorphoseCost(copy));
       },
     ]);
   if (game.inHand('Frantic Search'))
@@ -210,7 +210,7 @@ function addManaMoves(game: CodieGame, moves: SolverMove[]): void {
       'Frantic Search (untap 3 lands)',
       (copy) => castUntapSpell(copy, 'Frantic Search'),
     ]);
-  if (game.onBf(CODIE))
+  if (game.isOnBattlefield(CODIE))
     moves.push(['Codie: {4}, T: WUBRG', (copy) => activateCodie(copy)]);
 }
 
@@ -240,7 +240,7 @@ function addTutorMoves(game: CodieGame, moves: SolverMove[]): void {
   }
   // Codie + a spell of mana value 1: the free spell is always Profane Tutor (the only mana value 0 one): any card to hand
   if (
-    game.onBf(CODIE) &&
+    game.isOnBattlefield(CODIE) &&
     game.library.some((card) => card.name === PROFANE_TUTOR)
   ) {
     for (const spell of TRIGGER_SPELLS) {
@@ -313,10 +313,10 @@ export function findNextTurnKill(
   copy.nextTurn = true;
   copy.turn += 1;
   copy.pool = { U: 0, B: 0, C: 0, S: 0, W: 0, R: 0, G: 0 };
-  copy.bf = copy.bf.filter(
-    (permanent) => permanent.cd !== TREASURE || !permanent.tapped,
+  copy.battlefield = copy.battlefield.filter(
+    (permanent) => permanent.card !== TREASURE || !permanent.tapped,
   );
-  for (const permanent of copy.bf) {
+  for (const permanent of copy.battlefield) {
     permanent.tapped = false;
     permanent.sick = false;
   }
@@ -332,7 +332,7 @@ export function findNextTurnKill(
     removeIfPresent(copy.hand, land);
     const landPermanent = new Perm(land, land.land, false);
     landPermanent.sick = false;
-    copy.bf.push(landPermanent);
+    copy.battlefield.push(landPermanent);
   }
   const line = searchForKill(copy, needBackup, 1500);
   return line

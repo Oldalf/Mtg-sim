@@ -9,7 +9,7 @@
  *   candidates.ts  everything the AI may do now, with a score each
  *   actions.ts     what the abilities and spells do when the AI picks them
  *
- * Win: 2 opponents dead, or cfg.win_damage damage dealt in total. Second measure: first opponent dead.
+ * Win: 2 opponents dead, or config.win_damage damage dealt in total. Second measure: first opponent dead.
  * The game itself (mana, zones, casting, turns, combat) is the shared engine in engine/game-core.ts.
  */
 import {
@@ -34,7 +34,7 @@ import { MULLIGAN } from './mulligan';
 
 export class MerenGame extends GameWithoutKillSearch {
   override mulliganRule(): MulliganRule | null {
-    return this.cfg.smart_mulligan ? MULLIGAN : null;
+    return this.config.smart_mulligan ? MULLIGAN : null;
   }
   override colors = ['B', 'G'];
   experience = 0; // Meren's experience counters
@@ -72,18 +72,18 @@ export class MerenGame extends GameWithoutKillSearch {
     let dead = 0;
     for (let i = 0; i < this.life.length; i++) if (this.life[i] <= 0) dead++;
     return (
-      dead >= (this.cfg.win_dead as number) ||
-      this.damageDealt >= (this.cfg.win_damage as number)
+      dead >= (this.config.win_dead as number) ||
+      this.damageDealt >= (this.config.win_damage as number)
     );
   }
 
-  override oppsBeaten(): boolean {
+  override areOpponentsBeaten(): boolean {
     return this.hasWon();
   }
 
-  override winsWith(dmg: number): boolean {
+  override winsWith(damage: number): boolean {
     const life = this.life.slice();
-    let left = dmg,
+    let left = damage,
       dealt = this.damageDealt;
     while (left > 0) {
       let weakestIndex = -1;
@@ -98,16 +98,16 @@ export class MerenGame extends GameWithoutKillSearch {
     }
     return (
       life.filter((life) => life <= 0).length >=
-        (this.cfg.win_dead as number) ||
-      dealt >= (this.cfg.win_damage as number)
+        (this.config.win_dead as number) ||
+      dealt >= (this.config.win_damage as number)
     );
   }
 
   override checkKill(): number {
     if (this.died) return 2; // the game is over (lost)
     if (this.hasWon()) {
-      if (this.unprot === null) {
-        this.unprot = this.turn;
+      if (this.unprotectedKillTurn === null) {
+        this.unprotectedKillTurn = this.turn;
         this.say(
           `WIN: opp life [${this.life.join(', ')}], ${this.damageDealt} damage dealt`,
         );
@@ -119,7 +119,10 @@ export class MerenGame extends GameWithoutKillSearch {
 
   override play(): [number | null, number | null] {
     super.play();
-    return [this.died ? null : this.unprot, this.firstOppDead];
+    return [
+      this.died ? null : this.unprotectedKillTurn,
+      this.firstOpponentDeadTurn,
+    ];
   }
 
   // ---------------------------------------------------------------- log analyzer hooks
@@ -143,7 +146,9 @@ export class MerenGame extends GameWithoutKillSearch {
   override clone(): this {
     const copy = super.clone();
     const map = new Map(
-      this.bf.map((permanent, i) => [permanent, copy.bf[i]] as [Perm, Perm]),
+      this.battlefield.map(
+        (permanent, i) => [permanent, copy.battlefield[i]] as [Perm, Perm],
+      ),
     );
     const toCopy = (permanent: Perm) => map.get(permanent) ?? permanent;
     copy.prepared = new Set([...this.prepared].map(toCopy));
@@ -157,28 +162,29 @@ export class MerenGame extends GameWithoutKillSearch {
     if (this.died) return -5000;
     let value = 0;
     // progress to the win: total damage, and the two opponents closest to dead
-    value += 5 * Math.min(this.cfg.win_damage as number, this.damageDealt);
+    value += 5 * Math.min(this.config.win_damage as number, this.damageDealt);
     const lives = this.life.slice().sort((first, second) => first - second);
-    const start = this.cfg.opp_life as number;
-    for (let i = 0; i < (this.cfg.win_dead as number); i++)
+    const start = this.config.opp_life as number;
+    for (let i = 0; i < (this.config.win_dead as number); i++)
       value += 3 * (start - Math.max(0, lives[i]));
     // the board: attackers, Gray Merchant's devotion, Meren and her experience
     for (const permanent of this.creatures()) {
-      if (permanent.cd.name === 'Spore Frog') value += 25;
+      if (permanent.card.name === 'Spore Frog') value += 25;
       else
         value +=
-          7 * this.power(permanent) * (permanent.cd.flying ? 1.5 : 1) +
-          0.25 * this.battlefieldValue(permanent.cd);
+          7 * this.power(permanent) * (permanent.card.flying ? 1.5 : 1) +
+          0.25 * this.battlefieldValue(permanent.card);
     }
     value += 10 * Math.min(12, this.devotion('B'));
-    if (this.onBf(MEREN)) value += 90 + 12 * Math.min(8, this.experience);
+    if (this.isOnBattlefield(MEREN))
+      value += 90 + 12 * Math.min(8, this.experience);
     else value += 6 * Math.min(8, this.experience);
-    for (const battlefieldPermanent of this.bf)
+    for (const battlefieldPermanent of this.battlefield)
       if (
         battlefieldPermanent.land === null &&
         !battlefieldPermanent.isCreature
       )
-        value += 0.4 * this.battlefieldValue(battlefieldPermanent.cd);
+        value += 0.4 * this.battlefieldValue(battlefieldPermanent.card);
     // resources: creature cards to bring back, mana, cards in hand
     value += 6 * Math.min(10, this.creaturesInGraveyard());
     value += 25 * Math.min(10, this.manaSources());
@@ -224,16 +230,16 @@ export class MerenGame extends GameWithoutKillSearch {
   }
 
   creaturesInGraveyard(): number {
-    return this.gy.filter((card) => card.isCreature).length;
+    return this.graveyard.filter((card) => card.isCreature).length;
   }
 
-  override srcKind(permanent: Perm, ignoreSick = false): string | null {
-    return super.srcKind(permanent, ignoreSick);
+  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+    return super.manaSourceKind(permanent, ignoreSick);
   }
 
   override commanderCost(card: CardDef, cost: Cost): Cost {
     return card.name === MEREN
-      ? cost.withGeneric(cost.g + 2 * this.merenCasts)
+      ? cost.withGeneric(cost.generic + 2 * this.merenCasts)
       : cost;
   }
   override onCommanderCast(card: CardDef): void {
@@ -249,9 +255,12 @@ export class MerenGame extends GameWithoutKillSearch {
   /** A basic land from the library onto the battlefield tapped. */
   fetchBasic(): void {
     const want =
-      this.landsBf().filter((permanent) => permanent.land!.mana === 'G')
-        .length <=
-      this.landsBf().filter((permanent) => permanent.land!.mana === 'B').length
+      this.landsOnBattlefield().filter(
+        (permanent) => permanent.land!.mana === 'G',
+      ).length <=
+      this.landsOnBattlefield().filter(
+        (permanent) => permanent.land!.mana === 'B',
+      ).length
         ? 'Forest'
         : 'Swamp';
     const card =
@@ -263,14 +272,16 @@ export class MerenGame extends GameWithoutKillSearch {
     this.shuffle();
     const basicLand = new Perm(card, card.land, true);
     basicLand.sick = false;
-    this.bf.push(basicLand);
+    this.battlefield.push(basicLand);
   }
 
   /** The best creature card in the graveyard for some purpose. */
   bestCreatureInGraveyard(
     isWanted: (card: CardDef) => boolean = () => true,
   ): CardDef | null {
-    const cards = this.gy.filter((card) => card.isCreature && isWanted(card));
+    const cards = this.graveyard.filter(
+      (card) => card.isCreature && isWanted(card),
+    );
     return cards.length
       ? firstMax(cards, (card) => this.battlefieldValue(card))
       : null;
@@ -279,11 +290,11 @@ export class MerenGame extends GameWithoutKillSearch {
   /** Put a creature card from our graveyard onto the battlefield. */
   reanimate(
     card: CardDef,
-    opts: { tapped?: boolean; counters?: number } = {},
+    options: { tapped?: boolean; counters?: number } = {},
   ): Perm {
-    removeIfPresent(this.gy, card);
-    const permanent = this.enter(card, 'graveyard', { tapped: opts.tapped });
-    if (opts.counters) permanent.counters += opts.counters;
+    removeIfPresent(this.graveyard, card);
+    const permanent = this.enter(card, 'graveyard', { tapped: options.tapped });
+    if (options.counters) permanent.counters += options.counters;
     this.say('  reanimate', card);
     return permanent;
   }
@@ -291,25 +302,26 @@ export class MerenGame extends GameWithoutKillSearch {
   /** Our creatures in the order we'd sacrifice them (cheapest loss first). */
   sacrificeOrder(exclude: Perm[] = []): Perm[] {
     const sacValue = (permanent: Perm): number => {
-      if (permanent.cd === TOKENS.stolen) return 80;
+      if (permanent.card === TOKENS.stolen) return 80;
       if (permanent.token) return 5 + this.power(permanent);
-      if (DEATH_VALUE.has(permanent.cd.name) && this.onBf(MEREN)) return 10;
-      if (MANA_ELVES.has(permanent.cd.name) && this.turn >= 5) return 15;
+      if (DEATH_VALUE.has(permanent.card.name) && this.isOnBattlefield(MEREN))
+        return 10;
+      if (MANA_ELVES.has(permanent.card.name) && this.turn >= 5) return 15;
       if (
-        EDICT_ETB.has(permanent.cd.name) ||
-        permanent.cd.name === 'Satyr Wayfinder' ||
-        permanent.cd.name === 'Studious First-Year'
+        EDICT_ETB.has(permanent.card.name) ||
+        permanent.card.name === 'Satyr Wayfinder' ||
+        permanent.card.name === 'Studious First-Year'
       )
         return 20;
-      return this.battlefieldValue(permanent.cd);
+      return this.battlefieldValue(permanent.card);
     };
     return sortDesc(
       this.creatures().filter(
         (permanent) =>
           !exclude.includes(permanent) &&
-          permanent.cd.name !== MEREN &&
-          permanent.cd.name !== 'Spore Frog' &&
-          permanent.cd.name !== 'Twilight Diviner',
+          permanent.card.name !== MEREN &&
+          permanent.card.name !== 'Spore Frog' &&
+          permanent.card.name !== 'Twilight Diviner',
       ),
       (permanent) => -sacValue(permanent),
     );
@@ -317,7 +329,7 @@ export class MerenGame extends GameWithoutKillSearch {
 
   findFreeSacrificeOutlet(): Perm | null {
     for (const name of FREE_OUTLETS) {
-      const permanent = this.perm(name);
+      const permanent = this.findPermanent(name);
       if (permanent) return permanent;
     }
     return null;
@@ -333,12 +345,12 @@ export class MerenGame extends GameWithoutKillSearch {
   }
 
   override powerBonus(permanent: Perm): number {
-    return permanent.cd.name === 'Wight of the Reliquary'
+    return permanent.card.name === 'Wight of the Reliquary'
       ? this.creaturesInGraveyard()
       : 0;
   }
   override toughnessBonus(permanent: Perm): number {
-    return permanent.cd.name === 'Wight of the Reliquary'
+    return permanent.card.name === 'Wight of the Reliquary'
       ? this.creaturesInGraveyard()
       : 0;
   }
@@ -346,7 +358,7 @@ export class MerenGame extends GameWithoutKillSearch {
   // ================================================================ turn steps
   override startTurn(): void {
     if (this.turn >= 4 && this.turn <= 6) {
-      this.permanentsAtTurnEnd[this.turn] = this.bf.filter(
+      this.permanentsAtTurnEnd[this.turn] = this.battlefield.filter(
         (permanent) => permanent.land === null,
       ).length;
       this.reanimatedAtTurnEnd[this.turn] = this.reanimated;
@@ -362,7 +374,7 @@ export class MerenGame extends GameWithoutKillSearch {
 
   override upkeep(): void {
     // the opponents' turns happened: crackback, unless Spore Frog prevents it (then it's sacrificed)
-    const frog = this.perm('Spore Frog');
+    const frog = this.findPermanent('Spore Frog');
     if (frog && this.fogUsed) {
       this.say('Spore Frog prevents the crackback');
       this.sacrifice(frog);
@@ -374,18 +386,18 @@ export class MerenGame extends GameWithoutKillSearch {
     }
     this.pendingCrackback = 0;
     this.fogUsed = false;
-    if (this.onBf('Phyrexian Arena')) {
+    if (this.isOnBattlefield('Phyrexian Arena')) {
       this.draw(1);
       this.loseLife(1);
     }
     // Ophiomancer: a deathtouch Snake at each of our upkeeps if we have none
     if (
-      this.onBf('Ophiomancer') &&
-      !this.bf.some((permanent) => permanent.cd === TOKENS.snake)
+      this.isOnBattlefield('Ophiomancer') &&
+      !this.battlefield.some((permanent) => permanent.card === TOKENS.snake)
     )
       this.createTokens(TOKENS.snake);
-    for (const researcher of this.bf.filter(
-      (permanent) => permanent.cd.name === 'Grave Researcher',
+    for (const researcher of this.battlefield.filter(
+      (permanent) => permanent.card.name === 'Grave Researcher',
     )) {
       this.scry(1, true);
       if (this.creaturesInGraveyard() >= 3) this.prepared.add(researcher);
@@ -394,17 +406,17 @@ export class MerenGame extends GameWithoutKillSearch {
 
   override endStep(): void {
     for (const permanent of this.sacAtEnd)
-      if (this.bf.includes(permanent)) this.sacrifice(permanent);
+      if (this.battlefield.includes(permanent)) this.sacrifice(permanent);
     this.sacAtEnd = [];
     for (const exiledPermanent of this.exileAtEnd) {
-      const i = this.bf.indexOf(exiledPermanent);
+      const i = this.battlefield.indexOf(exiledPermanent);
       if (i >= 0) {
-        this.bf.splice(i, 1);
+        this.battlefield.splice(i, 1);
         this.leftThisTurn = true;
       }
     }
     this.exileAtEnd = [];
-    if (this.onBf(MEREN)) this.feedMerenAtEndStep();
+    if (this.isOnBattlefield(MEREN)) this.feedMerenAtEndStep();
     this.checkKill();
   }
 
@@ -414,32 +426,33 @@ export class MerenGame extends GameWithoutKillSearch {
     if (outlet) {
       // sacrifice tokens and creatures whose death is worth something: each one is an experience counter
       for (const permanent of this.sacrificeOrder()) {
-        if (permanent === outlet && outlet.cd.name !== 'Viscera Seer') continue;
+        if (permanent === outlet && outlet.card.name !== 'Viscera Seer')
+          continue;
         if (
-          permanent.cd === TOKENS.stolen ||
-          FREE_OUTLETS.includes(permanent.cd.name)
+          permanent.card === TOKENS.stolen ||
+          FREE_OUTLETS.includes(permanent.card.name)
         )
           continue;
-        if (permanent.token || DEATH_VALUE.has(permanent.cd.name))
+        if (permanent.token || DEATH_VALUE.has(permanent.card.name))
           this.sacrifice(permanent);
       }
       // the Gray Merchant loop: sacrifice it and let Meren bring it back (drain again)
-      const grayMerchant = this.perm(GRAY_MERCHANT);
+      const grayMerchant = this.findPermanent(GRAY_MERCHANT);
       if (grayMerchant && !grayMerchant.token && this.experience + 1 >= 5)
         this.sacrifice(grayMerchant);
     }
-    const cands = this.gy.filter((card) => card.isCreature);
-    if (!cands.length) return;
+    const candidates = this.graveyard.filter((card) => card.isCreature);
+    if (!candidates.length) return;
     const score = (card: CardDef) =>
-      card.mv <= this.experience
+      card.manaValue <= this.experience
         ? this.battlefieldValue(card)
         : this.battlefieldValue(card) * 0.4;
-    const best = firstMax(cands, score);
-    if (best.mv <= this.experience) {
+    const best = firstMax(candidates, score);
+    if (best.manaValue <= this.experience) {
       this.say(`Meren (${this.experience} experience) returns`, best);
       this.reanimate(best);
     } else {
-      removeIfPresent(this.gy, best);
+      removeIfPresent(this.graveyard, best);
       this.hand.push(best);
       this.say(`Meren (${this.experience} experience) returns to hand`, best);
     }
@@ -447,17 +460,17 @@ export class MerenGame extends GameWithoutKillSearch {
 
   // ================================================================ combat
   override canAttack(permanent: Perm): boolean {
-    return super.canAttack(permanent) && permanent.cd.name !== 'Spore Frog';
+    return super.canAttack(permanent) && permanent.card.name !== 'Spore Frog';
   }
   override fogBlocker(): Perm | null {
-    return this.perm('Spore Frog');
+    return this.findPermanent('Spore Frog');
   }
-  override onAttack(att: Perm[]): Perm[] {
+  override onAttack(attackers: Perm[]): Perm[] {
     const extra: Perm[] = [];
-    for (const permanent of att) {
-      if (permanent.cd.name === 'Grave Titan')
+    for (const permanent of attackers) {
+      if (permanent.card.name === 'Grave Titan')
         this.createTokens(TOKENS.zombie, 2);
-      if (permanent.cd.name === 'Avenger of the Fallen') {
+      if (permanent.card.name === 'Avenger of the Fallen') {
         // Mobilize X: tapped and attacking 1/1s, sacrificed at the end step
         for (const warrior of this.createTokens(
           TOKENS.warrior,
@@ -479,26 +492,26 @@ export class MerenGame extends GameWithoutKillSearch {
   /** How close to winning the others think we are: Meren out, black devotion for Gray Merchant, a big graveyard. */
   override podClose(): number {
     let closeness = 0;
-    if (this.onBf(MEREN)) closeness += 0.3;
+    if (this.isOnBattlefield(MEREN)) closeness += 0.3;
     if (this.devotion('B') >= 8) closeness += 0.3;
     if (this.creaturesInGraveyard() >= 8) closeness += 0.2;
     if (
-      this.onBf('Priest of Forgotten Gods') ||
-      this.onBf('Zulaport Cutthroat')
+      this.isOnBattlefield('Priest of Forgotten Gods') ||
+      this.isOnBattlefield('Zulaport Cutthroat')
     )
       closeness += 0.2;
     return Math.min(1, closeness);
   }
   /** A pod: Spore Frog is the fog, not a blocker. */
   override blockValue(permanent: Perm): number {
-    return permanent.cd.name === 'Spore Frog'
+    return permanent.card.name === 'Spore Frog'
       ? 500
       : super.blockValue(permanent);
   }
-  /** A pod: sacrifice Spore Frog to prevent all combat damage this turn, when the hit is lethal or big (cfg.fog_at). */
-  override fogPrevent(dmg: number, lethal: boolean): boolean {
-    const frog = this.perm('Spore Frog');
-    if (!frog || (!lethal && dmg < ((this.cfg.fog_at as number) ?? 6)))
+  /** A pod: sacrifice Spore Frog to prevent all combat damage this turn, when the hit is lethal or big (config.fog_at). */
+  override fogPrevent(damage: number, lethal: boolean): boolean {
+    const frog = this.findPermanent('Spore Frog');
+    if (!frog || (!lethal && damage < ((this.config.fog_at as number) ?? 6)))
       return false;
     this.sacrifice(frog);
     return true;
@@ -525,26 +538,26 @@ export class MerenGame extends GameWithoutKillSearch {
     _toTop: boolean,
     _spent: string | null = null,
   ): CardDef | null {
-    const cands = this.library.filter(allowed);
-    if (!cands.length) return null;
+    const candidates = this.library.filter(allowed);
+    if (!candidates.length) return null;
     for (const name of this.tutorPriorities()) {
-      const wantedCard = cands.find(
+      const wantedCard = candidates.find(
         (card) =>
           card.name === name &&
-          !this.onBf(name) &&
+          !this.isOnBattlefield(name) &&
           !this.hand.some((inHandCard) => inHandCard.name === name),
       );
       if (wantedCard) return wantedCard;
     }
-    return firstMax(cands, (card) => this.cardValue(card));
+    return firstMax(candidates, (card) => this.cardValue(card));
   }
 
   /** A card from the library into the graveyard (Vile Entomber, Buried Alive). */
   tutorToGraveyard(allowed: (card: CardDef) => boolean): void {
-    const cands = this.library.filter(
-      (card) => allowed(card) && !this.gy.includes(card),
+    const candidates = this.library.filter(
+      (card) => allowed(card) && !this.graveyard.includes(card),
     );
-    if (!cands.length) return;
+    if (!candidates.length) return;
     const order = [
       GRAY_MERCHANT,
       'Sepulchral Primordial',
@@ -555,9 +568,9 @@ export class MerenGame extends GameWithoutKillSearch {
     ];
     const chosen =
       order
-        .map((name) => cands.find((card) => card.name === name))
+        .map((name) => candidates.find((card) => card.name === name))
         .find((card) => card) ??
-      firstMax(cands, (card) => this.battlefieldValue(card));
+      firstMax(candidates, (card) => this.battlefieldValue(card));
     removeIfPresent(this.library, chosen);
     this.toGy(chosen, true);
     this.shuffle();
@@ -577,11 +590,14 @@ export class MerenGame extends GameWithoutKillSearch {
     } else if (name === 'Village Rites') this.draw(2);
     else if (name === 'Breach the Multiverse') {
       this.millOurselves(10);
-      for (let i = 0; i < this.lib.length; i++)
-        this.lib[i] = Math.max(0, this.lib[i] - 10);
+      for (let i = 0; i < this.opponentLibrarySizes.length; i++)
+        this.opponentLibrarySizes[i] = Math.max(
+          0,
+          this.opponentLibrarySizes[i] - 10,
+        );
       const best = this.bestCreatureInGraveyard();
       if (best) this.reanimate(best);
-      for (let i = 0; i < this.oppsAlive(); i++)
+      for (let i = 0; i < this.countOpponentsAlive(); i++)
         this.enter(TOKENS.stolen, 'graveyard', { token: true });
     } else if (name === 'Grisly Salvage') {
       const top = this.library.splice(0, 5);
@@ -591,22 +607,24 @@ export class MerenGame extends GameWithoutKillSearch {
       const kept = keep.length
         ? firstMax(keep, (candidate) => this.cardValue(candidate))
         : null;
-      for (const c of top)
-        if (c === kept) this.hand.push(c);
-        else this.toGy(c, true);
+      for (const otherCard of top)
+        if (otherCard === kept) this.hand.push(otherCard);
+        else this.toGy(otherCard, true);
     } else if (name === 'Persist') {
-      const c = this.bestCreatureInGraveyard(
+      const anotherCard = this.bestCreatureInGraveyard(
         (candidate) => !candidate.types.has('legendary'),
       );
-      if (c) this.reanimate(c, { counters: -1 });
+      if (anotherCard) this.reanimate(anotherCard, { counters: -1 });
     } else if (name === 'Unearth') {
-      const c = this.bestCreatureInGraveyard((candidate) => candidate.mv <= 3);
-      if (c) this.reanimate(c);
+      const creature = this.bestCreatureInGraveyard(
+        (candidate) => candidate.manaValue <= 3,
+      );
+      if (creature) this.reanimate(creature);
     } else if (name === 'Victimize') {
       // (the sacrifice was paid when casting)
       for (let copyNumber = 0; copyNumber < 2; copyNumber++) {
-        const c = this.bestCreatureInGraveyard();
-        if (c) this.reanimate(c, { tapped: true });
+        const creature = this.bestCreatureInGraveyard();
+        if (creature) this.reanimate(creature, { tapped: true });
       }
     } else if (name === 'Songs of the Damned')
       this.pool.B += this.creaturesInGraveyard();
@@ -615,13 +633,16 @@ export class MerenGame extends GameWithoutKillSearch {
       const permanent = this.sacrificeOrder()[0];
       if (permanent) {
         this.sacrifice(permanent);
-        const back = this.gy.filter(
-          (candidate) => candidate !== permanent.cd && candidate.land === null,
+        const back = this.graveyard.filter(
+          (candidate) =>
+            candidate !== permanent.card && candidate.land === null,
         );
         if (back.length) {
-          const c = firstMax(back, (candidate) => this.cardValue(candidate));
-          removeIfPresent(this.gy, c);
-          this.hand.push(c);
+          const creature = firstMax(back, (candidate) =>
+            this.cardValue(candidate),
+          );
+          removeIfPresent(this.graveyard, creature);
+          this.hand.push(creature);
         }
       }
     } else if (name === 'Buried Alive') {

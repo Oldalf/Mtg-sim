@@ -75,8 +75,8 @@ function resolveManaSpell(game: CodieGame, spell: CardDef): boolean {
       game.pool.R += game.opponentTappedLands();
       return true;
     case BRASS_BOUNTY:
-      for (let i = 0; i < game.landsBf().length; i++)
-        game.bf.push(new Perm(TREASURE));
+      for (let i = 0; i < game.landsOnBattlefield().length; i++)
+        game.battlefield.push(new Perm(TREASURE));
       return true;
     case 'Manamorphose': {
       const colours = coloursWeAreShortOf(game);
@@ -191,11 +191,13 @@ export function fetchLand(
       );
     return true;
   };
-  const have = new Set(game.landsBf().map((permanent) => permanent.cd.name));
+  const have = new Set(
+    game.landsOnBattlefield().map((permanent) => permanent.card.name),
+  );
   const need = coloursWeAreShortOf(game);
   const score = (card: CardDef) => {
     let score = 0;
-    for (const col of need) if (C.landMakes(card, col)) score += 4;
+    for (const colour of need) if (C.landMakes(card, colour)) score += 4;
     if (!card.land!.basic) score += 1; // nonbasics are better (more colours, or utility)
     if (have.has(card.name) && card.land!.basic) score += 0.5;
     if (
@@ -207,9 +209,9 @@ export function fetchLand(
     if (card.name === 'Field of the Dead' && !toHand) score -= 3;
     return score;
   };
-  const cands = game.library.filter(isWantedKind);
-  if (!cands.length) return null;
-  const pick = firstMax(cands, score);
+  const candidates = game.library.filter(isWantedKind);
+  if (!candidates.length) return null;
+  const pick = firstMax(candidates, score);
   removeIfPresent(game.library, pick);
   game.shuffle();
   if (toHand) game.hand.push(pick);
@@ -218,7 +220,7 @@ export function fetchLand(
       tapped || game.entersTapped(pick) || pick.land!.etb === 'tapped';
     const land = new Perm(pick, pick.land, entersTapped);
     land.sick = false;
-    game.bf.push(land);
+    game.battlefield.push(land);
     game.onLandEnter(land, false);
   }
   return pick;
@@ -227,27 +229,29 @@ export function fetchLand(
 /** Colours we are short of for the cards in hand (red for Reiterate, black for the finishers, ...). */
 export function coloursWeAreShortOf(game: CodieGame): string[] {
   const want: string[] = [];
-  const have = (col: string) =>
-    game.landsBf().filter((permanent) => C.landMakes(permanent.cd, col)).length;
-  for (const [col, neededCount] of [
+  const have = (colour: string) =>
+    game
+      .landsOnBattlefield()
+      .filter((permanent) => C.landMakes(permanent.card, colour)).length;
+  for (const [colour, neededCount] of [
     ['R', 2],
     ['B', 2],
     ['U', 2],
     ['W', 1],
     ['G', 1],
   ] as [string, number][])
-    if (have(col) < neededCount) want.push(col);
+    if (have(colour) < neededCount) want.push(colour);
   return want;
 }
 
 export function sacrificeLand(game: CodieGame): void {
   const permanent =
     game
-      .landsBf()
+      .landsOnBattlefield()
       .filter((basicLand) => basicLand.land?.basic)
       .sort((first, second) => +second.tapped - +first.tapped)[0] ??
-    game.landsBf()[0];
-  if (permanent) removeIfPresent(game.bf, permanent);
+    game.landsOnBattlefield()[0];
+  if (permanent) removeIfPresent(game.battlefield, permanent);
 }
 
 export function putCardsBackOnLibrary(game: CodieGame, count: number): void {
@@ -276,24 +280,24 @@ export function chooseTutorTarget(
   game: CodieGame,
   isAllowed: (card: CardDef) => boolean = () => true,
 ): CardDef | null {
-  const cands = game.library.filter(isAllowed);
-  if (!cands.length) return null;
+  const candidates = game.library.filter(isAllowed);
+  if (!candidates.length) return null;
   // 1. a card that completes a kill line (tried on a copy of the game)
-  if (!game.inRollout || game.cfg.rollout_solver) {
+  if (!game.inRollout || game.config.rollout_solver) {
     for (const name of tutorPriorityList(game)) {
-      const candidate = cands.find((card) => card.name === name);
+      const candidate = candidates.find((card) => card.name === name);
       if (!candidate) continue;
-      const solverCopy = game.light();
+      const solverCopy = game.buildKillSearchState();
       solverCopy.hand.push(candidate);
       if (findKillLine(solverCopy) !== null) return candidate;
     }
   }
   // 2. the best missing piece
   for (const name of tutorPriorityList(game)) {
-    const wantedCard = cands.find((card) => card.name === name);
+    const wantedCard = candidates.find((card) => card.name === name);
     if (wantedCard) return wantedCard;
   }
-  return firstMax(cands, (card) => game.cardValue(card));
+  return firstMax(candidates, (card) => game.cardValue(card));
 }
 
 export function tutorPriorityList(game: CodieGame): string[] {
@@ -329,13 +333,13 @@ export function fetchCardFromLibrary(
 
 /** Ad Nauseam: reveal cards until a limit on life (always the whole library with Teferi's Protection). */
 export function resolveAdNauseam(game: CodieGame): void {
-  const floor = game.cfg.ad_floor as number;
+  const floor = game.config.ad_floor as number;
   while (game.library.length && game.isStillAlive()) {
     const card = game.library[0];
-    if (game.myLife - card.mv < floor) break;
+    if (game.myLife - card.manaValue < floor) break;
     game.library.shift();
     game.hand.push(card);
-    game.loseLife(card.mv);
+    game.loseLife(card.manaValue);
   }
   game.say('Ad Nauseam: hand', game.hand.length, 'life', game.myLife);
 }

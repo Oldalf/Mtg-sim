@@ -81,7 +81,7 @@ function addPermanentCastMoves(
     next[flag] = true;
     if (card.isCreature) {
       next.creatureCount += 1;
-      next.energyTapTargets = [...next.energyTapTargets, card.mv].sort(
+      next.energyTapTargets = [...next.energyTapTargets, card.manaValue].sort(
         (first, second) => second - first,
       ); // (Energy Tap can tap a creature that just arrived)
     }
@@ -137,7 +137,7 @@ function addAbilityMoves(
       next.spendMana(COST_GUILDMAGE_MILL) &&
       next.biggestLibraryOpponent() !== null
     ) {
-      next.recordOpponentStep('tmill', 2);
+      next.recordOpponentStep('millBiggestLibrary', 2);
       moves.push(labelled(next, 'Guildmage {2}{U}{B}: opponent mills 2'));
     }
   }
@@ -153,7 +153,7 @@ function addAbilityMoves(
       const next = state.copy();
       if (next.spendMana(COST_MONUMENT_EXHAUST)) {
         next.hasMonument = next.monumentCanExhaust = false;
-        next.millEach('ogy');
+        next.millEach('graveyardSize');
         moves.push(
           labelled(
             next,
@@ -175,7 +175,7 @@ function addAbilityMoves(
     const next = state.copy();
     next.mindskinnerCanAttack = false;
     if (next.biggestLibraryOpponent() !== null) {
-      next.recordOpponentStep('tdmg', 10);
+      next.recordOpponentStep('damageBiggestLibrary', 10);
       moves.push(
         labelled(next, 'attack with The Mindskinner (each opponent mills 10)'),
       );
@@ -205,7 +205,10 @@ function describeHandSpell(
     };
   const card = C.get(name);
   // counters need a target; Archmage's Charm can always pick "target player draws two"
-  if (!card.isIS || (Facts.COUNTERS.has(name) && name !== "Archmage's Charm"))
+  if (
+    !card.isInstantOrSorcery ||
+    (Facts.COUNTERS.has(name) && name !== "Archmage's Charm")
+  )
     return null;
   return {
     spell: name,
@@ -409,15 +412,15 @@ function selfCounterTargets(
   }
   targets.sort(
     (first, second) =>
-      first.mv - second.mv ||
+      first.manaValue - second.manaValue ||
       (first.name < second.name ? -1 : first.name > second.name ? 1 : 0),
   );
   const worthTrying = targets.slice(0, 1);
   if (state.hasGale) {
     for (const card of targets.slice(1)) {
       if (
-        card.isIS &&
-        card.mv <= 3 &&
+        card.isInstantOrSorcery &&
+        card.manaValue <= 3 &&
         state.graveyardSpells.some(
           (graveyardName) =>
             RELEVANT.has(graveyardName) &&
@@ -449,7 +452,7 @@ function selfCounterMoves(state: KillSearchState): KillSearchState[] {
       const afterTarget = state.copy();
       if (!afterTarget.payForSpell(targetCard)) continue;
       afterTarget.hand = remove1(afterTarget.hand, targetName);
-      const firstRecasts: GaleRecast[] = targetCard.isIS
+      const firstRecasts: GaleRecast[] = targetCard.isInstantOrSorcery
         ? galeOptions(afterTarget, targetCard.isInstant)
         : [[null, null, null]];
       for (const [firstName, firstVariant, firstCost] of firstRecasts) {
@@ -494,7 +497,9 @@ function selfCounterMoves(state: KillSearchState): KillSearchState[] {
           else if (counterName === 'Rewind') next.untapLands(4);
           next.graveyardSpells = addSorted(
             next.graveyardSpells,
-            targetCard.isIS ? [counterName, targetName] : [counterName],
+            targetCard.isInstantOrSorcery
+              ? [counterName, targetName]
+              : [counterName],
           );
           moves.push(
             labelled(

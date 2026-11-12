@@ -8,14 +8,15 @@ import { removeIfPresent } from '../../engine/lists';
 export function valueOfGainingLife(game: SamFrodoGame, amount: number): number {
   let value = 0;
   const after = game.lifeGainedThisTurn + amount;
-  for (const permanent of game.bf) {
-    const name = permanent.cd.name;
+  for (const permanent of game.battlefield) {
+    const name = permanent.card.name;
     if (name === 'Sanguine Bond') value += 10 * amount;
     else if (name === GOLLUM)
       value +=
         10 *
         amount *
-        game.gollumHit.filter((hit, i) => hit && game.oppAlive(i)).length;
+        game.gollumHit.filter((hit, i) => hit && game.isOpponentAlive(i))
+          .length;
     else if (
       (name === 'The Gaffer' || name === 'Gwaihir, Greatest of the Eagles') &&
       game.lifeGainedThisTurn < 3 &&
@@ -62,7 +63,7 @@ export function artifactToSacrifice(game: SamFrodoGame): Perm | null {
   return (
     game
       .spareSacrifices()
-      .find((permanent) => permanent.cd.types.has('artifact')) ?? null
+      .find((permanent) => permanent.card.types.has('artifact')) ?? null
   );
 }
 
@@ -86,9 +87,9 @@ export function returnCauldronFamiliar(
   card: CardDef,
 ): boolean {
   const permanent = game.foodsOnBattlefield()[0];
-  if (!permanent || !game.gy.includes(card)) return false;
+  if (!permanent || !game.graveyard.includes(card)) return false;
   game.sacrifice(permanent);
-  removeIfPresent(game.gy, card);
+  removeIfPresent(game.graveyard, card);
   game.say('Cauldron Familiar returns');
   game.enter(card, 'graveyard');
   return true;
@@ -99,10 +100,10 @@ export function activateWitchsOven(
   permanent: Perm,
   victim: Perm,
 ): boolean {
-  if (!game.bf.includes(victim)) return false;
+  if (!game.battlefield.includes(victim)) return false;
   permanent.tapped = true;
   const big = game.toughness(victim) >= 4;
-  game.say("Witch's Oven eats", victim.cd);
+  game.say("Witch's Oven eats", victim.card);
   game.sacrifice(victim);
   game.makeTokens(big ? [FOOD, FOOD] : [FOOD]);
   return true;
@@ -114,7 +115,7 @@ export function activateLobelia(
   artifact: Perm,
 ): boolean {
   permanent.tapped = true;
-  game.say('Lobelia: sacrifice', artifact.cd, '-> drain 2');
+  game.say('Lobelia: sacrifice', artifact.card, '-> drain 2');
   game.sacrifice(artifact);
   game.drainEach(2);
   game.gainLife(2);
@@ -138,7 +139,7 @@ export function sacrificeFoodsToDraw(
 ): boolean {
   const permanents = game
     .spareSacrifices()
-    .filter((permanent) => permanent.cd === FOOD)
+    .filter((permanent) => permanent.card === FOOD)
     .slice(0, count);
   if (permanents.length < count) return false;
   for (const food of permanents) game.sacrifice(food);

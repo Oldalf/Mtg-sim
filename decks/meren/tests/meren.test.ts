@@ -6,165 +6,176 @@ import { CFG } from '../config';
 import { castSawInHalf } from '../actions';
 import { MerenGame } from '../game';
 
-const rep = (n: string, k: number) => new Array(k).fill(n) as string[];
+const repeatName = (cardName: string, count: number) =>
+  new Array(count).fill(cardName) as string[];
 
 function board(
-  bf: string[] = [],
+  battlefieldNames: string[] = [],
   hand: string[] = [],
-  gy: string[] = [],
-  lands = [...rep('Swamp', 4), ...rep('Forest', 3)],
+  graveyardNames: string[] = [],
+  lands = [...repeatName('Swamp', 4), ...repeatName('Forest', 3)],
 ): MerenGame {
-  const g = new MerenGame([], rep('Swamp', 60), new Rng(1), { ...CFG });
-  g.startTurn();
-  g.turn = 5;
-  for (const l of lands) {
-    const cd = C.get(l);
-    const p = new Perm(cd, cd.land);
-    p.sick = false;
-    g.bf.push(p);
+  const game = new MerenGame([], repeatName('Swamp', 60), new Rng(1), {
+    ...CFG,
+  });
+  game.startTurn();
+  game.turn = 5;
+  for (const landName of lands) {
+    const card = C.get(landName);
+    const permanent = new Perm(card, card.land);
+    permanent.sick = false;
+    game.battlefield.push(permanent);
   }
-  for (const n of bf) {
-    const p = new Perm(C.get(n));
-    p.sick = false;
-    g.bf.push(p);
+  for (const cardName of battlefieldNames) {
+    const otherPermanent = new Perm(C.get(cardName));
+    otherPermanent.sick = false;
+    game.battlefield.push(otherPermanent);
   }
-  g.hand = hand.map((n) => C.get(n));
-  g.gy = gy.map((n) => C.get(n));
-  return g;
+  game.hand = hand.map((cardName) => C.get(cardName));
+  game.graveyard = graveyardNames.map((cardName) => C.get(cardName));
+  return game;
 }
 
 export function runMerenTests(): boolean {
-  let ok = true;
+  let allPassed = true;
   const check = (label: string, got: unknown, expect: unknown) => {
     const good = JSON.stringify(got) === JSON.stringify(expect);
     console.log(
       `${good ? 'OK ' : 'BAD'} ${label}: got ${JSON.stringify(got)}, expected ${JSON.stringify(expect)}`,
     );
-    ok = ok && good;
+    allPassed = allPassed && good;
   };
 
   // Gray Merchant: each opponent loses devotion to black (its own BB + Meren's B = 3), we gain the total
-  let g = board(['Meren of Clan Nel Toth'], ['Gray Merchant of Asphodel']);
-  g.castPerm(C.get('Gray Merchant of Asphodel'));
-  check('Gray Merchant with Meren out drains 3 each', g.life, [37, 37, 37]);
-  check('... and we gain 9', g.myLife, 49);
+  let game = board(['Meren of Clan Nel Toth'], ['Gray Merchant of Asphodel']);
+  game.castPerm(C.get('Gray Merchant of Asphodel'));
+  check('Gray Merchant with Meren out drains 3 each', game.life, [37, 37, 37]);
+  check('... and we gain 9', game.myLife, 49);
 
   // Meren's end step: experience 5 returns Gray Merchant to the battlefield (drain again)
-  g = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
-  g.experience = 5;
-  g.endStep();
+  game = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
+  game.experience = 5;
+  game.endStep();
   check(
     'Meren with 5 experience returns Gray Merchant to the battlefield',
-    g.onBf('Gray Merchant of Asphodel'),
+    game.isOnBattlefield('Gray Merchant of Asphodel'),
     true,
   );
-  check('... which drains 3 each', g.life, [37, 37, 37]);
+  check('... which drains 3 each', game.life, [37, 37, 37]);
 
   // ... with 4 experience it goes to hand instead
-  g = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
-  g.experience = 4;
-  g.endStep();
+  game = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
+  game.experience = 4;
+  game.endStep();
   check(
     'Meren with 4 experience puts Gray Merchant in hand',
-    g.hand.map((c) => c.name),
+    game.hand.map((card) => card.name),
     ['Gray Merchant of Asphodel'],
   );
 
   // Twilight Diviner copies a creature entering from the graveyard: two Gray Merchant drains. Ordering the
   // triggers well, the copy enters first, so both drains count Meren B + Diviner B + Merchant BB + copy BB = 6
-  g = board(
+  game = board(
     ['Meren of Clan Nel Toth', 'Twilight Diviner'],
     [],
     ['Gray Merchant of Asphodel'],
   );
-  g.experience = 5;
-  g.endStep();
+  game.experience = 5;
+  game.endStep();
   check(
     'Diviner + Meren returning Gray Merchant: two drains of 6',
-    g.life,
+    game.life,
     [28, 28, 28],
   );
 
   // Saw in Half on our Gray Merchant: it dies, two token copies enter: two more drains
-  g = board(['Gray Merchant of Asphodel'], ['Saw in Half']);
-  const gm = g.perm('Gray Merchant of Asphodel')!;
-  castSawInHalf(g, C.get('Saw in Half'), gm);
+  game = board(['Gray Merchant of Asphodel'], ['Saw in Half']);
+  const permanent = game.findPermanent('Gray Merchant of Asphodel')!;
+  castSawInHalf(game, C.get('Saw in Half'), permanent);
   check(
     'Saw in Half on Gray Merchant: copies drain 2 then 4',
-    g.life,
+    game.life,
     [34, 34, 34],
   );
   check(
     '... Gray Merchant is in the graveyard (for Meren)',
-    g.gy.some((c) => c.name === 'Gray Merchant of Asphodel'),
+    game.graveyard.some((card) => card.name === 'Gray Merchant of Asphodel'),
     true,
   );
 
   // a sacrificed creature gives Meren an experience counter
-  g = board(['Meren of Clan Nel Toth', 'Viscera Seer', 'Llanowar Elves']);
-  g.sacrifice(g.perm('Llanowar Elves')!);
-  check('Sacrificing a creature with Meren out: 1 experience', g.experience, 1);
+  game = board(['Meren of Clan Nel Toth', 'Viscera Seer', 'Llanowar Elves']);
+  game.sacrifice(game.findPermanent('Llanowar Elves')!);
+  check(
+    'Sacrificing a creature with Meren out: 1 experience',
+    game.experience,
+    1,
+  );
 
   // combat: flying always connects; half of the other attackers (rounded down) are blocked, the biggest first
-  g = board([
+  game = board([
     'Butcher of Malakir',
     'Grave Titan',
     'Woe Strider',
     'Llanowar Elves',
   ]);
-  g.myLife = 1000; // (so crackback doesn't hold the attack back)
-  g.creatureCombat();
+  game.myLife = 1000; // (so crackback doesn't hold the attack back)
+  game.creatureCombat();
   // all four: Butcher 5 (flying) + ground Titan 6 / Strider 3 / Elves 1 with one blocked (Titan) = 9. Better: Butcher +
   // Titan alone (one ground attacker, none blocked) = 11, so the AI attacks with those two
   check(
     'Combat: the AI attacks with Butcher + Grave Titan (11), not all four (9)',
-    g.damageDealt,
+    game.damageDealt,
     11,
   );
 
   // crackback: attacking with everything and nothing home -> we take what we dealt at our next upkeep
-  g = board(['Butcher of Malakir']);
-  g.myLife = 1000;
-  g.creatureCombat();
-  g.upkeep();
+  game = board(['Butcher of Malakir']);
+  game.myLife = 1000;
+  game.creatureCombat();
+  game.upkeep();
   check(
     'Full swing with nothing home: crackback = damage dealt (5)',
-    g.myLife,
+    game.myLife,
     995,
   );
   // Grave Titan's attack makes two Zombies that stay home as blockers: crackback 6 x (1 - 2/3) = 2
-  g = board(['Grave Titan']);
-  g.myLife = 1000;
-  g.creatureCombat();
-  g.upkeep();
+  game = board(['Grave Titan']);
+  game.myLife = 1000;
+  game.creatureCombat();
+  game.upkeep();
   check(
     'Grave Titan attacks, its 2 Zombies stay home: crackback 2',
-    g.myLife,
+    game.myLife,
     998,
   );
 
   // Spore Frog stays home and prevents the crackback; it's sacrificed before our turn
-  g = board(['Grave Titan', 'Spore Frog']);
-  g.creatureCombat();
-  g.upkeep();
-  check('Spore Frog: no crackback', g.myLife, 40);
-  check('... and Spore Frog was sacrificed', g.onBf('Spore Frog'), false);
+  game = board(['Grave Titan', 'Spore Frog']);
+  game.creatureCombat();
+  game.upkeep();
+  check('Spore Frog: no crackback', game.myLife, 40);
+  check(
+    '... and Spore Frog was sacrificed',
+    game.isOnBattlefield('Spore Frog'),
+    false,
+  );
 
   // win: 100 damage in total or 2 opponents dead
-  g = board();
-  g.hurtOpp(0, 40);
-  g.hurtOpp(1, 40);
-  check('Two opponents dead is a win', g.hasWon(), true);
-  g = board();
-  g.drainEach(33);
-  g.hurtOpp(0, 1);
-  check('100 damage spread over three opponents is a win', g.hasWon(), true);
+  game = board();
+  game.damageOpponent(0, 40);
+  game.damageOpponent(1, 40);
+  check('Two opponents dead is a win', game.hasWon(), true);
+  game = board();
+  game.drainEach(33);
+  game.damageOpponent(0, 1);
+  check('100 damage spread over three opponents is a win', game.hasWon(), true);
 
-  console.log(ok ? 'ALL OK' : 'SOME FAILED');
+  console.log(allPassed ? 'ALL OK' : 'SOME FAILED');
   // ---- lands with conditions (the shared engine: Game.entersTapped, pain lands, Tainted Wood)
   const tapped = (name: string, lands: string[], hand: string[] = []) => {
-    const gg = board([], [name, ...hand], [], lands);
-    return gg.entersTapped(C.get(name));
+    const testGame = board([], [name, ...hand], [], lands);
+    return testGame.entersTapped(C.get(name));
   };
   check(
     'Woodland Cemetery: tapped with no Swamp or Forest',
@@ -210,36 +221,39 @@ export function runMerenTests(): boolean {
     tapped('Bojuka Bog', ['Swamp', 'Forest']),
     true,
   );
-  g = board([], ['Woodland Cemetery'], [], ['Island']);
-  g.playLand();
+  game = board([], ['Woodland Cemetery'], [], ['Island']);
+  game.playLand();
   check(
     'playLand: Woodland Cemetery with only an Island enters tapped',
-    g.perm('Woodland Cemetery')!.tapped,
+    game.findPermanent('Woodland Cemetery')!.tapped,
     true,
   );
-  g = board([], [], [], ['Tainted Wood', 'Forest']);
+  game = board([], [], [], ['Tainted Wood', 'Forest']);
   check(
     'Tainted Wood: no coloured mana without a Swamp (only {C})',
-    [g.srcKind(g.perm('Tainted Wood')!), g.canPay(C.Cost.parse('{B}'))],
+    [
+      game.manaSourceKind(game.findPermanent('Tainted Wood')!),
+      game.canPay(C.Cost.parse('{B}')),
+    ],
     ['C', false],
   );
-  g = board([], [], [], ['Tainted Wood', 'Swamp']);
+  game = board([], [], [], ['Tainted Wood', 'Swamp']);
   check(
     '  ... with a Swamp it makes {B} or {G}',
-    g.canPay(C.Cost.parse('{G}')),
+    game.canPay(C.Cost.parse('{G}')),
     true,
   );
-  g = board([], [], [], ['Llanowar Wastes']);
-  g.pay(C.Cost.parse('{G}'));
-  check('Llanowar Wastes: {G} costs 1 life', g.myLife, 39);
-  g = board([], [], [], ['Llanowar Wastes']);
-  g.pay(new C.Cost(1));
-  g.canPay(C.Cost.parse('{G}'));
+  game = board([], [], [], ['Llanowar Wastes']);
+  game.pay(C.Cost.parse('{G}'));
+  check('Llanowar Wastes: {G} costs 1 life', game.myLife, 39);
+  game = board([], [], [], ['Llanowar Wastes']);
+  game.pay(new C.Cost(1));
+  game.canPay(C.Cost.parse('{G}'));
   check(
     '  ... {C} for a generic cost and just checking a payment cost nothing',
-    g.myLife,
+    game.myLife,
     40,
   );
 
-  return ok;
+  return allPassed;
 }

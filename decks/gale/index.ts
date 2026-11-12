@@ -20,20 +20,20 @@ export const deck = {
     sections: ['counters'],
     cards: ['Spell Pierce', 'Muddle the Mixture', 'Rewind', 'Extended Absence'],
   },
-  cfg: CFG,
+  config: CFG,
   Game: GaleGame,
   // --hands: what to look for in an opening hand
   handFeatures: [
     {
       label: 'a blue source and a black source',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         cards.some((card) => landMakes(card, 'U')) &&
         cards.some((card) => landMakes(card, 'B')),
     },
     {
       label:
         'a mana rock (Sol Ring, Signet, Talisman, Fellwar Stone, Waterskin)',
-      f: anyOf([
+      matches: anyOf([
         'Sol Ring',
         'Arcane Signet',
         'Dimir Signet',
@@ -45,7 +45,7 @@ export const deck = {
     {
       label:
         'a cost reducer / engine creature (Baral, Sprite, Drake, Geist, Wizards...)',
-      f: anyOf([
+      matches: anyOf([
         'Baral, Chief of Compliance',
         'Mocking Sprite',
         'Thunderclap Drake',
@@ -58,7 +58,7 @@ export const deck = {
     {
       label:
         'a cheap cantrip (Brainstorm, Ponder, Preordain, Opt, Consider...)',
-      f: anyOf([
+      matches: anyOf([
         'Brainstorm',
         'Consider',
         'Opt',
@@ -70,7 +70,7 @@ export const deck = {
     },
     {
       label: 'a tutor',
-      f: anyOf([
+      matches: anyOf([
         'Diabolic Tutor',
         'Gifts Ungiven',
         'Insatiable Avarice',
@@ -83,7 +83,7 @@ export const deck = {
     {
       label:
         'a combo piece (Guildmage, Mindcrank, Konrad, Mindskinner, Cacophony...)',
-      f: anyOf([
+      matches: anyOf([
         'Duskmantle Guildmage',
         'Mindcrank',
         'Syr Konrad, the Grim',
@@ -98,7 +98,7 @@ export const deck = {
     {
       label:
         'a ritual or untap (High Tide, Muck, Dark Ritual, Energy Tap, Turnabout...)',
-      f: anyOf([
+      matches: anyOf([
         'High Tide',
         'Bubbling Muck',
         'Dark Ritual',
@@ -111,7 +111,7 @@ export const deck = {
     },
     {
       label: 'a rock, reducer or cantrip (something that develops)',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         anyOf([
           'Sol Ring',
           'Arcane Signet',
@@ -137,7 +137,7 @@ export const deck = {
     },
     {
       label: '2 lands and a rock, reducer or cantrip',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         lands(cards) === 2 &&
         anyOf([
           'Sol Ring',

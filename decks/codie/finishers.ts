@@ -17,10 +17,10 @@ export function isBackupReady(game: CodieGame): boolean {
   for (const card of game.hand) {
     const backup = BACKUP[card.name];
     if (!backup) continue;
-    if (backup[1] === 'commander' && !game.onBf(CODIE)) continue;
+    if (backup[1] === 'commander' && !game.isOnBattlefield(CODIE)) continue;
     if (
       backup[1] === 'island' &&
-      !game.landsBf().some((permanent) => permanent.land?.island)
+      !game.landsOnBattlefield().some((permanent) => permanent.land?.island)
     )
       continue;
     if (game.canPay(Cost.parse(backup[0]), true)) return true;
@@ -51,7 +51,7 @@ export function reiterateCopyCost(
       0,
       2 * reiterateCasts + 2 * favorCount,
     );
-    if (best === null || cost.mv < best.mv) best = cost;
+    if (best === null || cost.manaValue < best.manaValue) best = cost;
   }
   return best;
 }
@@ -62,7 +62,7 @@ export function findFinisherCast(
   needBackup: boolean,
 ): string[] | null {
   const life = Math.max(...game.life.filter((life) => life > 0), 1);
-  const opps = game.life.filter((life) => life > 0).length;
+  const opponents = game.life.filter((life) => life > 0).length;
   for (const finisher of FINISHERS) {
     if (
       !game.inHand(finisher) &&
@@ -73,7 +73,16 @@ export function findFinisherCast(
       const copyCost = reiterateCopyCost(game, resolutionCount);
       if (copyCost === null) continue;
       for (let xValue = 1; xValue <= 80; xValue++) {
-        if (!finisherKills(game, finisher, xValue, resolutionCount, life, opps))
+        if (
+          !finisherKills(
+            game,
+            finisher,
+            xValue,
+            resolutionCount,
+            life,
+            opponents,
+          )
+        )
           continue;
         const cost = (
           finisher === CRACKLE_WITH_POWER
@@ -87,7 +96,7 @@ export function findFinisherCast(
             if (!isBackupReady(paidCopy)) break;
           }
           return [
-            `cast ${finisher} X=${xValue}${resolutionCount > 1 ? ` with ${resolutionCount - 1} cop${resolutionCount > 2 ? 'ies' : 'y'}` : ''} (${cost.mv} mana)`,
+            `cast ${finisher} X=${xValue}${resolutionCount > 1 ? ` with ${resolutionCount - 1} cop${resolutionCount > 2 ? 'ies' : 'y'}` : ''} (${cost.manaValue} mana)`,
           ];
         }
         break; // a bigger X for this n costs more: not payable
@@ -104,7 +113,7 @@ export function finisherKills(
   xValue: number,
   resolutionCount: number,
   life: number,
-  opps: number,
+  opponents: number,
 ): boolean {
   if (finisher === EXSANGUINATE) return resolutionCount * xValue >= life;
   if (finisher === TORMENT_OF_HAILFIRE)
@@ -113,5 +122,5 @@ export function finisherKills(
     );
   // Crackle: five times X to each of up to X targets, n times
   const hits = Math.ceil(life / (5 * xValue));
-  return hits * opps <= resolutionCount * Math.min(xValue, opps);
+  return hits * opponents <= resolutionCount * Math.min(xValue, opponents);
 }

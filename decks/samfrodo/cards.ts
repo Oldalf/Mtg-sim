@@ -138,7 +138,7 @@ export function isHalfling(card: CardDef): boolean {
   if (isHalflingCard === undefined) {
     isHalflingCard =
       card === TOK.halfling ||
-      (C.db()[card.name]?.type_line ?? '').includes('Halfling');
+      (C.cardDatabase()[card.name]?.type_line ?? '').includes('Halfling');
     HALFLING_CACHE.set(card, isHalflingCard);
   }
   return isHalflingCard;

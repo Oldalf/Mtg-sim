@@ -21,17 +21,17 @@ function buildConfigs(
   args: Args,
   deck: Runner.Deck,
 ): { defaultConfig: Config; configWithSettings: Config } {
-  const defaultConfig: Config = { ...deck.cfg };
+  const defaultConfig: Config = { ...deck.config };
   if (args.turns) defaultConfig.max_turn = args.turns;
   const configWithSettings: Config = { ...defaultConfig };
   for (const setting of args.settings) {
     const [key, value] = setting.split('=', 2);
-    if (!(key in deck.cfg))
+    if (!(key in deck.config))
       throw new Error(
-        `unknown setting ${key}; choose from ${Object.keys(deck.cfg).join(', ')}`,
+        `unknown setting ${key}; choose from ${Object.keys(deck.config).join(', ')}`,
       );
     configWithSettings[key] =
-      typeof deck.cfg[key] === 'boolean'
+      typeof deck.config[key] === 'boolean'
         ? ['1', 'true', 'yes', 'on'].includes(value.toLowerCase())
         : Number(value);
   }

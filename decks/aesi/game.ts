@@ -78,11 +78,11 @@ import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
 export type Way =
-  { kind: 'drop' } | { kind: 'putter'; p: Perm } | { kind: 'patron' };
+  { kind: 'drop' } | { kind: 'putter'; permanent: Perm } | { kind: 'patron' };
 
 export class AesiGame extends Game<AesiGame> {
   override mulliganRule(): MulliganRule | null {
-    return this.cfg.smart_mulligan ? MULLIGAN : null;
+    return this.config.smart_mulligan ? MULLIGAN : null;
   }
   override colors = ['G', 'U'];
   dropsUsed = 0; // land drops used this turn
@@ -113,21 +113,25 @@ export class AesiGame extends Game<AesiGame> {
   replayMana(): number {
     return this.landsCreatures() && !this.awakened ? 0 : 1;
   }
-  override oppsBeaten(): boolean {
-    return this.locked || super.oppsBeaten();
+  override areOpponentsBeaten(): boolean {
+    return this.locked || super.areOpponentsBeaten();
   }
 
   // ================================================================ the win condition
   override checkKill(): number {
     if (this.died) return 2;
-    if (this.inArena() && !this.oppsBeaten())
-      this.podPre = [this.life.slice(), this.lib.slice(), this.poison.slice()];
-    if (!this.oppsBeaten()) solveLoops(this);
-    if (this.oppsBeaten()) {
-      if (this.unprot === null) {
-        this.unprot = this.turn;
+    if (this.inArena() && !this.areOpponentsBeaten())
+      this.podPre = [
+        this.life.slice(),
+        this.opponentLibrarySizes.slice(),
+        this.poison.slice(),
+      ];
+    if (!this.areOpponentsBeaten()) solveLoops(this);
+    if (this.areOpponentsBeaten()) {
+      if (this.unprotectedKillTurn === null) {
+        this.unprotectedKillTurn = this.turn;
         this.say(
-          `WIN: opp life [${this.life.join(', ')}], libraries [${this.lib.join(', ')}]`,
+          `WIN: opp life [${this.life.join(', ')}], libraries [${this.opponentLibrarySizes.join(', ')}]`,
         );
       }
       return 2;
@@ -137,7 +141,10 @@ export class AesiGame extends Game<AesiGame> {
   override play(): [number | null, number | null] {
     super.play();
     this.castsByTurn[this.turn] = this.spellsCast;
-    return [this.died ? null : this.unprot, this.firstOppDead];
+    return [
+      this.died ? null : this.unprotectedKillTurn,
+      this.firstOpponentDeadTurn,
+    ];
   }
   override diag(): Record<string, number | null> {
     const castsUpToTurn = (lastTurn: number) =>
@@ -159,7 +166,7 @@ export class AesiGame extends Game<AesiGame> {
     };
   }
   libraryCardsToKeep(): number {
-    return this.cfg.keep_library as number;
+    return this.config.keep_library as number;
   }
   /** A pod: a loop win can be answered by countering its finisher (Blue Sun's Zenith, Endless Swarm, Eternal Dominion) or by
    *  removing a loop piece. A counterspell in hand answers one more (Kira and Soratami Rainshaper protect the creatures: Game.podShield). */
@@ -170,11 +177,12 @@ export class AesiGame extends Game<AesiGame> {
   /** How close to winning the others think we are: Retreat or a land-putter with an untapper, Aesi out, many lands. */
   override podClose(): number {
     let closeness = 0;
-    if (this.onBf(RETREAT) || this.onBf(OMNI)) closeness += 0.5;
-    if (this.bf.some((permanent) => PUTTERS.has(permanent.cd.name)))
+    if (this.isOnBattlefield(RETREAT) || this.isOnBattlefield(OMNI))
+      closeness += 0.5;
+    if (this.battlefield.some((permanent) => PUTTERS.has(permanent.card.name)))
       closeness += 0.2;
-    if (this.onBf(AESI)) closeness += 0.2;
-    if (this.landsBf().length >= 9) closeness += 0.2;
+    if (this.isOnBattlefield(AESI)) closeness += 0.2;
+    if (this.landsOnBattlefield().length >= 9) closeness += 0.2;
     return Math.min(1, closeness);
   }
   override winAttempt(): WinAttempt | null {
@@ -195,7 +203,7 @@ export class AesiGame extends Game<AesiGame> {
       PATRON,
       COBRA,
       AESI,
-    ].filter((name) => this.onBf(name));
+    ].filter((name) => this.isOnBattlefield(name));
     const backup = this.hand.some(
       (card) => this.answer(card)?.kind === 'counter',
     )
@@ -205,26 +213,27 @@ export class AesiGame extends Game<AesiGame> {
   }
   /** An opponent milled out (they lose at their next draw; counted now). */
   millOut(i: number): void {
-    if (this.lib[i] <= 0) return;
-    this.lib[i] = 0;
-    if (this.firstOppDead === null) this.firstOppDead = this.turn;
+    if (this.opponentLibrarySizes[i] <= 0) return;
+    this.opponentLibrarySizes[i] = 0;
+    if (this.firstOpponentDeadTurn === null)
+      this.firstOpponentDeadTurn = this.turn;
   }
   millAll(how: string): void {
-    for (let i = 0; i < this.lib.length; i++)
-      if (this.oppAlive(i)) this.millOut(i);
+    for (let i = 0; i < this.opponentLibrarySizes.length; i++)
+      if (this.isOpponentAlive(i)) this.millOut(i);
     this.loopWinHow = how;
     this.say('LOOP WIN: ' + how);
   }
 
   // ---------------------------------------------------------------- kill search (only for the log analyzer)
   /** A copy of the game to run the loop solver on (nextTurn: untapped, a fresh land drop). */
-  light(nextTurn = false): AesiGame {
+  buildKillSearchState(nextTurn = false): AesiGame {
     const copy = this.clone();
     copy.verbose = true;
     copy.log = [];
     copy.inRollout = true;
     if (nextTurn) {
-      for (const permanent of copy.bf) {
+      for (const permanent of copy.battlefield) {
         permanent.tapped = false;
         permanent.sick = false;
       }
@@ -236,35 +245,35 @@ export class AesiGame extends Game<AesiGame> {
     copy.comboKey = null;
     return copy;
   }
-  lightKey(): string {
+  killSearchStateKey(): string {
     return '';
   }
-  override lightAddLand(game: AesiGame): void {
+  override addLandToKillSearchState(game: AesiGame): void {
     game.dropsUsed = Math.max(0, game.dropsUsed - 1);
   }
-  override lightAddMana(game: AesiGame, amount: number): void {
+  override addManaToKillSearchState(game: AesiGame, amount: number): void {
     game.pool.G += amount;
   }
   killSearch(): KillSearcher<AesiGame> {
     const killSearcher: KillSearcher<AesiGame> = {
       lastLine: null,
-      lastP: null,
+      lastLineProbability: null,
       bestMiss: null,
       minChance: 1,
       search: (game: AesiGame) => {
-        const lives = game.oppsBeaten();
+        const lives = game.areOpponentsBeaten();
         game.comboSolve();
         killSearcher.lastLine = game.log.map((line) =>
           line.replace(/^T\d+: /, ''),
         );
-        if (!lives && game.oppsBeaten()) return 1;
+        if (!lives && game.areOpponentsBeaten()) return 1;
         if (
-          game.bf.some(
+          game.battlefield.some(
             (permanent) =>
-              permanent.cd === TOK.illusionArmy ||
-              permanent.cd === TOK.snakeArmy,
+              permanent.card === TOK.illusionArmy ||
+              permanent.card === TOK.snakeArmy,
           ) ||
-          game.dominionCopies >= (game.cfg.dominion_win as number)
+          game.dominionCopies >= (game.config.dominion_win as number)
         ) {
           killSearcher.lastLine.push('(wins on the next turn)');
           return 1;
@@ -276,10 +285,10 @@ export class AesiGame extends Game<AesiGame> {
   }
   override syncFromLog(board: LogBoardView): void {
     this.dropsUsed = Math.min(board.landsFromHand, this.dropsAllowed());
-    for (const permanent of this.bf) {
-      if (permanent.cd.name === DRUID)
+    for (const permanent of this.battlefield) {
+      if (permanent.card.name === DRUID)
         permanent.counters = Math.max(1, permanent.counters);
-      if (permanent.cd.name === SAGA)
+      if (permanent.card.name === SAGA)
         permanent.counters = Math.max(1, permanent.counters);
     }
   }
@@ -290,8 +299,8 @@ export class AesiGame extends Game<AesiGame> {
     if (lowerCaseName.includes('elemental'))
       return makeToken(
         'Elemental',
-        this.landsBf().length,
-        this.landsBf().length,
+        this.landsOnBattlefield().length,
+        this.landsOnBattlefield().length,
         'green',
       );
     return null; // Blue Sun's Zenith copies and other markers
@@ -300,8 +309,8 @@ export class AesiGame extends Game<AesiGame> {
   // ================================================================ land drops and land puts
   dropsAllowed(): number {
     let drops = 1 + this.dropsBonus;
-    for (const permanent of this.bf) {
-      const name = permanent.cd.name;
+    for (const permanent of this.battlefield) {
+      const name = permanent.card.name;
       if (name === AESI || name === 'Loot, Exuberant Explorer' || name === CASE)
         drops += 1;
       else if (name === 'Azusa, Lost but Seeking') drops += 2;
@@ -327,14 +336,14 @@ export class AesiGame extends Game<AesiGame> {
     );
   }
   readyPutters(): Perm[] {
-    const landCount = this.landsBf().length;
-    return this.bf.filter(
+    const landCount = this.landsOnBattlefield().length;
+    return this.battlefield.filter(
       (permanent) =>
-        PUTTERS.has(permanent.cd.name) &&
+        PUTTERS.has(permanent.card.name) &&
         !permanent.tapped &&
         !permanent.sick &&
-        !(permanent.cd.name === BUDOKA && permanent.transformed) &&
-        (permanent.cd.name !== BUDOKA || landCount < 30),
+        !(permanent.card.name === BUDOKA && permanent.transformed) &&
+        (permanent.card.name !== BUDOKA || landCount < 30),
     );
   }
   /** How to get a land from hand onto the battlefield now, best first: a "put" creature when Retreat
@@ -344,13 +353,14 @@ export class AesiGame extends Game<AesiGame> {
     // Budoka flips at 10 lands (losing the ability): use it last
     permanents.sort(
       (permanent, otherPermanent) =>
-        +(permanent.cd.name === BUDOKA) - +(otherPermanent.cd.name === BUDOKA),
+        +(permanent.card.name === BUDOKA) -
+        +(otherPermanent.card.name === BUDOKA),
     );
     if (permanents.length && this.hasUntapper())
-      return { kind: 'putter', p: permanents[0] };
+      return { kind: 'putter', permanent: permanents[0] };
     if (this.canDrop()) return { kind: 'drop' };
-    if (permanents.length) return { kind: 'putter', p: permanents[0] };
-    if (this.onBf(PATRON) && this.canPay(new Cost(1)))
+    if (permanents.length) return { kind: 'putter', permanent: permanents[0] };
+    if (this.isOnBattlefield(PATRON) && this.canPay(new Cost(1)))
       return { kind: 'patron' };
     return null;
   }
@@ -364,7 +374,9 @@ export class AesiGame extends Game<AesiGame> {
       if (i.special === 'wilds')
         score = needNow ? 2 : 7; // two landfall triggers, but the basic is tapped
       else if (i.special === 'chamber')
-        score = this.landsBf().some((permanent) => permanent.land!.basic)
+        score = this.landsOnBattlefield().some(
+          (permanent) => permanent.land!.basic,
+        )
           ? needNow
             ? 1
             : 5
@@ -390,20 +402,20 @@ export class AesiGame extends Game<AesiGame> {
       (card) =>
         card.land === null &&
         !HOLD.has(card.name) &&
-        this.effCost(card).mv === avail + 1,
+        this.effCost(card).manaValue === avail + 1,
     );
   }
   wantColour(): string {
     let blueNeeded = 0,
       greenNeeded = 0;
     for (const card of [...this.hand, ...this.command]) {
-      blueNeeded += card.cost.u;
-      greenNeeded += card.cost.gn;
+      blueNeeded += card.cost.blue;
+      greenNeeded += card.cost.green;
     }
     let blueSources = 0,
       greenSources = 0;
-    for (const permanent of this.landsBf()) {
-      const kind = this.srcKind(permanent, true) ?? '';
+    for (const permanent of this.landsOnBattlefield()) {
+      const kind = this.manaSourceKind(permanent, true) ?? '';
       if (kind === 'U' || kind === 'GU' || kind === 'A') blueSources++;
       if (kind === 'G' || kind === 'GU' || kind === 'A') greenSources++;
     }
@@ -443,9 +455,12 @@ export class AesiGame extends Game<AesiGame> {
     const land = otherCard ?? this.chooseLand(lands);
     if (chosenWay.kind === 'drop') this.dropsUsed += 1;
     else {
-      chosenWay.p.tapped = true;
-      if (chosenWay.p.cd.name === BUDOKA && this.landsBf().length + 1 >= 10) {
-        chosenWay.p.transformed = true; // flips into Dokai, Weaver of Life
+      chosenWay.permanent.tapped = true;
+      if (
+        chosenWay.permanent.card.name === BUDOKA &&
+        this.landsOnBattlefield().length + 1 >= 10
+      ) {
+        chosenWay.permanent.transformed = true; // flips into Dokai, Weaver of Life
         this.say('Budoka Gardener flips (10 lands)');
       }
     }
@@ -454,7 +469,7 @@ export class AesiGame extends Game<AesiGame> {
       'hand',
       chosenWay.kind === 'drop'
         ? 'play land'
-        : `${chosenWay.p.cd.name.split(',')[0]} puts`,
+        : `${chosenWay.permanent.card.name.split(',')[0]} puts`,
     );
     return true;
   }
@@ -470,7 +485,7 @@ export class AesiGame extends Game<AesiGame> {
    *  library. (A fixed step, not a choice: the planner's copies shuffle the library, so their choices
    *  mustn't depend on the top card.) */
   caseTop(): void {
-    const permanent = this.perm(CASE);
+    const permanent = this.findPermanent(CASE);
     if (!permanent || !permanent.transformed) return;
     for (
       let i = 0;
@@ -487,7 +502,7 @@ export class AesiGame extends Game<AesiGame> {
         (top.isCreature || top.types.has('enchantment')) &&
         !HOLD.has(top.name) &&
         this.battlefieldValue(top) >= 50 &&
-        !(top.types.has('legendary') && this.onBf(top.name)) &&
+        !(top.types.has('legendary') && this.isOnBattlefield(top.name)) &&
         this.canPay(this.effCost(top))
       ) {
         castFromTopOfLibrary(this, top);
@@ -506,11 +521,13 @@ export class AesiGame extends Game<AesiGame> {
     removeIfPresent(from === 'hand' ? this.hand : this.library, card);
     const landInfo = card.land!;
     if (landInfo.special === 'wilds') {
-      this.gy.push(card);
+      this.graveyard.push(card);
       this.say(`${how}: ${card.name} (cracked)`);
       this.onLandEnter(new Perm(card, landInfo), true);
       this.fetchBasic({
-        tapped: !(card.name === PASSAGE && this.landsBf().length >= 3),
+        tapped: !(
+          card.name === PASSAGE && this.landsOnBattlefield().length >= 3
+        ),
       });
       return null;
     }
@@ -520,7 +537,7 @@ export class AesiGame extends Game<AesiGame> {
       tapped || this.entersTapped(card),
     );
     permanent.sick = true; // entered this turn (matters only when lands are creatures)
-    this.bf.push(permanent);
+    this.battlefield.push(permanent);
     this.say(`${how}: ${card.name}${permanent.tapped ? ' (tapped)' : ''}`);
     this.onLandEnter(permanent, false);
     if (landInfo.special === 'chamber') this.chamberBounce(permanent);
@@ -528,7 +545,7 @@ export class AesiGame extends Game<AesiGame> {
   }
   /** Simic Growth Chamber: return a land (a tapped basic; tap an untapped one for mana first). */
   chamberBounce(self: Perm): void {
-    const others = this.landsBf().filter(
+    const others = this.landsOnBattlefield().filter(
       (permanent) =>
         permanent !== self && permanent.land!.special !== 'chamber',
     );
@@ -540,12 +557,12 @@ export class AesiGame extends Game<AesiGame> {
         (permanent) =>
           (permanent.tapped ? 2 : 0) + (permanent.land!.basic ? 1 : 0),
       );
-      if (!landToReturn.tapped && this.srcKind(landToReturn))
+      if (!landToReturn.tapped && this.manaSourceKind(landToReturn))
         this.tap(landToReturn, 'N');
     } else landToReturn = self;
-    removeIfPresent(this.bf, landToReturn);
-    this.hand.push(landToReturn.cd);
-    this.say(`${self.cd.name} returns`, landToReturn.cd);
+    removeIfPresent(this.battlefield, landToReturn);
+    this.hand.push(landToReturn.card);
+    this.say(`${self.card.name} returns`, landToReturn.card);
   }
   /** Search the library for a basic land (the colour we need; only = Forest or Island). */
   fetchBasic(
@@ -576,10 +593,11 @@ export class AesiGame extends Game<AesiGame> {
 
   // ================================================================ landfall and enter triggers
   override onLandEnter(permanent: Perm, _gone: boolean): void {
-    if (this.aesiDraw === null && this.onBf(AESI)) this.aesiDraw = this.turn;
+    if (this.aesiDraw === null && this.isOnBattlefield(AESI))
+      this.aesiDraw = this.turn;
     if (permanent.land?.scry && !_gone) this.scry(1); // Temple of Mystery
-    for (const otherPermanent of this.bf.slice()) {
-      const name = otherPermanent.cd.name;
+    for (const otherPermanent of this.battlefield.slice()) {
+      const name = otherPermanent.card.name;
       if (name === AESI && this.library.length > this.libraryCardsToKeep())
         this.draw(1);
       else if (name === COBRA) {
@@ -595,41 +613,41 @@ export class AesiGame extends Game<AesiGame> {
       )
         this.draw(1);
     }
-    if (!this.kodamaBusy) this.kodamaTrigger(permanent.cd.mv);
+    if (!this.kodamaBusy) this.kodamaTrigger(permanent.card.manaValue);
   }
   /** Retreat or Elven Raft-Steerer on a landfall: Retreat's tap/untap mode, and Retreat alone can scry. */
   hasUntapper(): boolean {
-    return this.onBf(RETREAT) || this.onBf(RAFT);
+    return this.isOnBattlefield(RETREAT) || this.isOnBattlefield(RAFT);
   }
   /** Retreat to Coralhelm: untap a tapped "put" creature (if there's a land to put), Dokai or Loot; else scry 1
    *  (Retreat only). */
   retreat(scry: boolean): void {
-    const tapped = this.bf.filter(
+    const tapped = this.battlefield.filter(
       (permanent) =>
-        permanent.tapped && !permanent.sick && permanent.cd.isCreature,
+        permanent.tapped && !permanent.sick && permanent.card.isCreature,
     );
     const lands = this.landsInHand().length > 0;
     const otherPermanent =
       tapped.find(
         (permanent) =>
-          PUTTERS.has(permanent.cd.name) &&
-          !(permanent.cd.name === BUDOKA && permanent.transformed) &&
+          PUTTERS.has(permanent.card.name) &&
+          !(permanent.card.name === BUDOKA && permanent.transformed) &&
           lands,
       ) ??
       tapped.find(
-        (permanent) => permanent.cd.name === BUDOKA && permanent.transformed,
+        (permanent) => permanent.card.name === BUDOKA && permanent.transformed,
       ) ??
       tapped.find(
-        (permanent) => permanent.cd.name === 'Loot, Exuberant Explorer',
+        (permanent) => permanent.card.name === 'Loot, Exuberant Explorer',
       );
     if (otherPermanent) otherPermanent.tapped = false;
     else if (this.landsCreatures()) {
       // lands are creatures: untap a tapped land that can tap for mana again
-      const anotherPermanent = this.landsBf().find(
+      const anotherPermanent = this.landsOnBattlefield().find(
         (permanent) =>
           permanent.tapped &&
           (!permanent.sick || this.awakened) &&
-          this.srcKind(permanent, true),
+          this.manaSourceKind(permanent, true),
       );
       if (anotherPermanent) anotherPermanent.tapped = false;
       else if (scry) this.scry(1);
@@ -638,10 +656,10 @@ export class AesiGame extends Game<AesiGame> {
   /** Kodama of the East Tree: another permanent entered (not put by Kodama): put a permanent card with
    *  equal or lesser mana value from hand onto the battlefield. */
   kodamaTrigger(manaValue: number): void {
-    if (!this.onBf(KODAMA)) return;
+    if (!this.isOnBattlefield(KODAMA)) return;
     const perms = this.hand.filter(
       (card) =>
-        card.mv <= manaValue &&
+        card.manaValue <= manaValue &&
         (card.land !== null ||
           card.types.has('creature') ||
           card.types.has('artifact') ||
@@ -667,7 +685,7 @@ export class AesiGame extends Game<AesiGame> {
   }
 
   override onEnter(permanent: Perm, _from: Zone): void {
-    const name = permanent.cd.name;
+    const name = permanent.card.name;
     if (name === AESI && this.aesiOut === null) this.aesiOut = this.turn;
     if (name === HARU && !permanent.token) this.draw(1);
     if (name === ELVES && !permanent.token)
@@ -676,19 +694,23 @@ export class AesiGame extends Game<AesiGame> {
     if (name === SAGA) this.dropsBonus += 1; // chapter I: an additional land this turn
     if (name === REVOLT) this.revolt = true;
     if (!this.kodamaBusy && permanent.land === null && name !== KODAMA)
-      this.kodamaTrigger(permanent.cd.mv);
+      this.kodamaTrigger(permanent.card.manaValue);
   }
 
   // ================================================================ mana
   reduction(): number {
     let total = 0;
-    for (const permanent of this.bf) total += REDUCERS[permanent.cd.name] ?? 0;
+    for (const permanent of this.battlefield)
+      total += REDUCERS[permanent.card.name] ?? 0;
     return total;
   }
   /** An activated ability of one of our creatures, after Familiar / Training Grounds / Heartstone. */
   abilityCost(cost: Cost): Cost {
-    const coloured = cost.mv - cost.g;
-    const generic = Math.max(coloured > 0 ? 0 : 1, cost.g - this.reduction());
+    const coloured = cost.manaValue - cost.generic;
+    const generic = Math.max(
+      coloured > 0 ? 0 : 1,
+      cost.generic - this.reduction(),
+    );
     return cost.withGeneric(generic);
   }
   /** Untapped mana right now (roughly: each source counts what it makes). */
@@ -701,15 +723,15 @@ export class AesiGame extends Game<AesiGame> {
       this.pool.B +
       this.pool.W +
       this.pool.R;
-    for (const permanent of this.bf) {
+    for (const permanent of this.battlefield) {
       if (permanent.tapped) continue;
-      const kind = this.srcKind(permanent);
+      const kind = this.manaSourceKind(permanent);
       if (kind === null) continue;
       mana += kind === 'C2' || kind === 'GU' ? 2 : 1;
     }
     return mana;
   }
-  override srcKind(permanent: Perm, ignoreSick = false): string | null {
+  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
     if (
       permanent.land !== null &&
       permanent.sick &&
@@ -718,11 +740,11 @@ export class AesiGame extends Game<AesiGame> {
       !this.awakened
     )
       return null;
-    return super.srcKind(permanent, ignoreSick);
+    return super.manaSourceKind(permanent, ignoreSick);
   }
-  override pay(cost: Cost, isIS = false, commit = true): boolean {
+  override pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
     if (this.infMana) return true;
-    return super.pay(cost, isIS, commit);
+    return super.pay(cost, isInstantOrSorcery, commit);
   }
   override effCost(
     card: CardDef,
@@ -730,7 +752,12 @@ export class AesiGame extends Game<AesiGame> {
     fromGy = false,
   ): Cost {
     // Omniscience: spells from hand are free (an X spell then has X = 0, so Blue Sun's Zenith is paid normally)
-    if (base === null && !fromGy && this.onBf(OMNI) && this.hand.includes(card))
+    if (
+      base === null &&
+      !fromGy &&
+      this.isOnBattlefield(OMNI) &&
+      this.hand.includes(card)
+    )
       return new Cost();
     return super.effCost(card, base, fromGy);
   }
@@ -740,7 +767,7 @@ export class AesiGame extends Game<AesiGame> {
     if (wasCast && SPIRITS.has(card.name)) this.spiritCast();
     return wasCast;
   }
-  override castIS(
+  override castInstantOrSorcery(
     card: CardDef,
     fromGy = false,
     base: Cost | null = null,
@@ -748,10 +775,11 @@ export class AesiGame extends Game<AesiGame> {
     triggers: Record<string, unknown> = {},
   ): boolean {
     if (this.epic) return false;
-    if (!super.castIS(card, fromGy, base, mode, triggers)) return false;
+    if (!super.castInstantOrSorcery(card, fromGy, base, mode, triggers))
+      return false;
     if (card.name === BSZ) {
       // shuffled into the library instead of the graveyard
-      removeIfPresent(this.gy, card);
+      removeIfPresent(this.graveyard, card);
       this.library.push(card);
       this.shuffle();
     }
@@ -771,7 +799,8 @@ export class AesiGame extends Game<AesiGame> {
       return spare <= 0 ? 70 : spare <= 2 ? 50 : 30;
     }
     if (HOLD.has(card.name)) return 10;
-    if (RAMP.has(card.name) && this.landsBf().length >= 10) return 30;
+    if (RAMP.has(card.name) && this.landsOnBattlefield().length >= 10)
+      return 30;
     return this.battlefieldValue(card);
   }
 
@@ -789,7 +818,7 @@ export class AesiGame extends Game<AesiGame> {
   }
 
   /** Search for Tomorrow, suspended: it comes out two upkeeps later (cast for free) and fetches a basic. */
-  suspended: { cd: CardDef; left: number }[] = [];
+  suspended: { card: CardDef; left: number }[] = [];
   override clone(): this {
     const copy = super.clone();
     copy.suspended = this.suspended.map((entry) => ({ ...entry }));
@@ -798,7 +827,7 @@ export class AesiGame extends Game<AesiGame> {
   suspendSearch(card: CardDef): boolean {
     if (!this.pay(Cost.parse('{G}'), true)) return false;
     removeIfPresent(this.hand, card);
-    this.suspended.push({ cd: card, left: 2 });
+    this.suspended.push({ card: card, left: 2 });
     this.say('suspend Search for Tomorrow');
     return true;
   }
@@ -807,16 +836,16 @@ export class AesiGame extends Game<AesiGame> {
       if (--entry.left > 0) continue;
       removeIfPresent(this.suspended, entry);
       this.say('Search for Tomorrow comes out of suspend');
-      this.resolve(entry.cd);
-      this.gy.push(entry.cd);
+      this.resolve(entry.card);
+      this.graveyard.push(entry.card);
     }
     // epic copies (Endless Swarm makes a Snake for each card in hand; Eternal Dominion takes a card)
-    if (this.dominionCopies >= (this.cfg.dominion_win as number)) {
+    if (this.dominionCopies >= (this.config.dominion_win as number)) {
       this.say(
         `Eternal Dominion: ${this.dominionCopies} copies take the opponents' best cards -> win`,
       );
       for (let i = 0; i < this.life.length; i++)
-        if (this.oppAlive(i)) this.hurtOpp(i, this.life[i]);
+        if (this.isOpponentAlive(i)) this.damageOpponent(i, this.life[i]);
       this.loopWinHow = 'Eternal Dominion copies';
       return;
     }
@@ -824,16 +853,16 @@ export class AesiGame extends Game<AesiGame> {
       this.makeSnakes(this.hand.length);
     for (let i = 0; i < this.dominionCopies; i++) this.putStolenLand();
     // the Saga's next chapter (really after the draw step; close enough)
-    for (const permanent of this.bf.filter(
-      (otherPermanent) => otherPermanent.cd.name === SAGA,
+    for (const permanent of this.battlefield.filter(
+      (otherPermanent) => otherPermanent.card.name === SAGA,
     )) {
       permanent.counters += 1;
       if (permanent.counters === 2) this.gainLife(3);
       else if (permanent.counters >= 3) permanent.transformed = true; // Likeness of the Seeker (a 3/3 nobody minds)
     }
     // Into the Wilds: a land on top goes onto the battlefield
-    for (const _ of this.bf.filter(
-      (permanent) => permanent.cd.name === 'Into the Wilds',
+    for (const _ of this.battlefield.filter(
+      (permanent) => permanent.card.name === 'Into the Wilds',
     )) {
       const top = this.library[0];
       if (
@@ -848,7 +877,7 @@ export class AesiGame extends Game<AesiGame> {
   putStolenLand(): void {
     const permanent = new Perm(STOLEN_LAND, STOLEN_LAND.land);
     permanent.sick = false;
-    this.bf.push(permanent);
+    this.battlefield.push(permanent);
     this.say('Eternal Dominion takes a land');
     this.onLandEnter(permanent, false);
   }
@@ -869,15 +898,22 @@ export class AesiGame extends Game<AesiGame> {
   override endTurn(): void {
     this.endStep();
     if (this.turn <= 6) {
-      this.landsEnd[this.turn] = this.landsBf().length;
+      this.landsEnd[this.turn] = this.landsOnBattlefield().length;
     }
     const max =
-      this.onBf('Reliquary Tower') || this.onBf('Graceful Adept') ? 999 : 7;
+      this.isOnBattlefield('Reliquary Tower') ||
+      this.isOnBattlefield('Graceful Adept')
+        ? 999
+        : 7;
     if (this.hand.length > max) this.discard(this.hand.length - max);
   }
   override endStep(): void {
-    const permanent = this.perm(CASE);
-    if (permanent && !permanent.transformed && this.landsBf().length >= 7) {
+    const permanent = this.findPermanent(CASE);
+    if (
+      permanent &&
+      !permanent.transformed &&
+      this.landsOnBattlefield().length >= 7
+    ) {
       permanent.transformed = true;
       this.say('Case of the Locked Hothouse solved');
     }
@@ -891,19 +927,20 @@ export class AesiGame extends Game<AesiGame> {
     const ready = this.creatures().filter(
       (permanent) =>
         !permanent.tapped &&
-        (!permanent.sick || permanent.cd.haste) &&
+        (!permanent.sick || permanent.card.haste) &&
         this.power(permanent) > 0,
     );
-    const flyers = ready.filter((permanent) => permanent.cd.flying);
+    const flyers = ready.filter((permanent) => permanent.card.flying);
     const ground = ready
-      .filter((permanent) => !permanent.cd.flying)
+      .filter((permanent) => !permanent.card.flying)
       .sort(
         (permanent, otherPermanent) =>
           this.power(otherPermanent) - this.power(permanent),
       );
     let druidLandSize = 0;
-    const druid = this.perm(DRUID);
-    if (druid && druid.counters >= 3) druidLandSize = this.landsBf().length; // a land creature with haste
+    const druid = this.findPermanent(DRUID);
+    if (druid && druid.counters >= 3)
+      druidLandSize = this.landsOnBattlefield().length; // a land creature with haste
     const flyerDamage = flyers.reduce(
       (total, permanent) => total + this.power(permanent),
       0,
@@ -911,7 +948,7 @@ export class AesiGame extends Game<AesiGame> {
     // lands that are 2/2 creatures (Nature's Revolt, Natural Affinity, Sylvan Awakening): untapped ones that
     // aren't summoning sick (Awakening gives haste)
     const landAttackers = this.landsCreatures()
-      ? this.landsBf().filter(
+      ? this.landsOnBattlefield().filter(
           (permanent) =>
             !permanent.tapped && (!permanent.sick || this.awakened),
         )
@@ -920,7 +957,7 @@ export class AesiGame extends Game<AesiGame> {
       // a pod: real blockers decide. Land creatures are 2/2; the Druid Class land is as big as our land count
       const anotherPermanent = druidLandSize
         ? (landAttackers[0] ??
-          this.landsBf().find((permanent) => !permanent.tapped) ??
+          this.landsOnBattlefield().find((permanent) => !permanent.tapped) ??
           null)
         : null;
       const pool = [
@@ -964,10 +1001,10 @@ export class AesiGame extends Game<AesiGame> {
     for (const attacker of attackers) attacker.tapped = true;
     let left = damage;
     while (left > 0) {
-      const target = this.focusOpp();
+      const target = this.chooseTargetOpponent();
       if (target === null) break;
       const damageToOpponent = Math.min(left, this.life[target]);
-      this.hurtOpp(target, damageToOpponent);
+      this.damageOpponent(target, damageToOpponent);
       left -= damageToOpponent;
     }
     this.say(
@@ -991,9 +1028,11 @@ export class AesiGame extends Game<AesiGame> {
 
   /** The turn planner may pick any of its best few plays, but with aesi_first it never passes up casting Aesi. */
   override plan(options: number[], main2: boolean): number {
-    if (this.cfg.aesi_first && this.command.length) {
-      const cands = this.orderedCands(main2);
-      const i = options.find((optionIndex) => cands[optionIndex]?.score === 96); // (the commander's score; nothing else uses 96)
+    if (this.config.aesi_first && this.command.length) {
+      const candidates = this.orderedCands(main2);
+      const i = options.find(
+        (optionIndex) => candidates[optionIndex]?.score === 96,
+      ); // (the commander's score; nothing else uses 96)
       if (i !== undefined) return i;
     }
     return super.plan(options, main2);
@@ -1012,9 +1051,10 @@ export class AesiGame extends Game<AesiGame> {
     _fromGy: boolean,
     _trig: Record<string, unknown>,
   ): void {
-    if (!UYO_COPY.has(card.name) || !this.onBf(UYO) || this.epic) return;
-    const basics = this.landsBf().filter((permanent) =>
-      this.untappedLand(permanent.cd),
+    if (!UYO_COPY.has(card.name) || !this.isOnBattlefield(UYO) || this.epic)
+      return;
+    const basics = this.landsOnBattlefield().filter((permanent) =>
+      this.untappedLand(permanent.card),
     );
     const replays =
       this.dropsAllowed() - this.dropsUsed + this.readyPutters().length;
@@ -1029,13 +1069,13 @@ export class AesiGame extends Game<AesiGame> {
       )
       .slice(0, 2);
     for (const anotherPermanent of landsToReturn) {
-      if (!anotherPermanent.tapped && this.srcKind(anotherPermanent))
+      if (!anotherPermanent.tapped && this.manaSourceKind(anotherPermanent))
         this.tap(anotherPermanent, 'N'); // float its mana first
-      removeIfPresent(this.bf, anotherPermanent);
-      this.hand.push(anotherPermanent.cd);
+      removeIfPresent(this.battlefield, anotherPermanent);
+      this.hand.push(anotherPermanent.card);
     }
     this.say(
-      `Uyo copies ${card.name} (returning ${landsToReturn.map((permanent) => permanent.cd.name).join(', ')})`,
+      `Uyo copies ${card.name} (returning ${landsToReturn.map((permanent) => permanent.card.name).join(', ')})`,
     );
     this.resolve(card, false, 'copy');
   }
@@ -1053,27 +1093,28 @@ export class AesiGame extends Game<AesiGame> {
   override positionValue(): number {
     if (this.died) return -5000;
     let value = 0;
-    const start = this.cfg.opp_life as number,
-      startingLibrarySize = this.cfg.opp_library as number;
+    const start = this.config.opp_life as number,
+      startingLibrarySize = this.config.opp_library as number;
     for (let i = 0; i < this.life.length; i++) {
       value +=
         2 * (start - Math.max(0, this.life[i])) +
-        0.5 * (startingLibrarySize - this.lib[i]);
-      if (!this.oppAlive(i)) value += 60;
+        0.5 * (startingLibrarySize - this.opponentLibrarySizes[i]);
+      if (!this.isOpponentAlive(i)) value += 60;
     }
     if (
-      this.bf.some(
+      this.battlefield.some(
         (permanent) =>
-          permanent.cd === TOK.illusionArmy || permanent.cd === TOK.snakeArmy,
+          permanent.card === TOK.illusionArmy ||
+          permanent.card === TOK.snakeArmy,
       )
     )
       value += 3000;
-    const landCount = this.landsBf().length;
+    const landCount = this.landsOnBattlefield().length;
     value += 24 * Math.min(landCount, 12) + 6 * Math.max(0, landCount - 12);
-    for (const otherPermanent of this.bf) {
+    for (const otherPermanent of this.battlefield) {
       if (otherPermanent.land !== null) continue;
       if (otherPermanent.token) value += 4 + this.power(otherPermanent);
-      else value += 0.8 * this.battlefieldValue(otherPermanent.cd);
+      else value += 0.8 * this.battlefieldValue(otherPermanent.card);
     }
     value += 10 * (this.dropsAllowed() - 1);
     value +=

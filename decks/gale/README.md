@@ -9,7 +9,7 @@ Dimir spellslinger combo. Run with `npm run sim -- gale ...` from the project ro
 | `decklist.txt` | The list as first given (the adopted list is `lists/proposed.txt`, see PLAN.md). |
 | `lists/` | Test lists (`proposed.txt` is the adopted list, see PLAN.md). `lists/cuts/` holds cut-test variants, `lists/old/` older results. |
 | `logs/` | Archidekt playtest logs of real games, for `--analyze`. |
-| `game.ts` | `GaleGame`: its state, the engine hooks, Scion's draw, the Mindskinner's attack, and what the AI values (`cardValue`, `devValueIS`, `positionValue`). |
+| `game.ts` | `GaleGame`: its state, the engine hooks, Scion's draw, the Mindskinner's attack, and what the AI values (`cardValue`, `instantOrSorceryDevValue`, `positionValue`). |
 | `candidates.ts` | What the AI may do now (`buildCandidates`), Gale's recast, countering its own spell. |
 | `tutoring.ts` | What to tutor for (`chooseTutorTarget`) and which Gifts Ungiven pile to make. |
 | `spells.ts` | What the spells only this deck uses do when they resolve. |

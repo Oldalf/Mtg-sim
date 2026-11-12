@@ -46,7 +46,7 @@ type AddCandidate = (
   score: number,
   cost: Cost,
   isInstantOrSorcery: boolean,
-  act: () => boolean,
+  action: () => boolean,
   rockCard?: CardDef,
 ) => void;
 
@@ -62,13 +62,19 @@ interface CandidateContext {
 export function buildCandidates(game: MikeGame, main2: boolean): Cand[] {
   game.purgeSpawns();
   const candidates: Cand[] = [];
-  const add: AddCandidate = (score, cost, isIS, act, rock) =>
-    candidates.push({ score, cost, isIS, act, rock });
+  const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
+    candidates.push({
+      score,
+      cost,
+      isInstantOrSorcery: isInstantOrSorcery,
+      action: action,
+      rock,
+    });
   const context: CandidateContext = {
     isEarly: game.manaSources() < 6,
     drawRoom: game.maxDrawEvents(),
     hasWinPiece: game.hasMillWinPiece(),
-    isLibraryLow: game.library.length <= (game.cfg.maniac_at as number),
+    isLibraryLow: game.library.length <= (game.config.maniac_at as number),
   };
   for (const commander of game.command.slice())
     add(92, game.commanderCost(commander, game.effCost(commander)), false, () =>
@@ -149,7 +155,7 @@ function addEnginePieceCandidate(
     case JACE: {
       // win pieces: cast them when the mill is near (or early, if config says so)
       const isNear = context.isLibraryLow || game.isSafeToEmptyLibrary();
-      score = isNear ? 97 : game.cfg.maniac_early ? score - 10 : 0;
+      score = isNear ? 97 : game.config.maniac_early ? score - 10 : 0;
       if (score > 0) add(score, cost, false, cast);
       return true;
     }
@@ -226,7 +232,7 @@ function addDrawSpellCandidate(
 ): boolean {
   const name = card.name;
   const cost = game.effCost(card);
-  const cast = () => game.castIS(card);
+  const cast = () => game.castInstantOrSorcery(card);
   const score = game.value(card);
   const winPieceBonus = context.hasWinPiece ? 40 : 0;
   switch (name) {
@@ -254,15 +260,15 @@ function addDrawSpellCandidate(
           Math.min(98, (context.hasWinPiece ? 70 : 30) + 4 * xValue),
           xCost,
           true,
-          () => game.castIS(card, false, xCost, `x=${xValue}`),
+          () => game.castInstantOrSorcery(card, false, xCost, `x=${xValue}`),
         );
       }
       return true;
     }
     case 'Treasure Cruise': {
       const baseCost = game.effCost(card);
-      const delve = Math.min(game.gy.length, baseCost.g);
-      const delvedCost = baseCost.withGeneric(baseCost.g - delve);
+      const delve = Math.min(game.graveyard.length, baseCost.generic);
+      const delvedCost = baseCost.withGeneric(baseCost.generic - delve);
       if (game.mayDraw(1))
         add(
           score + (context.hasWinPiece ? 30 : 0) - (delve < 3 ? 25 : 0),
@@ -287,7 +293,7 @@ function addRefillSpellCandidate(
 ): void {
   const isFlux = card.name === 'Flux';
   const cost = game.effCost(card);
-  const cast = () => game.castIS(card);
+  const cast = () => game.castInstantOrSorcery(card);
   const score = game.value(card);
   const discarded = game.hand.length - 1; // cards that get discarded (Flux: all of them when the mill is safe)
   const totalDrawn = game.refillDraws(discarded, isFlux);
@@ -322,7 +328,7 @@ function addRefillSpellCandidate(
     if (game.mayDraw(2) && hasDeadCard) add(score, cost, true, cast);
   } else if (
     discarded >= 4 &&
-    totalDrawn <= game.library.length - (game.cfg.keep_library as number) &&
+    totalDrawn <= game.library.length - (game.config.keep_library as number) &&
     (!hasKeeper || crawlerCount > 0)
   )
     add(crawlerCount ? 85 : 40, cost, true, cast);
@@ -339,7 +345,7 @@ function addPermanentCandidate(
   if (name === 'Volatile Stormdrake' || name === 'Thunderclap Drake')
     score +=
       name === 'Thunderclap Drake' &&
-      game.hand.filter((candidate) => candidate.isIS).length >= 2
+      game.hand.filter((candidate) => candidate.isInstantOrSorcery).length >= 2
         ? 10
         : 0;
   if (
@@ -370,21 +376,21 @@ export function abilityCandidates(
   drawRoom: number,
   hasWinPiece: boolean,
 ): void {
-  const add = (score: number, cost: Cost, act: () => boolean) =>
-    candidates.push({ score, cost, isIS: false, act });
+  const add = (score: number, cost: Cost, action: () => boolean) =>
+    candidates.push({ score, cost, isInstantOrSorcery: false, action: action });
   const context: AbilityContext = {
     isMain2: main2,
     drawRoom,
     hasWinPiece,
     winPieceBonus: hasWinPiece ? 40 : 0,
   };
-  for (const permanent of game.bf) {
+  for (const permanent of game.battlefield) {
     if (addDrawAbilityCandidate(game, permanent, add, context)) continue;
     addCombatAbilityCandidate(game, permanent, add, context);
   }
 }
 
-type AddAbility = (score: number, cost: Cost, act: () => boolean) => void;
+type AddAbility = (score: number, cost: Cost, action: () => boolean) => void;
 
 /** Abilities that draw cards or loot. Returns true if the permanent has one of them (even if not usable now). */
 function addDrawAbilityCandidate(
@@ -396,7 +402,7 @@ function addDrawAbilityCandidate(
   const { isMain2, winPieceBonus } = context;
   const isReady =
     !permanent.tapped && !(permanent.isCreature && permanent.sick);
-  switch (permanent.cd.name) {
+  switch (permanent.card.name) {
     case SPECTRAL_SAILOR:
       if (game.mayDraw(1))
         add(
@@ -468,7 +474,7 @@ function addEngineAbilityCandidate(
   const { drawRoom, hasWinPiece, winPieceBonus } = context;
   const isReady =
     !permanent.tapped && !(permanent.isCreature && permanent.sick);
-  switch (permanent.cd.name) {
+  switch (permanent.card.name) {
     case FOLIO_OF_FANCIES:
       if (isReady) {
         const xValue = Math.min(game.maxAffordableX(0, 2), drawRoom);
@@ -556,7 +562,7 @@ function addCombatAbilityCandidate(
   add: AddAbility,
   context: AbilityContext,
 ): void {
-  const name = permanent.cd.name;
+  const name = permanent.card.name;
   const isReady =
     !permanent.tapped && !(permanent.isCreature && permanent.sick);
   if (

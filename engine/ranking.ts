@@ -44,7 +44,7 @@ export async function rank(
   const percentKillingBy = (turns: number[]) =>
     (turns.filter((turn) => turn <= rankTurn).length / turns.length) * 100;
   const mean = (numbers: number[]) =>
-    numbers.reduce((sum, x) => sum + x, 0) / numbers.length;
+    numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
 
   const rankings: CardRanking[] = [];
   for (const card of [...new Set(decklist.library)].sort()) {
@@ -64,9 +64,9 @@ export async function rank(
     });
   }
   rankings.sort(
-    (a, b) =>
-      b.turnsSooner - a.turnsSooner ||
-      b.percentPointsMore - a.percentPointsMore,
+    (first, second) =>
+      second.turnsSooner - first.turnsSooner ||
+      second.percentPointsMore - first.percentPointsMore,
   );
 
   console.log(

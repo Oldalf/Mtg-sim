@@ -26,7 +26,7 @@ export const deck = {
   name: 'aesi',
   dir: path.join(ROOT, 'decks', 'aesi'),
   defaultList: 'decklist.txt',
-  cfg: CFG,
+  config: CFG,
   Game: AesiGame,
   metrics: [
     ['Win (all 3 out)', 'win'],
@@ -52,21 +52,21 @@ export const deck = {
   handFeatures: [
     {
       label: 'a green source (Forest, dual, fetch, Chamber)',
-      f: (cards: CardDef[]) => cards.some((card) => landMakes(card, 'G')),
+      matches: (cards: CardDef[]) => cards.some((card) => landMakes(card, 'G')),
     },
     {
       label: 'a blue source',
-      f: (cards: CardDef[]) => cards.some((card) => landMakes(card, 'U')),
+      matches: (cards: CardDef[]) => cards.some((card) => landMakes(card, 'U')),
     },
     {
       label: 'a green and a blue source',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         cards.some((card) => landMakes(card, 'G')) &&
         cards.some((card) => landMakes(card, 'U')),
     },
     {
       label: 'a ramp spell or creature',
-      f: anyOf([
+      matches: anyOf([
         'Rampant Growth',
         'Farseek',
         'Cultivate',
@@ -92,7 +92,7 @@ export const deck = {
     {
       label:
         'a ramp piece costing 1-2 (Rampant Growth, Elder, Search, Cobra, Sol Ring...)',
-      f: anyOf([
+      matches: anyOf([
         'Rampant Growth',
         'Farseek',
         'Sakura-Tribe Elder',
@@ -107,7 +107,7 @@ export const deck = {
     {
       label:
         'an untapper or a land putter (Retreat, Raft-Steerer, Atlas, Scout, PuPu)',
-      f: anyOf([
+      matches: anyOf([
         'Retreat to Coralhelm',
         'Elven Raft-Steerer',
         'Walking Atlas',
@@ -118,7 +118,7 @@ export const deck = {
     },
     {
       label: 'an extra-land-drop card (Azusa, Loot, Case, Druid Class...)',
-      f: anyOf([
+      matches: anyOf([
         'Azusa, Lost but Seeking',
         'Loot, Exuberant Explorer',
         'Case of the Locked Hothouse',
@@ -129,7 +129,7 @@ export const deck = {
     },
     {
       label: '2 lands and a cheap ramp piece',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         lands(cards) === 2 &&
         anyOf([
           'Rampant Growth',
@@ -145,7 +145,7 @@ export const deck = {
     },
     {
       label: '2 lands, a green source and a cheap ramp piece',
-      f: (cards: CardDef[]) =>
+      matches: (cards: CardDef[]) =>
         lands(cards) === 2 &&
         cards.some((card) => landMakes(card, 'G')) &&
         anyOf([
@@ -167,12 +167,12 @@ export const deck = {
     {
       label: 'No win by turn 14 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => win(row) > 14),
+      measure: (rows: DiagRow[]) => percentOf(rows, (row) => win(row) > 14),
     },
     {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         rows.map(win).sort((first, second) => first - second)[
           Math.floor(rows.length * 0.9)
         ],
@@ -181,7 +181,7 @@ export const deck = {
     {
       label: 'Won without ever casting Aesi (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(
           rows,
           (row) => win(row) <= 14 && turnOf(row, 'aesiOut') > win(row),
@@ -190,7 +190,7 @@ export const deck = {
     {
       label: 'Average turn Aesi comes down (games where he does)',
       unit: 'turn' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter(
             (row) =>
@@ -202,26 +202,26 @@ export const deck = {
     {
       label: 'No Aesi by end of turn 5, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => turnOf(row, 'aesiOut') > 5 && win(row) > 5),
     },
     {
       label: 'No Aesi by end of turn 6, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => turnOf(row, 'aesiOut') > 6 && win(row) > 6),
     },
     {
       label: 'No Aesi by end of turn 7, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => turnOf(row, 'aesiOut') > 7 && win(row) > 7),
     },
     {
       label:
         "Average turn of Aesi's first landfall draw (games where it happens)",
       unit: 'turn' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => row.aesiDraw !== null),
           (row) => turnOf(row, 'aesiDraw'),
@@ -230,7 +230,7 @@ export const deck = {
     {
       label: 'No landfall draw by end of turn 7, game still going (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => turnOf(row, 'aesiDraw') > 7 && win(row) > 7),
     },
     // "Not doing much" (Pontus): less than 60% of the mana of one land per turn (15 by turn 5, 21 by turn 6)
@@ -238,19 +238,19 @@ export const deck = {
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 5 && (row.spent5 ?? 0) < 9),
     },
     {
       label: 'Slow start: under 13 mana spent by turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(rows, (row) => win(row) > 6 && (row.spent6 ?? 0) < 13),
     },
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         percentOf(
           rows,
           (row) =>
@@ -261,7 +261,7 @@ export const deck = {
     {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 5),
           (row) => row.spent5 ?? 0,
@@ -270,7 +270,7 @@ export const deck = {
     {
       label: 'Average mana spent by turn 6 (of 21)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) =>
+      measure: (rows: DiagRow[]) =>
         averageOf(
           rows.filter((row) => win(row) > 6),
           (row) => row.spent6 ?? 0,
@@ -279,12 +279,13 @@ export const deck = {
     {
       label: 'Lands on turn 5 (average)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) => averageOf(rows, (row) => row.lands5 ?? 0),
+      measure: (rows: DiagRow[]) => averageOf(rows, (row) => row.lands5 ?? 0),
     },
     {
       label: '5 lands or fewer after turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (row) => (row.lands6 ?? 0) <= 5),
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => (row.lands6 ?? 0) <= 5),
     },
   ],
 };

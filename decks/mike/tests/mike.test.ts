@@ -18,250 +18,261 @@ import {
   ORMOS_ARCHIVE_KEEPER,
 } from '../cards';
 
-const rep = (n: string, k: number) => new Array(k).fill(n) as string[];
+const repeatName = (cardName: string, count: number) =>
+  new Array(count).fill(cardName) as string[];
 
 function board(
-  bf: string[] = [],
+  battlefieldNames: string[] = [],
   hand: string[] = [],
-  library = rep('Island', 40),
-  gy: string[] = [],
-  lands = rep('Island', 6),
-  cfg = {},
+  library = repeatName('Island', 40),
+  graveyardNames: string[] = [],
+  lands = repeatName('Island', 6),
+  config = {},
 ): MikeGame {
-  const g = new MikeGame([], library, new Rng(1), { ...CFG, ...cfg });
-  g.startTurn();
-  g.turn = 6;
-  g.drawStepOpen = false;
-  for (const l of lands) {
-    const cd = C.get(l);
-    const p = new Perm(cd, cd.land);
-    p.sick = false;
-    g.bf.push(p);
+  const game = new MikeGame([], library, new Rng(1), { ...CFG, ...config });
+  game.startTurn();
+  game.turn = 6;
+  game.drawStepOpen = false;
+  for (const landName of lands) {
+    const card = C.get(landName);
+    const permanent = new Perm(card, card.land);
+    permanent.sick = false;
+    game.battlefield.push(permanent);
   }
-  for (const n of bf) {
-    const p = new Perm(C.get(n));
-    p.sick = false;
-    g.bf.push(p);
+  for (const cardName of battlefieldNames) {
+    const otherPermanent = new Perm(C.get(cardName));
+    otherPermanent.sick = false;
+    game.battlefield.push(otherPermanent);
   }
-  g.hand = hand.map((n) => C.get(n));
-  g.gy = gy.map((n) => C.get(n));
-  return g;
+  game.hand = hand.map((cardName) => C.get(cardName));
+  game.graveyard = graveyardNames.map((cardName) => C.get(cardName));
+  return game;
 }
 
 export function runMikeTests(): boolean {
-  let ok = true;
+  let allPassed = true;
   const check = (label: string, got: unknown, expect: unknown) => {
     const good = JSON.stringify(got) === JSON.stringify(expect);
     console.log(
       `${good ? 'OK ' : 'BAD'} ${label}: got ${JSON.stringify(got)}, expected ${JSON.stringify(expect)}`,
     );
-    ok = ok && good;
+    allPassed = allPassed && good;
   };
 
   // ---- drawing from an empty library
-  let g = board([LABORATORY_MANIAC], [], []);
-  g.draw(1);
+  let game = board([LABORATORY_MANIAC], [], []);
+  game.draw(1);
   check(
     'Laboratory Maniac: drawing from an empty library wins',
-    [g.milled, g.died],
+    [game.milled, game.died],
     [true, false],
   );
-  g = board([JACE], [], []);
-  g.draw(1);
+  game = board([JACE], [], []);
+  game.draw(1);
   check(
     'Jace: drawing from an empty library wins',
-    [g.milled, g.died],
+    [game.milled, game.died],
     [true, false],
   );
-  g = board([LIVING_CONUNDRUM], [], []);
-  g.draw(3);
+  game = board([LIVING_CONUNDRUM], [], []);
+  game.draw(3);
   check(
     'Living Conundrum: the draws are skipped',
-    [g.milled, g.died, g.hand.length],
+    [game.milled, game.died, game.hand.length],
     [false, false, 0],
   );
-  g = board([ORMOS_ARCHIVE_KEEPER], [], []);
-  g.draw(2);
+  game = board([ORMOS_ARCHIVE_KEEPER], [], []);
+  game.draw(2);
   check(
     'Ormos: two empty draws = ten +1/+1 counters',
-    [g.perm(ORMOS_ARCHIVE_KEEPER)!.counters, g.died],
+    [game.findPermanent(ORMOS_ARCHIVE_KEEPER)!.counters, game.died],
     [10, false],
   );
-  g = board([], [], []);
-  g.draw(1);
-  check('no protection: drawing from an empty library loses', g.died, true);
-  g = board([LABORATORY_MANIAC, LIVING_CONUNDRUM], [], []);
-  g.draw(1);
+  game = board([], [], []);
+  game.draw(1);
+  check('no protection: drawing from an empty library loses', game.died, true);
+  game = board([LABORATORY_MANIAC, LIVING_CONUNDRUM], [], []);
+  game.draw(1);
   check(
     'Maniac and Conundrum together: we win (Maniac is chosen)',
-    g.milled,
+    game.milled,
     true,
   );
 
   // ---- doubling draws
-  g = board([VNWXT], []);
-  g.speed = 4;
-  g.draw(1);
-  check('Vnwxt at max speed: draw two instead', g.hand.length, 2);
-  g = board([VNWXT], []);
-  g.speed = 3;
-  g.draw(1);
-  check('Vnwxt below max speed: draw one', g.hand.length, 1);
-  g = board([TEFERIS_AGELESS_INSIGHT], []);
-  g.draw(1);
-  check("Teferi's Ageless Insight: an effect draw gives two", g.hand.length, 2);
-  g = board([TEFERIS_AGELESS_INSIGHT], []);
-  g.drawStepOpen = true;
-  g.draw(1);
+  game = board([VNWXT], []);
+  game.speed = 4;
+  game.draw(1);
+  check('Vnwxt at max speed: draw two instead', game.hand.length, 2);
+  game = board([VNWXT], []);
+  game.speed = 3;
+  game.draw(1);
+  check('Vnwxt below max speed: draw one', game.hand.length, 1);
+  game = board([TEFERIS_AGELESS_INSIGHT], []);
+  game.draw(1);
+  check(
+    "Teferi's Ageless Insight: an effect draw gives two",
+    game.hand.length,
+    2,
+  );
+  game = board([TEFERIS_AGELESS_INSIGHT], []);
+  game.drawStepOpen = true;
+  game.draw(1);
   check(
     'Teferi: the first draw of the draw step is just one card',
-    g.hand.length,
+    game.hand.length,
     1,
   );
-  g = board([TEFERIS_AGELESS_INSIGHT, VNWXT], []);
-  g.speed = 4;
-  g.draw(1);
+  game = board([TEFERIS_AGELESS_INSIGHT, VNWXT], []);
+  game.speed = 4;
+  game.draw(1);
   check(
     'Teferi + Vnwxt (max speed): one effect draw gives four',
-    g.hand.length,
+    game.hand.length,
     4,
   );
-  g = board([TEFERIS_AGELESS_INSIGHT, VNWXT], []);
-  g.speed = 4;
-  g.drawStepOpen = true;
-  g.draw(1);
+  game = board([TEFERIS_AGELESS_INSIGHT, VNWXT], []);
+  game.speed = 4;
+  game.drawStepOpen = true;
+  game.draw(1);
   check(
     'Teferi + Vnwxt: the draw step gives three (the first card is exempt from Teferi)',
-    g.hand.length,
+    game.hand.length,
     3,
   );
 
   // ---- draw triggers
-  g = board([PSYCHOSIS_CRAWLER], []);
-  g.draw(3);
+  game = board([PSYCHOSIS_CRAWLER], []);
+  game.draw(3);
   check(
     'Psychosis Crawler: each draw drains every opponent 1',
-    g.life,
+    game.life,
     [37, 37, 37],
   );
-  g = board([PSYCHOSIS_CRAWLER, KRANG], []);
-  g.draw(2);
-  check("Krang doubles Psychosis Crawler's trigger", g.life, [36, 36, 36]);
-  g = board([OMINOUS_SEAS], []);
-  g.draw(7);
+  game = board([PSYCHOSIS_CRAWLER, KRANG], []);
+  game.draw(2);
+  check("Krang doubles Psychosis Crawler's trigger", game.life, [36, 36, 36]);
+  game = board([OMINOUS_SEAS], []);
+  game.draw(7);
   check(
     'Ominous Seas: seven draws, seven counters, no Kraken',
     [
-      g.perm(OMINOUS_SEAS)!.counters,
-      g.bf.filter((p) => p.cd === TOK.kraken).length,
+      game.findPermanent(OMINOUS_SEAS)!.counters,
+      game.battlefield.filter((permanent) => permanent.card === TOK.kraken)
+        .length,
     ],
     [7, 0],
   );
-  g.draw(1);
+  game.draw(1);
   check(
     'Ominous Seas: the eighth draw makes an 8/8 Kraken',
     [
-      g.perm(OMINOUS_SEAS)!.counters,
-      g.bf.filter((p) => p.cd === TOK.kraken).length,
+      game.findPermanent(OMINOUS_SEAS)!.counters,
+      game.battlefield.filter((permanent) => permanent.card === TOK.kraken)
+        .length,
     ],
     [0, 1],
   );
-  g = board(['Clinquant Skymage', 'Oneirophage'], []);
-  g.draw(2);
+  game = board(['Clinquant Skymage', 'Oneirophage'], []);
+  game.draw(2);
   check(
     'Skymage and Oneirophage grow with each draw',
-    g.bf.filter((p) => p.counters === 2).length,
+    game.battlefield.filter((permanent) => permanent.counters === 2).length,
     2,
   );
-  g = board(["Emrakul's Messenger", 'Mischievous Mystic'], []);
-  g.draw(1);
-  const none = g.bf.length;
-  g.draw(1);
+  game = board(["Emrakul's Messenger", 'Mischievous Mystic'], []);
+  game.draw(1);
+  const none = game.battlefield.length;
+  game.draw(1);
   check(
     'Messenger / Mystic: only the second card each turn makes a Spawn and a Faerie',
-    [none, g.bf.length],
+    [none, game.battlefield.length],
     [8, 10],
   );
 
   // ---- speed
-  g = board([VNWXT], []);
-  g.speed = 1;
-  g.hurtOpp(0, 3);
-  g.hurtOpp(1, 3);
-  check('speed rises once per turn when an opponent loses life', g.speed, 2);
-  g.startTurn();
-  g.hurtOpp(0, 1);
-  check('...and again on the next turn', g.speed, 3);
-  g = board([], []);
-  g.hurtOpp(0, 3);
-  check('without a speed card there is no speed', g.speed, 0);
+  game = board([VNWXT], []);
+  game.speed = 1;
+  game.damageOpponent(0, 3);
+  game.damageOpponent(1, 3);
+  check('speed rises once per turn when an opponent loses life', game.speed, 2);
+  game.startTurn();
+  game.damageOpponent(0, 1);
+  check('...and again on the next turn', game.speed, 3);
+  game = board([], []);
+  game.damageOpponent(0, 3);
+  check('without a speed card there is no speed', game.speed, 0);
 
   // ---- Toad
-  g = board([TWENTY_TOED_TOAD], rep('Island', 20));
+  game = board([TWENTY_TOED_TOAD], repeatName('Island', 20));
   check(
     'Twenty-Toed Toad with twenty cards in hand wins',
-    (g.checkKill(), g.oppsBeaten()),
+    (game.checkKill(), game.areOpponentsBeaten()),
     true,
   );
-  g = board([TWENTY_TOED_TOAD], rep('Island', 19));
-  check('...with nineteen it does not', (g.checkKill(), g.oppsBeaten()), false);
+  game = board([TWENTY_TOED_TOAD], repeatName('Island', 19));
+  check(
+    '...with nineteen it does not',
+    (game.checkKill(), game.areOpponentsBeaten()),
+    false,
+  );
 
   // ---- the AI's safety rule
-  g = board([], [], rep('Island', 6));
+  game = board([], [], repeatName('Island', 6));
   check(
     'no protection: the AI will not draw into the last 3 cards',
-    [g.mayDraw(2), g.mayDraw(4)],
+    [game.mayDraw(2), game.mayDraw(4)],
     [true, false],
   );
-  g = board([LIVING_CONUNDRUM], [], rep('Island', 6));
+  game = board([LIVING_CONUNDRUM], [], repeatName('Island', 6));
   check(
     'Living Conundrum on the battlefield: drawing everything is fine',
-    g.mayDraw(20),
+    game.mayDraw(20),
     true,
   );
-  g = board([LABORATORY_MANIAC], [], rep('Island', 6));
+  game = board([LABORATORY_MANIAC], [], repeatName('Island', 6));
   check(
     'a win piece on the battlefield: drawing everything is the plan',
-    g.mayDraw(20),
+    game.mayDraw(20),
     true,
   );
 
   // ---- Slick Imitator copies a Windfall (Pontus: 15 cards in hand = 30 drawn, then the copy discards 30 and draws 60)
-  g = board(
+  game = board(
     [VNWXT, 'Slick Imitator'],
-    ['Windfall', ...rep('Brainstorm', 14)],
-    rep('Island', 300),
+    ['Windfall', ...repeatName('Brainstorm', 14)],
+    repeatName('Island', 300),
   );
-  g.speed = 4;
-  g.castIS(C.get('Windfall'));
+  game.speed = 4;
+  game.castInstantOrSorcery(C.get('Windfall'));
   check(
     'Windfall with 14 other cards at max speed, copied by Slick Imitator: 28 drawn, then 56',
-    [g.hand.length, g.onBf('Slick Imitator')],
+    [game.hand.length, game.isOnBattlefield('Slick Imitator')],
     [56, false],
   );
-  g = board(
+  game = board(
     [VNWXT, LABORATORY_MANIAC],
-    ['Flux', ...rep('Brainstorm', 14)],
-    rep('Island', 25),
+    ['Flux', ...repeatName('Brainstorm', 14)],
+    repeatName('Island', 25),
   );
-  g.speed = 4;
-  g.castIS(C.get('Flux'));
+  game.speed = 4;
+  game.castInstantOrSorcery(C.get('Flux'));
   check(
     'Flux with a win piece out and a small library: the whole hand is refilled and the library runs out (win)',
-    g.milled,
+    game.milled,
     true,
   );
 
   // ---- the Water Crystal makes blue spells cheaper
-  g = board(['The Water Crystal'], []);
+  game = board(['The Water Crystal'], []);
   check(
     'The Water Crystal: Pull from Tomorrow (X=3) costs one less',
-    g.effCost(
+    game.effCost(
       C.get('Pull from Tomorrow'),
       C.Cost.parse('{U}{U}').withGeneric(3),
-    ).mv,
+    ).manaValue,
     4,
   );
 
-  return ok;
+  return allPassed;
 }
