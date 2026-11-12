@@ -6,8 +6,8 @@ import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
 import { keepsHand, DEFAULT_MULLIGAN } from '../../../engine/mulligan';
 import { MULLIGAN } from '../mulligan';
+import { AesiGame } from '../game';
 import {
-  AesiGame,
   AESI,
   RETREAT,
   KODAMA,
@@ -22,7 +22,7 @@ import {
   SWARM,
   CHAMBER,
   TOK,
-} from '../game';
+} from '../cards';
 
 const rep = (n: string, k: number) => new Array(k).fill(n) as string[];
 

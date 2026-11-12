@@ -25,7 +25,11 @@ Simic "reverse landfall" (based on DefCatMtg's list), bracket 3, built to be fun
 - **Patron of the Moon's offering** is used (sacrifices the least useful moonfolk). **Land lock** (`land_lock_win`): with lands as creatures, bouncing every opponent's land over and over counts as a win (Pontus); `--set land_lock_win=0` turns it off.
 - **AI policy `aesi_first`:** the turn planner never passes up casting Aesi when he is affordable (moved late-Aesi games from 11.6% to 11.3%: noise, kept because it is Pontus's intent). Planner on: about +4 points win by turn 10.
 
-## How the cards are played (`game.ts`)
+## Files
+
+- `cards.ts`: the card names and facts about them (values, ramp, the moonfolk table). `game.ts`: `AesiGame` (state, land drops, mana, turn steps, combat). `loops.ts`: the loop solver. `candidates.ts`: what the AI may do now, with a score. `actions.ts`: what the abilities do. `spells.ts`: what the ramp and utility spells do. `index.ts`: the deck registration and its --diag / --hands measures. `mulligan.ts`, `config.ts`, `tests/`.
+
+## How the cards are played (`game.ts`, `candidates.ts`)
 
 - **Land drops:** 1, plus 1 each for Aesi, Loot, Case of the Locked Hothouse, Druid Class level 2; Azusa 2; this turn only Explore 1, Summer Bloom 3, Azusa's Many Journeys 1. **Land puts** (no drop): Atlas, Scout, PuPu, Budoka (flips at 10 lands), Patron's {1}, Kodama, Growth Spiral. With an untapper out a "put" creature goes first.
 - **Lands:** Evolving Wilds, Terramorphic Expanse and Fabled Passage crack at once (two landfalls, basic tapped; Passage untapped with 4+ lands). Simic Growth Chamber and Guildless Commons return a land (themselves when that sets up a loop). Case (solved at 7 lands) plays lands and casts good creatures from the top. Myriad Landscape: {2}, sacrifice, two basics. Demolition Field counts as a 2-mana "fetch a basic".
