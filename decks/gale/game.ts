@@ -1,11 +1,38 @@
 /**
  * The Gale deck's AI: what it wants to do each turn, and the rules of the cards only it uses.
- * The game itself (mana, zones, casting, turns, planner) is the shared engine in engine/game.ts.
+ * The game itself (mana, zones, casting, turns, planner) is the shared engine in engine/game-core.ts.
+ *
+ * Files:
+ *   roles.ts             what each card is for (combo pieces, engines, packages, scores)
+ *   game.ts              this file: GaleGame, its state, hooks and what the AI values
+ *   candidates.ts        everything the AI may do now, with a score each, and Gale's recasts
+ *   tutoring.ts          what to tutor for, and which Gifts Ungiven pile to make
+ *   spells.ts            what the spells only this deck uses do when they resolve
+ *   snapshot.ts          builds the state the kill search starts from
+ *   kills.ts             the kill search and its pre-filter
+ *   kill-state.ts        the state the search works on, and the effects of spells on it
+ *   kill-moves.ts        the moves of the search (what can be cast or activated from a state)
+ *   chain-probability.ts checks lines that rely on Konrad's creature count against real shuffles
  */
 import * as C from '../../engine/cards';
 import * as Facts from '../../engine/card-facts';
-import { Cost, CardDef } from '../../engine/cards';
-import { Game } from '../../engine/game';
+import {
+  COMBO_PERMS,
+  COMBO_SORC,
+  ENGINES,
+  GALE,
+  PACKAGES,
+  PERM_SCORE,
+  SCION,
+  permScore,
+} from './roles';
+import { OPPONENT_EVENT, KillSearchState } from './kill-state';
+import { finisherReachable, search } from './kills';
+import { chooseTutorTarget } from './tutoring';
+import { buildCandidates, castWithGaleRecast } from './candidates';
+import { buildKillSearchState } from './snapshot';
+import { resolveGaleSpell } from './spells';
+import { CardDef, Cost } from '../../engine/cards';
 import {
   Cand,
   KillSearcher,
@@ -13,150 +40,66 @@ import {
   Perm,
   WinAttempt,
 } from '../../engine/game-types';
-import {
-  firstMax,
-  firstMin,
-  sortDesc,
-  removeOrThrow,
-} from '../../engine/lists';
+import { Game } from '../../engine/game';
+import { removeOrThrow } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
-import {
-  GALE,
-  SCION,
-  COMBO_PERMS,
-  COMBO_SPELLS,
-  ENGINES,
-  COMBO_SORC,
-} from './roles';
-import { Light, search, finisherReachable, FODDER_EXCLUDE, EV } from './kills';
 
-const PACKAGES: Set<string>[][] = [
-  [
-    new Set(['Duskmantle Guildmage']),
-    new Set(['Mindcrank']),
-    new Set([
-      'Maddening Cacophony',
-      'Windfall',
-      'Riverchurn Monument',
-      'Syr Konrad, the Grim',
-      'Extended Absence',
-      'Singularity Rupture',
-    ]),
-  ],
-  [
-    new Set(['Duskmantle Guildmage']),
-    new Set(['Maddening Cacophony', 'Singularity Rupture']),
-  ],
-  [new Set(['Maddening Cacophony']), new Set(['Riverchurn Monument'])],
-  [new Set(['The Mindskinner']), new Set(['Syr Konrad, the Grim'])],
-  [new Set(['Expansion Algorithm']), new Set(['Prologue to Phyresis'])],
-];
-const RAMP_PREFS = [
-  'Sol Ring',
-  'Arcane Signet',
-  'Fellwar Stone',
-  'Talisman of Dominance',
-  'Dimir Signet',
-  "Bender's Waterskin",
-  'Baral, Chief of Compliance',
-  'Mocking Sprite',
-  'Thunderclap Drake',
-];
-export const PERM_SCORE: Record<string, number> = {
-  'Sol Ring': 100,
-  'Arcane Signet': 88,
-  'Dimir Signet': 86,
-  'Fellwar Stone': 88,
-  'Talisman of Dominance': 88,
-  "Bender's Waterskin": 80,
-  'Baral, Chief of Compliance': 77,
-  'Mocking Sprite': 75,
-  'Thunderclap Drake': 76,
-  'Geist of Saint Thalia': 74,
-  'Nightscape Familiar': 72,
-  'Wizards of Thay': 73,
-  'Case of the Ransacked Lab': 74,
-  'Curious Homunculus': 71,
-  'Emet-Selch of the Third Seat': 69,
-  'Archmage Emeritus': 73,
-  'Baleful Strix': 66,
-  'Academy Wall': 60,
-  'Secrets of the Dead': 52,
-  'The Mindskinner': 69,
-  'Duskmantle Guildmage': 64,
-  Mindcrank: 62,
-  'Riverchurn Monument': 61,
-  'Syr Konrad, the Grim': 58,
-  'Sapphire Medallion': 76,
-  'Archmage of Runes': 75,
-  'Peregrine Drake': 62,
-  'Cloud of Faeries': 64,
-};
-const permScore = (n: string, d: number) => PERM_SCORE[n] ?? d;
-const SELF_COUNTER_DEV = ["An Offer You Can't Refuse", 'Unwind', 'Rewind'];
-
-function* combinations<T>(
-  xs: T[],
-  k: number,
-  start = 0,
-  acc: T[] = [],
-): Generator<T[]> {
-  if (acc.length === k) {
-    yield acc.slice();
-    return;
-  }
-  for (let i = start; i < xs.length; i++) {
-    acc.push(xs[i]);
-    yield* combinations(xs, k, i + 1, acc);
-    acc.pop();
-  }
-}
-
-export class GaleGame extends Game<Light> {
+export class GaleGame extends Game<KillSearchState> {
   override mulliganRule(): MulliganRule | null {
     return this.cfg.smart_mulligan ? MULLIGAN : null;
   }
   // (subclass fields are set after the engine's constructor has run, so they can use this.cfg)
-  giftsNote = false;
+  everySplitWinsNextTurn = false;
   galeCasts = 0;
-  cacc: number[] = new Array(this.cfg.opponents as number).fill(0);
-  gmAct = 0;
-  konradActs = 0;
-  emetUsed = false;
+  opponentCreatureAccumulator: number[] = new Array(
+    this.cfg.opponents as number,
+  ).fill(0);
+  guildmageActivations = 0;
+  konradActivations = 0;
+  emetSelchUsed = false;
   override chanceName = 'Konrad chain';
 
-  killSearch(): KillSearcher<Light> {
+  killSearch(): KillSearcher<KillSearchState> {
     return search;
   }
-  override killReachable(st: Light): boolean {
-    return finisherReachable(st);
+  override killReachable(state: KillSearchState): boolean {
+    return finisherReachable(state);
   }
-  lightKey(st: Light): string {
-    return st.key();
+  lightKey(state: KillSearchState): string {
+    return state.searchKey();
   }
-  override lightPool(st: Light): Record<string, number> {
-    return { ...st.pool };
+  override lightPool(state: KillSearchState): Record<string, number> {
+    return { ...state.pool };
   }
 
   // ---------------------------------------------------------------- log analyzer hooks
   override syncFromLog(board: LogBoardView): void {
-    this.galeCasts = board.battlefield.some((p) => p.name === GALE) ? 1 : 0;
+    this.galeCasts = board.battlefield.some(
+      (permanent) => permanent.name === GALE,
+    )
+      ? 1
+      : 0;
   }
-  override lightAddMana(L: Light, n: number): void {
-    L.pool.A += n;
-    L.free += n;
+  override lightAddMana(state: KillSearchState, amount: number): void {
+    state.pool.A += amount;
+    state.coloursFromOutsideLands += amount;
   }
-  override lightAddLand(L: Light): void {
-    L.pool.A += 1;
-    L.lands += 1;
-    L.mix = [L.mix[0], L.mix[1], L.mix[2], L.mix[3] + 1];
+  override lightAddLand(state: KillSearchState): void {
+    state.pool.A += 1;
+    state.landCount += 1;
+    state.landMix = [
+      state.landMix[0],
+      state.landMix[1],
+      state.landMix[2],
+      state.landMix[3] + 1,
+    ];
   }
 
   // ---------------------------------------------------------------- card rules only Gale uses
-  override onToGy(cd: CardDef): void {
-    if (cd.isCreature && this.onBf('Syr Konrad, the Grim'))
-      this.oppEvents([EV.KONRAD, -1, 1]);
+  override onToGy(card: CardDef): void {
+    if (card.isCreature && this.onBf('Syr Konrad, the Grim'))
+      this.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, 1]);
   }
 
   override beforeDraw(): void {
@@ -168,9 +111,12 @@ export class GaleGame extends Game<Light> {
       this.library.length >= 2
     ) {
       this.firstDrawDone = true;
-      const [a, b] = this.library;
-      const worse = this.discardValue(a) < this.discardValue(b) ? a : b;
-      const keep = worse === a ? b : a;
+      const [topCard, secondCard] = this.library;
+      const worse =
+        this.discardValue(topCard) < this.discardValue(secondCard)
+          ? topCard
+          : secondCard;
+      const keep = worse === topCard ? secondCard : topCard;
       this.library.splice(0, 2, keep);
       this.toGy(worse);
       this.say(`Scion: ${worse.name} -> graveyard`);
@@ -178,7 +124,7 @@ export class GaleGame extends Game<Light> {
   }
 
   override castTriggers(
-    cd: CardDef,
+    card: CardDef,
     fromGy: boolean,
     trig: Record<string, unknown>,
   ): void {
@@ -207,958 +153,277 @@ export class GaleGame extends Game<Light> {
     const text = this.lastKillLine.join(' | ');
     if (!text) return null;
     const have = new Set(
-      [...this.hand, ...this.gy, ...this.library].map((c) => c.name),
+      [...this.hand, ...this.gy, ...this.library].map((card) => card.name),
     );
     const spells: string[] = [];
-    for (const m of text.matchAll(
+    for (const match of text.matchAll(
       /cast (.+?)(?: \[unk\])? from (?:hand|graveyard)/g,
     ))
-      if (have.has(m[1]) && !spells.includes(m[1])) spells.push(m[1]);
-    spells.sort((a, b) => C.get(b).mv - C.get(a).mv);
+      if (have.has(match[1]) && !spells.includes(match[1]))
+        spells.push(match[1]);
+    spells.sort((first, second) => C.get(second).mv - C.get(first).mv);
     const perms: string[] = [];
-    for (const p of this.bf) {
-      if (p.land !== null || p.cd.rock || perms.includes(p.cd.name)) continue;
+    for (const permanent of this.bf) {
+      if (
+        permanent.land !== null ||
+        permanent.cd.rock ||
+        perms.includes(permanent.cd.name)
+      )
+        continue;
       const words = [
-        p.cd.name,
-        p.cd.name.split(',')[0],
-        ...p.cd.name.split(/[ ,]+/).filter((x) => x.length >= 7),
+        permanent.cd.name,
+        permanent.cd.name.split(',')[0],
+        ...permanent.cd.name.split(/[ ,]+/).filter((word) => word.length >= 7),
       ];
-      if (words.some((x) => text.includes(x))) perms.push(p.cd.name);
+      if (words.some((word) => text.includes(word)))
+        perms.push(permanent.cd.name);
     }
     return { spells, perms, backup: this.prot === this.turn ? 1 : 0 };
   }
 
   /** A pod: with The Mindskinner out, damage our creatures would deal to an opponent is prevented and each opponent mills that many. */
-  override combatHit(slot: number, n: number): void {
-    if (this.onBf('The Mindskinner')) this.oppEvents([EV.DMG, slot, n]);
-    else super.combatHit(slot, n);
+  override combatHit(slot: number, amount: number): void {
+    if (this.onBf('The Mindskinner'))
+      this.applyOpponentEvents([OPPONENT_EVENT.DMG, slot, amount]);
+    else super.combatHit(slot, amount);
   }
   /** How close to winning the others think we are: Gale out, the kill engines, a big graveyard of instants and sorceries. */
   override podClose(): number {
-    let c = 0;
-    if (this.onBf(GALE)) c += 0.3;
+    let closeness = 0;
+    if (this.onBf(GALE)) closeness += 0.3;
     if (
       this.onBf('Duskmantle Guildmage') ||
       this.onBf('The Mindskinner') ||
       this.onBf('Riverchurn Monument')
     )
-      c += 0.3;
-    if (this.gy.filter((x) => x.isIS).length >= 8) c += 0.2;
-    if (this.landsBf().length + this.bf.filter((p) => p.cd.rock).length >= 8)
-      c += 0.2;
-    return Math.min(1, c);
+      closeness += 0.3;
+    if (this.gy.filter((card) => card.isIS).length >= 8) closeness += 0.2;
+    if (
+      this.landsBf().length +
+        this.bf.filter((permanent) => permanent.cd.rock).length >=
+      8
+    )
+      closeness += 0.2;
+    return Math.min(1, closeness);
   }
 
-  override commanderCost(cd: CardDef, cost: Cost): Cost {
-    return cd.name === GALE
+  override commanderCost(card: CardDef, cost: Cost): Cost {
+    return card.name === GALE
       ? cost.withGeneric(cost.g + 2 * this.galeCasts)
       : cost;
   }
-  override onCommanderCast(cd: CardDef): void {
-    if (cd.name === GALE) this.galeCasts += 1;
+  override onCommanderCast(card: CardDef): void {
+    if (card.name === GALE) this.galeCasts += 1;
   }
 
-  override landWant(c: CardDef): [number, Cost] {
-    let sc = c.isIS ? this.devValueIS(c) : permScore(c.name, 30);
-    let cost = this.effCost(c);
-    if (c.name === GALE) {
+  override landWant(card: CardDef): [number, Cost] {
+    let score = card.isIS ? this.devValueIS(card) : permScore(card.name, 30);
+    let cost = this.effCost(card);
+    if (card.name === GALE) {
       cost = new Cost(cost.g + 2 * this.galeCasts, cost.u);
-      sc = 95;
+      score = 95;
     }
-    return [sc, cost];
+    return [score, cost];
   }
-  override landBias(cd: CardDef): number {
-    return cd.name === 'Jidoor, Aristocratic Capital' ? -1 : 0;
+  override landBias(card: CardDef): number {
+    return card.name === 'Jidoor, Aristocratic Capital' ? -1 : 0;
   }
 
   override startTurn(): void {
     super.startTurn();
-    this.gmAct = 0;
-    this.emetUsed = false;
-    this.konradActs = 0;
+    this.guildmageActivations = 0;
+    this.emetSelchUsed = false;
+    this.konradActivations = 0;
   }
-
   override resolveOther(
-    cd: CardDef,
+    card: CardDef,
     _fromGy: boolean,
     _mode: string | null,
   ): void {
-    const n = cd.name;
-    if (n === 'Mission Briefing') {
-      this.scry(2, true);
-      const opts = this.gy.filter(
-        (g) =>
-          g.isIS &&
-          g !== cd &&
-          this.devValueIS(g, true) > 0 &&
-          this.canPay(this.effCost(g, null, true), true),
-      );
-      if (opts.length) {
-        const g = firstMax(opts, (x) => this.devValueIS(x, true));
-        this.say('  Mission Briefing recasts', g);
-        this.castIS(g, true);
-      }
-    } else if (n === 'Prologue to Phyresis') {
-      for (let i = 0; i < this.life.length; i++)
-        if (this.life[i] > 0 && this.lib[i] > 0) this.poison[i] += 1;
-      this.draw(1);
-    } else if (n === 'Windfall') {
-      const k = this.hand.length;
-      for (const c of this.hand.slice()) {
-        removeOrThrow(this.hand, c);
-        this.toGy(c);
-      }
-      const ev: number[] = [];
-      for (let i = 0; i < this.life.length; i++)
-        ev.push(EV.PUTGY, i, this.cfg.opp_hand_size as number);
-      this.oppEvents(ev);
-      this.draw(
-        this.inArena()
-          ? this.arena!.wheel(this, k)
-          : Math.max(k, this.cfg.opp_hand_size as number),
-      );
-    } else if (n === 'Unearth') {
-      const opts = this.gy.filter((c) => c.isCreature && c.mv <= 3);
-      if (opts.length) {
-        const c = firstMax(opts, (x) => permScore(x.name, 30));
-        removeOrThrow(this.gy, c);
-        this.enter(c);
-        if (this.onBf('Syr Konrad, the Grim'))
-          this.oppEvents([EV.KONRAD, -1, 1]);
-      }
-    } else if (n === 'Gifts Ungiven') {
-      const pile = this.inRollout ? null : this.giftsPile();
-      if (pile !== null) {
-        const [picks, binned] = pile;
-        for (const c of picks) removeOrThrow(this.library, c);
-        this.shuffle();
-        for (const c of binned) this.toGy(c);
-        this.hand.push(...picks.filter((c) => !binned.includes(c)));
-        this.say(
-          'Gifts ->',
-          picks,
-          '| opponent bins',
-          binned,
-          this.giftsNote ? '(every split wins next turn)' : '',
-        );
-        return;
-      }
-      const picks: CardDef[] = [];
-      const gale = this.onBf(GALE);
-      for (let i = 0; i < 4; i++) {
-        // with Gale out, build the pile mostly from instants/sorceries (binned ones stay castable)
-        const onlyIS = gale && i >= 1;
-        const names = new Set(picks.map((p) => p.name));
-        const t = this.tutorTarget(
-          (c) => !names.has(c.name) && (c.isIS || !onlyIS),
-          false,
-        );
-        if (t === null) break;
-        picks.push(t);
-        removeOrThrow(this.library, t);
-      }
-      this.shuffle();
-      // opponent bins the two cards that hurt us most to lose from hand
-      sortDesc(picks, (c) => this.cardValue(c) * (c.isIS && gale ? 0.3 : 1.0));
-      for (const c of picks.slice(0, 2)) this.toGy(c);
-      this.hand.push(...picks.slice(2));
-      this.say('Gifts ->', picks);
-    }
+    return resolveGaleSpell(this, card, _fromGy, _mode);
   }
 
-  // ---------------------------------------------------------------- the kill search's snapshot
-  light(nextTurn = false, add: string[] = [], remove: string[] = []): Light {
-    const L = new Light();
-    const pool = { U: 0, B: 0, A: 0, C: 0, S: 0 };
-    if (!nextTurn) {
-      pool.U += this.pool.U;
-      pool.B += this.pool.B;
-      pool.C += this.pool.C;
-      pool.S += this.pool.S;
-    }
-    const ht = nextTurn ? 0 : this.ht;
-    const muck = nextTurn ? 0 : this.muck;
-    const energy = this.energy && !nextTurn;
-    let htc = 0,
-      swc = 0,
-      lands = 0;
-    let free = nextTurn ? 0 : this.pool.U + this.pool.B;
-    let freeC = nextTurn ? 0 : this.pool.C;
-    const mix = [0, 0, 0, 0]; // dual, island-only, swamp-only, other: all lands, tapped or not
-    for (const p of this.bf) {
-      if (p.land !== null) {
-        const i_ = !!p.land.island || energy,
-          s_ = !!p.land.swamp || energy;
-        mix[i_ && s_ ? 0 : i_ ? 1 : s_ ? 2 : 3] += 1;
-      }
-      const k = this.srcKind(p, nextTurn);
-      if (k === null || (p.tapped && !nextTurn)) continue;
-      if (k === 'U' || k === 'B' || k === 'C' || k === 'S') pool[k] += 1;
-      else if (k === 'A' || k === 'F') pool.A += 1;
-      else if (k === 'UB') {
-        pool.U += 1;
-        pool.B += 1;
-      } else if (k === 'C2') pool.C += 2;
-      if (p.land === null && ['U', 'B', 'A', 'F', 'UB'].includes(k))
-        free += k === 'UB' ? 2 : 1;
-      else if (p.land === null && (k === 'C' || k === 'C2'))
-        freeC += k === 'C2' ? 2 : 1;
-      if (p.land !== null) {
-        lands += 1;
-        if (p.land.island || energy) {
-          htc += 1;
-          pool.U += ht;
-        }
-        if (p.land.swamp || energy) {
-          swc += 1;
-          pool.B += muck;
-        }
-      }
-    }
-    const hand = this.hand.map((c) => c.name);
-    for (const r of remove) {
-      const i = hand.indexOf(r);
-      if (i >= 0) hand.splice(i, 1);
-    }
-    hand.push(...add);
-    if (nextTurn && hand.some((h) => C.get(h).land !== null)) {
-      pool.A += 1;
-      lands += 1;
-      mix[3] += 1;
-    }
-    L.pool = pool;
-    L.htCount = htc;
-    L.swCount = swc;
-    L.ht = ht;
-    L.muck = muck;
-    L.lands = lands;
-    L.mix = mix;
-    L.free = free;
-    L.freeC = freeC;
-    L.hand = hand.sort();
-    L.gy = this.gy
-      .filter((c) => c.isIS)
-      .map((c) => c.name)
-      .sort();
-    L.gyCr = this.gy
-      .filter((c) => c.isCreature)
-      .map((c) => c.name)
-      .sort();
-    L.gale = this.onBf(GALE);
-    L.gm = this.onBf('Duskmantle Guildmage');
-    L.gmAct = nextTurn ? 0 : this.gmAct;
-    L.crank = this.onBf('Mindcrank');
-    L.konrad = this.onBf('Syr Konrad, the Grim');
-    const sk = this.perm('The Mindskinner');
-    L.skinner = sk !== null;
-    L.skinnerAtk = sk !== null && (nextTurn || (!sk.sick && !this.attacked));
-    const mon = this.perm('Riverchurn Monument');
-    L.mon = mon !== null && (nextTurn || !mon.tapped);
-    L.monEx = mon !== null && !mon.exhausted;
-    L.emet = this.onBf('Emet-Selch of the Third Seat');
-    L.emetUsed = nextTurn ? false : this.emetUsed;
-    L.lost = false;
-    const cre = this.bf.filter((p) => p.cd.isCreature);
-    L.nCre = cre.length;
-    L.fodder = cre.filter(
-      (p) => p.cd.power >= 2 && !FODDER_EXCLUDE.has(p.cd.name),
-    ).length;
-    L.redIs = this.redIS();
-    L.redNc = this.bf.filter((p) =>
-      Facts.REDUCE_NONCREATURE.has(p.cd.name),
-    ).length;
-    L.redBlue = this.bf.filter((p) => Facts.REDUCE_BLUE.has(p.cd.name)).length;
-    L.redGy =
-      2 * this.bf.filter((p) => Facts.REDUCE_FROM_GY2.has(p.cd.name)).length;
-    L.life = this.life.slice();
-    L.lib = this.lib.map((x) => Math.max(0, x - (nextTurn && x > 0 ? 1 : 0)));
-    L.ogy = this.ogy.slice();
-    L.poison = this.poison.slice();
-    L.cacc = this.cacc.slice();
-    L.myLib = this.library.length;
-    L.myCacc = 0;
-    L.myDens = this.library.length
-      ? this.library.filter((c) => c.isCreature).length / this.library.length
-      : 0;
-    L.pCre = this.cfg.opp_creature_density as number;
-    L.oppHand = this.cfg.opp_hand_size as number;
-    L.oppCre = this.cfg.opp_creatures_on_board as number;
-    // Energy Tap targets: untapped creatures that aren't mana sources (Mindskinner only if it can't attack anyway)
-    L.tapMvs = this.bf
-      .filter(
-        (p) =>
-          p.cd.isCreature &&
-          (nextTurn || !p.tapped) &&
-          !this.srcKind(p, true) &&
-          !(p.cd.name === 'The Mindskinner' && L.skinnerAtk),
-      )
-      .map((p) => p.cd.mv)
-      .sort((a, b) => b - a);
-    L.oppLands = Math.floor(
-      (this.turn + (nextTurn ? 1 : 0)) *
-        ((this.cfg.opp_lands_per_turn as number) ?? 1) *
-        ((this.cfg.opp_lands_untapped as number) ?? 1),
-    );
-    L.gyOther = this.gy.filter((c) => !c.isIS).length;
-    return L;
+  light(
+    nextTurn = false,
+    add: string[] = [],
+    remove: string[] = [],
+  ): KillSearchState {
+    return buildKillSearchState(this, nextTurn, add, remove);
   }
 
   /** Apply opponent events (Konrad triggers, Windfall, combat damage) to the real game. */
-  oppEvents(events: number[]): void {
-    const L = this.light();
-    L.run(events);
-    this.life = L.life;
-    this.lib = L.lib;
-    this.ogy = L.ogy;
-    this.cacc = L.cacc;
+  applyOpponentEvents(events: number[]): void {
+    const state = buildKillSearchState(this);
+    state.resolveOpponentEvents(events);
+    this.life = state.opponentLife;
+    this.lib = state.opponentLibrary;
+    this.ogy = state.opponentGraveyard;
+    this.opponentCreatureAccumulator = state.opponentCreatureAccumulator;
   }
 
   // ---------------------------------------------------------------- what the AI wants
-  override cardValue(cd: CardDef): number {
-    const n = cd.name;
-    if (cd.land !== null) {
-      const m = this.manaSources() + this.countLandsHand();
-      return m <= 3 ? 80 : m <= 6 ? 60 : m <= 8 ? 42 : 12;
+  override cardValue(card: CardDef): number {
+    const name = card.name;
+    if (card.land !== null) {
+      const manaAndLands = this.manaSources() + this.countLandsHand();
+      return manaAndLands <= 3
+        ? 80
+        : manaAndLands <= 6
+          ? 60
+          : manaAndLands <= 8
+            ? 42
+            : 12;
     }
-    if (COMBO_PERMS.has(n) || COMBO_SORC.has(n)) {
-      if (this.onBf(n)) return 10;
-      return this.hand.some((c) => c.name === n) ? 30 : 70;
+    if (COMBO_PERMS.has(name) || COMBO_SORC.has(name)) {
+      if (this.onBf(name)) return 10;
+      return this.hand.some((candidate) => candidate.name === name) ? 30 : 70;
     }
-    if (Facts.COUNTERS.has(n)) return this.hasCounterInHand() ? 38 : 58;
-    if (Facts.TUTORS.has(n)) return 66;
-    if (n === 'Sol Ring') return 85;
-    if (cd.rock) return this.manaSources() < 6 ? 60 : 20;
+    if (Facts.COUNTERS.has(name)) return this.hasCounterInHand() ? 38 : 58;
+    if (Facts.TUTORS.has(name)) return 66;
+    if (name === 'Sol Ring') return 85;
+    if (card.rock) return this.manaSources() < 6 ? 60 : 20;
     if (
-      Facts.REDUCE_IS.has(n) ||
-      Facts.REDUCE_NONCREATURE.has(n) ||
-      Facts.REDUCE_BLUE.has(n) ||
-      ENGINES.has(n)
+      Facts.REDUCE_IS.has(name) ||
+      Facts.REDUCE_NONCREATURE.has(name) ||
+      Facts.REDUCE_BLUE.has(name) ||
+      ENGINES.has(name)
     )
-      return this.onBf(n) ? 15 : 55;
-    if (Facts.RITUALS.has(n)) return 42;
-    if (n in Facts.DRAW_SPELLS) return 30 + 6 * Facts.DRAW_SPELLS[n];
-    if (cd.mdfcLand) return 50;
+      return this.onBf(name) ? 15 : 55;
+    if (Facts.RITUALS.has(name)) return 42;
+    if (name in Facts.DRAW_SPELLS) return 30 + 6 * Facts.DRAW_SPELLS[name];
+    if (card.mdfcLand) return 50;
     return 25;
   }
 
-  override discardValue(cd: CardDef): number {
-    let v = this.cardValue(cd);
-    if (cd.isIS && this.onBf(GALE)) v -= 15;
-    return v;
+  override discardValue(card: CardDef): number {
+    let value = this.cardValue(card);
+    if (card.isIS && this.onBf(GALE)) value -= 15;
+    return value;
   }
-
   override tutorTarget(
-    allowed: (c: CardDef) => boolean,
+    allowed: (card: CardDef) => boolean,
     toTop: boolean,
     spent: string | null = null,
     rampOk = false,
   ): CardDef | null {
-    const cands = new Map<string, CardDef>();
-    for (const c of this.library)
-      if (allowed(c) && !cands.has(c.name)) cands.set(c.name, c);
-    if (!cands.size) return null;
-    const rem = spent ? [spent] : [];
-    let best: CardDef | null = null,
-      bs = -1;
-    const budget = Math.floor((this.cfg.search_budget as number) / 3);
-    if (!this.inRollout) {
-      // rollouts: quick rule below
-      for (const [name, cd] of cands) {
-        if (!(
-          COMBO_PERMS.has(name) ||
-          COMBO_SPELLS.has(name) ||
-          Facts.COUNTERS.has(name) ||
-          COMBO_SORC.has(name) ||
-          name === 'Jidoor, Aristocratic Capital'
-        ))
-          continue;
-        let s = 0;
-        if (!toTop) {
-          const st = this.light(false, [name], rem);
-          if (this.killReachable(st)) {
-            const r = search.search(st, budget);
-            s = r === 2 ? 1000 : r === 1 ? 800 : 0;
-          }
-        }
-        if (s < 800) {
-          const st = this.light(true, [name], rem);
-          if (this.killReachable(st)) {
-            const r = search.search(st, budget);
-            s = Math.max(s, r === 2 ? 600 : r === 1 ? 400 : 0);
-          }
-        }
-        if (s > bs) {
-          best = cd;
-          bs = s;
-        }
-      }
-    }
-    if (bs > 0) return best;
-    // "tutor for ramp, recast the tutor later with Gale for the combo"
+    return chooseTutorTarget(this, allowed, toTop, spent, rampOk);
+  }
+
+  override devValueIS(card: CardDef, fromGy = false): number {
+    const name = card.name;
     if (
-      rampOk &&
-      this.cfg.ramp_tutor &&
-      this.turn <= ((this.cfg.ramp_tutor_until as number) ?? 4) &&
-      this.manaSources() < ((this.cfg.ramp_tutor_below as number) ?? 5)
-    ) {
-      for (const n of RAMP_PREFS)
-        if (
-          cands.has(n) &&
-          !this.onBf(n) &&
-          !this.hand.some((c) => c.name === n)
-        )
-          return cands.get(n)!;
-    }
-    // fallback: complete the package that is closest to done
-    const have = new Set([
-      ...this.hand.map((c) => c.name),
-      ...this.bf.map((p) => p.cd.name),
-    ]);
-    if (this.onBf(GALE) || this.command.length)
-      for (const c of this.gy) if (c.isIS) have.add(c.name);
-    let bestPkg: Set<string>[] | null = null,
-      bestMissing = 99;
-    let complete = false;
-    for (const pkg of PACKAGES) {
-      const missing = pkg.filter((req) => ![...req].some((n) => have.has(n)));
-      if (!missing.length) {
-        complete = true;
-        continue;
-      }
-      const avail = missing.filter((req) => [...req].some((n) => cands.has(n)));
-      // prefer packages that are closer to done, and fully fetchable ones on ties
-      const k = missing.length + (avail.length === missing.length ? 0 : 0.5);
-      if (avail.length && k < bestMissing) {
-        bestPkg = avail;
-        bestMissing = k;
-      }
-    }
-    if (complete && !this.hasCounterInHand()) bestPkg = null;
-    if (bestPkg === null) {
-      // a full package is already assembled: protection, then mana, then cards
-      const prefs = this.hasCounterInHand()
-        ? []
-        : [
-            'Counterspell',
-            'Arcane Denial',
-            'Mana Sculpt',
-            "Archmage's Charm",
-            'Unwind',
-            "An Offer You Can't Refuse",
-            'Dispel',
-          ];
-      prefs.push(
-        'Sol Ring',
-        'High Tide',
-        'Dark Ritual',
-        'Stock Up',
-        'See the Truth',
-        "Night's Whisper",
-      );
-      for (const n of prefs) if (cands.has(n)) return cands.get(n)!;
-      return firstMax([...cands.values()], (c) => this.cardValue(c));
-    }
-    const req = bestPkg[0];
-    const opts = [...req].filter((n) => cands.has(n)).map((n) => cands.get(n)!);
-    return firstMin(opts, (c) => c.mv);
-  }
-
-  /** Kill-next-turn score if toHand goes to hand and toGy to the graveyard. */
-  giftsSplitValue(toHand: CardDef[], toGy: CardDef[], budget: number): number {
-    const L = this.light(
-      true,
-      toHand.map((c) => c.name),
-    );
-    L.gy = [...L.gy, ...toGy.filter((c) => c.isIS).map((c) => c.name)].sort();
-    L.gyCr = [
-      ...L.gyCr,
-      ...toGy.filter((c) => c.isCreature).map((c) => c.name),
-    ].sort();
-    if (!this.killReachable(L)) return 0;
-    return search.search(L, budget);
-  }
-
-  /** Pick the pile whose WORST split (the opponent chooses) is best for us. Also considers finding
-   *  only two instants/sorceries: then both go to the graveyard, where Gale can cast them.
-   *  Returns [picks, binned] or null to use the simple rule. */
-  giftsPile(): [CardDef[], CardDef[]] | null {
-    this.giftsNote = false;
-    const pool = new Map<string, CardDef>();
-    for (const c of this.library) {
-      if (pool.has(c.name)) continue;
-      if (
-        COMBO_PERMS.has(c.name) ||
-        COMBO_SPELLS.has(c.name) ||
-        Facts.COUNTERS.has(c.name) ||
-        COMBO_SORC.has(c.name)
-      )
-        pool.set(c.name, c);
-    }
-    if (pool.size < 2) return null;
-    const budget = (this.cfg.gifts_budget as number) ?? 250;
-    // shortlist: cards that make a kill next turn on their own (in hand or binned) come first
-    const single = (c: CardDef) =>
-      Math.max(
-        this.giftsSplitValue([c], [], budget),
-        this.giftsSplitValue([], [c], budget),
-      );
-    const scored = [...pool.values()].map((c) => ({
-      c,
-      a: single(c),
-      b: this.cardValue(c),
-    }));
-    scored.sort((x, y) => y.a - x.a || y.b - x.b);
-    const short = scored
-      .slice(0, (this.cfg.gifts_shortlist as number) ?? 6)
-      .map((x) => x.c);
-    let best: [CardDef[], CardDef[]] | null = null;
-    let bv: [number, number] = [-1, -1];
-    const gt = (a: [number, number], b: [number, number]) =>
-      a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);
-    const gale = this.onBf(GALE);
-    const cache = new Map<string, number>();
-    const splitVal = (handPart: CardDef[], gyPart: CardDef[]): number => {
-      const k =
-        handPart
-          .map((c) => c.name)
-          .sort()
-          .join('|') +
-        '#' +
-        gyPart
-          .map((c) => c.name)
-          .sort()
-          .join('|');
-      let v = cache.get(k);
-      if (v === undefined) {
-        v = this.giftsSplitValue(handPart, gyPart, budget);
-        cache.set(k, v);
-      }
-      return v;
-    };
-    for (const pile of combinations(short, 4)) {
-      let worst = 9,
-        tot = 0;
-      let worstGy: CardDef[] | null = null;
-      for (const gyPart of combinations(pile, 2)) {
-        const handPart = pile.filter((c) => !gyPart.includes(c));
-        const v = splitVal(handPart, gyPart);
-        tot += v;
-        if (v < worst) {
-          worst = v;
-          worstGy = gyPart;
-        }
-        if (worst < bv[0]) break; // this pile can no longer beat the best one: skip the rest
-      }
-      if (gt([worst, tot], bv)) {
-        best = [pile, worstGy!];
-        bv = [worst, tot];
-      }
-    }
-    if (gale) {
-      for (const pile of combinations(
-        short.filter((c) => c.isIS),
-        2,
-      )) {
-        const v = splitVal([], pile);
-        if (gt([v, v * 6], bv)) {
-          best = [pile, pile];
-          bv = [v, v * 6];
-        }
-      }
-    }
-    if (best === null || bv[0] === 0)
-      return best === null || bv[1] === 0 ? null : best;
-    this.giftsNote = true;
-    return best;
-  }
-
-  /** Best graveyard card of the other type for Gale, given we just paid for cd. */
-  galeOption(cd: CardDef): CardDef | null {
-    if (!this.onBf(GALE)) return null;
-    const wantSorc = cd.isInstant;
-    let best: CardDef | null = null,
-      bs = 0;
-    for (const g of this.gy) {
-      if (g === cd || !(wantSorc ? g.isSorcery : g.isInstant)) continue;
-      const s = this.devValueIS(g, true);
-      if (s > bs && this.canPay(this.effCost(g, null, true), true)) {
-        best = g;
-        bs = s;
-      }
-    }
-    return best;
-  }
-
-  override devValueIS(cd: CardDef, fromGy = false): number {
-    const n = cd.name;
-    if (COMBO_SORC.has(n) || Facts.COUNTERS.has(n) || Facts.RITUALS.has(n))
+      COMBO_SORC.has(name) ||
+      Facts.COUNTERS.has(name) ||
+      Facts.RITUALS.has(name)
+    )
       return 0;
-    if (n === 'See the Truth') return fromGy ? 62 : 42;
-    if (n in Facts.DRAW_SPELLS) {
-      const v = 38 + 8 * Facts.DRAW_SPELLS[n];
-      if (n === 'Windfall' && this.hand.length > 3) {
+    if (name === 'See the Truth') return fromGy ? 62 : 42;
+    if (name in Facts.DRAW_SPELLS) {
+      const value = 38 + 8 * Facts.DRAW_SPELLS[name];
+      if (name === 'Windfall' && this.hand.length > 3) {
         if (!this.onBf(GALE)) return 0;
         // with Gale out, discarded instants/sorceries stay castable from the graveyard,
         // so Windfall only really loses the permanents in hand
         const lost = this.hand.filter(
-          (c) =>
-            c !== cd && !c.isIS && c.land === null && this.cardValue(c) >= 55,
+          (candidate) =>
+            candidate !== card &&
+            !candidate.isIS &&
+            candidate.land === null &&
+            this.cardValue(candidate) >= 55,
         ).length;
-        const binned = this.hand.filter((c) => c !== cd && c.isIS).length;
+        const binned = this.hand.filter(
+          (candidate) => candidate !== card && candidate.isIS,
+        ).length;
         return lost === 0 ? Math.min(80, 60 + 4 * binned) : lost === 1 ? 45 : 0;
       }
-      if (n === 'Insatiable Avarice') return 0;
-      return v;
+      if (name === 'Insatiable Avarice') return 0;
+      return value;
     }
-    if (Facts.TUTORS.has(n)) return 72;
-    if (n === 'Unearth')
+    if (Facts.TUTORS.has(name)) return 72;
+    if (name === 'Unearth')
       return this.gy.some(
-        (c) => c.isCreature && c.mv <= 3 && c.name in PERM_SCORE,
+        (candidate) =>
+          candidate.isCreature &&
+          candidate.mv <= 3 &&
+          candidate.name in PERM_SCORE,
       )
         ? 60
         : 0;
-    if (n === 'Snap') return 20;
-    if (!cd.known) return 15;
+    if (name === 'Snap') return 20;
+    if (!card.known) return 15;
     return 0;
   }
-
   candidates(main2: boolean): Cand[] {
-    const out: Cand[] = [];
-    // commanders
-    for (const cd of this.command.slice()) {
-      if (cd.name === GALE) {
-        const c0 = this.effCost(cd);
-        out.push({
-          score: 95,
-          cost: c0.withGeneric(c0.g + 2 * this.galeCasts),
-          isIS: false,
-          act: () => this.castPerm(cd, true),
-        });
-      } else if (cd.name === SCION) {
-        out.push({
-          score: this.onBf(GALE) ? 91 : 18,
-          cost: this.effCost(cd),
-          isIS: false,
-          act: () => this.castPerm(cd, true),
-        });
-      } else
-        out.push({
-          score: 40,
-          cost: this.effCost(cd),
-          isIS: false,
-          act: () => this.castPerm(cd, true),
-        });
-    }
-    const seen = new Set<string>();
-    for (const cd of this.hand.slice()) {
-      if (seen.has(cd.name) || cd.land !== null) continue;
-      seen.add(cd.name);
-      const n = cd.name;
-      if (!cd.isIS) {
-        if (n === 'Wishclaw Talisman') {
-          out.push({
-            score: 73,
-            cost: this.effCost(cd).plus(new Cost(1)),
-            isIS: false,
-            act: () => this.wishclaw(cd),
-          });
-          continue;
-        }
-        let sc = permScore(n, 30);
-        if (COMBO_PERMS.has(n) && !this.onBf(n)) {
-          const miss = this.pkgMissing(n);
-          sc = miss === 0 ? 88 : miss === 1 && this.turn >= 4 ? 78 : sc;
-        }
-        if (cd.rock && n !== 'Sol Ring' && this.manaSources() >= 7) sc = 30;
-        if (this.onBf(n) && n in PERM_SCORE) sc = 5; // legendary / redundant
-        out.push({
-          score: sc,
-          cost: this.effCost(cd),
-          isIS: false,
-          act: () => this.castPerm(cd),
-          rock: cd.rock ? cd : undefined,
-        });
-        continue;
-      }
-      // instants & sorceries
-      if (n === 'Insatiable Avarice') {
-        for (const [mode, extra, sc] of [
-          ['both', new Cost(2, 0, 2), 78],
-          ['tutor', new Cost(2), 70],
-          ['draw', new Cost(0, 0, 2), 50],
-        ] as [string, Cost, number][]) {
-          const base = cd.cost.plus(extra);
-          out.push({
-            score: sc,
-            cost: this.effCost(cd, base),
-            isIS: true,
-            act: () => this.castWithGale(cd, base, mode),
-          });
-        }
-        continue;
-      }
-      if (n === 'Muddle the Mixture') {
-        // transmute {1}{U}{U}: discard it, find a card with mana value 2 (Guildmage, Mindcrank,
-        // Cacophony, Prologue, Expansion Algorithm, ...). Keeps it as a counter when it's the only one.
-        const sc =
-          this.hand.filter((c) => Facts.COUNTERS.has(c.name)).length >= 2
-            ? 72
-            : 60;
-        out.push({
-          score: sc,
-          cost: new Cost(1, 2),
-          isIS: false,
-          act: () => this.transmute(cd),
-        });
-        continue;
-      }
-      if (n === "Archmage's Charm") {
-        if (this.hand.filter((c) => Facts.COUNTERS.has(c.name)).length >= 2)
-          out.push({
-            score: 36,
-            cost: this.effCost(cd),
-            isIS: true,
-            act: () => this.castWithGale(cd),
-          });
-        continue;
-      }
-      if (Facts.RITUALS.has(n)) continue;
-      const sc = this.devValueIS(cd);
-      if (sc <= 0 && !this.onBf(GALE)) continue;
-      out.push({
-        score: sc,
-        cost: this.effCost(cd),
-        isIS: true,
-        act: () => this.castWithGale(cd),
-      });
-    }
-    // flashback Deep Analysis
-    const da = this.gy.find((c) => c.name === 'Deep Analysis');
-    if (da)
-      out.push({
-        score: 44,
-        cost: this.effCost(da, new Cost(1, 1), true),
-        isIS: true,
-        act: () => this.flashback(da),
-      });
-    if (this.cfg.self_counter_dev ?? true) out.push(...this.selfCounterDev());
-    if (main2) out.push(...this.sinks());
-    return out;
+    return buildCandidates(this, main2);
   }
 
-  /** Development play: cast a cheap spell, counter it with your own Offer (+2 Treasures) or Unwind
-   *  (untap 3 lands). The counter is an instant, so Gale recasts a sorcery from the graveyard.
-   *  Only when another counter stays in hand for protection. */
-  selfCounterDev(): Cand[] {
-    if (!this.onBf(GALE)) return [];
-    const out: Cand[] = [];
-    for (const kname of SELF_COUNTER_DEV) {
-      const k = this.hand.find((c) => c.name === kname);
-      if (!k || !this.hand.some((c) => Facts.COUNTERS.has(c.name) && c !== k))
-        continue;
-      const sorc = this.gy.filter(
-        (g) => g.isSorcery && this.devValueIS(g, true) > 0,
-      );
-      if (!sorc.length) continue;
-      const targets = this.hand.filter(
-        (c) =>
-          c !== k &&
-          c.isIS && // not a rock or other permanent
-          !Facts.COUNTERS.has(c.name) &&
-          !COMBO_SORC.has(c.name) &&
-          !COMBO_PERMS.has(c.name) &&
-          !COMBO_SPELLS.has(c.name) &&
-          !Facts.TUTORS.has(c.name) &&
-          c.name !== 'Jidoor, Aristocratic Capital',
-      );
-      if (!targets.length) continue;
-      const t = firstMin(
-        targets,
-        (c) => this.effCost(c).mv * 1000 + this.cardValue(c),
-      );
-      const gain = Math.max(...sorc.map((g) => this.devValueIS(g, true)));
-      const sc = gain - 4 - Math.floor(this.cardValue(t) / 10);
-      out.push({
-        score: sc,
-        cost: this.effCost(t).plus(this.effCost(k)),
-        isIS: true,
-        act: () => this.selfCounter(k, t),
-      });
-    }
-    return out;
+  override canTapForEnergy(permanent: Perm): boolean {
+    return !(
+      permanent.cd.name === 'The Mindskinner' &&
+      !permanent.sick &&
+      !this.attacked
+    ); // it would rather attack (Gale never does)
   }
 
-  selfCounter(k: CardDef, t: CardDef): boolean {
-    const s = this.snap();
-    if (!(
-      this.pay(this.effCost(t), t.isIS) && this.pay(this.effCost(k), true)
-    )) {
-      this.restore(s);
-      return false;
-    }
-    this.restore(s);
-    this.pay(this.effCost(t), t.isIS);
-    removeOrThrow(this.hand, t);
-    this.say('cast', t, 'to counter it with your own', k);
-    if (t.isIS) {
-      this.spellsCast += 1;
-      this.onCastIS(false);
-      const g1 = this.galeOption(t);
-      if (g1 !== null) {
-        const s1 = this.snap();
-        if (
-          this.pay(this.effCost(g1, null, true), true) &&
-          this.canPay(this.effCost(k), true)
-        ) {
-          removeOrThrow(this.gy, g1);
-          this.say('  Gale recasts', g1);
-          this.spellsCast += 1;
-          this.onCastIS(true);
-          this.resolve(g1, true);
-          this.exile.push(g1);
-        } else this.restore(s1);
-      }
-    }
-    if (!this.hand.includes(k) || !this.pay(this.effCost(k), true)) {
-      // e.g. discarded by the recast
-      this.gy.push(t);
-      return true;
-    }
-    removeOrThrow(this.hand, k);
-    this.spellsCast += 1;
-    this.onCastIS(false);
-    const g2 = this.galeOption(k);
-    if (g2 !== null && this.pay(this.effCost(g2, null, true), true)) {
-      removeOrThrow(this.gy, g2);
-      this.say('  Gale recasts', g2);
-      this.spellsCast += 1;
-      this.onCastIS(true);
-      this.resolve(g2, true);
-      this.exile.push(g2);
-    }
-    this.gy.push(t, k);
-    if (k.name === "An Offer You Can't Refuse") {
-      this.pool.U += 1; // 2 Treasures (used this turn)
-      this.pool.B += 1;
-    } else this.untapLands(k.name === 'Rewind' ? 4 : 3);
-    return true;
-  }
-
-  pkgMissing(extra: string): number {
-    const have = new Set([
-      ...this.hand.map((c) => c.name),
-      ...this.bf.map((p) => p.cd.name),
-      extra,
-    ]);
-    if (this.onBf(GALE)) for (const c of this.gy) if (c.isIS) have.add(c.name);
-    let m = Infinity;
-    for (const pkg of PACKAGES) {
-      if (!pkg.some((r) => r.has(extra))) continue;
-      m = Math.min(
-        m,
-        pkg.filter((req) => ![...req].some((n) => have.has(n))).length,
-      );
-    }
-    return m;
-  }
-
-  castWithGale(
-    cd: CardDef,
-    base: Cost | null = null,
-    mode: string | null = null,
-  ): boolean {
-    const s = this.snap();
-    if (!this.pay(this.effCost(cd, base), true)) return false;
-    const tgt = this.galeOption(cd);
-    this.restore(s);
-    return this.castIS(cd, false, base, mode, { galeTarget: tgt });
-  }
-
-  override canTapForEnergy(p: Perm): boolean {
-    return !(p.cd.name === 'The Mindskinner' && !p.sick && !this.attacked); // it would rather attack (Gale never does)
-  }
-
-  override castRitual(cd: CardDef): boolean {
-    return this.castWithGale(cd);
-  }
-
-  sinks(): Cand[] {
-    const out: Cand[] = [];
-    const lands = this.landsBf().length;
-    const cyc = this.hand.find(
-      (cd) =>
-        (cd.name === 'Fetid Pools' || cd.name === 'Unearth') && lands >= 5,
-    );
-    if (cyc)
-      out.push({
-        score: 8,
-        cost: new Cost(2),
-        isIS: false,
-        act: () => this.cycle(cyc),
-      });
-    if (this.perm('Syr Konrad, the Grim') && this.onBf(GALE))
-      out.push({
-        score: 6,
-        cost: new Cost(1, 0, 1),
-        isIS: false,
-        act: () => this.konradMill(),
-      });
-    return out;
-  }
-
-  konradMill(): boolean {
-    if (this.konradActs >= 3 || !this.pay(new Cost(1, 0, 1))) return false;
-    this.konradActs += 1;
-    const ev: number[] = [];
-    for (let i = 0; i < this.life.length; i++) ev.push(EV.MILL, i, 1);
-    this.oppEvents(ev);
-    if (this.library.length) this.toGy(this.library.shift()!);
-    return true;
+  override castRitual(card: CardDef): boolean {
+    return castWithGaleRecast(this, card);
   }
 
   /** Rough value of a position when no kill is in sight (higher is better). */
   override positionValue(): number {
-    const st = this.light(true);
-    let v = 0;
-    const p = st.pool;
-    v += 35 * Math.min(10, p.U + p.B + p.A + p.C + p.S);
-    v += 25 * (st.redIs + st.redNc + st.redBlue) + 12 * st.redGy;
-    if (st.gale) {
-      v += 150;
-      v +=
+    const state = buildKillSearchState(this, true);
+    let value = 0;
+    const pool = state.pool;
+    value += 35 * Math.min(10, pool.U + pool.B + pool.A + pool.C + pool.S);
+    value +=
+      25 *
+        (state.reductionInstantSorcery +
+          state.reductionNoncreature +
+          state.reductionBlue) +
+      12 * state.reductionFromGraveyard;
+    if (state.hasGale) {
+      value += 150;
+      value +=
         6 *
-        this.gy.filter((c) => c.isIS && this.devValueIS(c, true) > 0).length;
+        this.gy.filter((card) => card.isIS && this.devValueIS(card, true) > 0)
+          .length;
     }
     const have = new Set([
-      ...this.hand.map((c) => c.name),
-      ...this.bf.map((q) => q.cd.name),
+      ...this.hand.map((card) => card.name),
+      ...this.bf.map((permanent) => permanent.cd.name),
     ]);
-    if (st.gale || this.command.length)
-      for (const c of this.gy) if (c.isIS) have.add(c.name);
+    if (state.hasGale || this.command.length)
+      for (const candidate of this.gy)
+        if (candidate.isIS) have.add(candidate.name);
     const miss = Math.min(
       ...PACKAGES.map(
-        (pkg) => pkg.filter((req) => ![...req].some((n) => have.has(n))).length,
+        (pkg) =>
+          pkg.filter((req) => ![...req].some((name) => have.has(name))).length,
       ),
     );
-    v += miss === 0 ? 450 : miss === 1 ? 220 : miss === 2 ? 70 : 0;
+    value += miss === 0 ? 450 : miss === 1 ? 220 : miss === 2 ? 70 : 0;
     // engines / creatures on the battlefield are worth at least as much as in hand
-    v +=
+    value +=
       0.6 *
       this.bf
-        .filter((q) => q.land === null && !q.cd.rock)
-        .reduce((s, q) => s + permScore(q.cd.name, 0), 0);
-    v += 0.4 * this.hand.reduce((s, c) => s + this.cardValue(c), 0);
-    if (this.hasCounterInHand()) v += 40;
-    return v;
+        .filter((permanent) => permanent.land === null && !permanent.cd.rock)
+        .reduce(
+          (total, permanent) => total + permScore(permanent.cd.name, 0),
+          0,
+        );
+    value +=
+      0.4 * this.hand.reduce((total, card) => total + this.cardValue(card), 0);
+    if (this.hasCounterInHand()) value += 40;
+    return value;
   }
 
   override combat(): void {
-    const sk = this.perm('The Mindskinner');
-    if (sk && !sk.sick && !this.attacked) {
+    const permanent = this.perm('The Mindskinner');
+    if (permanent && !permanent.sick && !this.attacked) {
       this.attacked = true;
-      const t = this.light().target();
-      if (t !== null) {
-        this.oppEvents([EV.DMG, t, 10]);
+      const target = buildKillSearchState(this).biggestLibraryOpponent();
+      if (target !== null) {
+        this.applyOpponentEvents([OPPONENT_EVENT.DMG, target, 10]);
         this.say(
           'Mindskinner attacks: opp libraries',
           `[${this.lib.join(', ')}]`,
@@ -1168,12 +433,12 @@ export class GaleGame extends Game<Light> {
     if (this.inArena()) {
       // a pod: the other creatures attack when no blocker can stop or kill them (in a goldfish game Gale never attacks)
       const pool = this.creatures().filter(
-        (p) =>
-          p.cd.name !== 'The Mindskinner' &&
-          !p.tapped &&
-          !p.sick &&
-          this.power(p) > 0 &&
-          !this.srcKind(p, true),
+        (candidate) =>
+          candidate.cd.name !== 'The Mindskinner' &&
+          !candidate.tapped &&
+          !candidate.sick &&
+          this.power(candidate) > 0 &&
+          !this.srcKind(candidate, true),
       );
       if (pool.length) this.arenaCombat(pool);
     }

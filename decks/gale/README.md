@@ -9,9 +9,16 @@ Dimir spellslinger combo. Run with `npm run sim -- gale ...` from the project ro
 | `decklist.txt` | The list as first given (the adopted list is `lists/proposed.txt`, see PLAN.md). |
 | `lists/` | Test lists (`proposed.txt` is the adopted list, see PLAN.md). `lists/cuts/` holds cut-test variants, `lists/old/` older results. |
 | `logs/` | Archidekt playtest logs of real games, for `--analyze`. |
-| `game.ts` | `GaleGame`: priorities (`PERM_SCORE`, `PACKAGES`), what to cast, tutors and Gifts piles, Gale's recast, Scion's draw, Mindskinner's attack, and the cards only this deck uses. |
-| `kills.ts` | The kill search's snapshot (`Light`) and moves: every combo line below, plus the Konrad chain check with real shuffles (`chainProb`). |
-| `roles.ts` | Which cards are combo pieces, engines, held for the kill. |
+| `game.ts` | `GaleGame`: its state, the engine hooks, Scion's draw, the Mindskinner's attack, and what the AI values (`cardValue`, `devValueIS`, `positionValue`). |
+| `candidates.ts` | What the AI may do now (`buildCandidates`), Gale's recast, countering its own spell. |
+| `tutoring.ts` | What to tutor for (`chooseTutorTarget`) and which Gifts Ungiven pile to make. |
+| `spells.ts` | What the spells only this deck uses do when they resolve. |
+| `snapshot.ts` | Builds the state the kill search starts from. |
+| `kills.ts` | The kill search and its cheap pre-filter. |
+| `kill-state.ts` | The state the search works on (`KillSearchState`) and what spells do to it. |
+| `kill-moves.ts` | The moves of the search: every combo line below. |
+| `chain-probability.ts` | The Konrad chain check with real shuffles. |
+| `roles.ts` | Which cards are combo pieces, engines, held for the kill; the packages and card scores. |
 | `config.ts` | Settings (`--set key=value`). |
 | `index.ts` | What the CLI loads for this deck. |
 | `tests/kills.test.ts` | Hand-built boards that must or must not be a kill (`--test`). |

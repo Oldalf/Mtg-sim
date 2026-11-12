@@ -1,8 +1,8 @@
 /**
  * Kill-search driver shared by every deck.
  *
- * A deck supplies a snapshot type (with won(), key() and a path field) and these functions:
- *   children(st)       next snapshots (each one with .path extended by a description; render(path)
+ * A deck supplies a snapshot type (with hasWon(), searchKey() and a killLine field) and these functions:
+ *   children(st)       next snapshots (each one with .killLine extended by a description; render(path)
  *                      turns the winning path into text, so it's only built once)
  *   protected(st)      true if a counterspell can still back up the kill
  *   uncertain(st)      true if a won leaf is only won "on average" (then chance is asked)
@@ -14,9 +14,9 @@
  */
 
 export interface Snapshot {
-  path: unknown;
-  won(): boolean;
-  key(): string;
+  killLine: unknown;
+  hasWon(): boolean;
+  searchKey(): string;
   fullKey(): string;
 }
 
@@ -70,12 +70,12 @@ export class KillSearch<S extends Snapshot> {
     let prob: number | null = null;
     let miss: number | null = null;
     let nodes = 0;
-    root.path = null;
+    root.killLine = null;
     const uncertain = o.uncertain ?? (() => false);
     const minChance = this.minChance;
 
     const dfs = (st: S, depth: number): void => {
-      if (st.won()) {
+      if (st.hasWon()) {
         const r = o.protected(st) ? 2 : 1;
         // same level as the best line so far: only worth a look if that one is uncertain
         const unc = uncertain(st);
@@ -91,12 +91,12 @@ export class KillSearch<S extends Snapshot> {
           if (r === best && p <= (prob as number)) return;
         }
         best = r;
-        line = st.path;
+        line = st.killLine;
         prob = p;
         return;
       }
       if (depth === 0 || nodes >= budget) return;
-      const k = st.key();
+      const k = st.searchKey();
       if (seen.has(k)) return;
       seen.add(k);
       nodes++;

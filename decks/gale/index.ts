@@ -6,10 +6,10 @@ import { GaleGame } from './game';
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);
-  return (hand: CardDef[]) => hand.some((c) => set.has(c.name));
+  return (hand: CardDef[]) => hand.some((card) => set.has(card.name));
 };
 const lands = (hand: CardDef[]) =>
-  hand.filter((c) => c.land !== null || c.mdfcLand !== null).length;
+  hand.filter((card) => card.land !== null || card.mdfcLand !== null).length;
 
 export const deck = {
   name: 'gale',
@@ -26,8 +26,9 @@ export const deck = {
   handFeatures: [
     {
       label: 'a blue source and a black source',
-      f: (h: CardDef[]) =>
-        h.some((c) => landMakes(c, 'U')) && h.some((c) => landMakes(c, 'B')),
+      f: (cards: CardDef[]) =>
+        cards.some((card) => landMakes(card, 'U')) &&
+        cards.some((card) => landMakes(card, 'B')),
     },
     {
       label:
@@ -110,7 +111,7 @@ export const deck = {
     },
     {
       label: 'a rock, reducer or cantrip (something that develops)',
-      f: (h: CardDef[]) =>
+      f: (cards: CardDef[]) =>
         anyOf([
           'Sol Ring',
           'Arcane Signet',
@@ -132,12 +133,12 @@ export const deck = {
           'Preordain',
           'Frantic Search',
           'See the Truth',
-        ])(h),
+        ])(cards),
     },
     {
       label: '2 lands and a rock, reducer or cantrip',
-      f: (h: CardDef[]) =>
-        lands(h) === 2 &&
+      f: (cards: CardDef[]) =>
+        lands(cards) === 2 &&
         anyOf([
           'Sol Ring',
           'Arcane Signet',
@@ -159,7 +160,7 @@ export const deck = {
           'Preordain',
           'Frantic Search',
           'See the Truth',
-        ])(h),
+        ])(cards),
     },
   ],
 };
