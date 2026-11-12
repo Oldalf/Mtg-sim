@@ -3,6 +3,7 @@ import * as C from '../../../engine/cards';
 import { Perm } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
+import { castSawInHalf } from '../actions';
 import { MerenGame } from '../game';
 
 const rep = (n: string, k: number) => new Array(k).fill(n) as string[];
@@ -50,7 +51,7 @@ export function runMerenTests(): boolean {
 
   // Meren's end step: experience 5 returns Gray Merchant to the battlefield (drain again)
   g = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
-  g.exp = 5;
+  g.experience = 5;
   g.endStep();
   check(
     'Meren with 5 experience returns Gray Merchant to the battlefield',
@@ -61,7 +62,7 @@ export function runMerenTests(): boolean {
 
   // ... with 4 experience it goes to hand instead
   g = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
-  g.exp = 4;
+  g.experience = 4;
   g.endStep();
   check(
     'Meren with 4 experience puts Gray Merchant in hand',
@@ -76,7 +77,7 @@ export function runMerenTests(): boolean {
     [],
     ['Gray Merchant of Asphodel'],
   );
-  g.exp = 5;
+  g.experience = 5;
   g.endStep();
   check(
     'Diviner + Meren returning Gray Merchant: two drains of 6',
@@ -87,7 +88,7 @@ export function runMerenTests(): boolean {
   // Saw in Half on our Gray Merchant: it dies, two token copies enter: two more drains
   g = board(['Gray Merchant of Asphodel'], ['Saw in Half']);
   const gm = g.perm('Gray Merchant of Asphodel')!;
-  g.sawInHalf(C.get('Saw in Half'), gm);
+  castSawInHalf(g, C.get('Saw in Half'), gm);
   check(
     'Saw in Half on Gray Merchant: copies drain 2 then 4',
     g.life,
@@ -102,7 +103,7 @@ export function runMerenTests(): boolean {
   // a sacrificed creature gives Meren an experience counter
   g = board(['Meren of Clan Nel Toth', 'Viscera Seer', 'Llanowar Elves']);
   g.sacrifice(g.perm('Llanowar Elves')!);
-  check('Sacrificing a creature with Meren out: 1 experience', g.exp, 1);
+  check('Sacrificing a creature with Meren out: 1 experience', g.experience, 1);
 
   // combat: flying always connects; half of the other attackers (rounded down) are blocked, the biggest first
   g = board([
@@ -153,11 +154,11 @@ export function runMerenTests(): boolean {
   g = board();
   g.hurtOpp(0, 40);
   g.hurtOpp(1, 40);
-  check('Two opponents dead is a win', g.won(), true);
+  check('Two opponents dead is a win', g.hasWon(), true);
   g = board();
   g.drainEach(33);
   g.hurtOpp(0, 1);
-  check('100 damage spread over three opponents is a win', g.won(), true);
+  check('100 damage spread over three opponents is a win', g.hasWon(), true);
 
   console.log(ok ? 'ALL OK' : 'SOME FAILED');
   // ---- lands with conditions (the shared engine: Game.entersTapped, pain lands, Tainted Wood)

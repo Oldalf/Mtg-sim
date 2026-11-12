@@ -12,21 +12,23 @@ import {
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);
-  return (hand: CardDef[]) => hand.some((c) => set.has(c.name));
+  return (hand: CardDef[]) => hand.some((card) => set.has(card.name));
 };
 const lands = (hand: CardDef[]) =>
-  hand.filter((c) => c.land !== null || c.mdfcLand !== null).length;
+  hand.filter((card) => card.land !== null || card.mdfcLand !== null).length;
 
 /** A turn the game never reached counts as turn 13 (the horizon is turn 12). */
-const turnOf = (r: DiagRow, key: string) => (r[key] ?? 13) as number;
-const win = (r: DiagRow) => turnOf(r, 'win');
+const turnOf = (row: DiagRow, key: string) => (row[key] ?? 13) as number;
+const win = (row: DiagRow) => turnOf(row, 'win');
 // "No meaningful impact" (a first definition, change it here): by the end of turn 5 / 6 nothing has come back from a
 // graveyard (Meren's end step, Unearth, Reanimate...) and the board has fewer than THIN nonland permanents.
 const THIN = 3;
-const noImpact = (r: DiagRow, t: 5 | 6) =>
-  win(r) > t && (r['reanim' + t] ?? 0) === 0 && (r['perms' + t] ?? 0) < THIN;
-const slow5 = (r: DiagRow) => win(r) > 5 && (r.spent5 ?? 0) < 9;
-const slow6 = (r: DiagRow) => win(r) > 6 && (r.spent6 ?? 0) < 13;
+const noImpact = (row: DiagRow, turn: 5 | 6) =>
+  win(row) > turn &&
+  (row['reanim' + turn] ?? 0) === 0 &&
+  (row['perms' + turn] ?? 0) < THIN;
+const slow5 = (row: DiagRow) => win(row) > 5 && (row.spent5 ?? 0) < 9;
+const slow6 = (row: DiagRow) => win(row) > 6 && (row.spent6 ?? 0) < 13;
 
 export const deck = {
   name: 'meren',
@@ -53,7 +55,9 @@ export const deck = {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
       f: (rows: DiagRow[]) =>
-        rows.map(win).sort((a, b) => a - b)[Math.floor(rows.length * 0.9)],
+        rows.map(win).sort((first, second) => first - second)[
+          Math.floor(rows.length * 0.9)
+        ],
     },
     // Pontus's slow start: less than 60% of the mana of one land per turn spent (15 by turn 5, 21 by turn 6)
     {
@@ -69,15 +73,16 @@ export const deck = {
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => slow5(r) || slow6(r)),
+      f: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => slow5(row) || slow6(row)),
     },
     {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 5),
-          (r) => r.spent5 ?? 0,
+          rows.filter((row) => win(row) > 5),
+          (row) => row.spent5 ?? 0,
         ),
     },
     {
@@ -85,8 +90,8 @@ export const deck = {
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 6),
-          (r) => r.spent6 ?? 0,
+          rows.filter((row) => win(row) > 6),
+          (row) => row.spent6 ?? 0,
         ),
     },
     {
@@ -94,27 +99,27 @@ export const deck = {
       unit: 'turn' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => r.merenOut !== null),
-          (r) => turnOf(r, 'merenOut'),
+          rows.filter((row) => row.merenOut !== null),
+          (row) => turnOf(row, 'merenOut'),
         ),
     },
     {
       label: 'No Meren by end of turn 4, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => turnOf(r, 'merenOut') > 4 && win(r) > 4),
+        percentOf(rows, (row) => turnOf(row, 'merenOut') > 4 && win(row) > 4),
     },
     {
       label: 'No Meren by end of turn 5, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => turnOf(r, 'merenOut') > 5 && win(r) > 5),
+        percentOf(rows, (row) => turnOf(row, 'merenOut') > 5 && win(row) > 5),
     },
     {
       label: 'No Meren by end of turn 6, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => turnOf(r, 'merenOut') > 6 && win(r) > 6),
+        percentOf(rows, (row) => turnOf(row, 'merenOut') > 6 && win(row) > 6),
     },
     {
       label:
@@ -123,27 +128,27 @@ export const deck = {
         ' nonland permanents at end of turn 5 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => win(r) > 5 && (r.perms5 ?? 0) < THIN),
+        percentOf(rows, (row) => win(row) > 5 && (row.perms5 ?? 0) < THIN),
     },
     {
       label: 'Nothing reanimated by end of turn 5, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => win(r) > 5 && (r.reanim5 ?? 0) === 0),
+        percentOf(rows, (row) => win(row) > 5 && (row.reanim5 ?? 0) === 0),
     },
     {
       label: 'Nothing reanimated by end of turn 6, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => win(r) > 6 && (r.reanim6 ?? 0) === 0),
+        percentOf(rows, (row) => win(row) > 6 && (row.reanim6 ?? 0) === 0),
     },
     {
       label: 'Average Meren experience at end of turn 5',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 5),
-          (r) => r.exp5 ?? 0,
+          rows.filter((row) => win(row) > 5),
+          (row) => row.exp5 ?? 0,
         ),
     },
     {
@@ -151,31 +156,32 @@ export const deck = {
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 6),
-          (r) => r.exp6 ?? 0,
+          rows.filter((row) => win(row) > 6),
+          (row) => row.exp6 ?? 0,
         ),
     },
     {
       label: 'No impact by turn 5: nothing reanimated and a thin board (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => noImpact(r, 5)),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 5)),
     },
     {
       label: 'No impact by turn 6: the same (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => noImpact(r, 6)),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 6)),
     },
   ],
   // --hands: what to look for in an opening hand
   handFeatures: [
     {
       label: 'a black source and a green source',
-      f: (h: CardDef[]) =>
-        h.some((c) => landMakes(c, 'B')) && h.some((c) => landMakes(c, 'G')),
+      f: (cards: CardDef[]) =>
+        cards.some((card) => landMakes(card, 'B')) &&
+        cards.some((card) => landMakes(card, 'G')),
     },
     {
       label: 'a green source',
-      f: (h: CardDef[]) => h.some((c) => landMakes(c, 'G')),
+      f: (cards: CardDef[]) => cards.some((card) => landMakes(card, 'G')),
     },
     {
       label: 'a ramp piece (Llanowar, Elder, Sol Ring, Dark Ritual, Solemn...)',
@@ -240,8 +246,8 @@ export const deck = {
     },
     {
       label: '2 lands and a ramp piece',
-      f: (h: CardDef[]) =>
-        lands(h) === 2 &&
+      f: (cards: CardDef[]) =>
+        lands(cards) === 2 &&
         anyOf([
           'Llanowar Elves',
           'Sakura-Tribe Elder',
@@ -250,7 +256,7 @@ export const deck = {
           'Solemn Simulacrum',
           'Studious First-Year',
           'Simulacrum Shaper',
-        ])(h),
+        ])(cards),
     },
   ],
 };

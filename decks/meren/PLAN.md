@@ -2,6 +2,10 @@
 
 Golgari reanimator, bracket 2–3. The aim is a consistent deck that's fun to play: slower than Gale, winning with Gray Merchant / Lotleth Giant drains and combat. Run it with `npm run sim -- meren` (see the root README). Engine notes: the root `PLAN.md`.
 
+## Files
+
+- `cards.ts`: the card names and facts about them. `game.ts`: `MerenGame` (state, win check, turn steps, combat, tutors). `triggers.ts`: enter and death triggers. `candidates.ts`: what the AI may do now, with a score. `actions.ts`: what the abilities and spells do. `index.ts`: deck registration and --diag / --hands measures. `mulligan.ts`, `config.ts`, `tests/`.
+
 ## How the deck wins (Pontus's primer)
 
 - Meren and other reanimation are value engines for a big tempo swing.
