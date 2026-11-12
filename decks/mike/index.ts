@@ -3,7 +3,8 @@
 import * as path from 'path';
 import { ROOT } from '../../engine/cards';
 import { CFG } from './config';
-import { MikeGame, LOG_TRACKERS } from './game';
+import { MikeGame } from './game';
+import { LOG_TRACKERS } from './cards';
 import { DiagRow } from '../../engine/runner';
 import {
   percentOf,
@@ -12,7 +13,7 @@ import {
 } from '../../engine/diag-metrics';
 
 /** A game with no win by turn 14 counts as turn 15. */
-const win = (r: DiagRow) => (r.win ?? 15) as number;
+const win = (row: DiagRow) => (row.win ?? 15) as number;
 
 export const deck = {
   name: 'mike',
@@ -39,51 +40,53 @@ export const deck = {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
       f: (rows: DiagRow[]) =>
-        rows.map(win).sort((a, b) => a - b)[Math.floor(rows.length * 0.9)],
+        rows.map(win).sort((first, second) => first - second)[
+          Math.floor(rows.length * 0.9)
+        ],
     },
     {
       label: 'Won by milling out (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => r.how === 1),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.how === 1),
     },
     {
       label: 'Won with the Toad (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => r.how === 2),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.how === 2),
     },
     {
       label: 'Won by life loss (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => r.how === 3 || r.how === 4),
+        percentOf(rows, (row) => row.how === 3 || row.how === 4),
     },
     {
       label: 'Win with a counterspell in hand and 2 mana untapped (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => r.backup === 1),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.backup === 1),
     },
     {
       label: 'Library emptied (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => r.emptied === 1),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.emptied === 1),
     },
     {
       label: 'Library emptied with a win piece / Conundrum / Ormos out (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => r.emptiedSafe === 1),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.emptiedSafe === 1),
     },
     {
       label: 'Decked ourselves (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => percentOf(rows, (r) => r.died === 1),
+      f: (rows: DiagRow[]) => percentOf(rows, (row) => row.died === 1),
     },
     {
       label: 'Average turn Vnwxt comes down',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => r.vnwxtOut != null),
-          (r) => r.vnwxtOut as number,
+          rows.filter((row) => row.vnwxtOut != null),
+          (row) => row.vnwxtOut as number,
         ),
     },
     {
@@ -92,7 +95,7 @@ export const deck = {
       f: (rows: DiagRow[]) =>
         percentOf(
           rows,
-          (r) => r.maxSpeed != null && (r.maxSpeed as number) <= 8,
+          (row) => row.maxSpeed != null && (row.maxSpeed as number) <= 8,
         ),
     },
     {
@@ -100,8 +103,8 @@ export const deck = {
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 6),
-          (r) => r.draws6 ?? 0,
+          rows.filter((row) => win(row) > 6),
+          (row) => row.draws6 ?? 0,
         ),
     },
     {
@@ -109,15 +112,15 @@ export const deck = {
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
         averageOf(
-          rows.filter((r) => win(r) > 8),
-          (r) => r.hand8 ?? 0,
+          rows.filter((row) => win(row) > 8),
+          (row) => row.hand8 ?? 0,
         ),
     },
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        percentOf(rows, (r) => win(r) > 5 && (r.spent5 ?? 0) < 9),
+        percentOf(rows, (row) => win(row) > 5 && (row.spent5 ?? 0) < 9),
     },
   ],
 };

@@ -3,20 +3,20 @@ import * as C from '../../../engine/cards';
 import { Perm } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
+import { MikeGame } from '../game';
 import {
-  MikeGame,
   TOK,
   VNWXT,
-  CRAWLER,
-  SEAS,
+  PSYCHOSIS_CRAWLER,
+  OMINOUS_SEAS,
   KRANG,
-  TEFERI,
-  MANIAC,
+  TEFERIS_AGELESS_INSIGHT,
+  LABORATORY_MANIAC,
   JACE,
-  TOAD,
-  CONUNDRUM,
-  ORMOS,
-} from '../game';
+  TWENTY_TOED_TOAD,
+  LIVING_CONUNDRUM,
+  ORMOS_ARCHIVE_KEEPER,
+} from '../cards';
 
 const rep = (n: string, k: number) => new Array(k).fill(n) as string[];
 
@@ -59,7 +59,7 @@ export function runMikeTests(): boolean {
   };
 
   // ---- drawing from an empty library
-  let g = board([MANIAC], [], []);
+  let g = board([LABORATORY_MANIAC], [], []);
   g.draw(1);
   check(
     'Laboratory Maniac: drawing from an empty library wins',
@@ -73,24 +73,24 @@ export function runMikeTests(): boolean {
     [g.milled, g.died],
     [true, false],
   );
-  g = board([CONUNDRUM], [], []);
+  g = board([LIVING_CONUNDRUM], [], []);
   g.draw(3);
   check(
     'Living Conundrum: the draws are skipped',
     [g.milled, g.died, g.hand.length],
     [false, false, 0],
   );
-  g = board([ORMOS], [], []);
+  g = board([ORMOS_ARCHIVE_KEEPER], [], []);
   g.draw(2);
   check(
     'Ormos: two empty draws = ten +1/+1 counters',
-    [g.perm(ORMOS)!.counters, g.died],
+    [g.perm(ORMOS_ARCHIVE_KEEPER)!.counters, g.died],
     [10, false],
   );
   g = board([], [], []);
   g.draw(1);
   check('no protection: drawing from an empty library loses', g.died, true);
-  g = board([MANIAC, CONUNDRUM], [], []);
+  g = board([LABORATORY_MANIAC, LIVING_CONUNDRUM], [], []);
   g.draw(1);
   check(
     'Maniac and Conundrum together: we win (Maniac is chosen)',
@@ -107,10 +107,10 @@ export function runMikeTests(): boolean {
   g.speed = 3;
   g.draw(1);
   check('Vnwxt below max speed: draw one', g.hand.length, 1);
-  g = board([TEFERI], []);
+  g = board([TEFERIS_AGELESS_INSIGHT], []);
   g.draw(1);
   check("Teferi's Ageless Insight: an effect draw gives two", g.hand.length, 2);
-  g = board([TEFERI], []);
+  g = board([TEFERIS_AGELESS_INSIGHT], []);
   g.drawStepOpen = true;
   g.draw(1);
   check(
@@ -118,7 +118,7 @@ export function runMikeTests(): boolean {
     g.hand.length,
     1,
   );
-  g = board([TEFERI, VNWXT], []);
+  g = board([TEFERIS_AGELESS_INSIGHT, VNWXT], []);
   g.speed = 4;
   g.draw(1);
   check(
@@ -126,7 +126,7 @@ export function runMikeTests(): boolean {
     g.hand.length,
     4,
   );
-  g = board([TEFERI, VNWXT], []);
+  g = board([TEFERIS_AGELESS_INSIGHT, VNWXT], []);
   g.speed = 4;
   g.drawStepOpen = true;
   g.draw(1);
@@ -137,27 +137,33 @@ export function runMikeTests(): boolean {
   );
 
   // ---- draw triggers
-  g = board([CRAWLER], []);
+  g = board([PSYCHOSIS_CRAWLER], []);
   g.draw(3);
   check(
     'Psychosis Crawler: each draw drains every opponent 1',
     g.life,
     [37, 37, 37],
   );
-  g = board([CRAWLER, KRANG], []);
+  g = board([PSYCHOSIS_CRAWLER, KRANG], []);
   g.draw(2);
   check("Krang doubles Psychosis Crawler's trigger", g.life, [36, 36, 36]);
-  g = board([SEAS], []);
+  g = board([OMINOUS_SEAS], []);
   g.draw(7);
   check(
     'Ominous Seas: seven draws, seven counters, no Kraken',
-    [g.perm(SEAS)!.counters, g.bf.filter((p) => p.cd === TOK.kraken).length],
+    [
+      g.perm(OMINOUS_SEAS)!.counters,
+      g.bf.filter((p) => p.cd === TOK.kraken).length,
+    ],
     [7, 0],
   );
   g.draw(1);
   check(
     'Ominous Seas: the eighth draw makes an 8/8 Kraken',
-    [g.perm(SEAS)!.counters, g.bf.filter((p) => p.cd === TOK.kraken).length],
+    [
+      g.perm(OMINOUS_SEAS)!.counters,
+      g.bf.filter((p) => p.cd === TOK.kraken).length,
+    ],
     [0, 1],
   );
   g = board(['Clinquant Skymage', 'Oneirophage'], []);
@@ -191,32 +197,32 @@ export function runMikeTests(): boolean {
   check('without a speed card there is no speed', g.speed, 0);
 
   // ---- Toad
-  g = board([TOAD], rep('Island', 20));
+  g = board([TWENTY_TOED_TOAD], rep('Island', 20));
   check(
     'Twenty-Toed Toad with twenty cards in hand wins',
     (g.checkKill(), g.oppsBeaten()),
     true,
   );
-  g = board([TOAD], rep('Island', 19));
+  g = board([TWENTY_TOED_TOAD], rep('Island', 19));
   check('...with nineteen it does not', (g.checkKill(), g.oppsBeaten()), false);
 
   // ---- the AI's safety rule
   g = board([], [], rep('Island', 6));
   check(
     'no protection: the AI will not draw into the last 3 cards',
-    [g.drawOk(2), g.drawOk(4)],
+    [g.mayDraw(2), g.mayDraw(4)],
     [true, false],
   );
-  g = board([CONUNDRUM], [], rep('Island', 6));
+  g = board([LIVING_CONUNDRUM], [], rep('Island', 6));
   check(
     'Living Conundrum on the battlefield: drawing everything is fine',
-    g.drawOk(20),
+    g.mayDraw(20),
     true,
   );
-  g = board([MANIAC], [], rep('Island', 6));
+  g = board([LABORATORY_MANIAC], [], rep('Island', 6));
   check(
     'a win piece on the battlefield: drawing everything is the plan',
-    g.drawOk(20),
+    g.mayDraw(20),
     true,
   );
 
@@ -234,7 +240,7 @@ export function runMikeTests(): boolean {
     [56, false],
   );
   g = board(
-    [VNWXT, MANIAC],
+    [VNWXT, LABORATORY_MANIAC],
     ['Flux', ...rep('Brainstorm', 14)],
     rep('Island', 25),
   );

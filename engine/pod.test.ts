@@ -5,7 +5,8 @@ import { ANSWERS } from './answers';
 import * as C from './cards';
 import { Rng } from './rng';
 import { CFG as MIKE_CFG } from '../decks/mike/config';
-import { MikeGame, VNWXT, MANIAC, JACE } from '../decks/mike/game';
+import { MikeGame } from '../decks/mike/game';
+import { VNWXT, LABORATORY_MANIAC, JACE } from '../decks/mike/cards';
 
 const many = (n: string, k: number) => new Array(k).fill(n) as string[];
 /** A Mike board: untapped Islands, permanents, a hand; Vnwxt is the commander (in the command zone unless on the battlefield). */
@@ -253,7 +254,7 @@ export function runPodTests(): boolean {
     "Negate can't counter a creature spell",
     cards(
       g.podRespond(
-        { spells: [MANIAC], perms: [], backup: 0 },
+        { spells: [LABORATORY_MANIAC], perms: [], backup: 0 },
         1,
         mike(0, [], []),
       ),
@@ -277,9 +278,9 @@ export function runPodTests(): boolean {
     'a counterspell needs a spell on the stack: none against a permanent-only win',
     cards(
       g.podRespond(
-        { spells: [], perms: [MANIAC], backup: 0 },
+        { spells: [], perms: [LABORATORY_MANIAC], backup: 0 },
         1,
-        mike(0, [MANIAC], []),
+        mike(0, [LABORATORY_MANIAC], []),
       ),
     ),
     [],
@@ -289,12 +290,12 @@ export function runPodTests(): boolean {
     'creature removal takes the creature, not the planeswalker',
     cards(
       g.podRespond(
-        { spells: [], perms: [JACE, MANIAC], backup: 0 },
+        { spells: [], perms: [JACE, LABORATORY_MANIAC], backup: 0 },
         1,
-        mike(0, [JACE, MANIAC], []),
+        mike(0, [JACE, LABORATORY_MANIAC], []),
       ),
     ),
-    ['Pongify > ' + MANIAC],
+    ['Pongify > ' + LABORATORY_MANIAC],
   );
   g = mike(1, [], ['Pongify']);
   check(
@@ -313,14 +314,17 @@ export function runPodTests(): boolean {
     'two answers when the winner has backup',
     cards(
       g.podRespond(
-        { spells: [], perms: [MANIAC], backup: 1 },
+        { spells: [], perms: [LABORATORY_MANIAC], backup: 1 },
         2,
-        mike(0, [MANIAC], []),
+        mike(0, [LABORATORY_MANIAC], []),
       ),
     ),
-    ['Pongify > ' + MANIAC, 'Rapid Hybridization > ' + MANIAC],
+    [
+      'Pongify > ' + LABORATORY_MANIAC,
+      'Rapid Hybridization > ' + LABORATORY_MANIAC,
+    ],
   );
-  g = mike(4, [MANIAC], ['Negate', 'Pongify']);
+  g = mike(4, [LABORATORY_MANIAC], ['Negate', 'Pongify']);
   g.turn = 6;
   check(
     'mana is held up for the cheapest instant answer (from round 5)',
@@ -341,11 +345,13 @@ export function runPodTests(): boolean {
     [],
   );
   g = mike(2, [], ['Heartless Act']);
-  let o = mike(0, [MANIAC], []);
-  o.perm(MANIAC)!.counters = 1;
+  let o = mike(0, [LABORATORY_MANIAC], []);
+  o.perm(LABORATORY_MANIAC)!.counters = 1;
   check(
     "Heartless Act can't destroy a creature with counters",
-    cards(g.podRespond({ spells: [], perms: [MANIAC], backup: 0 }, 1, o)),
+    cards(
+      g.podRespond({ spells: [], perms: [LABORATORY_MANIAC], backup: 0 }, 1, o),
+    ),
     [],
   );
   g = mike(1, [], ['Swords to Plowshares']);
@@ -361,42 +367,49 @@ export function runPodTests(): boolean {
     [],
   );
   g = mike(2, [], ['Pongify', 'Rapid Hybridization']);
-  o = mike(1, [MANIAC, 'Siren Stormtamer'], []);
-  const r = g.podRespond({ spells: [], perms: [MANIAC], backup: 0 }, 1, o);
+  o = mike(1, [LABORATORY_MANIAC, 'Siren Stormtamer'], []);
+  const r = g.podRespond(
+    { spells: [], perms: [LABORATORY_MANIAC], backup: 0 },
+    1,
+    o,
+  );
   check(
     'Siren Stormtamer counters the first removal; the second gets through',
     r.map((x) => `${x.card}:${x.shield ?? 'hit'}`),
     ['Pongify:Siren Stormtamer', 'Rapid Hybridization:hit'],
   );
   check('... and Stormtamer is sacrificed', o.onBf('Siren Stormtamer'), false);
-  o = mike(0, [MANIAC, 'Kira, Great Glass-Spinner'], []);
+  o = mike(0, [LABORATORY_MANIAC, 'Kira, Great Glass-Spinner'], []);
   check(
     'Kira counters the first spell at each creature each turn',
-    [o.podShield(o.perm(MANIAC)!), o.podShield(o.perm(MANIAC)!)],
+    [
+      o.podShield(o.perm(LABORATORY_MANIAC)!),
+      o.podShield(o.perm(LABORATORY_MANIAC)!),
+    ],
     ['Kira, Great Glass-Spinner', null],
   );
-  o = mike(3, [MANIAC], []);
-  o.podSuffer(o.perm(MANIAC)!, ANSWERS['Pongify']);
+  o = mike(3, [LABORATORY_MANIAC], []);
+  o.podSuffer(o.perm(LABORATORY_MANIAC)!, ANSWERS['Pongify']);
   check(
     'Pongify: the owner gets a 3/3',
     o.creatures().map((p) => `${p.cd.power}/${p.cd.toughness}`),
     ['3/3'],
   );
-  o = mike(3, [MANIAC], []);
+  o = mike(3, [LABORATORY_MANIAC], []);
   o.myLife = 30;
-  o.podSuffer(o.perm(MANIAC)!, ANSWERS['Swords to Plowshares']);
+  o.podSuffer(o.perm(LABORATORY_MANIAC)!, ANSWERS['Swords to Plowshares']);
   check(
     'Swords: the owner gains life equal to the power',
     o.myLife,
-    30 + C.get(MANIAC).power,
+    30 + C.get(LABORATORY_MANIAC).power,
   );
   // losing the card the win was stopped at
-  g = mike(3, [MANIAC], []);
-  g.podLose(MANIAC, 'destroy');
+  g = mike(3, [LABORATORY_MANIAC], []);
+  g.podLose(LABORATORY_MANIAC, 'destroy');
   check(
     'a destroyed key creature goes to the graveyard',
-    [g.onBf(MANIAC), g.gy.map((c) => c.name)],
-    [false, [MANIAC]],
+    [g.onBf(LABORATORY_MANIAC), g.gy.map((c) => c.name)],
+    [false, [LABORATORY_MANIAC]],
   );
   g = mike(6, [], ['Traumatize']);
   g.podLose('Traumatize', 'countered');
@@ -427,20 +440,20 @@ export function runPodTests(): boolean {
     [false, [VNWXT]],
   );
   // Mike's mill win stopped: Laboratory Maniac removed in response to the draw = we draw from an empty library and lose
-  g = mike(3, [MANIAC], []);
+  g = mike(3, [LABORATORY_MANIAC], []);
   g.library = [];
   g.draw(1);
-  g.podLose(MANIAC, 'destroy');
+  g.podLose(LABORATORY_MANIAC, 'destroy');
   g.podWinStopped();
   check(
     'Maniac removed in response to the winning draw: we lose',
     [g.milled, g.died],
     [false, true],
   );
-  g = mike(3, [MANIAC, 'Living Conundrum'], []);
+  g = mike(3, [LABORATORY_MANIAC, 'Living Conundrum'], []);
   g.library = [];
   g.draw(1);
-  g.podLose(MANIAC, 'destroy');
+  g.podLose(LABORATORY_MANIAC, 'destroy');
   g.podWinStopped();
   check(
     '... unless Living Conundrum skips the draw',

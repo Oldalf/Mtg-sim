@@ -5,6 +5,10 @@ Mono-blue card draw, bracket 2–3. "Mike" is the nickname (Mike Wazowski: one e
 - **Lists:** `decklist.txt` is the list as Pontus first gave it (2026-11-09). The other files in `lists/` are test lists. `logs/` holds his real games.
 - **Pontus's goals:** a fun, consistent deck that protects itself and has answers, but isn't oppressive; win around turn 10–11 on average. The draw plan is a gimmick first (a tiny creature holding 20+ cards), the win conditions second.
 
+## Files
+
+- `cards.ts`: the card names and facts about them. `game.ts`: `MikeGame` (state, win checks, drawing and speed, combat, spells). `candidates.ts`: what the AI may do now, with a score. `actions.ts`: what some abilities do. `index.ts`: deck registration and --diag / --hands measures. `mulligan.ts`, `config.ts`, `tests/`.
+
 ## How the deck wins (Pontus)
 
 - **Mill yourself:** draw the whole library with Laboratory Maniac (or Jace, Wielder of Mysteries) on the battlefield. Living Conundrum and Ormos are the safety: if you draw too much without a win card (or it gets removed) they stop you from losing.
