@@ -41,6 +41,8 @@ import { runMikeTests } from './decks/mike/tests/mike.test';
 import { runCodieTests } from './decks/codie/tests/codie.test';
 import { regress, RegressSpec } from './engine/regress';
 import * as P from './engine/pod';
+import { printPod } from './engine/pod-report';
+import { PodJob } from './engine/pod-types';
 import { runPodTests } from './engine/pod.test';
 
 const DECKS: Record<string, R.Deck> = {
@@ -226,7 +228,7 @@ async function podMain(args: Args): Promise<void> {
   const games = args.gamesGiven ? args.games : 1000;
   const t0 = Date.now();
   const r = await P.simulatePod(spec, games, workers, duty);
-  P.printPod(spec, r.games);
+  printPod(spec, r.games);
   console.log(`\n(${((Date.now() - t0) / 1000).toFixed(0)}s)`);
 }
 
@@ -416,7 +418,7 @@ async function main(): Promise<void> {
 
 if (!isMainThread && workerData === 'sim-worker') {
   // a runner worker: play the seeds it is sent
-  parentPort!.on('message', (job: R.Job | P.PodJob) =>
+  parentPort!.on('message', (job: R.Job | PodJob) =>
     parentPort!.postMessage(
       'pod' in job ? P.runPodJob(DECKS, job) : R.runJob(DECKS[job.deck], job),
     ),
