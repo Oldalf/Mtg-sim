@@ -5,6 +5,10 @@ Five-colour spells combo, bracket 4 (borderline 5). **Not Pontus's deck**: he wa
 - **Lists:** `decklist.txt` is the list as given (2026-11-10); `logs/` is empty.
 - **How it wins:** an X spell with a burst of mana: Exsanguinate (X = 40 kills all three at once, 42 mana), Crackle with Power (X = 8, 26 mana), Torment of Hailfire. Reiterate copies the X spell (each copy resolves with the same X); Return the Favor copies it too. Codie can't cast permanent spells; it taps for WUBRG for 4 (net +1) and its free-spell trigger is not modelled.
 
+## Files
+
+- `cards.ts`: the card names and facts about them. `game.ts`: `CodieGame` (state, hooks, turn steps). `candidates.ts`: what the AI may do while developing. `spells.ts`: what the spells do when they resolve. `solver.ts`: the kill search. `solver-actions.ts`: the solver's moves. `finishers.ts`: the kill itself (X spell, copies, backup). `index.ts`: deck registration and --diag measures. `mulligan.ts`, `config.ts`, `tests/`.
+
 ## Simulation rules (agreed 2026-11-10)
 
 - 3 goldfish opponents at 40 life. Two measures, as for Gale: any win, and a win with a counterspell or protection spell still castable afterwards (Silence, Orim's Chant, Counterspell, Mana Drain, Arcane Denial, An Offer, Daze, Fierce Guardianship, Bilbo's Gambit, Autumn's Veil).

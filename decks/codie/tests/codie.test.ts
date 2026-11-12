@@ -4,6 +4,15 @@ import { Perm } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
 import { CodieGame } from '../game';
+import { findKillLine } from '../solver';
+import {
+  activateCodie,
+  castAdNauseamWithTeferi,
+  castVault,
+  flashbackTutor,
+  suspendProfaneTutor,
+} from '../solver-actions';
+import { finisherKills, reiterateCopyCost } from '../finishers';
 
 const rep = (n: string, k: number) => new Array(k).fill(n) as string[];
 
@@ -55,49 +64,49 @@ export function runCodieTests(): boolean {
   const twelve = [...five, 'Mountain', 'Swamp', 'Island']; // 12 lands: 4 red, 3 black
   const thirteen = [...twelve, 'Plains'];
   const loops = (g: CodieGame) =>
-    g.solve()?.steps.some((s) => s.startsWith('loop')) ?? false;
+    findKillLine(g)?.steps.some((s) => s.startsWith('loop')) ?? false;
 
   // ---- the finishers' arithmetic
   let g = board(five, []);
   check(
     'Exsanguinate: X=40 kills three opponents at 40',
-    g.kills('Exsanguinate', 40, 1, 40, 3),
+    finisherKills(g, 'Exsanguinate', 40, 1, 40, 3),
     true,
   );
   check(
     'Exsanguinate with one copy: X=20',
-    g.kills('Exsanguinate', 20, 2, 40, 3),
+    finisherKills(g, 'Exsanguinate', 20, 2, 40, 3),
     true,
   );
   check(
     'Exsanguinate X=19 with one copy does not',
-    g.kills('Exsanguinate', 19, 2, 40, 3),
+    finisherKills(g, 'Exsanguinate', 19, 2, 40, 3),
     false,
   );
   check(
     'Crackle with Power: X=8 (40 to each of 8 targets) kills',
-    g.kills('Crackle with Power', 8, 1, 40, 3),
+    finisherKills(g, 'Crackle with Power', 8, 1, 40, 3),
     true,
   );
   check(
     'Crackle X=4 needs a copy (20 twice)',
     [
-      g.kills('Crackle with Power', 4, 1, 40, 3),
-      g.kills('Crackle with Power', 4, 2, 40, 3),
+      finisherKills(g, 'Crackle with Power', 4, 1, 40, 3),
+      finisherKills(g, 'Crackle with Power', 4, 2, 40, 3),
     ],
     [false, true],
   );
   check(
     'Torment of Hailfire: X=19 (5 payments each, then 3 per repeat) kills',
     [
-      g.kills('Torment of Hailfire', 18, 1, 40, 3),
-      g.kills('Torment of Hailfire', 19, 1, 40, 3),
+      finisherKills(g, 'Torment of Hailfire', 18, 1, 40, 3),
+      finisherKills(g, 'Torment of Hailfire', 19, 1, 40, 3),
     ],
     [false, true],
   );
   check(
     'Torment X=10 with one copy kills (20 repeats)',
-    g.kills('Torment of Hailfire', 10, 2, 40, 3),
+    finisherKills(g, 'Torment of Hailfire', 10, 2, 40, 3),
     true,
   );
 
@@ -105,43 +114,43 @@ export function runCodieTests(): boolean {
   g = board(five, ['Reiterate']);
   check(
     'one Reiterate (no buyback) = one copy costs {1}{R}{R}',
-    g.copyCost(2)!.toString(),
+    reiterateCopyCost(g, 2)!.toString(),
     '{1}RR',
   );
   check(
     'two copies from Reiterate: buyback the first (6) + the second (3) = 9 mana',
-    g.copyCost(3)!.mv,
+    reiterateCopyCost(g, 3)!.mv,
     9,
   );
   g = board(five, ['Reiterate', 'Return the Favor']);
   check(
     'Return the Favor makes a copy cheaper than a second Reiterate',
-    g.copyCost(3)!.mv,
+    reiterateCopyCost(g, 3)!.mv,
     6,
   );
 
   // ---- the solver
   g = board(five, ['Crackle with Power']);
-  check('9 lands, Crackle: no kill (no loop, no copy)', g.solve(), null);
+  check('9 lands, Crackle: no kill (no loop, no copy)', findKillLine(g), null);
   g = board(
     [...five, ...rep('Mountain', 5), ...rep('Swamp', 4)],
     ['Torment of Hailfire', 'Reiterate'],
   );
   check(
     '18 lands: Torment X=10 with a Reiterate copy (15 mana) kills',
-    g.solve() !== null,
+    findKillLine(g) !== null,
     true,
   );
   g = board(five, ['Reiterate', "Jeska's Will", 'Crackle with Power']);
   check(
     "Jeska's Will + Reiterate (9 mana: 3 + 6 buyback): a bottomless loop, then Crackle X=8 (red only)",
-    [g.solve() !== null, loops(g)],
+    [findKillLine(g) !== null, loops(g)],
     [true, true],
   );
   g = board(five, ['Reiterate', "Jeska's Will", 'Exsanguinate']);
   check(
     '...but Exsanguinate needs BB and the loop used every land: no kill',
-    g.solve(),
+    findKillLine(g),
     null,
   );
   g = board(
@@ -150,7 +159,7 @@ export function runCodieTests(): boolean {
   );
   check(
     '...with two more Swamps left over after the loop: Exsanguinate X=40, the infinite red pays the generic',
-    g.solve() !== null,
+    findKillLine(g) !== null,
     true,
   );
   g = board(
@@ -207,7 +216,7 @@ export function runCodieTests(): boolean {
     ['Mountain', 'Mountain', 'Swamp', 'Swamp', 'Island'],
     ['Reiterate', "Jeska's Will", 'Crackle with Power'],
   );
-  check('only 5 lands: the loop needs 9 mana, no kill', g.solve(), null);
+  check('only 5 lands: the loop needs 9 mana, no kill', findKillLine(g), null);
 
   // ---- rituals and tutors
   g = board(
@@ -218,7 +227,7 @@ export function runCodieTests(): boolean {
   );
   check(
     '12 lands: Demonic Tutor for Crackle (2), then the Will loop (9) and Crackle',
-    g.solve() !== null,
+    findKillLine(g) !== null,
     true,
   );
   g = board(five, [
@@ -230,7 +239,7 @@ export function runCodieTests(): boolean {
   ]);
   check(
     '9 lands + Seething Song, Dark Ritual, Pyretic Ritual (+5 net) = 14 mana: Torment X=10 with a Reiterate copy needs 15: no kill',
-    g.solve(),
+    findKillLine(g),
     null,
   );
   g = board(
@@ -243,7 +252,11 @@ export function runCodieTests(): boolean {
       'Reiterate',
     ],
   );
-  check('...with a tenth land it is 15 mana: kill', g.solve() !== null, true);
+  check(
+    '...with a tenth land it is 15 mana: kill',
+    findKillLine(g) !== null,
+    true,
+  );
 
   // ---- Codie + a spell of mana value 1 = the free Profane Tutor (the only mana value 0 instant or sorcery)
   const lib = [
@@ -256,7 +269,7 @@ export function runCodieTests(): boolean {
   ];
   g = board(five, ['Silence', 'Ad Nauseam'], ['Codie, Vociferous Codex'], lib);
   g.perm('Codie, Vociferous Codex')!.sick = false;
-  const rc = g.solve();
+  const rc = findKillLine(g);
   check(
     "Codie + Silence -> Profane Tutor -> Teferi's Protection, then Ad Nauseam: the library in hand, a kill next turn",
     [
@@ -269,13 +282,13 @@ export function runCodieTests(): boolean {
   g = board(five, ['Silence', 'Ad Nauseam'], [], lib);
   check(
     "without Codie there is no tutor for Teferi's Protection: no kill",
-    g.solve(),
+    findKillLine(g),
     null,
   );
   g = board(five, ['Ad Nauseam', "Teferi's Protection"], [], lib);
   check(
     "Ad Nauseam + Teferi's Protection in hand (8 mana): a kill next turn",
-    g.solve()?.nextTurn,
+    findKillLine(g)?.nextTurn,
     true,
   );
   g = board(five, ['Ad Nauseam', "Teferi's Protection"], [], lib);
@@ -286,13 +299,13 @@ export function runCodieTests(): boolean {
   g.library = g.library.filter((c) => c.name !== 'Profane Tutor');
   check(
     'Profane Tutor already gone: Codie + Fog finds nothing',
-    g.solve()?.steps.some((s) => s.startsWith('Codie + Fog')) ?? false,
+    findKillLine(g)?.steps.some((s) => s.startsWith('Codie + Fog')) ?? false,
     false,
   );
   // Codie's trigger in development finds Profane Tutor for a spell of mana value 1
   g = board(five, ['Silence'], ['Codie, Vociferous Codex'], lib);
   g.perm('Codie, Vociferous Codex')!.sick = false;
-  g.codie();
+  activateCodie(g);
   g.castIS(C.get('Silence'));
   check(
     'Codie armed, then Silence: Profane Tutor was cast free and fetched a card',
@@ -303,17 +316,17 @@ export function runCodieTests(): boolean {
   // ---- the opponents' tapped lands grow with the turn
   g = board(five, []);
   g.turn = 3;
-  const t3 = g.oppTapped();
+  const t3 = g.opponentTappedLands();
   g.turn = 6;
   check(
     'tapped opposing lands: 6 on turn 3, 13 on turn 6',
-    [t3, g.oppTapped()],
+    [t3, g.opponentTappedLands()],
     [6, 13],
   );
 
   // ---- Ad Nauseam + Teferi's Protection leaves the last five cards; Lim-Dul's Vault stacks the best window of five
   g = board(five, ['Ad Nauseam', "Teferi's Protection"], [], lib);
-  g.adTeferi();
+  castAdNauseamWithTeferi(g);
   check(
     "Ad Nauseam + Teferi's Protection: all but the last 5 cards of the library are drawn",
     [g.library.length, g.libraryInHand],
@@ -330,7 +343,7 @@ export function runCodieTests(): boolean {
   ];
   g = board(twelve, ["Lim-Dûl's Vault"], [], vlib);
   g.library = vlib.map((n) => C.get(n)); // (a board shuffles its library: put the order back)
-  g.vault();
+  castVault(g);
   check(
     "Lim-Dul's Vault: the third window (two looks, 2 life) has the combo cards; they are on top",
     [
@@ -357,7 +370,7 @@ export function runCodieTests(): boolean {
   g.hand.push(C.get('Brainstorm'));
   check(
     'a stacked top lets the solver use Brainstorm / Stock Up (every card drawn is known)',
-    g.solve() === null,
+    findKillLine(g) === null,
     true,
   );
 
@@ -370,7 +383,7 @@ export function runCodieTests(): boolean {
     crlib,
   );
   g.perm('Codie, Vociferous Codex')!.sick = false;
-  const dg = g.solve();
+  const dg = findKillLine(g);
   check(
     "Jeska's Will + Reiterate with Codie out: the exile mode digs the library, so a Crackle in the library is enough",
     [dg !== null, dg?.steps.some((s) => s.startsWith('loop'))],
@@ -379,7 +392,7 @@ export function runCodieTests(): boolean {
   g = board(five, ['Reiterate', "Jeska's Will"], [], crlib);
   check(
     '...without Codie (no commander: one mode only) there is no dig: no kill',
-    g.solve(),
+    findKillLine(g),
     null,
   );
   g = board(five, ['Windfall', ...rep('Brainstorm', 9)], [], rep('Island', 40));
@@ -390,7 +403,7 @@ export function runCodieTests(): boolean {
     [9, 9],
   );
   g = board(five, ['Profane Tutor'], [], ['Reiterate', ...rep('Island', 40)]);
-  g.suspendProfane(C.get('Profane Tutor'));
+  suspendProfaneTutor(g, C.get('Profane Tutor'));
   g.upkeep();
   const afterOne = g.hand.length;
   g.upkeep();
@@ -409,7 +422,7 @@ export function runCodieTests(): boolean {
   check(
     'Flashback on a Demonic Tutor in the graveyard: tutor for Crackle with Power (1 + 2 mana)',
     [
-      g.fbTutor('Demonic Tutor', 'Crackle with Power'),
+      flashbackTutor(g, 'Demonic Tutor', 'Crackle with Power'),
       g.hand.map((c) => c.name),
     ],
     [true, ['Crackle with Power']],
@@ -424,7 +437,8 @@ export function runCodieTests(): boolean {
   g.perm('Codie, Vociferous Codex')!.sick = false;
   check(
     "Flashback Jeska's Will + Reiterate (1 + 3 + 6 = 10 mana): a bottomless loop, then Crackle",
-    g.solve()?.steps.some((s) => s.startsWith('loop: Flashback')) ?? false,
+    findKillLine(g)?.steps.some((s) => s.startsWith('loop: Flashback')) ??
+      false,
     true,
   );
 
@@ -435,11 +449,11 @@ export function runCodieTests(): boolean {
   );
   check(
     'a loop kill with a Counterspell in hand has backup (two Islands stay untapped)',
-    g.solve()?.backup,
+    findKillLine(g)?.backup,
     true,
   );
   g = board(twelve, ['Reiterate', "Jeska's Will", 'Crackle with Power']);
-  check('...without one it does not', g.solve()?.backup, false);
+  check('...without one it does not', findKillLine(g)?.backup, false);
 
   return ok;
 }

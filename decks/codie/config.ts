@@ -4,8 +4,11 @@ import { BASE_CONFIG, Config } from '../../engine/game-types';
 export const CFG: Config = {
   ...BASE_CONFIG,
   max_turn: 12,
-  opp_hand: 7, // cards in each opponent's hand (Jeska's Will makes {R} for each card in ONE opponent's hand): goldfish opponents hold 7
-  opp_tapped_lands: 0, // tapped lands the opponents control in all (Mana Geyser); 0 = by turn: opp_tapped_per_turn x turn. 6 is break-even with a Reiterate copy, 7 or more gains
+  // cards in each opponent's hand (Jeska's Will makes {R} for each card in ONE opponent's hand): goldfish opponents hold 7
+  opp_hand: 7,
+  // tapped lands the opponents control in all (Mana Geyser); 0 = by turn: opp_tapped_per_turn x turn.
+  // 6 is break-even with a Reiterate copy, 7 or more gains
+  opp_tapped_lands: 0,
   opp_tapped_per_turn: 2.15, // Pontus's creator: at least 6 at turn 3, 13 in his turn 6 game
   opp_payments: 5, // Torment of Hailfire: each opponent pays this many times (sacrifice / discard) before losing life
   ad_end_step: true, // AI policy: Ad Nauseam at the end of the turn with spare mana (an instant, cast on the opponents' end step)
