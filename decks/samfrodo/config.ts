@@ -1,5 +1,5 @@
 /** Settings for the Sam & Frodo goldfish simulation (change one with: npm run sim -- samfrodo --set key=value). */
-import { Config } from "../../engine/game";
+import { Config } from '../../engine/game';
 
 export const CFG: Config = {
   opponents: 3,

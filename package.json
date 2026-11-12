@@ -7,11 +7,14 @@
     "sim": "npm run -s build && node --enable-source-maps dist/sim.js",
     "pod": "npm run -s build && node --enable-source-maps dist/sim.js pod",
     "eco": "npm run -s build && node --enable-source-maps dist/sim.js --eco",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\""
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "esbuild": "^0.24.0",
+    "prettier": "^3.10.1",
     "typescript": "^5.7.0"
   }
 }

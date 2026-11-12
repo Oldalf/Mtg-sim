@@ -37,7 +37,10 @@ export class KillSearch<S extends Snapshot> {
   lastLine: string[] | null = null;
   lastP: number | null = null;
   bestMiss: number | null = null;
-  private cache = new Map<string, [number, string[] | null, number | null, number | null]>();
+  private cache = new Map<
+    string,
+    [number, string[] | null, number | null, number | null]
+  >();
 
   constructor(private o: KillSearchOptions<S>) {
     this.minChance = o.minChance ?? 0.9;
@@ -45,7 +48,7 @@ export class KillSearch<S extends Snapshot> {
 
   search(root: S, budget = 2500): number {
     this.o.prepare?.(root);
-    const ck = root.fullKey() + "|" + budget;
+    const ck = root.fullKey() + '|' + budget;
     const hit = this.cache.get(ck);
     if (hit !== undefined) {
       this.stats[0]++;
@@ -76,7 +79,8 @@ export class KillSearch<S extends Snapshot> {
         const r = o.protected(st) ? 2 : 1;
         // same level as the best line so far: only worth a look if that one is uncertain
         const unc = uncertain(st);
-        if (r < best || (r === best && (prob === null || prob >= 0.98 || !unc))) return;
+        if (r < best || (r === best && (prob === null || prob >= 0.98 || !unc)))
+          return;
         let p: number | null = null;
         if (unc) {
           p = o.chance!(root, st);
@@ -103,7 +107,11 @@ export class KillSearch<S extends Snapshot> {
     };
 
     dfs(root, o.depth ?? 9);
-    this.lastLine = best ? (o.render ? o.render(line) : (line as string[])) : null;
+    this.lastLine = best
+      ? o.render
+        ? o.render(line)
+        : (line as string[])
+      : null;
     this.lastP = prob;
     this.bestMiss = miss;
     return best;

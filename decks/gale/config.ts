@@ -1,5 +1,5 @@
 /** Settings for the Gale goldfish simulation (change one with: npm run sim -- gale --set key=value). */
-import { Config } from "../../engine/game";
+import { Config } from '../../engine/game';
 
 export const CFG: Config = {
   opponents: 3,
