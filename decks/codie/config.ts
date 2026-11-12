@@ -1,11 +1,8 @@
 /** Settings for the Codie goldfish simulation (change one with: npm run sim -- codie --set key=value). */
-import { Config } from '../../engine/game';
+import { BASE_CONFIG, Config } from '../../engine/game';
 
 export const CFG: Config = {
-  opponents: 3,
-  opp_life: 40,
-  opp_library: 92, // 99 - opening 7
-  on_play_chance: 0.25, // 4-player pod: 1 in 4 to skip the first draw
+  ...BASE_CONFIG,
   max_turn: 12,
   opp_hand: 7, // cards in each opponent's hand (Jeska's Will makes {R} for each card in ONE opponent's hand): goldfish opponents hold 7
   opp_tapped_lands: 0, // tapped lands the opponents control in all (Mana Geyser); 0 = by turn: opp_tapped_per_turn x turn. 6 is break-even with a Reiterate copy, 7 or more gains
@@ -22,10 +19,4 @@ export const CFG: Config = {
   guides_dev: true, // AI policy: exile a Spirit Guide for mana to cast a land-fetch spell a turn earlier
   codie_early: false, // AI policy: cast Codie before the ramp spells (it makes mana only for four, so by default it waits)
   rollout_solver: false, // the planner's copies don't use the solver to pick tutor targets (faster)
-  search_budget: 0,
-  smart_mulligan: true, // the deck's mulligan rule (mulligan.ts); off = keep 2 to 5 lands
-  planner: true, // AI tries its best few plays on copies of the game and keeps the best
-  planner_width: 4,
-  planner_rollouts: 2,
-  planner_budget: 0,
 };

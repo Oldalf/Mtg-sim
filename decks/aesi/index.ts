@@ -3,7 +3,13 @@ import * as path from 'path';
 import { ROOT } from '../../engine/cards';
 import { CFG } from './config';
 import { AesiGame } from './game';
-import { DiagRow, landMakes } from '../../engine/runner';
+import {
+  DiagRow,
+  landMakes,
+  percentOf,
+  winByTurnMetrics,
+  averageOf,
+} from '../../engine/runner';
 import { CardDef } from '../../engine/cards';
 
 const anyOf = (names: string[]) => {
@@ -13,12 +19,8 @@ const anyOf = (names: string[]) => {
 const lands = (hand: CardDef[]) =>
   hand.filter((c) => c.land !== null || c.mdfcLand !== null).length;
 
-const pct = (rows: DiagRow[], f: (r: DiagRow) => boolean) =>
-  (100 * rows.filter(f).length) / rows.length;
 const turnOf = (r: DiagRow, key: string, none = 15) =>
   (r[key] ?? none) as number;
-const meanOf = (rows: DiagRow[], f: (r: DiagRow) => number) =>
-  rows.reduce((s, r) => s + f(r), 0) / rows.length;
 /** A turn number the game never reached counts as turn 15. */
 const win = (r: DiagRow) => turnOf(r, 'win');
 
@@ -162,20 +164,11 @@ export const deck = {
   ],
   // --diag: consistency measures (Pontus, 2026-11-05). A game with no win by turn 14 counts as turn 15.
   diagMetrics: [
-    {
-      label: 'Win by turn 10 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 10),
-    },
-    {
-      label: 'Win by turn 12 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 12),
-    },
+    ...winByTurnMetrics([10, 12], win),
     {
       label: 'No win by turn 14 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) > 14),
+      f: (rows: DiagRow[]) => percentOf(rows, (r) => win(r) > 14),
     },
     {
       label: 'Slow tail: turn the 90th-percentile game wins',
@@ -188,13 +181,13 @@ export const deck = {
       label: 'Won without ever casting Aesi (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) <= 14 && turnOf(r, 'aesiOut') > win(r)),
+        percentOf(rows, (r) => win(r) <= 14 && turnOf(r, 'aesiOut') > win(r)),
     },
     {
       label: 'Average turn Aesi comes down (games where he does)',
       unit: 'turn' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter(
             (r) => r.aesiOut !== null && (r.aesiOut as number) <= win(r),
           ),
@@ -205,26 +198,26 @@ export const deck = {
       label: 'No Aesi by end of turn 5, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => turnOf(r, 'aesiOut') > 5 && win(r) > 5),
+        percentOf(rows, (r) => turnOf(r, 'aesiOut') > 5 && win(r) > 5),
     },
     {
       label: 'No Aesi by end of turn 6, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => turnOf(r, 'aesiOut') > 6 && win(r) > 6),
+        percentOf(rows, (r) => turnOf(r, 'aesiOut') > 6 && win(r) > 6),
     },
     {
       label: 'No Aesi by end of turn 7, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => turnOf(r, 'aesiOut') > 7 && win(r) > 7),
+        percentOf(rows, (r) => turnOf(r, 'aesiOut') > 7 && win(r) > 7),
     },
     {
       label:
         "Average turn of Aesi's first landfall draw (games where it happens)",
       unit: 'turn' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => r.aesiDraw !== null),
           (r) => turnOf(r, 'aesiDraw'),
         ),
@@ -233,7 +226,7 @@ export const deck = {
       label: 'No landfall draw by end of turn 7, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => turnOf(r, 'aesiDraw') > 7 && win(r) > 7),
+        percentOf(rows, (r) => turnOf(r, 'aesiDraw') > 7 && win(r) > 7),
     },
     // "Not doing much" (Pontus): less than 60% of the mana of one land per turn (15 by turn 5, 21 by turn 6)
     // is spent. A game already won by then doesn't count.
@@ -241,19 +234,19 @@ export const deck = {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) > 5 && (r.spent5 ?? 0) < 9),
+        percentOf(rows, (r) => win(r) > 5 && (r.spent5 ?? 0) < 9),
     },
     {
       label: 'Slow start: under 13 mana spent by turn 6 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) > 6 && (r.spent6 ?? 0) < 13),
+        percentOf(rows, (r) => win(r) > 6 && (r.spent6 ?? 0) < 13),
     },
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(
+        percentOf(
           rows,
           (r) =>
             (win(r) > 5 && (r.spent5 ?? 0) < 9) ||
@@ -264,7 +257,7 @@ export const deck = {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 5),
           (r) => r.spent5 ?? 0,
         ),
@@ -273,7 +266,7 @@ export const deck = {
       label: 'Average mana spent by turn 6 (of 21)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 6),
           (r) => r.spent6 ?? 0,
         ),
@@ -281,12 +274,12 @@ export const deck = {
     {
       label: 'Lands on turn 5 (average)',
       unit: 'n' as const,
-      f: (rows: DiagRow[]) => meanOf(rows, (r) => r.lands5 ?? 0),
+      f: (rows: DiagRow[]) => averageOf(rows, (r) => r.lands5 ?? 0),
     },
     {
       label: '5 lands or fewer after turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => (r.lands6 ?? 0) <= 5),
+      f: (rows: DiagRow[]) => percentOf(rows, (r) => (r.lands6 ?? 0) <= 5),
     },
   ],
 };

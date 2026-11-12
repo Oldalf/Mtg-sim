@@ -3,7 +3,13 @@ import * as path from 'path';
 import { ROOT } from '../../engine/cards';
 import { CFG } from './config';
 import { MerenGame } from './game';
-import { landMakes, DiagRow } from '../../engine/runner';
+import {
+  landMakes,
+  DiagRow,
+  percentOf,
+  winByTurnMetrics,
+  averageOf,
+} from '../../engine/runner';
 import { CardDef } from '../../engine/cards';
 
 const anyOf = (names: string[]) => {
@@ -13,10 +19,6 @@ const anyOf = (names: string[]) => {
 const lands = (hand: CardDef[]) =>
   hand.filter((c) => c.land !== null || c.mdfcLand !== null).length;
 
-const pct = (rows: DiagRow[], f: (r: DiagRow) => boolean) =>
-  (100 * rows.filter(f).length) / rows.length;
-const meanOf = (rows: DiagRow[], f: (r: DiagRow) => number) =>
-  rows.reduce((s, r) => s + f(r), 0) / rows.length;
 /** A turn the game never reached counts as turn 13 (the horizon is turn 12). */
 const turnOf = (r: DiagRow, key: string) => (r[key] ?? 13) as number;
 const win = (r: DiagRow) => turnOf(r, 'win');
@@ -48,21 +50,7 @@ export const deck = {
   rankTurn: 10,
   // --diag: consistency measures (the same slow-start definition as Aesi). A game with no win by turn 12 counts as turn 13.
   diagMetrics: [
-    {
-      label: 'Win by turn 8 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 8),
-    },
-    {
-      label: 'Win by turn 10 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 10),
-    },
-    {
-      label: 'Win by turn 12 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 12),
-    },
+    ...winByTurnMetrics([8, 10, 12], win),
     {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
@@ -73,23 +61,23 @@ export const deck = {
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, slow5),
+      f: (rows: DiagRow[]) => percentOf(rows, slow5),
     },
     {
       label: 'Slow start: under 13 mana spent by turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, slow6),
+      f: (rows: DiagRow[]) => percentOf(rows, slow6),
     },
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => slow5(r) || slow6(r)),
+      f: (rows: DiagRow[]) => percentOf(rows, (r) => slow5(r) || slow6(r)),
     },
     {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 5),
           (r) => r.spent5 ?? 0,
         ),
@@ -98,7 +86,7 @@ export const deck = {
       label: 'Average mana spent by turn 6 (of 21)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 6),
           (r) => r.spent6 ?? 0,
         ),
@@ -107,7 +95,7 @@ export const deck = {
       label: 'Average turn Meren comes down (games where she does)',
       unit: 'turn' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => r.merenOut !== null),
           (r) => turnOf(r, 'merenOut'),
         ),
@@ -116,19 +104,19 @@ export const deck = {
       label: 'No Meren by end of turn 4, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => turnOf(r, 'merenOut') > 4 && win(r) > 4),
+        percentOf(rows, (r) => turnOf(r, 'merenOut') > 4 && win(r) > 4),
     },
     {
       label: 'No Meren by end of turn 5, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => turnOf(r, 'merenOut') > 5 && win(r) > 5),
+        percentOf(rows, (r) => turnOf(r, 'merenOut') > 5 && win(r) > 5),
     },
     {
       label: 'No Meren by end of turn 6, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => turnOf(r, 'merenOut') > 6 && win(r) > 6),
+        percentOf(rows, (r) => turnOf(r, 'merenOut') > 6 && win(r) > 6),
     },
     {
       label:
@@ -137,25 +125,25 @@ export const deck = {
         ' nonland permanents at end of turn 5 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) > 5 && (r.perms5 ?? 0) < THIN),
+        percentOf(rows, (r) => win(r) > 5 && (r.perms5 ?? 0) < THIN),
     },
     {
       label: 'Nothing reanimated by end of turn 5, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) > 5 && (r.reanim5 ?? 0) === 0),
+        percentOf(rows, (r) => win(r) > 5 && (r.reanim5 ?? 0) === 0),
     },
     {
       label: 'Nothing reanimated by end of turn 6, game still going (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) > 6 && (r.reanim6 ?? 0) === 0),
+        percentOf(rows, (r) => win(r) > 6 && (r.reanim6 ?? 0) === 0),
     },
     {
       label: 'Average Meren experience at end of turn 5',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 5),
           (r) => r.exp5 ?? 0,
         ),
@@ -164,7 +152,7 @@ export const deck = {
       label: 'Average Meren experience at end of turn 6',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 6),
           (r) => r.exp6 ?? 0,
         ),
@@ -172,12 +160,12 @@ export const deck = {
     {
       label: 'No impact by turn 5: nothing reanimated and a thin board (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => noImpact(r, 5)),
+      f: (rows: DiagRow[]) => percentOf(rows, (r) => noImpact(r, 5)),
     },
     {
       label: 'No impact by turn 6: the same (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => noImpact(r, 6)),
+      f: (rows: DiagRow[]) => percentOf(rows, (r) => noImpact(r, 6)),
     },
   ],
   // --hands: what to look for in an opening hand

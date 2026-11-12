@@ -13,6 +13,7 @@ import {
   firstMax,
   firstMin,
   sortDesc,
+  removeOrThrow,
 } from '../../engine/game';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -90,12 +91,6 @@ export const PERM_SCORE: Record<string, number> = {
 };
 const permScore = (n: string, d: number) => PERM_SCORE[n] ?? d;
 const SELF_COUNTER_DEV = ["An Offer You Can't Refuse", 'Unwind', 'Rewind'];
-
-function removeOne<T>(xs: T[], x: T): void {
-  const i = xs.indexOf(x);
-  if (i < 0) throw new Error(`not in list: ${String(x)}`);
-  xs.splice(i, 1);
-}
 
 function* combinations<T>(
   xs: T[],
@@ -192,7 +187,7 @@ export class GaleGame extends Game<Light> {
         true,
       );
       if (this.pay(gcost, true)) {
-        removeOne(this.gy, target);
+        removeOrThrow(this.gy, target);
         this.say('  Gale recasts', target);
         this.spellsCast += 1;
         this.onCastIS(true);
@@ -306,7 +301,7 @@ export class GaleGame extends Game<Light> {
     } else if (n === 'Windfall') {
       const k = this.hand.length;
       for (const c of this.hand.slice()) {
-        removeOne(this.hand, c);
+        removeOrThrow(this.hand, c);
         this.toGy(c);
       }
       const ev: number[] = [];
@@ -322,7 +317,7 @@ export class GaleGame extends Game<Light> {
       const opts = this.gy.filter((c) => c.isCreature && c.mv <= 3);
       if (opts.length) {
         const c = firstMax(opts, (x) => permScore(x.name, 30));
-        removeOne(this.gy, c);
+        removeOrThrow(this.gy, c);
         this.enter(c);
         if (this.onBf('Syr Konrad, the Grim'))
           this.oppEvents([EV.KONRAD, -1, 1]);
@@ -331,7 +326,7 @@ export class GaleGame extends Game<Light> {
       const pile = this.inRollout ? null : this.giftsPile();
       if (pile !== null) {
         const [picks, binned] = pile;
-        for (const c of picks) removeOne(this.library, c);
+        for (const c of picks) removeOrThrow(this.library, c);
         this.shuffle();
         for (const c of binned) this.toGy(c);
         this.hand.push(...picks.filter((c) => !binned.includes(c)));
@@ -356,7 +351,7 @@ export class GaleGame extends Game<Light> {
         );
         if (t === null) break;
         picks.push(t);
-        removeOne(this.library, t);
+        removeOrThrow(this.library, t);
       }
       this.shuffle();
       // opponent bins the two cards that hurt us most to lose from hand
@@ -994,7 +989,7 @@ export class GaleGame extends Game<Light> {
     }
     this.restore(s);
     this.pay(this.effCost(t), t.isIS);
-    removeOne(this.hand, t);
+    removeOrThrow(this.hand, t);
     this.say('cast', t, 'to counter it with your own', k);
     if (t.isIS) {
       this.spellsCast += 1;
@@ -1006,7 +1001,7 @@ export class GaleGame extends Game<Light> {
           this.pay(this.effCost(g1, null, true), true) &&
           this.canPay(this.effCost(k), true)
         ) {
-          removeOne(this.gy, g1);
+          removeOrThrow(this.gy, g1);
           this.say('  Gale recasts', g1);
           this.spellsCast += 1;
           this.onCastIS(true);
@@ -1020,12 +1015,12 @@ export class GaleGame extends Game<Light> {
       this.gy.push(t);
       return true;
     }
-    removeOne(this.hand, k);
+    removeOrThrow(this.hand, k);
     this.spellsCast += 1;
     this.onCastIS(false);
     const g2 = this.galeOption(k);
     if (g2 !== null && this.pay(this.effCost(g2, null, true), true)) {
-      removeOne(this.gy, g2);
+      removeOrThrow(this.gy, g2);
       this.say('  Gale recasts', g2);
       this.spellsCast += 1;
       this.onCastIS(true);

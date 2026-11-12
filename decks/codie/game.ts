@@ -12,7 +12,14 @@
  */
 import * as C from '../../engine/cards';
 import { Cost, CardDef, makeToken } from '../../engine/cards';
-import { Game, Cand, KillSearcher, Perm, firstMax } from '../../engine/game';
+import {
+  Game,
+  Cand,
+  KillSearcher,
+  Perm,
+  firstMax,
+  removeIfPresent,
+} from '../../engine/game';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -176,11 +183,6 @@ C.registerKnown([
   'Sundering Eruption // Volcanic Fissure',
 ]);
 
-function removeOne<T>(xs: T[], x: T): void {
-  const i = xs.indexOf(x);
-  if (i >= 0) xs.splice(i, 1);
-}
-
 /** What the solver found. */
 export interface Line {
   steps: string[];
@@ -227,7 +229,7 @@ export class CodieGame extends Game<CodieGame> {
     if (this.cfg.mana_drain_flat && this.turn >= 2) {
       const md = this.card('Mana Drain');
       if (md) {
-        removeOne(this.hand, md);
+        removeIfPresent(this.hand, md);
         this.gy.push(md);
         this.pool.C += 2 + Math.floor(this.rng.random() * 4);
       }
@@ -378,7 +380,7 @@ export class CodieGame extends Game<CodieGame> {
     const cands = this.library.filter(ok);
     if (!cands.length) return null;
     const pick = firstMax(cands, score);
-    removeOne(this.library, pick);
+    removeIfPresent(this.library, pick);
     this.shuffle();
     if (toHand) this.hand.push(pick);
     else {
@@ -455,7 +457,7 @@ export class CodieGame extends Game<CodieGame> {
           (HOLD.has(c.name) ? false : c.land !== null || this.value(c) < 45),
       );
       for (const c of bad) {
-        removeOne(this.hand, c);
+        removeIfPresent(this.hand, c);
         this.library.push(c);
       }
       this.draw(bad.length + 1);
@@ -487,14 +489,14 @@ export class CodieGame extends Game<CodieGame> {
       this.landsBf()
         .filter((p) => p.land?.basic)
         .sort((a, b) => +b.tapped - +a.tapped)[0] ?? this.landsBf()[0];
-    if (l) removeOne(this.bf, l);
+    if (l) removeIfPresent(this.bf, l);
   }
   putBack(k: number): void {
     for (let i = 0; i < Math.min(k, this.hand.length); i++) {
       const c = this.hand.reduce((best, x) =>
         this.cardValue(x) < this.cardValue(best) ? x : best,
       );
-      removeOne(this.hand, c);
+      removeIfPresent(this.hand, c);
       this.library.unshift(c);
     }
   }
@@ -537,7 +539,7 @@ export class CodieGame extends Game<CodieGame> {
   }
   fetchCard(c: CardDef | null, toTop: boolean): void {
     if (!c) return;
-    removeOne(this.library, c);
+    removeIfPresent(this.library, c);
     this.shuffle();
     if (toTop) this.library.unshift(c);
     else this.hand.push(c);
@@ -610,7 +612,7 @@ export class CodieGame extends Game<CodieGame> {
     const parked = this.hand.filter(
       (c) => c.name === 'Glacial Chasm' || c.name === 'Maze of Ith',
     );
-    for (const c of parked) removeOne(this.hand, c);
+    for (const c of parked) removeIfPresent(this.hand, c);
     super.playLand();
     this.hand.push(...parked);
   }
@@ -1089,7 +1091,7 @@ export class CodieGame extends Game<CodieGame> {
   }
   exileFromHand(name: string): void {
     const c = this.card(name)!;
-    removeOne(this.hand, c);
+    removeIfPresent(this.hand, c);
     this.exile.push(c);
   }
   /** Cast a mana spell (and maybe copy it with a Reiterate that does not buy back). */
@@ -1103,7 +1105,7 @@ export class CodieGame extends Game<CodieGame> {
       const r = this.card(REITERATE);
       if (!r || !this.pay(rc, true)) return false;
       if (copy === 1) {
-        removeOne(this.hand, r);
+        removeIfPresent(this.hand, r);
         this.gy.push(r);
       } // (with buyback it stays in hand)
       this.spellsCast += 1;
@@ -1137,15 +1139,15 @@ export class CodieGame extends Game<CodieGame> {
   /** Pay for the loop's first spell and add the bottomless mana. */
   startLoop(s: string, c: CardDef, viaFlashback: boolean, first: Cost): void {
     if (viaFlashback) {
-      removeOne(this.gy, c);
+      removeIfPresent(this.gy, c);
       this.exile.push(c);
       const fb = this.card(FLASHBACK);
       if (fb) {
-        removeOne(this.hand, fb);
+        removeIfPresent(this.hand, fb);
         this.gy.push(fb);
       }
     } else {
-      removeOne(this.hand, c);
+      removeIfPresent(this.hand, c);
       this.gy.push(c);
     }
     this.pay(first, true);
@@ -1171,15 +1173,15 @@ export class CodieGame extends Game<CodieGame> {
     const t = this.library.find((x) => x.name === target);
     if (!c || !t || !this.spend(FLASHBACK)) return false;
     if (!this.pay(this.effCost(c, null, true), true)) return false;
-    removeOne(this.gy, c);
+    removeIfPresent(this.gy, c);
     this.exile.push(c);
-    removeOne(this.library, t);
+    removeIfPresent(this.library, t);
     this.hand.push(t);
     return true;
   }
   suspendProfane(cd: CardDef): boolean {
     if (!this.pay(Cost.parse('{1}{B}'), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.exile.push(cd);
     this.suspended.push(2);
     this.say('suspend Profane Tutor');
@@ -1191,7 +1193,7 @@ export class CodieGame extends Game<CodieGame> {
     if (!c) return null;
     const cost = this.effCost(c, base);
     if (!this.pay(cost, true)) return null;
-    removeOne(this.hand, c);
+    removeIfPresent(this.hand, c);
     this.gy.push(c);
     this.spellsCast += 1;
     return c;
@@ -1256,7 +1258,7 @@ export class CodieGame extends Game<CodieGame> {
   tutor(spell: string, target: string, top: boolean): boolean {
     const t = this.library.find((x) => x.name === target);
     if (!t || !this.spend(spell)) return false;
-    removeOne(this.library, t);
+    removeIfPresent(this.library, t);
     if (top) {
       this.library.unshift(t);
       this.knownTop = 1;
@@ -1369,8 +1371,8 @@ export class CodieGame extends Game<CodieGame> {
     this.codieArmed -= 1; // used right away
     if (!this.spend(spell)) return false;
     if (spell === 'Dark Ritual') this.pool.B += 3;
-    removeOne(this.library, pt);
-    removeOne(this.library, t);
+    removeIfPresent(this.library, pt);
+    removeIfPresent(this.library, t);
     this.hand.push(t);
     this.gy.push(pt);
     return true;
@@ -1408,7 +1410,7 @@ export class CodieGame extends Game<CodieGame> {
         c.name !== 'Glacial Chasm',
     );
     if (land) {
-      removeOne(g.hand, land);
+      removeIfPresent(g.hand, land);
       const p = new Perm(land, land.land, false);
       p.sick = false;
       g.bf.push(p);

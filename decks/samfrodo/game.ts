@@ -15,10 +15,11 @@ import {
   Game,
   Cand,
   Evasion,
-  KillSearcher,
+  GameWithoutKillSearch,
   Perm,
   Zone,
   firstMax,
+  removeIfPresent,
 } from '../../engine/game';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -153,11 +154,6 @@ const OWN_KILL_EXILES = new Set([
   'Anguished Unmaking',
 ]);
 
-function removeOne<T>(xs: T[], x: T): void {
-  const i = xs.indexOf(x);
-  if (i >= 0) xs.splice(i, 1);
-}
-
 const HALFLING_CACHE = new Map<CardDef, boolean>();
 export function isHalfling(cd: CardDef): boolean {
   let h = HALFLING_CACHE.get(cd);
@@ -173,17 +169,9 @@ export function isHalfling(cd: CardDef): boolean {
 // every card this file has rules for (lands, rocks and plain draw spells are engine facts)
 C.registerKnown([...Object.keys(VALUE), ...HOLD, FRODO, SAM, 'Dusk // Dawn']);
 
-const NO_SEARCH: KillSearcher<null> = {
-  search: () => 0,
-  lastLine: null,
-  lastP: null,
-  bestMiss: null,
-  minChance: 1,
-};
-
 type Phase = 'main1' | 'combat' | 'main2' | 'end';
 
-export class SamFrodoGame extends Game<null> {
+export class SamFrodoGame extends GameWithoutKillSearch {
   override mulliganRule(): MulliganRule | null {
     return this.cfg.smart_mulligan ? MULLIGAN : null;
   }
@@ -240,16 +228,6 @@ export class SamFrodoGame extends Game<null> {
     if (n.includes('bird')) return TOK.bird;
     if (n.includes('servo')) return TOK.servo;
     return null;
-  }
-
-  light(): null {
-    return null;
-  }
-  lightKey(): string {
-    return '';
-  }
-  killSearch(): KillSearcher<null> {
-    return NO_SEARCH;
   }
 
   override clone(): this {
@@ -402,7 +380,7 @@ export class SamFrodoGame extends Game<null> {
     if (partner && !p.token) {
       const c = this.library.find((x) => x.name === partner);
       if (c) {
-        removeOne(this.library, c);
+        removeIfPresent(this.library, c);
         this.shuffle();
         this.hand.push(c);
         this.say('partner: tutor', c);
@@ -494,7 +472,7 @@ export class SamFrodoGame extends Game<null> {
         this.bf.includes(q)
       ) {
         if (this.putBasic()) {
-          removeOne(this.bf, q);
+          removeIfPresent(this.bf, q);
           this.library.push(q.cd);
         }
       }
@@ -604,7 +582,7 @@ export class SamFrodoGame extends Game<null> {
     for (const name of order) {
       const c = this.library.find((x) => x.name === name);
       if (!c) continue;
-      removeOne(this.library, c);
+      removeIfPresent(this.library, c);
       this.shuffle();
       if (toHand) this.hand.push(c);
       else {
@@ -1145,7 +1123,7 @@ export class SamFrodoGame extends Game<null> {
         else if (dead && (bond || this.onBf(GOLLUM)))
           add(46, new Cost(1), false, () =>
             this.tradingPost(p, () => {
-              removeOne(this.hand, dead);
+              removeIfPresent(this.hand, dead);
               this.gy.push(dead);
               this.gainLife(4);
             }),
@@ -1258,7 +1236,7 @@ export class SamFrodoGame extends Game<null> {
 
   farmerCotton(cd: CardDef, x: number): boolean {
     if (!this.pay(cd.cost.withGeneric(x))) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.spellsCast += 1;
     this.say(`cast Farmer Cotton (X=${x})`);
     this.castX = x;
@@ -1270,7 +1248,7 @@ export class SamFrodoGame extends Game<null> {
     const f = this.foods()[0];
     if (!f || !this.gy.includes(cd)) return false;
     this.sacrifice(f);
-    removeOne(this.gy, cd);
+    removeIfPresent(this.gy, cd);
     this.say('Cauldron Familiar returns');
     this.enter(cd, 'graveyard');
     return true;
@@ -1341,7 +1319,7 @@ export class SamFrodoGame extends Game<null> {
       const pw = this.power(t);
       this.say(`${n} on our own Rapacious Guest (power ${pw})`);
       if (OWN_KILL_EXILES.has(n)) {
-        removeOne(this.bf, t);
+        removeIfPresent(this.bf, t);
         this.exile.push(t.cd);
         this.pingOne(pw); // leaves the battlefield: target opponent loses its power
         if (n === 'Swords to Plowshares') this.gainLife(pw);

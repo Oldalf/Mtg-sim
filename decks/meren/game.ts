@@ -10,12 +10,13 @@ import { Cost, CardDef, makeToken } from '../../engine/cards';
 import {
   Game,
   Cand,
-  KillSearcher,
+  GameWithoutKillSearch,
   Perm,
   Zone,
   firstMax,
   firstMin,
   sortDesc,
+  removeIfPresent,
 } from '../../engine/game';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -131,11 +132,6 @@ const LAND_ETB = new Set([
 const DRAW_ON_DEATH = new Set(['Simulacrum Shaper', 'Solemn Simulacrum']);
 const HOLD = new Set(['Heartless Act', 'Infernal Grasp']); // removal: no targets in a goldfish game
 
-function removeOne<T>(xs: T[], x: T): void {
-  const i = xs.indexOf(x);
-  if (i >= 0) xs.splice(i, 1);
-}
-
 // every card this file has rules for (the rest of the list is lands and engine card facts)
 C.registerKnown([
   ...Object.keys(VALUE),
@@ -166,15 +162,7 @@ C.registerKnown([
   'Village Rites',
 ]);
 
-const NO_SEARCH: KillSearcher<null> = {
-  search: () => 0,
-  lastLine: null,
-  lastP: null,
-  bestMiss: null,
-  minChance: 1,
-};
-
-export class MerenGame extends Game<null> {
+export class MerenGame extends GameWithoutKillSearch {
   override mulliganRule(): MulliganRule | null {
     return this.cfg.smart_mulligan ? MULLIGAN : null;
   }
@@ -326,17 +314,6 @@ export class MerenGame extends Game<null> {
     return v;
   }
 
-  // no kill search for this deck
-  light(): null {
-    return null;
-  }
-  lightKey(): string {
-    return '';
-  }
-  killSearch(): KillSearcher<null> {
-    return NO_SEARCH;
-  }
-
   // ================================================================ card values
   value(cd: CardDef): number {
     if (cd.name === 'Lotleth Giant')
@@ -394,7 +371,7 @@ export class MerenGame extends Game<null> {
       this.library.find((x) => x.land?.basic) ??
       null;
     if (!c) return;
-    removeOne(this.library, c);
+    removeIfPresent(this.library, c);
     this.shuffle();
     const p = new Perm(c, c.land, true);
     p.sick = false;
@@ -412,7 +389,7 @@ export class MerenGame extends Game<null> {
     cd: CardDef,
     opts: { tapped?: boolean; counters?: number } = {},
   ): Perm {
-    removeOne(this.gy, cd);
+    removeIfPresent(this.gy, cd);
     const p = this.enter(cd, 'graveyard', { tapped: opts.tapped });
     if (opts.counters) p.counters += opts.counters;
     this.say('  reanimate', cd);
@@ -520,7 +497,7 @@ export class MerenGame extends Game<null> {
           this.gy,
           (x) => this.cardValue(x) + (x.isCreature ? 0 : 10),
         );
-        removeOne(this.gy, c);
+        removeIfPresent(this.gy, c);
         this.hand.push(c);
       }
     } else if (n === 'Puppeteer Clique') {
@@ -546,7 +523,7 @@ export class MerenGame extends Game<null> {
     } else if (n === 'Gravedigger') {
       const c = this.bestGyCreature(() => true);
       if (c) {
-        removeOne(this.gy, c);
+        removeIfPresent(this.gy, c);
         this.hand.push(c);
       }
     } else if (n === "Stitcher's Supplier") this.millSelf(3);
@@ -600,7 +577,7 @@ export class MerenGame extends Game<null> {
         const cs = this.library.filter((c) => c.isCreature && c.mv <= budget);
         if (!cs.length) break;
         const c = firstMax(cs, (x) => this.value(x));
-        removeOne(this.library, c);
+        removeIfPresent(this.library, c);
         budget -= c.mv;
         this.enter(c, 'library');
       }
@@ -706,7 +683,7 @@ export class MerenGame extends Game<null> {
       this.say(`Meren (${this.exp} experience) returns`, c);
       this.reanimate(c);
     } else {
-      removeOne(this.gy, c);
+      removeIfPresent(this.gy, c);
       this.hand.push(c);
       this.say(`Meren (${this.exp} experience) returns to hand`, c);
     }
@@ -814,7 +791,7 @@ export class MerenGame extends Game<null> {
     const c =
       order.map((n) => cands.find((x) => x.name === n)).find((x) => x) ??
       firstMax(cands, (x) => this.value(x));
-    removeOne(this.library, c);
+    removeIfPresent(this.library, c);
     this.toGy(c, true);
     this.shuffle();
   }
@@ -867,7 +844,7 @@ export class MerenGame extends Game<null> {
         const back = this.gy.filter((c) => c !== f.cd && c.land === null);
         if (back.length) {
           const c = firstMax(back, (x) => this.cardValue(x));
-          removeOne(this.gy, c);
+          removeIfPresent(this.gy, c);
           this.hand.push(c);
         }
       }
@@ -1075,7 +1052,7 @@ export class MerenGame extends Game<null> {
   // ---------------------------------------------------------------- actions
   evoke(cd: CardDef): boolean {
     if (!this.pay(this.effCost(cd, Cost.parse('{1}{B}')), false)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.say('evoke', cd);
     const p = this.enter(cd, 'hand');
     this.sacrifice(p);
@@ -1091,7 +1068,7 @@ export class MerenGame extends Game<null> {
 
   evolve(cd: CardDef, f: Perm): boolean {
     if (!this.pay(this.effCost(cd), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     const x = f.cd.mv + 2;
     this.sacrifice(f);
     this.say(
@@ -1102,7 +1079,7 @@ export class MerenGame extends Game<null> {
     const cs = this.library.filter((c) => c.isCreature && c.mv <= x);
     if (cs.length) {
       const c = this.tutorTarget((y) => cs.includes(y), false) ?? cs[0];
-      removeOne(this.library, c);
+      removeIfPresent(this.library, c);
       this.shuffle();
       this.enter(c, 'library');
     }
@@ -1112,7 +1089,7 @@ export class MerenGame extends Game<null> {
 
   sawInHalf(cd: CardDef, t: Perm): boolean {
     if (!this.pay(this.effCost(cd), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.say('cast', cd, 'on our', t.cd);
     this.onCastIS(false);
     const half = Math.ceil(this.power(t) / 2) - (t.cd.power + t.counters);
@@ -1124,7 +1101,7 @@ export class MerenGame extends Game<null> {
 
   beastWithin(cd: CardDef, t: Perm): boolean {
     if (!this.pay(this.effCost(cd), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.dies(t);
     this.createTokens(TOKENS.beast);
     this.gy.push(cd);
@@ -1148,7 +1125,7 @@ export class MerenGame extends Game<null> {
       return false;
     p.tapped = true;
     const c = firstMin(d, (x) => this.discardValue(x));
-    removeOne(this.hand, c);
+    removeIfPresent(this.hand, c);
     this.toGy(c);
     this.doTutor((x) => x.isCreature, false);
     return true;
@@ -1180,7 +1157,7 @@ export class MerenGame extends Game<null> {
         `Grist -5: each opponent loses ${this.gyCreatures()}, opp life [${this.life.join(', ')}]`,
       );
       if (p.counters <= 0) {
-        removeOne(this.bf, p);
+        removeIfPresent(this.bf, p);
         this.gy.push(p.cd);
       }
     } else {
@@ -1215,7 +1192,7 @@ export class MerenGame extends Game<null> {
     this.draw(1);
     const land = this.hand.find((c) => c.land !== null);
     if (land) {
-      removeOne(this.hand, land);
+      removeIfPresent(this.hand, land);
       const q = new Perm(land, land.land, true);
       q.sick = false;
       this.bf.push(q);
@@ -1239,7 +1216,7 @@ export class MerenGame extends Game<null> {
       (c) => -this.cardValue(c),
     ).slice(0, 4);
     for (const c of others) {
-      removeOne(this.gy, c);
+      removeIfPresent(this.gy, c);
       this.exile.push(c);
     }
     const p = this.reanimate(cd);

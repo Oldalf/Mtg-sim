@@ -37,35 +37,40 @@ function capture(fn: () => void): string {
 }
 
 async function collect(deck: Deck, spec: RegressSpec, workers: number) {
-  const res = {
+  const results = {
     games: {} as Record<string, unknown>,
     logs: {} as Record<string, string>,
     tests: '',
   };
-  for (const l of spec.lists) {
+  for (const listFile of spec.lists) {
     const r = await simulate(
       deck,
-      path.join(deck.dir, l),
+      path.join(deck.dir, listFile),
       SEEDS,
       { ...deck.cfg },
       workers,
     );
-    res.games[l] = r.kills;
-    console.log(`  ${l}: ${SEEDS} games`);
+    results.games[listFile] = r.kills;
+    console.log(`  ${listFile}: ${SEEDS} games`);
   }
   const logDir = path.join(deck.dir, 'logs');
-  for (const f of fs.existsSync(logDir) ? fs.readdirSync(logDir).sort() : []) {
-    if (!f.endsWith('.txt')) continue;
-    const list = path.join(deck.dir, spec.logLists?.[f] ?? deck.defaultList);
-    res.logs[f] = capture(() =>
-      analyze(deck, path.join(logDir, f), list, AI_RUNS, 20000),
+  for (const logFile of fs.existsSync(logDir)
+    ? fs.readdirSync(logDir).sort()
+    : []) {
+    if (!logFile.endsWith('.txt')) continue;
+    const list = path.join(
+      deck.dir,
+      spec.logLists?.[logFile] ?? deck.defaultList,
     );
-    console.log(`  log ${f}`);
+    results.logs[logFile] = capture(() =>
+      analyze(deck, path.join(logDir, logFile), list, AI_RUNS, 20000),
+    );
+    console.log(`  log ${logFile}`);
   }
-  res.tests = capture(() => {
+  results.tests = capture(() => {
     spec.tests();
   });
-  return res;
+  return results;
 }
 
 export async function regress(
@@ -75,36 +80,40 @@ export async function regress(
   workers: number,
 ): Promise<boolean> {
   const file = path.join(C.ROOT, 'regress_baseline', `${deck.name}.json`);
-  const res = await collect(deck, spec, workers);
+  const results = await collect(deck, spec, workers);
   if (mode === 'record') {
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(res), 'utf-8');
+    fs.writeFileSync(file, JSON.stringify(results), 'utf-8');
     console.log(`recorded to ${file}`);
     return true;
   }
-  const base = JSON.parse(fs.readFileSync(file, 'utf-8')) as typeof res;
+  const base = JSON.parse(fs.readFileSync(file, 'utf-8')) as typeof results;
   let bad = 0;
-  for (const [l, rows] of Object.entries(base.games) as [
+  for (const [listFile, rows] of Object.entries(base.games) as [
     string,
     [number | null, number | null][],
   ][]) {
-    const now = (res.games[l] ?? []) as [number | null, number | null][];
+    const current = (results.games[listFile] ?? []) as [
+      number | null,
+      number | null,
+    ][];
     const diff: number[] = [];
-    rows.forEach((r, i) => {
-      if (!now[i] || now[i][0] !== r[0] || now[i][1] !== r[1]) diff.push(i + 1);
+    rows.forEach((row, i) => {
+      if (!current[i] || current[i][0] !== row[0] || current[i][1] !== row[1])
+        diff.push(i + 1);
     });
     bad += diff.length;
     console.log(
-      `${diff.length ? 'BAD' : 'OK '} ${l}: ${diff.length} of ${rows.length} seeds differ` +
+      `${diff.length ? 'BAD' : 'OK '} ${listFile}: ${diff.length} of ${rows.length} seeds differ` +
         (diff.length ? ` (first: ${diff.slice(0, 10).join(', ')})` : ''),
     );
   }
-  for (const [f, txt] of Object.entries(base.logs)) {
-    const same = res.logs[f] === txt;
+  for (const [logFile, savedText] of Object.entries(base.logs)) {
+    const same = results.logs[logFile] === savedText;
     if (!same) bad++;
-    console.log(`${same ? 'OK ' : 'BAD'} log ${f}`);
+    console.log(`${same ? 'OK ' : 'BAD'} log ${logFile}`);
   }
-  const same = res.tests === base.tests;
+  const same = results.tests === base.tests;
   if (!same) bad++;
   console.log(`${same ? 'OK ' : 'BAD'} kill-finder tests`);
   console.log(bad ? 'DIFFERENT' : 'IDENTICAL');

@@ -62,6 +62,20 @@ export class Perm {
   }
 }
 
+/** Settings every deck starts from. A deck's config.ts spreads this and overrides what differs. */
+export const BASE_CONFIG: Config = {
+  opponents: 3,
+  opp_life: 40,
+  opp_library: 92, // 99 - opening 7
+  on_play_chance: 0.25, // 4-player pod: 1 in 4 to skip the first draw
+  search_budget: 0, // 0 = no kill search
+  smart_mulligan: true, // the deck's mulligan rule (mulligan.ts); off = keep 2 to 5 lands
+  planner: true, // AI tries its best few plays on copies of the game and keeps the best
+  planner_width: 4, // how many plays it compares at each decision
+  planner_rollouts: 2, // random futures per play (library re-shuffled: no peeking)
+  planner_budget: 0, // kill-search effort when scoring a position
+};
+
 /** Where a permanent came from when it entered the battlefield. */
 export type Zone =
   'hand' | 'graveyard' | 'library' | 'command' | 'exile' | 'token' | 'stack';
@@ -112,7 +126,7 @@ const BASIC_OF: Record<string, string> = {
 };
 type Snap = [ManaPool, boolean[]];
 
-/** First element with the lowest key (like Python's min(xs, key=f)). */
+/** Element with the lowest key. On a tie the first one wins, so results stay the same from run to run. */
 export function firstMin<T>(xs: T[], key: (x: T) => number): T {
   let best = xs[0],
     bk = key(best);
@@ -126,7 +140,7 @@ export function firstMin<T>(xs: T[], key: (x: T) => number): T {
   return best;
 }
 
-/** First element with the highest key (like Python's max(xs, key=f)). */
+/** Element with the highest key. On a tie the first one wins. */
 export function firstMax<T>(xs: T[], key: (x: T) => number): T {
   let best = xs[0],
     bk = key(best);
@@ -140,17 +154,24 @@ export function firstMax<T>(xs: T[], key: (x: T) => number): T {
   return best;
 }
 
-/** Stable sort, highest key first (like Python's sort(key=f, reverse=True)). */
+/** Removes the first occurrence of an item. Throws if it is missing, which would be a bug in the caller. */
+export function removeOrThrow<T>(list: T[], item: T): void {
+  const index = list.indexOf(item);
+  if (index < 0) throw new Error(`not in list: ${String(item)}`);
+  list.splice(index, 1);
+}
+
+/** Removes the first occurrence of an item. Does nothing if it is missing. */
+export function removeIfPresent<T>(list: T[], item: T): void {
+  const index = list.indexOf(item);
+  if (index >= 0) list.splice(index, 1);
+}
+
+/** Sorts in place, highest key first. Equal keys keep their order. */
 export function sortDesc<T>(xs: T[], key: (x: T) => number): T[] {
   const ks = new Map<T, number>();
   for (const x of xs) ks.set(x, key(x));
   return xs.sort((a, b) => ks.get(b)! - ks.get(a)!);
-}
-
-function removeOne<T>(xs: T[], x: T): void {
-  const i = xs.indexOf(x);
-  if (i < 0) throw new Error(`not in list: ${String(x)}`);
-  xs.splice(i, 1);
 }
 
 /** Which mana source to tap first for what we're short of (a colour, H = hybrid, N = generic). */
@@ -735,7 +756,7 @@ export abstract class Game<S = unknown> {
     for (let i = 0; i < n; i++) {
       if (!this.hand.length) return;
       const c = firstMin(this.hand, (x) => this.discardValue(x));
-      removeOne(this.hand, c);
+      removeOrThrow(this.hand, c);
       this.toGy(c);
       this.say('discard', c);
     }
@@ -767,7 +788,7 @@ export abstract class Game<S = unknown> {
   ): void {
     const t = this.tutorTarget(allowed, toTop, spentCard, true);
     if (t === null) return;
-    removeOne(this.library, t);
+    removeOrThrow(this.library, t);
     this.shuffle();
     if (toTop) this.library.unshift(t);
     else this.hand.push(t);
@@ -781,7 +802,7 @@ export abstract class Game<S = unknown> {
       this.draw(3);
       for (let i = 0; i < Math.min(2, this.hand.length); i++) {
         const c = firstMin(this.hand, (x) => this.cardValue(x));
-        removeOne(this.hand, c);
+        removeOrThrow(this.hand, c);
         this.library.unshift(c);
       }
     } else if (n === 'Consider') {
@@ -1021,7 +1042,7 @@ export abstract class Game<S = unknown> {
   ): boolean {
     const cost = this.effCost(cd, base, fromGy);
     if (!this.pay(cost, true)) return false;
-    removeOne(fromGy ? this.gy : this.hand, cd);
+    removeOrThrow(fromGy ? this.gy : this.hand, cd);
     this.say(
       'cast',
       cd,
@@ -1059,9 +1080,9 @@ export abstract class Game<S = unknown> {
     if (fromCommand) cost = this.commanderCost(cd, cost);
     if (!this.pay(cost, false)) return false;
     if (fromCommand) {
-      removeOne(this.command, cd);
+      removeOrThrow(this.command, cd);
       this.onCommanderCast(cd);
-    } else removeOne(this.hand, cd);
+    } else removeOrThrow(this.hand, cd);
     this.spellsCast += 1;
     this.say('cast', cd);
     if (this.inArena() && this.arena!.counter(this, cd)) {
@@ -1223,7 +1244,7 @@ export abstract class Game<S = unknown> {
     };
 
     const cd = firstMax(lands, score);
-    removeOne(this.hand, cd);
+    removeOrThrow(this.hand, cd);
     this.landPlayed = true;
     const inf = { ...info(cd) };
     if (inf.special === 'wilds') {
@@ -1234,7 +1255,7 @@ export abstract class Game<S = unknown> {
         null;
       this.gy.push(cd);
       if (basic) {
-        removeOne(this.library, basic);
+        removeOrThrow(this.library, basic);
         this.shuffle();
         const q = new Perm(basic, basic.land, true);
         this.bf.push(q);
@@ -1260,7 +1281,7 @@ export abstract class Game<S = unknown> {
         );
         const back = others[0];
         if (!back.tapped && this.srcKind(back)) this.tap(back, 'N'); // float the mana before bouncing
-        removeOne(this.bf, back);
+        removeOrThrow(this.bf, back);
         this.hand.push(back.cd);
       }
     }
@@ -1274,7 +1295,7 @@ export abstract class Game<S = unknown> {
   // ================================================================ card actions
   flashback(cd: CardDef): boolean {
     if (!this.pay(this.effCost(cd, new Cost(1, 1), true), true)) return false;
-    removeOne(this.gy, cd);
+    removeOrThrow(this.gy, cd);
     this.myLife -= 3;
     this.say('flashback', cd);
     this.spellsCast += 1;
@@ -1286,7 +1307,7 @@ export abstract class Game<S = unknown> {
 
   wishclaw(cd: CardDef): boolean {
     if (!this.pay(this.effCost(cd).plus(new Cost(1)), false)) return false;
-    removeOne(this.hand, cd);
+    removeOrThrow(this.hand, cd);
     this.say('Wishclaw Talisman (cast + activate)');
     this.doTutor(() => true, false);
     return true;
@@ -1294,7 +1315,7 @@ export abstract class Game<S = unknown> {
 
   transmute(cd: CardDef): boolean {
     if (!this.pay(new Cost(1, 2), false)) return false;
-    removeOne(this.hand, cd);
+    removeOrThrow(this.hand, cd);
     this.gy.push(cd);
     this.say('transmute', cd.name);
     this.doTutor((c) => c.mv === cd.mv && c.land === null, false);
@@ -1303,7 +1324,7 @@ export abstract class Game<S = unknown> {
 
   cycle(cd: CardDef): boolean {
     if (!this.pay(new Cost(2))) return false;
-    removeOne(this.hand, cd);
+    removeOrThrow(this.hand, cd);
     this.gy.push(cd);
     this.say('cycle', cd);
     this.draw(1);
@@ -1577,7 +1598,7 @@ export abstract class Game<S = unknown> {
       ) {
         for (let i = 0; i < 7 - size; i++) {
           const c = firstMin(this.hand, (x) => this.cardValue(x));
-          removeOne(this.hand, c);
+          removeOrThrow(this.hand, c);
           this.library.push(c);
         }
         return;
@@ -2185,7 +2206,7 @@ export abstract class Game<S = unknown> {
   podCast(cd: CardDef): boolean {
     const cost = this.answerCost(cd);
     if (!this.hand.includes(cd) || !this.pay(cost, true)) return false;
-    removeOne(this.hand, cd);
+    removeOrThrow(this.hand, cd);
     this.gy.push(cd);
     const life = this.answer(cd)?.pay ?? 0;
     if (life) this.loseLife(life);
@@ -2289,7 +2310,7 @@ export abstract class Game<S = unknown> {
       this.tapMana(3);
       const land = this.landsBf().find((q) => q.tapped) ?? this.landsBf()[0];
       if (land) {
-        removeOne(this.bf, land);
+        removeOrThrow(this.bf, land);
         this.hand.push(land.cd);
       }
       return 'Soratami Rainshaper';
@@ -2323,7 +2344,7 @@ export abstract class Game<S = unknown> {
           ),
       );
       if (basic) {
-        removeOne(this.library, basic);
+        removeOrThrow(this.library, basic);
         this.enter(basic, 'library', { tapped: true });
         this.shuffle();
       }
@@ -2339,16 +2360,16 @@ export abstract class Game<S = unknown> {
   podRemove(p: Perm, how: string): void {
     if (!this.bf.includes(p)) return;
     if (this.isCommander(p)) {
-      removeOne(this.bf, p);
+      removeOrThrow(this.bf, p);
       this.command.push(p.cd);
     } else if (how === 'destroy' || how === 'sacrifice') {
       if (p.cd.isCreature) this.dies(p);
       else {
-        removeOne(this.bf, p);
+        removeOrThrow(this.bf, p);
         if (!p.token) this.gy.push(p.cd);
       }
     } else {
-      removeOne(this.bf, p);
+      removeOrThrow(this.bf, p);
       if (!p.token) (how === 'bounce' ? this.hand : this.exile).push(p.cd);
     }
   }
@@ -2520,7 +2541,28 @@ export abstract class Game<S = unknown> {
   lightAddLand(_st: S): void {}
 }
 
-// ------------------------------------------------------------------ log formatting (Python-like)
+/** Base for decks that have no kill search (no combo to find), so they skip the three search hooks. */
+export abstract class GameWithoutKillSearch extends Game<null> {
+  light(): null {
+    return null;
+  }
+  lightKey(): string {
+    return '';
+  }
+  killSearch(): KillSearcher<null> {
+    return NO_KILL_SEARCH;
+  }
+}
+
+const NO_KILL_SEARCH: KillSearcher<null> = {
+  search: () => 0,
+  lastLine: null,
+  lastP: null,
+  bestMiss: null,
+  minChance: 1,
+};
+
+// ------------------------------------------------------------------ log formatting
 function fmt(x: unknown): string {
   if (x instanceof CardDef) return x.name;
   if (Array.isArray(x))

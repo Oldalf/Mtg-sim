@@ -20,12 +20,13 @@ import {
   Game,
   Cand,
   Evasion,
-  KillSearcher,
+  GameWithoutKillSearch,
   Perm,
   WinAttempt,
   Zone,
   firstMax,
   firstMin,
+  removeIfPresent,
 } from '../../engine/game';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -182,11 +183,6 @@ C.registerKnown([
   'Gingerbrute',
 ]);
 
-function removeOne<T>(xs: T[], x: T): void {
-  const i = xs.indexOf(x);
-  if (i >= 0) xs.splice(i, 1);
-}
-
 /** Draw spells worth a Slick Imitator copy. */
 const IMITATE = new Set([
   'Pull from Tomorrow',
@@ -204,15 +200,7 @@ const COUNTERSPELLS = new Set([
   'Diversion Unit',
 ]);
 
-const NO_SEARCH: KillSearcher<null> = {
-  search: () => 0,
-  lastLine: null,
-  lastP: null,
-  bestMiss: null,
-  minChance: 1,
-};
-
-export class MikeGame extends Game<null> {
+export class MikeGame extends GameWithoutKillSearch {
   override mulliganRule(): MulliganRule | null {
     return this.cfg.smart_mulligan ? MULLIGAN : null;
   }
@@ -390,15 +378,6 @@ export class MikeGame extends Game<null> {
     return d && (d.type_line ?? '').includes('Creature') ? C.get(name) : null;
   }
 
-  light(): null {
-    return null;
-  }
-  lightKey(): string {
-    return '';
-  }
-  killSearch(): KillSearcher<null> {
-    return NO_SEARCH;
-  }
   override diag(): Record<string, number | null> {
     const upTo = (k: number) =>
       this.castsByTurn.slice(1, k + 1).reduce((s, x) => s + (x ?? 0), 0);
@@ -669,7 +648,7 @@ export class MikeGame extends Game<null> {
         .map((x) => this.gy.find((c) => c.name === x))
         .find((c) => c !== undefined);
       if (t) {
-        removeOne(this.gy, t);
+        removeIfPresent(this.gy, t);
         this.library.unshift(t);
         this.say('Mystic Sanctuary: put', t, 'on top');
       }
@@ -844,7 +823,7 @@ export class MikeGame extends Game<null> {
         this.milled = true;
         this.winHow = 'mill';
       }
-      removeOne(this.bf, f);
+      removeIfPresent(this.bf, f);
       this.library.push(f.cd);
       this.shuffle();
       this.say('Fblthp shuffles into the library');
@@ -1078,7 +1057,7 @@ export class MikeGame extends Game<null> {
     const cost = base.withGeneric(base.g - d);
     if (!this.pay(cost, true)) return false;
     for (let i = 0; i < d; i++) this.exile.push(this.gy.pop()!);
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.say('cast Treasure Cruise (delve', d + ')');
     this.spellsCast += 1;
     this.onCastIS(false);
@@ -1172,7 +1151,7 @@ export class MikeGame extends Game<null> {
           add(50 + boost, Cost.parse('{1}{U}{U}'), () => {
             if (!this.pay(Cost.parse('{1}{U}{U}'))) return false;
             for (const c of picks) {
-              removeOne(this.hand, c);
+              removeIfPresent(this.hand, c);
               this.toGy(c);
             }
             this.draw(5);
@@ -1296,7 +1275,7 @@ export class MikeGame extends Game<null> {
             .sort((a, b) => this.cardValue(a) - this.cardValue(b))
             .slice(0, 4);
       for (const c of bad) {
-        removeOne(this.hand, c);
+        removeIfPresent(this.hand, c);
         this.toGy(c);
       }
       this.draw(bad.length + 1);

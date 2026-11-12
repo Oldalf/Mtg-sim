@@ -3,7 +3,13 @@ import * as path from 'path';
 import { ROOT } from '../../engine/cards';
 import { CFG } from './config';
 import { SamFrodoGame } from './game';
-import { landMakes, DiagRow } from '../../engine/runner';
+import {
+  landMakes,
+  DiagRow,
+  percentOf,
+  winByTurnMetrics,
+  averageOf,
+} from '../../engine/runner';
 import { CardDef } from '../../engine/cards';
 
 const anyOf = (names: string[]) => {
@@ -12,10 +18,6 @@ const anyOf = (names: string[]) => {
 };
 const lands = (hand: CardDef[]) =>
   hand.filter((c) => c.land !== null || c.mdfcLand !== null).length;
-const pct = (rows: DiagRow[], f: (r: DiagRow) => boolean) =>
-  (100 * rows.filter(f).length) / rows.length;
-const meanOf = (rows: DiagRow[], f: (r: DiagRow) => number) =>
-  rows.reduce((s, r) => s + f(r), 0) / rows.length;
 /** A game with no win by turn 14 counts as turn 15. */
 const win = (r: DiagRow) => (r.win ?? 15) as number;
 const THIN = 3; // fewer nonland permanents than this = a thin board
@@ -43,21 +45,7 @@ export const deck = {
   rankTurn: 12,
   // --diag: consistency measures (the same slow-start definition as Aesi and Meren)
   diagMetrics: [
-    {
-      label: 'Win by turn 10 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 10),
-    },
-    {
-      label: 'Win by turn 12 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 12),
-    },
-    {
-      label: 'Win by turn 14 (%)',
-      unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => win(r) <= 14),
-    },
+    ...winByTurnMetrics([10, 12, 14], win),
     {
       label: 'Slow tail: turn the 90th-percentile game wins',
       unit: 'turn' as const,
@@ -67,23 +55,23 @@ export const deck = {
     {
       label: 'Slow start: under 9 mana spent by turn 5 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, slow5),
+      f: (rows: DiagRow[]) => percentOf(rows, slow5),
     },
     {
       label: 'Slow start: under 13 mana spent by turn 6 (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, slow6),
+      f: (rows: DiagRow[]) => percentOf(rows, slow6),
     },
     {
       label: 'Slow start either way (%)',
       unit: '%' as const,
-      f: (rows: DiagRow[]) => pct(rows, (r) => slow5(r) || slow6(r)),
+      f: (rows: DiagRow[]) => percentOf(rows, (r) => slow5(r) || slow6(r)),
     },
     {
       label: 'Average mana spent by turn 5 (of 15)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 5),
           (r) => r.spent5 ?? 0,
         ),
@@ -92,7 +80,7 @@ export const deck = {
       label: 'Average mana spent by turn 6 (of 21)',
       unit: 'n' as const,
       f: (rows: DiagRow[]) =>
-        meanOf(
+        averageOf(
           rows.filter((r) => win(r) > 6),
           (r) => r.spent6 ?? 0,
         ),
@@ -104,13 +92,13 @@ export const deck = {
         ' nonland permanents at end of turn 5 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) > 5 && (r.perms5 ?? 0) < THIN),
+        percentOf(rows, (r) => win(r) > 5 && (r.perms5 ?? 0) < THIN),
     },
     {
       label: 'Thin board at end of turn 6 (%)',
       unit: '%' as const,
       f: (rows: DiagRow[]) =>
-        pct(rows, (r) => win(r) > 6 && (r.perms6 ?? 0) < THIN),
+        percentOf(rows, (r) => win(r) > 6 && (r.perms6 ?? 0) < THIN),
     },
   ],
   // --hands: what to look for in an opening hand

@@ -504,14 +504,12 @@ export function playPod(
           continue;
         const everyone = [i, ...living(i)];
         const all = everyone.flatMap((k) =>
-          games[k]
-            .creatures()
-            .map((p) => ({
-              k,
-              p,
-              pw: games[k].power(p),
-              tg: games[k].toughness(p),
-            })),
+          games[k].creatures().map((p) => ({
+            k,
+            p,
+            pw: games[k].power(p),
+            tg: games[k].toughness(p),
+          })),
         );
         let pay = 0;
         if (cd.name === 'Toxic Deluge') {

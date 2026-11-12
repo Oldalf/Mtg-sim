@@ -24,6 +24,7 @@ import {
   Zone,
   firstMax,
   firstMin,
+  removeIfPresent,
 } from '../../engine/game';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -268,11 +269,6 @@ const LOOP_CAST = [
   'Loot, Exuberant Explorer',
 ];
 const BASIC_COL: Record<string, string> = { Forest: 'G', Island: 'U' };
-
-function removeOne<T>(xs: T[], x: T): void {
-  const i = xs.indexOf(x);
-  if (i >= 0) xs.splice(i, 1);
-}
 
 // every card this file has rules for (lands, Sol Ring are engine facts)
 C.registerKnown([
@@ -698,7 +694,7 @@ export class AesiGame extends Game<AesiGame> {
     how: string,
     tapped = false,
   ): Perm | null {
-    removeOne(from === 'hand' ? this.hand : this.library, cd);
+    removeIfPresent(from === 'hand' ? this.hand : this.library, cd);
     const info = cd.land!;
     if (info.special === 'wilds') {
       this.gy.push(cd);
@@ -731,7 +727,7 @@ export class AesiGame extends Game<AesiGame> {
       );
       if (!back.tapped && this.srcKind(back)) this.tap(back, 'N');
     } else back = self;
-    removeOne(this.bf, back);
+    removeIfPresent(this.bf, back);
     this.hand.push(back.cd);
     this.say(`${self.cd.name} returns`, back.cd);
   }
@@ -745,7 +741,7 @@ export class AesiGame extends Game<AesiGame> {
       (o.only ? undefined : this.library.find((x) => x.land?.basic));
     if (!c) return false;
     if (o.toHand) {
-      removeOne(this.library, c);
+      removeIfPresent(this.library, c);
       this.hand.push(c);
       this.say('basic to hand:', c);
     } else this.putLand(c, 'library', 'basic onto the battlefield', !!o.tapped);
@@ -822,7 +818,7 @@ export class AesiGame extends Game<AesiGame> {
     try {
       if (cd.land !== null) this.putLand(cd, 'hand', 'Kodama puts');
       else {
-        removeOne(this.hand, cd);
+        removeIfPresent(this.hand, cd);
         this.say('Kodama puts', cd);
         this.enter(cd);
       }
@@ -916,7 +912,7 @@ export class AesiGame extends Game<AesiGame> {
     if (!super.castIS(cd, fromGy, base, mode, trig)) return false;
     if (cd.name === BSZ) {
       // shuffled into the library instead of the graveyard
-      removeOne(this.gy, cd);
+      removeIfPresent(this.gy, cd);
       this.library.push(cd);
       this.shuffle();
     }
@@ -962,7 +958,7 @@ export class AesiGame extends Game<AesiGame> {
   }
   suspendSearch(cd: CardDef): boolean {
     if (!this.pay(Cost.parse('{G}'), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.suspended.push({ cd, left: 2 });
     this.say('suspend Search for Tomorrow');
     return true;
@@ -970,7 +966,7 @@ export class AesiGame extends Game<AesiGame> {
   override upkeep(): void {
     for (const x of this.suspended.slice()) {
       if (--x.left > 0) continue;
-      removeOne(this.suspended, x);
+      removeIfPresent(this.suspended, x);
       this.say('Search for Tomorrow comes out of suspend');
       this.resolve(x.cd);
       this.gy.push(x.cd);
@@ -1364,7 +1360,7 @@ export class AesiGame extends Game<AesiGame> {
         if (this.oppAlive(i) && (t === null || this.lib[i] > this.lib[t]))
           t = i;
       if (t !== null && bszHand) {
-        removeOne(this.hand, bszHand);
+        removeIfPresent(this.hand, bszHand);
         this.library.push(bszHand);
         this.shuffle();
         this.millOut(t);
@@ -1377,7 +1373,7 @@ export class AesiGame extends Game<AesiGame> {
   /** Cast Blue Sun's Zenith with this X (at an opponent: they draw / mill X). */
   castX(cd: CardDef, x: number): boolean {
     if (this.epic || !this.pay(cd.cost.withGeneric(x), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.spellsCast += 1;
     this.library.push(cd);
     this.shuffle();
@@ -1392,12 +1388,12 @@ export class AesiGame extends Game<AesiGame> {
     if (!lands.length) return false;
     let n = 0;
     for (const cd of lands) {
-      removeOne(this.hand, cd);
+      removeIfPresent(this.hand, cd);
       if (cd.land!.special === 'wilds') {
         this.gy.push(cd);
         const b = this.library.find((x) => x.land?.basic);
         if (b && this.library.length > this.keep()) {
-          removeOne(this.library, b);
+          removeIfPresent(this.library, b);
           const q = new Perm(b, b.land, true);
           q.sick = false;
           this.bf.push(q);
@@ -1935,7 +1931,7 @@ export class AesiGame extends Game<AesiGame> {
     if (!t) return;
     if (toBattlefield) this.putLand(t, 'library', 'tutor onto the battlefield');
     else {
-      removeOne(this.library, t);
+      removeIfPresent(this.library, t);
       this.hand.push(t);
       this.say('land tutor ->', t);
     }
@@ -1949,7 +1945,7 @@ export class AesiGame extends Game<AesiGame> {
   }
   myriad(p: Perm): boolean {
     if (!this.pay(new Cost(2))) return false;
-    removeOne(this.bf, p);
+    removeIfPresent(this.bf, p);
     this.gy.push(p.cd);
     const want = this.wantColour() === 'U' ? 'Island' : 'Forest';
     const type =
@@ -1980,7 +1976,7 @@ export class AesiGame extends Game<AesiGame> {
     const back = basics.sort((a, b) => +b.tapped - +a.tapped).slice(0, 2);
     for (const q of back) {
       if (!q.tapped && this.srcKind(q)) this.tap(q, 'N'); // float its mana first
-      removeOne(this.bf, q);
+      removeIfPresent(this.bf, q);
       this.hand.push(q.cd);
     }
     this.say(
@@ -2001,7 +1997,7 @@ export class AesiGame extends Game<AesiGame> {
       if (this.srcKind(land)) this.tap(land, 'N'); // float its mana first
     }
     if (!this.pay(cost)) return false;
-    removeOne(this.bf, land);
+    removeIfPresent(this.bf, land);
     this.hand.push(land.cd);
     this.say(`${m.cd.name.split(',')[0]}: return ${land.cd.name}`);
     this.moonfolkEffect(kind);
@@ -2030,7 +2026,7 @@ export class AesiGame extends Game<AesiGame> {
   melokuEnd(): boolean {
     const t = this.landsBf().find((p) => p.tapped && p.land!.basic);
     if (!t || !this.pay(this.abilityCost(new Cost(1)))) return false;
-    removeOne(this.bf, t);
+    removeIfPresent(this.bf, t);
     this.hand.push(t.cd);
     this.say(`Meloku: return ${t.cd.name} -> Illusion`);
     this.enter(TOK.illusion, 'token', { token: true });
@@ -2050,7 +2046,7 @@ export class AesiGame extends Game<AesiGame> {
       `moonfolk offering: sacrifice ${m.cd.name} for Patron of the Moon`,
     );
     this.sacrifice(m);
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.spellsCast += 1;
     this.enter(cd);
     this.spiritCast();
@@ -2058,7 +2054,7 @@ export class AesiGame extends Game<AesiGame> {
   }
   fertileFootsteps(cd: CardDef): boolean {
     if (!this.pay(Cost.parse('{2}{G}'), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.exile.push(cd);
     this.footstepsExiled = true;
     this.spellsCast += 1;
@@ -2068,7 +2064,7 @@ export class AesiGame extends Game<AesiGame> {
   }
   castGiant(cd: CardDef): boolean {
     if (!this.pay(cd.cost)) return false;
-    removeOne(this.exile, cd);
+    removeIfPresent(this.exile, cd);
     this.footstepsExiled = false;
     this.spellsCast += 1;
     this.say('cast Beanstalk Giant from exile');
@@ -2093,7 +2089,7 @@ export class AesiGame extends Game<AesiGame> {
   demolition(p: Perm): boolean {
     if (!this.pay(new Cost(2))) return false;
     p.tapped = true;
-    removeOne(this.bf, p);
+    removeIfPresent(this.bf, p);
     this.gy.push(p.cd);
     this.say(
       "Demolition Field: destroy an opponent's nonbasic land, fetch a basic",
@@ -2118,7 +2114,7 @@ export class AesiGame extends Game<AesiGame> {
         !(c.types.has('legendary') && this.onBf(c.name)),
     );
     const pick = ok.length ? firstMax(ok, (c) => this.value(c)) : null;
-    if (pick) removeOne(top, pick);
+    if (pick) removeIfPresent(top, pick);
     this.library.push(...top);
     this.say('Loot digs:', pick ?? 'nothing');
     if (pick) this.enter(pick, 'library');
@@ -2134,7 +2130,7 @@ export class AesiGame extends Game<AesiGame> {
   }
   zenithSelf(cd: CardDef, x: number): boolean {
     if (!this.pay(cd.cost.withGeneric(x), true)) return false;
-    removeOne(this.hand, cd);
+    removeIfPresent(this.hand, cd);
     this.spellsCast += 1;
     this.say(`cast Blue Sun's Zenith (X=${x}) for us`);
     this.draw(x);
@@ -2201,7 +2197,7 @@ export class AesiGame extends Game<AesiGame> {
               lands.find((p) => p.tapped) ??
               lands[0]);
         if (sac) {
-          removeOne(this.bf, sac);
+          removeIfPresent(this.bf, sac);
           this.gy.push(sac.cd);
         }
         const k = n === 'Entish Restoration' && ent() ? 3 : 2;
@@ -2236,7 +2232,7 @@ export class AesiGame extends Game<AesiGame> {
           ? firstMax(ok, (c) => this.cardValue(c) + (c.isCreature ? 5 : 0))
           : null;
         if (pick) {
-          removeOne(top, pick);
+          removeIfPresent(top, pick);
           this.hand.push(pick);
         }
         this.library.push(...top);
@@ -2264,7 +2260,7 @@ export class AesiGame extends Game<AesiGame> {
           lands.find((p) => p.tapped) ??
           lands[0];
         if (sac) {
-          removeOne(this.bf, sac);
+          removeIfPresent(this.bf, sac);
           this.gy.push(sac.cd);
         }
         this.landTutor(true);
