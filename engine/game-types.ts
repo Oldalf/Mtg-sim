@@ -186,7 +186,6 @@ export interface Arena {
   edict(game: Game<unknown>, nontoken: boolean): void;
   /** Take the best legal target of the biggest threat off the battlefield (an enters-the-battlefield removal effect). Returns its name. */
   snipe(game: Game<unknown>, ans: Answer): string | null;
-  say(game: Game<unknown>, text: string): void;
   /** We declared a win in the middle of our turn: the others may answer it now. True = it was stopped (the turn goes on). */
   answerWin(game: Game<unknown>): boolean;
   /** We cast this spell (paid, on the stack): does an opponent counter it? */

@@ -729,12 +729,6 @@ export abstract class GameCore<S = unknown> {
     for (const card of cards) this.putCard(card, toZone);
   }
 
-  /** Puts a card into a zone's list at a position (0 = first; in the library: the top). */
-  putCardAt(card: CardDef, toZone: CardListZone, index: number): void {
-    this[toZone].splice(index, 0, card);
-    this.moveRecorder?.noteCardArrived(card.name, LOG_ZONE[toZone]);
-  }
-
   /** Takes a card out of one zone and puts it at the end of another. */
   moveCard(card: CardDef, fromZone: CardListZone, toZone: CardListZone): void {
     this.takeCard(card, fromZone);

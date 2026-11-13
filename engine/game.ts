@@ -21,7 +21,6 @@ import {
   Target,
   WinAttempt,
 } from './game-types';
-import { removeOrThrow } from './lists';
 
 export abstract class Game<S = unknown> extends GameCore<S> {
   /** Set in a pod game: real opponents with real blockers. */

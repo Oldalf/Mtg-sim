@@ -19,7 +19,6 @@ export function buildArena(table: PodTable): Arena {
   // Everything that happens outside the player's own turn goes through runOffTurn, so the other decks' triggers count.
   return {
     real: (game) => table.games.includes(game),
-    say: (game, text) => table.sayAs(table.playerOf(game), text),
     board: (game, slot) => {
       const opponent =
         table.games[table.opponentsOf[table.playerOf(game)][slot]];
