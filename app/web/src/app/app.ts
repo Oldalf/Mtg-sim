@@ -1,15 +1,23 @@
-import { httpResource } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import type { HealthAnswer } from '../../../api-types';
+import { MatButton } from '@angular/material/button';
+import { MatToolbar } from '@angular/material/toolbar';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-/** The skeleton page of task 0: shows that the page runs and what the server answers. Task 6 replaces it with the app shell. */
+/** The four places of the app, in the toolbar. */
+const PLACES = [
+  { label: 'Decks', path: '/decks' },
+  { label: 'Simulate', path: '/simulate' },
+  { label: 'Pod', path: '/pod' },
+  { label: 'Games', path: '/games' },
+];
+
+/** The app shell: the toolbar with the four places, and the page of the route below it. */
 @Component({
-  imports: [RouterOutlet],
+  imports: [MatButton, MatToolbar, RouterLink, RouterLinkActive, RouterOutlet],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly health = httpResource<HealthAnswer>(() => '/api/health');
+  protected readonly places = PLACES;
 }

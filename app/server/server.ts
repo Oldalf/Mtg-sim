@@ -191,19 +191,35 @@ async function answerApiCall(
   return errorAnswer(404, `no API call ${url.pathname}`);
 }
 
-/** Sends a file of the built page. "/" is index.html. Paths outside the page's folder are refused. */
-function sendPageFile(response: http.ServerResponse, url: URL): void {
+/** A file of the built page for a path; null when there is none. Paths outside the page's folder are refused. */
+function findPageFile(pathname: string): string | null {
   const webFolder = path.resolve(WEB_FOLDER);
-  const relativePath =
-    url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname);
-  const file = path.resolve(webFolder, '.' + path.sep + relativePath);
+  const file = path.resolve(
+    webFolder,
+    '.' + path.sep + decodeURIComponent(pathname),
+  );
   const isInsideWebFolder = file.startsWith(webFolder + path.sep);
-  if (
-    !isInsideWebFolder ||
-    !fs.existsSync(file) ||
-    !fs.statSync(file).isFile()
-  ) {
-    const notFound = fs.existsSync(path.join(webFolder, 'index.html'))
+  if (!isInsideWebFolder || !fs.existsSync(file)) return null;
+  return fs.statSync(file).isFile() ? file : null;
+}
+
+/**
+ * Sends a file of the built page. Any other path a browser navigates to (a route of the page, such as
+ * /games/01-meren-decklist/412) gets index.html, so that reloading a route or opening a link works.
+ * A missing file that is not a navigation (a script, an image) is 404.
+ */
+function sendPageFile(
+  request: http.IncomingMessage,
+  response: http.ServerResponse,
+  url: URL,
+): void {
+  const isNavigation = (request.headers.accept ?? '').includes('text/html');
+  const requestedPath = url.pathname === '/' ? 'index.html' : url.pathname;
+  const file =
+    findPageFile(requestedPath) ??
+    (isNavigation ? findPageFile('index.html') : null);
+  if (!file) {
+    const notFound = findPageFile('index.html')
       ? `no file ${url.pathname}`
       : `the page is not built: run "npm run app" (or "ng build" in app/web/)`;
     response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -222,7 +238,7 @@ async function handleRequest(
 ): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://localhost');
   if (!url.pathname.startsWith('/api/')) {
-    sendPageFile(response, url);
+    sendPageFile(request, response, url);
     return;
   }
   try {

@@ -1,11 +1,43 @@
-main {
-  padding: 16px;
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
-strong {
+mat-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  gap: 16px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.app-name {
   color: var(--mat-sys-primary);
+  font: var(--mat-sys-title-medium);
+  text-decoration: none;
 }
 
-.error {
-  color: var(--mat-sys-error);
+nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+nav a {
+  --mat-button-text-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
+nav a.is-active {
+  --mat-button-text-label-text-color: var(--mat-sys-primary);
+  background-color: var(--mat-sys-secondary-container);
+}
+
+main {
+  flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
 }

@@ -1,14 +1,18 @@
-<main>
-  <h1>Goldfish: it works</h1>
-  <p>
-    The server says:
-    @if (health.hasValue()) {
-      <strong>{{ health.value().status }}</strong>
-    } @else if (health.error()) {
-      <strong class="error">no answer (is the server running?)</strong>
-    } @else {
-      asking…
+<mat-toolbar>
+  <a class="app-name" routerLink="/">Goldfish</a>
+  <nav aria-label="Places">
+    @for (place of places; track place.path) {
+      <a
+        mat-button
+        [routerLink]="place.path"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      >
+        {{ place.label }}
+      </a>
     }
-  </p>
+  </nav>
+</mat-toolbar>
+<main>
+  <router-outlet />
 </main>
-<router-outlet />

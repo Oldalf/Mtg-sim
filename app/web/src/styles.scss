@@ -26,4 +26,23 @@ body {
   font: var(--mat-sys-body-medium);
   margin: 0;
   height: 100%;
+  // numbers in tables and progress line up
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+h1 {
+  font: var(--mat-sys-headline-small);
+}
+
+// Material's tables have their own surface colour; on our dark page they read better without it
+.mat-mdc-table {
+  @include mat.table-overrides(
+    (
+      background-color: transparent,
+    )
+  );
 }
