@@ -74,7 +74,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 0 | The shapes and the skeleton | - | big model, first and alone | done (2026-11-13) |
 | 1 | Reports as data | 0 | small model | done (2026-11-13) |
 | 2 | Runs that report progress and can be stopped | 0 | big model | done (2026-11-13) |
-| 3 | Decks and decklists on the server | 0 | small model | open |
+| 3 | Decks and decklists on the server | 0 | small model | done (2026-11-13) |
 | 4 | Starting, following and stopping a run on the server | 1, 2 | big model | open |
 | 5 | Game logs on the server | 0 | small model | open |
 | 6 | The app shell, the theme and the shared components | 0 | big model | open |
@@ -127,6 +127,7 @@ The page needs the numbers, not printed text.
 - A decklist view groups the cards by the section `loadDecklist` already reads, and gives each card its type line, mana cost, mana value and `scryfall_id`.
 - A list name from the page must not reach outside the deck's folder (no `..`): answer 400.
 - Done when: a test asks for every deck and every list and gets no error, and a path with `..` is refused.
+- Notes (task 3, 2026-11-13): `app/server/decks-routes.ts` holds the two calls and `RequestError` (a status plus message that `server.ts` turns into an error answer; later routes can throw it too). `GET /api/decks?all=1` adds `lists/old` and `lists/cuts` to the list files; those folders also hold old reports that are not decklists, so the page must not open them as lists. The test is `app/server/decks-routes.test.ts`, run by `npm run app -- --test`.
 
 ### 4. Starting, following and stopping a run on the server
 

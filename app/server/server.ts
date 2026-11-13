@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
 import type { ErrorAnswer, HealthAnswer } from '../api-types';
+import { answerDecklist, answerDecks, RequestError } from './decks-routes';
 
 /** The built page (`ng build` in app/web/ writes it here). */
 export const WEB_FOLDER = path.join('dist', 'web');
@@ -32,6 +33,42 @@ const ROUTES: Route[] = [
     method: 'GET',
     path: /^\/api\/health$/,
     answer: () => ok<HealthAnswer>({ status: 'ok' }),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/decks$/,
+    answer: (_pathParts, url) =>
+      ok(answerDecks(url.searchParams.get('all') === '1')),
+  },
+  {
+    // the list name may hold slashes (lists/proposed.txt)
+    method: 'GET',
+    path: /^\/api\/decks\/(?<deck>[^/]+)\/lists\/(?<list>.+)$/,
+    answer: (pathParts) =>
+      ok(
+        answerDecklist(
+          decodeURIComponent(pathParts.deck),
+          decodeURIComponent(pathParts.list),
+        ),
+      ),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/decks$/,
+    answer: (_pathParts, url) =>
+      ok(answerDecks(url.searchParams.get('all') === '1')),
+  },
+  {
+    // the list name may hold slashes (lists/proposed.txt) and encoded characters
+    method: 'GET',
+    path: /^\/api\/decks\/(?<deck>[^/]+)\/lists\/(?<list>.+)$/,
+    answer: (pathParts) =>
+      ok(
+        answerDecklist(
+          decodeURIComponent(pathParts.deck),
+          decodeURIComponent(pathParts.list),
+        ),
+      ),
   },
 ];
 
@@ -119,6 +156,10 @@ async function handleRequest(
   try {
     sendJson(response, await answerApiCall(request, url));
   } catch (error) {
+    if (error instanceof RequestError) {
+      sendJson(response, errorAnswer(error.status, error.message));
+      return;
+    }
     const message = error instanceof Error ? error.message : String(error);
     sendJson(response, errorAnswer(500, message));
   }
