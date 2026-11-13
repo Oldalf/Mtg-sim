@@ -24,7 +24,6 @@
  *
  *   npm run pod -- gale meren samfrodo aesi mike -n 1000       (a deck may name its list: gale:lists/proposed.txt)
  */
-import { Worker } from 'worker_threads';
 import { Config } from './game-types';
 import { gamesFileName, writeGamesFile } from './game-log-files';
 import { buildArena } from './pod-arena';
@@ -32,6 +31,11 @@ import { useRemovalAfterTurn } from './pod-interaction';
 import { PodTable } from './pod-table';
 import { PodGame, PodJob, PodJobResult, PodSpec } from './pod-types';
 import { Deck, resolveList } from './runner';
+import {
+  RunControl,
+  runJobsInWorkers,
+  splitSeedsIntoJobs,
+} from './worker-pool';
 
 /** Play one pod game. */
 export function playPod(
@@ -166,59 +170,31 @@ export function runPodJob(
   return result;
 }
 
-/** Play seeds 1..n in worker threads (the same bundle runs as each worker; see sim.ts).
- *  logFolder: a run folder (game-log-files.ts) to write every game's log to. */
+/** Play seeds 1..n in worker threads (see worker-pool.ts).
+ *  logFolder: a run folder (game-log-files.ts) to write every game's log to.
+ *  control: progress and stopping; a stopped run returns the games played so far, with wasStopped set. */
 export async function simulatePod(
   spec: PodSpec,
   gameCount: number,
   workers: number,
   duty: number,
   logFolder?: string,
+  control?: RunControl,
 ): Promise<PodJobResult> {
-  const seeds = Array.from({ length: gameCount }, (_, i) => i + 1);
-  const chunk = Math.max(1, Math.floor(gameCount / (workers * 8)));
-  const jobs: PodJob[] = [];
-  for (let i = 0; i < gameCount; i += chunk)
-    jobs.push({
-      pod: spec,
-      seeds: seeds.slice(i, i + chunk),
-      logFolder,
-      jobNumber: jobs.length,
-    });
-  const results: PodJobResult[] = new Array(jobs.length);
-  let next = 0;
-  const pool = Array.from(
-    { length: Math.min(workers, jobs.length) },
-    () => new Worker(__filename, { workerData: 'sim-worker' }),
+  const jobs: PodJob[] = splitSeedsIntoJobs(gameCount, workers).map(
+    (seeds, jobNumber) => ({ pod: spec, seeds, logFolder, jobNumber }),
   );
-  await Promise.all(
-    pool.map(
-      (worker) =>
-        new Promise<void>((resolve, reject) => {
-          const give = () => {
-            if (next >= jobs.length) {
-              worker.terminate().then(() => resolve());
-              return;
-            }
-            const index = next++;
-            const startedAt = Date.now();
-            worker.once('message', (jobResult: PodJobResult) => {
-              results[index] = jobResult;
-              const rest =
-                duty < 100 ? (Date.now() - startedAt) * (100 / duty - 1) : 0;
-              if (rest > 1) setTimeout(give, rest);
-              else give();
-            });
-            worker.postMessage(jobs[index]);
-          };
-          worker.on('error', reject);
-          give();
-        }),
-    ),
+  const finished = await runJobsInWorkers<PodJob, PodJobResult>(
+    jobs,
+    workers,
+    duty,
+    control,
   );
+  const results = finished.results;
   const all: PodJobResult = {
     games: results.flatMap((jobResult) => jobResult.games),
     errors: results.flatMap((jobResult) => jobResult.errors),
+    wasStopped: finished.wasStopped,
   };
   if (logFolder !== undefined)
     all.logRows = results.flatMap((jobResult) => jobResult.logRows ?? []);

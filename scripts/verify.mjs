@@ -6,7 +6,7 @@
  *   npm run verify -- --record-pod save the pod report as the new baseline (after a change that is meant to alter it)
  *
  * The checks: the type-check, the formatting, and for every deck `--regress check` (must print IDENTICAL) and
- * `--test` (no BAD line); then the pod tests, and a pod run with fixed seeds whose report must equal the saved one
+ * `--test` (no BAD line); then the pod tests, the app's tests, and a pod run with fixed seeds whose report must equal the saved one
  * (regress_baseline/pod.txt), because `--regress` does not cover pod games.
  */
 import { spawnSync } from 'node:child_process';
@@ -129,6 +129,13 @@ if (build.exitCode === 0) {
     'pod: --test',
     podTests.exitCode === 0 && !/^BAD/m.test(podTests.output),
     podTests.output,
+  );
+
+  const appTests = runSimulator(['app', '--test']);
+  report(
+    'app: --test',
+    appTests.exitCode === 0 && !/^BAD/m.test(appTests.output),
+    appTests.output,
   );
 
   const podRun = runSimulator([...POD_ARGUMENTS, ...powerSaveOptions]);

@@ -5,7 +5,6 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { Worker } from 'worker_threads';
 import * as C from './cards';
 import { Config } from './game-types';
 import { Game } from './game';
@@ -15,6 +14,11 @@ import { GameIndexRow, gamesFileName, writeGamesFile } from './game-log-files';
 import { describeKillTurns } from './game-log-run';
 import { formatGameLog } from './game-log-text';
 import { Rng } from './rng';
+import {
+  RunControl,
+  runJobsInWorkers,
+  splitSeedsIntoJobs,
+} from './worker-pool';
 
 /** What a deck folder exports (decks/<name>/index.ts). */
 export interface Deck {
@@ -97,6 +101,8 @@ export type JobResult = {
   /** One row per logged game (see game-log-files.ts). */
   logRows?: GameIndexRow[];
   errors: [number, string][];
+  /** Set on the merged result of a run: true if it was stopped before every game was played. */
+  wasStopped?: boolean;
 };
 
 // ================================================================ machine and files
@@ -264,8 +270,9 @@ function playOpeningHand(
   return [anyKillTurn, handNames];
 }
 
-/** Play seeds 1..n in worker threads; the same bundle (dist/sim.js) runs as each worker.
- *  logFolder: a run folder (game-log-files.ts) to write every game's log to. */
+/** Play seeds 1..n in worker threads (see worker-pool.ts).
+ *  logFolder: a run folder (game-log-files.ts) to write every game's log to.
+ *  control: progress and stopping; a stopped run returns the games played so far, with wasStopped set. */
 export async function simulate(
   deck: Deck,
   listFile: string,
@@ -275,56 +282,30 @@ export async function simulate(
   what: JobKind = 'kills',
   handSize = 7,
   logFolder?: string,
+  control?: RunControl,
 ): Promise<JobResult> {
-  const seeds = Array.from({ length: gameCount }, (_, i) => i + 1);
-  const chunkSize = Math.max(1, Math.floor(gameCount / (workers * 8)));
-  const jobs: Job[] = [];
-  for (let start = 0; start < gameCount; start += chunkSize)
-    jobs.push({
+  const jobs: Job[] = splitSeedsIntoJobs(gameCount, workers).map(
+    (seeds, jobNumber) => ({
       deck: deck.name,
       list: listFile,
-      seeds: seeds.slice(start, start + chunkSize),
+      seeds,
       config: config,
       what,
       size: handSize,
       logFolder,
-      jobNumber: jobs.length,
-    });
-  const resultOfJob: JobResult[] = new Array(jobs.length);
-  let nextJob = 0;
-  const pool = Array.from(
-    { length: Math.min(workers, jobs.length) },
-    () => new Worker(__filename, { workerData: 'sim-worker' }),
+      jobNumber,
+    }),
   );
-  await Promise.all(
-    pool.map(
-      (worker) =>
-        new Promise<void>((resolve, reject) => {
-          const giveNextJob = () => {
-            if (nextJob >= jobs.length) {
-              worker.terminate().then(() => resolve());
-              return;
-            }
-            const jobIndex = nextJob++;
-            const startTime = Date.now();
-            worker.once('message', (result: JobResult) => {
-              resultOfJob[jobIndex] = result;
-              const restMilliseconds =
-                busyPercent < 100
-                  ? (Date.now() - startTime) * (100 / busyPercent - 1)
-                  : 0;
-              if (restMilliseconds > 1)
-                setTimeout(giveNextJob, restMilliseconds);
-              else giveNextJob();
-            });
-            worker.postMessage(jobs[jobIndex]);
-          };
-          worker.on('error', reject);
-          giveNextJob();
-        }),
-    ),
+  const finished = await runJobsInWorkers<Job, JobResult>(
+    jobs,
+    workers,
+    busyPercent,
+    control,
   );
-  return mergeResults(what, resultOfJob);
+  return {
+    ...mergeResults(what, finished.results),
+    wasStopped: finished.wasStopped,
+  };
 }
 
 function mergeResults(what: JobKind, results: JobResult[]): JobResult {
