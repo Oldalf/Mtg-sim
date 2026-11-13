@@ -6,6 +6,7 @@
     "build": "esbuild sim.ts --bundle --platform=node --format=cjs --target=node20 --sourcemap --log-level=warning --outfile=dist/sim.js",
     "sim": "npm run -s build && node --enable-source-maps dist/sim.js",
     "pod": "npm run -s build && node --enable-source-maps dist/sim.js pod",
+    "cards": "npm run -s build && node --enable-source-maps dist/sim.js cards",
     "eco": "npm run -s build && node --enable-source-maps dist/sim.js --eco",
     "check": "tsc --noEmit",
     "format": "prettier --write \"**/*.ts\"",

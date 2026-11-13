@@ -112,12 +112,12 @@ export function resolveList(deck: Deck, listPath: string): string {
 }
 
 /** Stops with a hint if a list has cards without data; notes cards that are played generically. */
-export function checkList(file: string, fetchHint: string): void {
+export function checkList(file: string): void {
   const decklist = C.loadDecklist(file);
   const total = decklist.commanders.length + decklist.library.length;
   if (decklist.missing.length) {
+    // addMissingCards (scryfall.ts) already tried to find these cards
     console.log(`!! ${file}: no card data for: ${decklist.missing.join(', ')}`);
-    console.log('   Run:  ' + fetchHint);
     process.exit(1);
   }
   if (decklist.generic.length)

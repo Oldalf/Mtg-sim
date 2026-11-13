@@ -2,7 +2,7 @@
 import { defaultWorkers } from '../engine/runner';
 
 export interface Args {
-  deck: string; // a deck name, or "pod"
+  deck: string; // a deck name, "pod" or "cards"
   lists: string[]; // decklist files (for the pod: the decks, each as "deck" or "deck:list")
   games: number; // -n
   gamesGiven: boolean; // was -n on the command line? (the pod has its own default)
@@ -22,7 +22,6 @@ export interface Args {
   analyzeList: string | null; // -d: the decklist the logged game was played with
   analyzeRuns: number; // --ai: how many games the analyzer plays from each point
   analyzeBudget: number; // --budget: kill-search effort of the analyzer
-  fetch: boolean; // --fetch
   test: boolean; // --test
   diag: boolean; // --diag
   hands: boolean; // --hands
@@ -51,7 +50,6 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     analyzeList: null,
     analyzeRuns: 200,
     analyzeBudget: 20000,
-    fetch: false,
     test: false,
     diag: false,
     hands: false,
@@ -90,7 +88,6 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
       args.analyzeList = nextValue();
     else if (option === '--ai') args.analyzeRuns = nextNumber();
     else if (option === '--budget') args.analyzeBudget = nextNumber();
-    else if (option === '--fetch') args.fetch = true;
     else if (option === '--test') args.test = true;
     else if (option === '--diag') args.diag = true;
     else if (option === '--hands') args.hands = true;

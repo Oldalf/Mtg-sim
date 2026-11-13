@@ -9,7 +9,8 @@
  *   npm run sim -- gale --rank                           rank cards by how much seeing them early helps
  *   npm run sim -- gale --cut "Card A" "Card B"          cut each card for a basic land and compare
  *   npm run sim -- gale --analyze logs/game6.txt         check a real game (Archidekt log) for missed kills
- *   npm run sim -- gale --fetch lists/new.txt            download card data for new cards from Scryfall
+ *   npm run cards -- update                              download Scryfall's bulk data (only when new sets are out); cards a list
+ *                                                         needs are then added to data/cards.json automatically
  *   npm run sim -- gale --eco                             power-save mode: runs in the background without loading the machine
  *                                                         (below-normal priority, a quarter of the cores, resting between chunks;
  *                                                         --duty N sets the busy percentage, -w N the worker count)
@@ -29,12 +30,15 @@ import { PodJob } from './engine/pod-types';
 import { Args, parseArgs, wantsEcoMode } from './cli/args';
 import { runDeckCommand } from './cli/deck-command';
 import { enableEcoMode, reportCpuUseAtExit } from './cli/eco';
+import { runCardsCommand } from './cli/cards-command';
 import { runPodCommand } from './cli/pod-command';
+import { addMissingCards } from './engine/scryfall';
 import { DECKS, REGRESS, TESTS } from './decks/index';
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2), Object.keys(DECKS));
   if (args.deck === 'pod') return runPodCommand(args, DECKS);
+  if (args.deck === 'cards') return runCardsCommand(args);
   const deck = DECKS[args.deck];
   if (!deck)
     throw new Error(
@@ -49,11 +53,12 @@ async function main(): Promise<void> {
   const listFiles = (args.lists.length ? args.lists : [deck.defaultList]).map(
     (list) => Runner.resolveList(deck, list),
   );
+  await addMissingCards(listFiles);
   if (await runSpecialCommand(args, deck, listFiles)) return;
   await runDeckCommand(args, deck, listFiles);
 }
 
-/** The commands that are not a simulation report: tests, regress, fetching card data, the log analyzer.
+/** The commands that are not a simulation report: tests, regress, the log analyzer.
  *  Returns true if one of them was asked for (and has run). */
 async function runSpecialCommand(
   args: Args,
@@ -69,11 +74,6 @@ async function runSpecialCommand(
       args.workers,
     );
     process.exit(identical ? 0 : 1);
-  }
-  if (args.fetch) {
-    const { fetchMissing } = await import('./engine/fetch');
-    await fetchMissing(listFiles);
-    return true;
   }
   if (args.analyzeLog) {
     const { run: analyzeLog } = await import('./engine/analyze');

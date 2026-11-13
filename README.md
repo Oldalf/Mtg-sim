@@ -27,7 +27,9 @@ npm run sim -- gale --analyze logs/game6.txt -d lists/proposed.txt   # check a r
 npm run sim -- aesi lists/a.txt lists/b.txt --diag   # a deck's own consistency measures per list (Aesi, Meren: slow starts, when the commander comes down)
 npm run sim -- gale --eco                            # power-save mode: for long runs in the background while you play (see below)
 npm run sim -- aesi --hands -n 8000                  # how opening hands do, by land count and contents (for mulligan advice)
-npm run sim -- gale --fetch lists/new.txt            # download data for new cards from Scryfall
+npm run cards                                       # when the Scryfall data was downloaded, and its latest set
+npm run cards -- update                             # download Scryfall's bulk data (only when new sets are out)
+npm run cards -- refresh                            # update the cards in data/cards.json from it
 npm run sim -- gale --test                           # the deck's kill-finder tests (must print ALL OK)
 npm run sim -- gale --regress check                  # after a refactor: results must be IDENTICAL
 npm run pod -- gale meren samfrodo aesi mike -n 1000 # a pod: the decks play against each other (3 to 6 decks; see POD_PLAN.md)
@@ -38,16 +40,17 @@ npm run check                                        # type-check the code
 
 **Power-save mode (`--eco`, or `npm run eco -- <deck> ...`):** for long runs while you do something else. It lowers the process priority, uses a quarter of the cores and makes each worker rest between chunks, so it is busy about 70% of the time (`--duty N` changes that, `-w N` the worker count). Results are identical, only slower: on a 16-core machine a run takes about 3 times as long and keeps about 3 of 16 cores busy on average (instead of nearly all), and it prints the average at the end. Lists and logs are looked up as given, then inside the deck's folder.
 
-**Testing a change:** copy `decks/gale/decklist.txt` to `decks/gale/lists/test.txt`, edit it, then run `npm run sim -- gale decklist.txt lists/test.txt -n 3000`. If a card is new, run `--fetch` on the list first. New cards are played generically (by type and mana cost) until rules are added: card facts that hold in any deck go in `engine/cards.ts` / `engine/game-core.ts`, deck-specific behaviour in the deck's folder.
+**Testing a change:** copy `decks/gale/decklist.txt` to `decks/gale/lists/test.txt`, edit it, then run `npm run sim -- gale decklist.txt lists/test.txt -n 3000`. A card that is not in `data/cards.json` yet is added from the downloaded Scryfall data automatically (no network; if the card is from a newer set, run `npm run cards -- update` first). New cards are played generically (by type and mana cost) until rules are added: card facts that hold in any deck go in `engine/cards.ts` / `engine/game-core.ts`, deck-specific behaviour in the deck's folder.
 
 ## Layout
 
 | Folder / file | What it is |
 |---|---|
-| `engine/` | The shared engine: card data (`cards.ts`), card facts that hold in any deck (`card-facts.ts`, `land-text.ts` reads unknown lands from their text), the rules of one game (`game-core.ts`: zones, mana, lands, casting, draw/scry/tutor effects, turn loop, mulligans, turn planner; its header lists the hooks a deck fills in), the pod parts of a game (`game.ts`: blocks, removal, counterspells), shared types (`game-types.ts`), the pod (`pod.ts` plays the rounds, with `pod-table.ts`, `pod-combat.ts`, `pod-blocking.ts`, `pod-interaction.ts`, `pod-arena.ts`, `pod-report.ts`), the kill-search driver (`search.ts`), the runner (`runner.ts`: worker threads and games), the tables it prints (`report.ts`), card ranking and cut tests (`ranking.ts`), the Archidekt log analyzer (`analyze.ts`, with the board rebuilt from a log in `log-board.ts`), the Scryfall fetcher (`fetch.ts`), the refactor safety net (`regress.ts`) and seeded random numbers (`rng.ts`). |
+| `engine/` | The shared engine: card data (`cards.ts`), card facts that hold in any deck (`card-facts.ts`, `land-text.ts` reads unknown lands from their text), the rules of one game (`game-core.ts`: zones, mana, lands, casting, draw/scry/tutor effects, turn loop, mulligans, turn planner; its header lists the hooks a deck fills in), the pod parts of a game (`game.ts`: blocks, removal, counterspells), shared types (`game-types.ts`), the pod (`pod.ts` plays the rounds, with `pod-table.ts`, `pod-combat.ts`, `pod-blocking.ts`, `pod-interaction.ts`, `pod-arena.ts`, `pod-report.ts`), the kill-search driver (`search.ts`), the runner (`runner.ts`: worker threads and games), the tables it prints (`report.ts`), card ranking and cut tests (`ranking.ts`), the Archidekt log analyzer (`analyze.ts`, with the board rebuilt from a log in `log-board.ts`), the Scryfall bulk data reader (`scryfall.ts`), the refactor safety net (`regress.ts`) and seeded random numbers (`rng.ts`). |
 | `decks/<name>/` | One deck: its AI (a `Game` subclass in `game.ts`), its card rules, settings (`config.ts`), `index.ts`, `decklist.txt`, test lists (`lists/`), real-game logs (`logs/`), tests (`tests/`). Gale also has a kill search (`kills.ts`) and card roles (`roles.ts`). |
-| `data/cards.json` | Oracle data for every card used, shared by all decks. |
-| `sim.ts`, `cli/` | The command line: `sim.ts` picks the command (and holds the code each worker thread runs), `cli/` has the options (`args.ts`), the deck report (`deck-command.ts`), the pod (`pod-command.ts`) and power-save mode (`eco.ts`). `decks/index.ts` lists the decks. |
+| `data/cards.json` | Oracle data for every card the lists use (no rulings: they stay in the bulk file, `rulingsFor` in `scryfall.ts` reads them), shared by all decks. The only card file the simulator reads. In git. |
+| `data/scryfall/` | Scryfall's bulk files (gzipped, never unzipped) and `bulk-info.json` (download date and latest set: when it is time to run `npm run cards -- update` again). Not in git. Filled by `npm run cards -- update`. |
+| `sim.ts`, `cli/` | The command line: `sim.ts` picks the command (and holds the code each worker thread runs), `cli/` has the options (`args.ts`), the deck report (`deck-command.ts`), the pod (`pod-command.ts`), card data (`cards-command.ts`) and power-save mode (`eco.ts`). `decks/index.ts` lists the decks. |
 | `regress_baseline/` | Saved results for `--regress check`. |
 | `PLAN.md` | Engine notes: rules for changing it, what it provides, history, ideas. Each deck has its own `PLAN.md`; phases and next steps are in `ROADMAP.md`. |
 

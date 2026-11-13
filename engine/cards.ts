@@ -1,7 +1,8 @@
 /**
  * Card definitions shared by every deck: costs, the CardDef of each card, tokens, and reading decklists.
  *
- * Base data (mana cost, types, power, oracle text) is read from data/cards.json (fetched from Scryfall).
+ * Base data (mana cost, types, power, oracle text) is read from data/cards.json: only the cards the lists use,
+ * taken from Scryfall's bulk data by scryfall.ts.
  * The card facts that hold in any deck (lands, rocks, cost reducers, counters, tutors, draw spells) are in
  * card-facts.ts.
  */
@@ -111,7 +112,8 @@ export function registerKnown(names: Iterable<string>): void {
 }
 
 // ------------------------------------------------------------------ card definitions
-interface CardData {
+/** One entry of data/cards.json (written by scryfall.ts). The engine only reads the first group of fields. */
+export interface CardData {
   name?: string;
   mana_cost?: string;
   type_line?: string;
@@ -119,6 +121,17 @@ interface CardData {
   power?: string | null;
   toughness?: string | null;
   keywords?: string[];
+  /** The rest is kept for the tools: the full name and the Scryfall ids (for images later). */
+  full_name?: string;
+  layout?: string;
+  oracle_id?: string;
+  scryfall_id?: string;
+  back?: {
+    name: string;
+    mana_cost: string;
+    type_line: string;
+    oracle: string;
+  };
 }
 
 const TYPE_WORDS = [
@@ -248,6 +261,12 @@ export function cardDatabase(): Record<string, CardData> {
       CardData
     >;
   return cardDatabaseCache;
+}
+
+/** Read data/cards.json again (after cards were added to it). */
+export function reloadCardDatabase(): void {
+  cardDatabaseCache = null;
+  CACHE.clear();
 }
 
 const CACHE = new Map<string, CardDef>();

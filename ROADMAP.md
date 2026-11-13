@@ -8,10 +8,12 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 - Done: the existing code was brought in line with CLAUDE.md (rule 0 names, readability, KISS, rule of three). Every change left `--regress check` IDENTICAL for all decks and pod output unchanged.
 - Known leftovers: card-nickname constants in aesi (e.g. `BSZ`, `OMNI`), a few 3+ letter abbreviations, and `engine/game-core.ts` is still about 1850 lines.
 
-## 2. Scryfall bulk data replaces `data/cards.json`
+## 2. Scryfall bulk data replaces per-card fetching (done)
 
-- A script downloads Scryfall's bulk data on demand. It is run once at the start, and later only when new sets and cards come out and a deck uses them. The bulk file is not kept in git.
-- Keep only the functional parts (mana cost, types, rulings and similar), only English default cards, no images.
+- `npm run cards -- update` downloads Scryfall's oracle cards and rulings (gzipped JSONL) into `data/scryfall/` (not in git), with `bulk-info.json` next to them (download date, latest set). It is run by hand, once now and again when new sets come out.
+- The files stay gzipped and are streamed line by line; only matching cards are parsed. The simulator still reads only `data/cards.json` (in git: the cards the lists use, now with Scryfall ids; rulings are downloaded but stay out of it, `rulingsFor` reads them), so run speed is unchanged. Cards missing from it are added from the bulk data automatically before a run.
+- `npm run cards -- refresh` rebuilds the stored cards from the bulk data and lists the ones whose rules text changed. Run once: no card changed in a way that affects play, `--regress check` is IDENTICAL for all decks, pod output unchanged.
+- Images are not downloaded. Each card keeps its `scryfall_id`, so images can later be fetched for just the cards the lists use.
 
 ## 3. Game logs
 

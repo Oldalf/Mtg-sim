@@ -44,10 +44,7 @@ export async function runDeckCommand(
   listFiles: string[],
 ): Promise<void> {
   const { defaultConfig, configWithSettings } = buildConfigs(args, deck);
-  const fetchHint =
-    `npm run sim -- ${deck.name} --fetch ` +
-    (args.lists.length ? args.lists : [deck.defaultList]).join(' ');
-  for (const listFile of listFiles) Runner.checkList(listFile, fetchHint);
+  for (const listFile of listFiles) Runner.checkList(listFile);
 
   const startTime = Date.now();
   const firstList = listFiles[0];

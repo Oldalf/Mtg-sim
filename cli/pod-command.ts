@@ -7,6 +7,7 @@ import * as Pod from '../engine/pod';
 import { printPod } from '../engine/pod-report';
 import { runPodTests } from '../engine/pod.test';
 import { PodSpec } from '../engine/pod-types';
+import { addMissingCards } from '../engine/scryfall';
 import { Deck } from '../engine/runner';
 import { Args, wantsEcoMode } from './args';
 import { enableEcoMode } from './eco';
@@ -48,6 +49,7 @@ export async function runPodCommand(
     threat,
     policy,
   );
+  await addMissingCards(spec.lists);
   if (args.trace) {
     printTracedGames(args, decks, spec);
     return;
