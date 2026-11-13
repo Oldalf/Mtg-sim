@@ -6,15 +6,19 @@ Written in TypeScript and run with Node.js (it was ported from Python in Novembe
 
 ## Setup
 
-Install [Node.js](https://nodejs.org) 20 or newer, then once in this folder:
+Install [Node.js](https://nodejs.org) 26 (the version is in `.nvmrc`, so `fnm use` / `nvm use` picks it; the app's page needs at least 22.22.3), then once in this folder:
 
 ```
 npm install
+npm install --prefix app/web                         # the app's page (Angular)
 ```
 
 ## Commands
 
 ```
+npm run app                                          # the app: builds the simulator and the page, starts the server
+                                                     #   (http://127.0.0.1:4173) and opens the page (-- --port N for another port)
+npm run app:dev                                      # for working on the page: the server plus `ng serve`, which reloads the page on every change
 npm run sim -- gale                                  # kill-turn table for decks/gale/decklist.txt (5000 games)
 npm run sim -- gale -n 20000                         # more games = less noise
 npm run sim -- gale decklist.txt lists/a.txt lists/b.txt   # compare lists on the same seeds (first = base)
@@ -59,6 +63,7 @@ npm run verify                                       # every check a change must
 | `data/cards.json` | Oracle data for every card the lists use (no rulings: they stay in the bulk file, `rulingsFor` in `scryfall.ts` reads them), shared by all decks. The only card file the simulator reads. In git. |
 | `data/scryfall/` | Scryfall's bulk files (gzipped, never unzipped) and `bulk-info.json` (download date and latest set: when it is time to run `npm run cards -- update` again). Not in git. Filled by `npm run cards -- update`. |
 | `sim.ts`, `cli/` | The command line: `sim.ts` picks the command (and holds the code each worker thread runs), `cli/` has the options (`args.ts`), the deck report (`deck-command.ts`), the pod (`pod-command.ts`), the log viewer (`logs-command.ts`, `log-session.ts`), card data (`cards-command.ts`) and power-save mode (`eco.ts`). `decks/index.ts` lists the decks. |
+| `app/` | The app (roadmap step 4, `PLAN.md`): `server/` (Node's own `http` server, the `app` command), `web/` (the page: an Angular project with its own `package.json`, built into `dist/web/`), `api-types.ts` (the shapes both sides share). |
 | `regress_baseline/` | Saved results for `--regress check`. |
 | `session-logs/` | The log of every game of the last `sim` or `pod` command, one folder per run (`engine/game-log-files.ts` describes it). Cleared when the next command starts a run. Not in git. Read it with `npm run logs`. |
 | `ENGINE.md` | Engine notes: rules for changing it, what it provides, history, ideas. |
