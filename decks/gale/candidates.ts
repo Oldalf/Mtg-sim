@@ -14,7 +14,7 @@ import { OPPONENT_EVENT } from './kill-state';
 import type { GaleGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Candidate } from '../../engine/game-types';
-import { firstMin, removeOrThrow } from '../../engine/lists';
+import { firstMin } from '../../engine/lists';
 
 /** Best graveyard card of the other type for Gale, given we just paid for cd. */
 export function bestGaleRecastTarget(
@@ -252,7 +252,7 @@ export function castSelfCounter(
   }
   game.restore(snapshot);
   game.pay(game.effectiveCost(targetCard), targetCard.isInstantOrSorcery);
-  removeOrThrow(game.hand, targetCard);
+  game.takeCard(targetCard, 'hand');
   game.say('cast', targetCard, 'to counter it with your own', card);
   if (targetCard.isInstantOrSorcery) {
     game.spellsCast += 1;
@@ -264,21 +264,21 @@ export function castSelfCounter(
         game.pay(game.effectiveCost(firstRecast, null, true), true) &&
         game.canPay(game.effectiveCost(card), true)
       ) {
-        removeOrThrow(game.graveyard, firstRecast);
+        game.takeCard(firstRecast, 'graveyard');
         game.say('  Gale recasts', firstRecast);
         game.spellsCast += 1;
         game.onCastInstantOrSorcery(true);
         game.resolve(firstRecast, true);
-        game.exile.push(firstRecast);
+        game.putCard(firstRecast, 'exile');
       } else game.restore(secondSnapshot);
     }
   }
   if (!game.hand.includes(card) || !game.pay(game.effectiveCost(card), true)) {
     // e.g. discarded by the recast
-    game.graveyard.push(targetCard);
+    game.putCard(targetCard, 'graveyard');
     return true;
   }
-  removeOrThrow(game.hand, card);
+  game.takeCard(card, 'hand');
   game.spellsCast += 1;
   game.onCastInstantOrSorcery(false);
   const secondRecast = bestGaleRecastTarget(game, card);
@@ -286,14 +286,14 @@ export function castSelfCounter(
     secondRecast !== null &&
     game.pay(game.effectiveCost(secondRecast, null, true), true)
   ) {
-    removeOrThrow(game.graveyard, secondRecast);
+    game.takeCard(secondRecast, 'graveyard');
     game.say('  Gale recasts', secondRecast);
     game.spellsCast += 1;
     game.onCastInstantOrSorcery(true);
     game.resolve(secondRecast, true);
-    game.exile.push(secondRecast);
+    game.putCard(secondRecast, 'exile');
   }
-  game.graveyard.push(targetCard, card);
+  game.putCards([targetCard, card], 'graveyard');
   if (card.name === "An Offer You Can't Refuse") {
     game.pool.U += 1; // 2 Treasures (used this turn)
     game.pool.B += 1;
@@ -367,6 +367,6 @@ export function activateKonradMill(game: GaleGame): boolean {
   for (let i = 0; i < game.life.length; i++)
     events.push(OPPONENT_EVENT.MILL, i, 1);
   game.applyOpponentEvents(events);
-  if (game.library.length) game.toGraveyard(game.library.shift()!);
+  if (game.library.length) game.toGraveyard(game.takeTopCardsOfLibrary(1)[0]);
   return true;
 }

@@ -693,9 +693,45 @@ export abstract class GameCore<S = unknown> {
     this.moveRecorder?.noteCardLeft(card.name, LOG_ZONE[fromZone]);
   }
 
+  /** Takes a card out of a zone if it is there. Returns whether it was. */
+  takeCardIfThere(card: CardDef, fromZone: CardListZone): boolean {
+    if (!this[fromZone].includes(card)) return false;
+    this.takeCard(card, fromZone);
+    return true;
+  }
+
+  /** Takes the card at a position of a zone's list (0 = the first; in the library: the top). */
+  takeCardAt(fromZone: CardListZone, index: number): CardDef {
+    const [card] = this[fromZone].splice(index, 1);
+    if (card === undefined)
+      throw new Error(`no card at position ${index} of ${fromZone}`);
+    this.moveRecorder?.noteCardLeft(card.name, LOG_ZONE[fromZone]);
+    return card;
+  }
+
+  /** Takes every card out of a zone, in the order of its list. */
+  takeAllCards(fromZone: CardListZone): CardDef[] {
+    const cards = this[fromZone].splice(0);
+    if (this.moveRecorder)
+      for (const card of cards)
+        this.moveRecorder.noteCardLeft(card.name, LOG_ZONE[fromZone]);
+    return cards;
+  }
+
   /** Puts a card into a zone, at the end of its list (in the library: on the bottom). */
   putCard(card: CardDef, toZone: CardListZone): void {
     this[toZone].push(card);
+    this.moveRecorder?.noteCardArrived(card.name, LOG_ZONE[toZone]);
+  }
+
+  /** Puts cards into a zone, at the end of its list, in the order given. */
+  putCards(cards: CardDef[], toZone: CardListZone): void {
+    for (const card of cards) this.putCard(card, toZone);
+  }
+
+  /** Puts a card into a zone's list at a position (0 = first; in the library: the top). */
+  putCardAt(card: CardDef, toZone: CardListZone, index: number): void {
+    this[toZone].splice(index, 0, card);
     this.moveRecorder?.noteCardArrived(card.name, LOG_ZONE[toZone]);
   }
 
@@ -736,6 +772,13 @@ export abstract class GameCore<S = unknown> {
   takeFromBattlefield(permanent: Permanent): void {
     removeOrThrow(this.battlefield, permanent);
     this.moveRecorder?.notePermanentLeft(permanent);
+  }
+
+  /** Takes a permanent off the battlefield if it is there. Returns whether it was. */
+  takeFromBattlefieldIfThere(permanent: Permanent): boolean {
+    if (!this.battlefield.includes(permanent)) return false;
+    this.takeFromBattlefield(permanent);
+    return true;
   }
 
   toGraveyard(card: CardDef, _fromLibrary = false): void {

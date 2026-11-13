@@ -4,7 +4,7 @@ import { OPPONENT_EVENT } from './kill-state';
 import { chooseGiftsPile, chooseTutorTarget } from './tutoring';
 import type { GaleGame } from './game';
 import { CardDef } from '../../engine/cards';
-import { firstMax, removeOrThrow, sortDesc } from '../../engine/lists';
+import { firstMax, sortDesc } from '../../engine/lists';
 
 export function resolveGaleSpell(
   game: GaleGame,
@@ -57,7 +57,7 @@ function resolveMissionBriefing(game: GaleGame, spell: CardDef): void {
 function resolveWindfall(game: GaleGame): void {
   const handSize = game.hand.length;
   for (const card of game.hand.slice()) {
-    removeOrThrow(game.hand, card);
+    game.takeCard(card, 'hand');
     game.toGraveyard(card);
   }
   const events: number[] = [];
@@ -78,7 +78,7 @@ function resolveUnearth(game: GaleGame): void {
   );
   if (!options.length) return;
   const creature = firstMax(options, (card) => permScore(card.name, 30));
-  removeOrThrow(game.graveyard, creature);
+  game.takeCard(creature, 'graveyard');
   game.enter(creature);
   if (game.isOnBattlefield('Syr Konrad, the Grim'))
     game.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, 1]);
@@ -89,10 +89,13 @@ function resolveGiftsUngiven(game: GaleGame): void {
   const pile = game.inRollout ? null : chooseGiftsPile(game);
   if (pile !== null) {
     const [picks, binned] = pile;
-    for (const card of picks) removeOrThrow(game.library, card);
+    for (const card of picks) game.takeCard(card, 'library');
     game.shuffle();
     for (const card of binned) game.toGraveyard(card);
-    game.hand.push(...picks.filter((card) => !binned.includes(card)));
+    game.putCards(
+      picks.filter((card) => !binned.includes(card)),
+      'hand',
+    );
     game.say(
       'Gifts ->',
       picks,
@@ -117,7 +120,7 @@ function resolveGiftsUngiven(game: GaleGame): void {
     );
     if (target === null) break;
     picks.push(target);
-    removeOrThrow(game.library, target);
+    game.takeCard(target, 'library');
   }
   game.shuffle();
   // opponent bins the two cards that hurt us most to lose from hand
@@ -127,6 +130,6 @@ function resolveGiftsUngiven(game: GaleGame): void {
       game.cardValue(card) * (card.isInstantOrSorcery && galeOut ? 0.3 : 1.0),
   );
   for (const card of picks.slice(0, 2)) game.toGraveyard(card);
-  game.hand.push(...picks.slice(2));
+  game.putCards(picks.slice(2), 'hand');
   game.say('Gifts ->', picks);
 }

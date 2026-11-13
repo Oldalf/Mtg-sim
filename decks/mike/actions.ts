@@ -3,7 +3,6 @@ import { MARK_UNBLOCKABLE_THIS_TURN } from './cards';
 import type { MikeGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Permanent } from '../../engine/game-types';
-import { removeIfPresent } from '../../engine/lists';
 
 export function castTreasureCruise(
   game: MikeGame,
@@ -13,13 +12,17 @@ export function castTreasureCruise(
   const base = game.effectiveCost(card);
   const cost = base.withGeneric(base.generic - delveCount);
   if (!game.pay(cost, true)) return false;
-  for (let i = 0; i < delveCount; i++) game.exile.push(game.graveyard.pop()!);
-  removeIfPresent(game.hand, card);
+  for (let i = 0; i < delveCount; i++)
+    game.putCard(
+      game.takeCardAt('graveyard', game.graveyard.length - 1),
+      'exile',
+    );
+  game.takeCardIfThere(card, 'hand');
   game.say('cast Treasure Cruise (delve', delveCount + ')');
   game.spellsCast += 1;
   game.onCastInstantOrSorcery(false);
   game.draw(3);
-  game.exile.push(card);
+  game.putCard(card, 'exile');
   game.imitate(card, null);
   return true;
 }
@@ -98,7 +101,7 @@ export function activateJacePlusOne(
   const mill = game.library.length > 3 && game.hasMillWinPiece();
   if (mill) {
     for (let i = 0; i < 2 && game.library.length; i++)
-      game.toGraveyard(game.library.shift()!);
+      game.toGraveyard(game.takeTopCardsOfLibrary(1)[0]);
   }
   game.say('Jace +1' + (mill ? ' (mills us two)' : ''));
   game.draw(1);

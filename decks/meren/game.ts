@@ -33,7 +33,7 @@ import {
   Zone,
 } from '../../engine/game-types';
 import { GameWithoutKillSearch } from '../../engine/game';
-import { firstMax, removeIfPresent, sortDesc } from '../../engine/lists';
+import { firstMax, sortDesc } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -258,7 +258,7 @@ export class MerenGame extends GameWithoutKillSearch {
   // ================================================================ zones
   millOurselves(count: number): void {
     for (let i = 0; i < count && this.library.length; i++)
-      this.toGraveyard(this.library.shift()!, true);
+      this.toGraveyard(this.takeTopCardsOfLibrary(1)[0], true);
   }
 
   /** A basic land from the library onto the battlefield tapped. */
@@ -277,11 +277,11 @@ export class MerenGame extends GameWithoutKillSearch {
       this.library.find((candidate) => candidate.land?.basic) ??
       null;
     if (!card) return;
-    removeIfPresent(this.library, card);
+    this.takeCardIfThere(card, 'library');
     this.shuffle();
     const basicLand = new Permanent(card, card.land, true);
     basicLand.sick = false;
-    this.battlefield.push(basicLand);
+    this.putOntoBattlefield(basicLand);
   }
 
   /** The best creature card in the graveyard for some purpose. */
@@ -301,7 +301,7 @@ export class MerenGame extends GameWithoutKillSearch {
     card: CardDef,
     options: { tapped?: boolean; counters?: number } = {},
   ): Permanent {
-    removeIfPresent(this.graveyard, card);
+    this.takeCardIfThere(card, 'graveyard');
     const permanent = this.enter(card, 'graveyard', { tapped: options.tapped });
     if (options.counters) permanent.counters += options.counters;
     this.say('  reanimate', card);
@@ -418,11 +418,8 @@ export class MerenGame extends GameWithoutKillSearch {
       if (this.battlefield.includes(permanent)) this.sacrifice(permanent);
     this.sacAtEnd = [];
     for (const exiledPermanent of this.exileAtEnd) {
-      const i = this.battlefield.indexOf(exiledPermanent);
-      if (i >= 0) {
-        this.battlefield.splice(i, 1);
+      if (this.takeFromBattlefieldIfThere(exiledPermanent))
         this.leftThisTurn = true;
-      }
     }
     this.exileAtEnd = [];
     if (this.isOnBattlefield(MEREN)) this.feedMerenAtEndStep();
@@ -461,8 +458,8 @@ export class MerenGame extends GameWithoutKillSearch {
       this.say(`Meren (${this.experience} experience) returns`, best);
       this.reanimate(best);
     } else {
-      removeIfPresent(this.graveyard, best);
-      this.hand.push(best);
+      this.takeCardIfThere(best, 'graveyard');
+      this.putCard(best, 'hand');
       this.say(`Meren (${this.experience} experience) returns to hand`, best);
     }
   }
@@ -580,7 +577,7 @@ export class MerenGame extends GameWithoutKillSearch {
         .map((name) => candidates.find((card) => card.name === name))
         .find((card) => card) ??
       firstMax(candidates, (card) => this.battlefieldValue(card));
-    removeIfPresent(this.library, chosen);
+    this.takeCardIfThere(chosen, 'library');
     this.toGraveyard(chosen, true);
     this.shuffle();
   }
@@ -609,7 +606,7 @@ export class MerenGame extends GameWithoutKillSearch {
       for (let i = 0; i < this.countOpponentsAlive(); i++)
         this.enter(TOKENS.stolen, 'graveyard', { token: true });
     } else if (name === 'Grisly Salvage') {
-      const top = this.library.splice(0, 5);
+      const top = this.takeTopCardsOfLibrary(5);
       const keep = top.filter(
         (candidate) => candidate.isCreature || candidate.land !== null,
       );
@@ -617,7 +614,7 @@ export class MerenGame extends GameWithoutKillSearch {
         ? firstMax(keep, (candidate) => this.cardValue(candidate))
         : null;
       for (const otherCard of top)
-        if (otherCard === kept) this.hand.push(otherCard);
+        if (otherCard === kept) this.putCard(otherCard, 'hand');
         else this.toGraveyard(otherCard, true);
     } else if (name === 'Persist') {
       const anotherCard = this.bestCreatureInGraveyard(
@@ -650,8 +647,8 @@ export class MerenGame extends GameWithoutKillSearch {
           const creature = firstMax(back, (candidate) =>
             this.cardValue(candidate),
           );
-          removeIfPresent(this.graveyard, creature);
-          this.hand.push(creature);
+          this.takeCardIfThere(creature, 'graveyard');
+          this.putCard(creature, 'hand');
         }
       }
     } else if (name === 'Buried Alive') {

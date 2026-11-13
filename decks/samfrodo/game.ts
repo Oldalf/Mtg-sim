@@ -46,7 +46,7 @@ import {
 import { CardDef, Cost } from '../../engine/cards';
 import { Candidate, Evasion, Permanent, Zone } from '../../engine/game-types';
 import { GameWithoutKillSearch } from '../../engine/game';
-import { firstMax, removeIfPresent } from '../../engine/lists';
+import { firstMax } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -391,13 +391,13 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     for (const name of order) {
       const card = this.library.find((candidate) => candidate.name === name);
       if (!card) continue;
-      removeIfPresent(this.library, card);
+      this.takeCardIfThere(card, 'library');
       this.shuffle();
-      if (toHand) this.hand.push(card);
+      if (toHand) this.putCard(card, 'hand');
       else {
         const landPermanent = new Permanent(card, card.land, true);
         landPermanent.sick = false;
-        this.battlefield.push(landPermanent);
+        this.putOntoBattlefield(landPermanent);
         this.say('basic land onto the battlefield:', card);
         this.onLandEnter(landPermanent, false);
       }
@@ -607,10 +607,8 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       );
     else if (name === 'Crypt Incursion') {
       const cards = this.graveyard.filter((candidate) => candidate.isCreature);
-      this.graveyard = this.graveyard.filter(
-        (candidate) => !candidate.isCreature,
-      );
-      this.exile.push(...cards);
+      for (const card of cards) this.takeCard(card, 'graveyard');
+      this.putCards(cards, 'exile');
       this.gainLife(3 * cards.length);
     } else if (OWN_KILL.includes(name)) {
       const guest = this.findPermanent('Rapacious Guest');
@@ -618,8 +616,8 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       const power = this.power(guest);
       this.say(`${name} on our own Rapacious Guest (power ${power})`);
       if (OWN_KILL_EXILES.has(name)) {
-        removeIfPresent(this.battlefield, guest);
-        this.exile.push(guest.card);
+        this.takeFromBattlefieldIfThere(guest);
+        this.putCard(guest.card, 'exile');
         this.drainTargetOpponent(power); // leaves the battlefield: target opponent loses its power
         if (name === 'Swords to Plowshares') this.gainLife(power);
         else if (name === 'Path to Exile') this.putBasic();

@@ -74,7 +74,7 @@ import {
   Zone,
 } from '../../engine/game-types';
 import { GameWithoutKillSearch } from '../../engine/game';
-import { firstMax, firstMin, removeIfPresent } from '../../engine/lists';
+import { firstMax, firstMin } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -382,7 +382,7 @@ export class MikeGame extends GameWithoutKillSearch {
       return;
     }
     this.firstDrawDone = true;
-    this.hand.push(this.library.shift()!);
+    this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
     if (!this.library.length && this.emptiedTurn === null) {
       this.emptiedTurn = this.turn;
       this.emptiedSafe = this.isSafeToEmptyLibrary();
@@ -590,8 +590,8 @@ export class MikeGame extends GameWithoutKillSearch {
         )
         .find((found) => found !== undefined);
       if (card) {
-        removeIfPresent(this.graveyard, card);
-        this.library.unshift(card);
+        this.takeCardIfThere(card, 'graveyard');
+        this.putCardsOnTopOfLibrary([card]);
         this.say('Mystic Sanctuary: put', card, 'on top');
       }
     }
@@ -793,8 +793,8 @@ export class MikeGame extends GameWithoutKillSearch {
         this.milled = true;
         this.winHow = 'mill';
       }
-      removeIfPresent(this.battlefield, fblthp);
-      this.library.push(fblthp.card);
+      this.takeFromBattlefieldIfThere(fblthp);
+      this.putCard(fblthp.card, 'library');
       this.shuffle();
       this.say('Fblthp shuffles into the library');
     }
@@ -847,13 +847,13 @@ export class MikeGame extends GameWithoutKillSearch {
             )
             .slice(0, 4);
       for (const discardedCard of bad) {
-        removeIfPresent(this.hand, discardedCard);
+        this.takeCardIfThere(discardedCard, 'hand');
         this.toGraveyard(discardedCard);
       }
       this.draw(bad.length + 1);
     } else if (name === 'Windfall') {
       const handSize = this.hand.length;
-      for (const card of this.hand.splice(0)) this.toGraveyard(card);
+      for (const card of this.takeAllCards('hand')) this.toGraveyard(card);
       this.draw(
         this.inArena()
           ? this.arena!.wheel(this, handSize)

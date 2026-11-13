@@ -38,7 +38,6 @@ import {
 import type { MikeGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Candidate, Permanent } from '../../engine/game-types';
-import { removeIfPresent } from '../../engine/lists';
 
 // ================================================================ what to do
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
@@ -550,7 +549,7 @@ function addOrmosCandidate(
     add(50 + winPieceBonus, Cost.parse('{1}{U}{U}'), () => {
       if (!game.pay(Cost.parse('{1}{U}{U}'))) return false;
       for (const card of picks) {
-        removeIfPresent(game.hand, card);
+        game.takeCardIfThere(card, 'hand');
         game.toGraveyard(card);
       }
       game.draw(5);

@@ -15,12 +15,13 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 - `npm run cards -- refresh` rebuilds the stored cards from the bulk data and lists the ones whose rules text changed. Run once: no card changed in a way that affects play, `--regress check` is IDENTICAL for all decks, pod output unchanged.
 - Images are not downloaded. Each card keeps its `scryfall_id`, so images can later be fetched for just the cards the lists use.
 
-## 3. Game logs
+## 3. Game logs (done)
 
-- Every simulated game is logged in the same format as the logs Pontus has provided.
-- Outliers get a tag, so that the UI can later open one specific game from a simulation or a pod run.
-- Logs live on disk for one session only. They are cleared when the application starts.
-- Comes after step 2.
+- Every game of a `sim` or `pod` run is logged as events: a readable line plus its card moves in Archidekt's simple format, the format of the logs Pontus has provided. A goldfish game, a pod game and a real Archidekt log share one format. The plan and what was decided on the way are in `PLAN.md`; `ENGINE.md` has the rules for new code.
+- The games worth reading get a tag (fastest, slowest, average, win-stopped...) and are saved as text; `npm run logs` reads any game, with its card moves, its highlights or the board at the end of each turn.
+- Logs live in `session-logs/` (not in git) and are cleared when the next `sim` or `pod` command starts a run. Until step 4 there is no application to start, so one session is the last run command.
+- Every zone change in the engine and the decks goes through the engine's functions (`takeCard`, `putCard`, `moveCard`...), which record it; `--test` fails on one that does not. Results did not change: `--regress check` IDENTICAL for all decks.
+- For step 4: the board at any point is rebuilt from the moves (`boardAt`), and a game can be played again from its run (`replayGame`).
 
 ## 4. App with a simple UI
 

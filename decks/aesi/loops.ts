@@ -25,7 +25,7 @@ import {
 import type { AesiGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Permanent } from '../../engine/game-types';
-import { firstMax, removeIfPresent } from '../../engine/lists';
+import { firstMax } from '../../engine/lists';
 
 /** What the loops on the battlefield give right now (see loops()). */
 export interface Loops {
@@ -410,8 +410,8 @@ export function winFromLoops(game: AesiGame, loops: Loops): boolean {
       )
         target = i;
     if (target !== null && bszHand) {
-      removeIfPresent(game.hand, bszHand);
-      game.library.push(bszHand);
+      game.takeCardIfThere(bszHand, 'hand');
+      game.putCard(bszHand, 'library');
       game.shuffle();
       game.millOut(target);
       game.say(
@@ -430,9 +430,9 @@ export function castZenithWithX(
   xValue: number,
 ): boolean {
   if (game.epic || !game.pay(card.cost.withGeneric(xValue), true)) return false;
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   game.spellsCast += 1;
-  game.library.push(card);
+  game.putCard(card, 'library');
   game.shuffle();
   game.say(`cast Blue Sun's Zenith (X=${xValue})`);
   return true;
@@ -446,15 +446,15 @@ export function dumpLandsFromHand(game: AesiGame): boolean {
   if (!lands.length) return false;
   let landCount = 0;
   for (const otherCard of lands) {
-    removeIfPresent(game.hand, otherCard);
+    game.takeCardIfThere(otherCard, 'hand');
     if (otherCard.land!.special === 'wilds') {
-      game.graveyard.push(otherCard);
+      game.putCard(otherCard, 'graveyard');
       const anotherCard = game.library.find((card) => card.land?.basic);
       if (anotherCard && game.library.length > game.libraryCardsToKeep()) {
-        removeIfPresent(game.library, anotherCard);
+        game.takeCardIfThere(anotherCard, 'library');
         const permanent = new Permanent(anotherCard, anotherCard.land, true);
         permanent.sick = false;
-        game.battlefield.push(permanent);
+        game.putOntoBattlefield(permanent);
       }
     } else {
       const otherPermanent = new Permanent(
@@ -463,7 +463,7 @@ export function dumpLandsFromHand(game: AesiGame): boolean {
         otherCard.land!.etb === 'tapped',
       );
       otherPermanent.sick = false;
-      game.battlefield.push(otherPermanent);
+      game.putOntoBattlefield(otherPermanent);
     }
     landCount++;
   }

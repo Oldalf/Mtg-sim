@@ -142,8 +142,8 @@ function chooseLandToSacrifice(game: AesiGame): Permanent | undefined {
 
 function sacrificeLand(game: AesiGame, land: Permanent | undefined): void {
   if (!land) return;
-  removeIfPresent(game.battlefield, land);
-  game.graveyard.push(land.card);
+  game.takeFromBattlefieldIfThere(land);
+  game.putCard(land.card, 'graveyard');
 }
 
 /** Spells that do something else: extra land drops, untapping, digging, lands as creatures and the epic spells. */
@@ -165,7 +165,7 @@ function resolveOtherSpell(game: AesiGame, spell: CardDef): boolean {
         game.landsOnBattlefield().length,
         Math.max(0, game.library.length - game.libraryCardsToKeep()),
       );
-      const top = game.library.splice(0, lookCount);
+      const top = game.takeTopCardsOfLibrary(lookCount);
       const choices = top.filter(
         (card) => card.isCreature || card.land !== null,
       );
@@ -177,9 +177,9 @@ function resolveOtherSpell(game: AesiGame, spell: CardDef): boolean {
         : null;
       if (pick) {
         removeIfPresent(top, pick);
-        game.hand.push(pick);
+        game.putCard(pick, 'hand');
       }
-      game.library.push(...top);
+      game.putCards(top, 'library');
       game.say('Seismic Sense:', pick ?? 'nothing');
       return true;
     }

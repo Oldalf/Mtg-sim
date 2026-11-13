@@ -41,7 +41,6 @@ import {
   WinAttempt,
 } from '../../engine/game-types';
 import { Game } from '../../engine/game';
-import { removeOrThrow } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -120,7 +119,8 @@ export class GaleGame extends Game<KillSearchState> {
           ? topCard
           : secondCard;
       const keep = worse === topCard ? secondCard : topCard;
-      this.library.splice(0, 2, keep);
+      this.takeTopCardsOfLibrary(2);
+      this.putCardsOnTopOfLibrary([keep]);
       this.toGraveyard(worse);
       this.say(`Scion: ${worse.name} -> graveyard`);
     }
@@ -140,12 +140,12 @@ export class GaleGame extends Game<KillSearchState> {
         true,
       );
       if (this.pay(gcost, true)) {
-        removeOrThrow(this.graveyard, target);
+        this.takeCard(target, 'graveyard');
         this.say('  Gale recasts', target);
         this.spellsCast += 1;
         this.onCastInstantOrSorcery(true);
         this.resolve(target, true, null);
-        this.exile.push(target);
+        this.putCard(target, 'exile');
       }
     }
   }

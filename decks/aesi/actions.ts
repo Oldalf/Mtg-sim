@@ -21,8 +21,8 @@ export function bounceAndReplayLand(
     if (game.manaSourceKind(land)) game.tap(land, 'N'); // float its mana first
   }
   if (!game.pay(cost)) return false;
-  removeIfPresent(game.battlefield, land);
-  game.hand.push(land.card);
+  game.takeFromBattlefieldIfThere(land);
+  game.putCard(land.card, 'hand');
   game.say(`${permanent.card.name.split(',')[0]}: return ${land.card.name}`);
   applyMoonfolkEffect(game, kind);
   return game.playLandVia(null, land.card);
@@ -66,8 +66,8 @@ export function melokuEndOfTurn(game: AesiGame): boolean {
     .landsOnBattlefield()
     .find((permanent) => permanent.tapped && permanent.land!.basic);
   if (!otherPermanent || !game.pay(game.abilityCost(new Cost(1)))) return false;
-  removeIfPresent(game.battlefield, otherPermanent);
-  game.hand.push(otherPermanent.card);
+  game.takeFromBattlefieldIfThere(otherPermanent);
+  game.putCard(otherPermanent.card, 'hand');
   game.say(`Meloku: return ${otherPermanent.card.name} -> Illusion`);
   game.enter(TOK.illusion, 'token', { token: true });
   return true;
@@ -96,7 +96,7 @@ export function castPatronWithOffering(
     `moonfolk offering: sacrifice ${permanent.card.name} for Patron of the Moon`,
   );
   game.sacrifice(permanent);
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   game.spellsCast += 1;
   game.enter(card);
   game.spiritCast();
@@ -105,8 +105,8 @@ export function castPatronWithOffering(
 
 export function castFertileFootsteps(game: AesiGame, card: CardDef): boolean {
   if (!game.pay(Cost.parse('{2}{G}'), true)) return false;
-  removeIfPresent(game.hand, card);
-  game.exile.push(card);
+  game.takeCardIfThere(card, 'hand');
+  game.putCard(card, 'exile');
   game.footstepsExiled = true;
   game.spellsCast += 1;
   game.say('cast Fertile Footsteps');
@@ -116,7 +116,7 @@ export function castFertileFootsteps(game: AesiGame, card: CardDef): boolean {
 
 export function castBeanstalkGiant(game: AesiGame, card: CardDef): boolean {
   if (!game.pay(card.cost)) return false;
-  removeIfPresent(game.exile, card);
+  game.takeCardIfThere(card, 'exile');
   game.footstepsExiled = false;
   game.spellsCast += 1;
   game.say('cast Beanstalk Giant from exile');
@@ -127,7 +127,7 @@ export function castBeanstalkGiant(game: AesiGame, card: CardDef): boolean {
 export function castFromTopOfLibrary(game: AesiGame, card: CardDef): boolean {
   if (game.library[0] !== card || !game.pay(game.effectiveCost(card)))
     return false;
-  game.library.shift();
+  game.takeTopCardsOfLibrary(1);
   game.spellsCast += 1;
   game.say('cast from the top (Case):', card);
   game.enter(card);
@@ -148,8 +148,8 @@ export function useDemolitionField(
 ): boolean {
   if (!game.pay(new Cost(2))) return false;
   permanent.tapped = true;
-  removeIfPresent(game.battlefield, permanent);
-  game.graveyard.push(permanent.card);
+  game.takeFromBattlefieldIfThere(permanent);
+  game.putCard(permanent.card, 'graveyard');
   game.say(
     "Demolition Field: destroy an opponent's nonbasic land, fetch a basic",
   );
@@ -174,7 +174,7 @@ export function useLootDig(
 ): boolean {
   if (!game.pay(cost)) return false;
   permanent.tapped = true;
-  const top = game.library.splice(0, 6);
+  const top = game.takeTopCardsOfLibrary(6);
   const landCount = game.landsOnBattlefield().length;
   const cards = top.filter(
     (card) =>
@@ -186,7 +186,7 @@ export function useLootDig(
     ? firstMax(cards, (card) => game.battlefieldValue(card))
     : null;
   if (pick) removeIfPresent(top, pick);
-  game.library.push(...top);
+  game.putCards(top, 'library');
   game.say('Loot digs:', pick ?? 'nothing');
   if (pick) game.enter(pick, 'library');
   return true;
@@ -213,11 +213,11 @@ export function castZenithForSelf(
   xValue: number,
 ): boolean {
   if (!game.pay(card.cost.withGeneric(xValue), true)) return false;
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   game.spellsCast += 1;
   game.say(`cast Blue Sun's Zenith (X=${xValue}) for us`);
   game.draw(xValue);
-  game.library.push(card);
+  game.putCard(card, 'library');
   game.shuffle();
   return true;
 }

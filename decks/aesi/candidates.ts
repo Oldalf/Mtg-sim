@@ -52,7 +52,7 @@ import {
 import type { AesiGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Candidate, Permanent } from '../../engine/game-types';
-import { firstMax, removeIfPresent } from '../../engine/lists';
+import { firstMax } from '../../engine/lists';
 
 // ================================================================ what to do
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
@@ -644,8 +644,8 @@ export function tutorLand(game: AesiGame, toBattlefield: boolean): void {
   if (toBattlefield)
     game.putLand(card, 'library', 'tutor onto the battlefield');
   else {
-    removeIfPresent(game.library, card);
-    game.hand.push(card);
+    game.takeCardIfThere(card, 'library');
+    game.putCard(card, 'hand');
     game.say('land tutor ->', card);
   }
   game.shuffle();
@@ -666,8 +666,8 @@ export function useMyriadLandscape(
   permanent: Permanent,
 ): boolean {
   if (!game.pay(new Cost(2))) return false;
-  removeIfPresent(game.battlefield, permanent);
-  game.graveyard.push(permanent.card);
+  game.takeFromBattlefieldIfThere(permanent);
+  game.putCard(permanent.card, 'graveyard');
   const want = game.wantColour() === 'U' ? 'Island' : 'Forest';
   const type =
     game.library.filter((card) => card.name === want).length >= 2

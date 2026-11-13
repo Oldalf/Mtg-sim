@@ -68,33 +68,28 @@ function report(label: string, differingSeeds: number[], seedCount: number) {
 
 const CHANGES_SHOWN = 8;
 
-/** Reports the zone changes that went around the engine's functions. They fail the test if every deck that
- *  played says it uses those functions (Deck.recordsExactMoves); otherwise they are the list of what is left to do. */
+/** Reports the zone changes that went around the engine's functions (takeCard, putCard, moveCard...). Each one
+ *  names the seed, the turn and the log line it was found at, which leads to the code that made it. */
 function reportUnrecordedMoves(
   label: string,
   unrecordedMoves: string[],
-  mustBeNone: boolean,
 ): boolean {
   return reportDifferences(
     label,
     'zone changes went around takeCard / putCard',
     unrecordedMoves,
-    mustBeNone,
   );
 }
 
-/** Prints a count of things that should not be there, and the first few. They fail the test only if mustBeNone. */
+/** Prints a count of things that should not be there, and the first few. Any of them fails the test. */
 function reportDifferences(
   label: string,
   whatTheyAre: string,
   differences: string[],
-  mustBeNone: boolean,
 ): boolean {
-  const isGood = differences.length === 0 || !mustBeNone;
-  const status = differences.length === 0 ? 'OK ' : mustBeNone ? 'BAD' : '-- ';
+  const isGood = differences.length === 0;
   console.log(
-    `${status} ${label}: ${differences.length} ${whatTheyAre}` +
-      (mustBeNone || !differences.length ? '' : ' (deck not converted yet)'),
+    `${isGood ? 'OK ' : 'BAD'} ${label}: ${differences.length} ${whatTheyAre}`,
   );
   for (const difference of differences.slice(0, CHANGES_SHOWN))
     console.log(`      ${difference}`);
@@ -122,7 +117,6 @@ export function runExactMoveTests(deck: Deck): boolean {
   return reportUnrecordedMoves(
     'card moves are recorded when they happen',
     unrecordedMoves,
-    deck.recordsExactMoves === true,
   );
 }
 
@@ -144,7 +138,6 @@ export function runPodExactMoveTests(allDecks: Record<string, Deck>): boolean {
   return reportUnrecordedMoves(
     'card moves in a pod are recorded when they happen',
     unrecordedMoves,
-    POD_DECKS.every((name) => allDecks[name].recordsExactMoves === true),
   );
 }
 
@@ -307,7 +300,6 @@ export function runBoardTests(deck: Deck): boolean {
     `the board rebuilt from the log matches the game (${BOARD_SEEDS} seeds)`,
     'turn ends differ',
     differences,
-    deck.recordsExactMoves === true,
   );
 }
 

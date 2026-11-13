@@ -9,7 +9,7 @@ import {
 } from './cards';
 import type { MerenGame } from './game';
 import { Permanent, Zone } from '../../engine/game-types';
-import { firstMax, removeIfPresent } from '../../engine/lists';
+import { firstMax } from '../../engine/lists';
 import { SHRIEKMAW } from '../../engine/answers';
 
 // ================================================================ entering the battlefield
@@ -111,10 +111,10 @@ function resolveCardAdvantageOnEnter(
       game.draw(power);
     }
   } else if (name === 'Satyr Wayfinder') {
-    const top = game.library.splice(0, 4);
+    const top = game.takeTopCardsOfLibrary(4);
     const land = top.find((card) => card.land !== null);
     for (const card of top)
-      if (card === land) game.hand.push(card);
+      if (card === land) game.putCard(card, 'hand');
       else game.toGraveyard(card, true);
   } else if (LAND_ETB.has(name)) {
     game.fetchBasic();
@@ -124,14 +124,14 @@ function resolveCardAdvantageOnEnter(
         game.graveyard,
         (card) => game.cardValue(card) + (card.isCreature ? 0 : 10),
       );
-      removeIfPresent(game.graveyard, best);
-      game.hand.push(best);
+      game.takeCardIfThere(best, 'graveyard');
+      game.putCard(best, 'hand');
     }
   } else if (name === 'Gravedigger') {
     const best = game.bestCreatureInGraveyard(() => true);
     if (best) {
-      removeIfPresent(game.graveyard, best);
-      game.hand.push(best);
+      game.takeCardIfThere(best, 'graveyard');
+      game.putCard(best, 'hand');
     }
   } else if (name === "Stitcher's Supplier") {
     game.millOurselves(3);
@@ -272,7 +272,7 @@ function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
       );
       if (!choices.length) break;
       const best = firstMax(choices, (card) => game.battlefieldValue(card));
-      removeIfPresent(game.library, best);
+      game.takeCardIfThere(best, 'library');
       budget -= best.manaValue;
       game.enter(best, 'library');
     }

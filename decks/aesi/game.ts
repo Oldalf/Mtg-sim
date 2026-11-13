@@ -518,10 +518,10 @@ export class AesiGame extends Game<AesiGame> {
     how: string,
     tapped = false,
   ): Permanent | null {
-    removeIfPresent(from === 'hand' ? this.hand : this.library, card);
+    this.takeCardIfThere(card, from);
     const landInfo = card.land!;
     if (landInfo.special === 'wilds') {
-      this.graveyard.push(card);
+      this.putCard(card, 'graveyard');
       this.say(`${how}: ${card.name} (cracked)`);
       this.onLandEnter(new Permanent(card, landInfo), true);
       this.fetchBasic({
@@ -537,7 +537,7 @@ export class AesiGame extends Game<AesiGame> {
       tapped || this.entersTapped(card),
     );
     permanent.sick = true; // entered this turn (matters only when lands are creatures)
-    this.battlefield.push(permanent);
+    this.putOntoBattlefield(permanent);
     this.say(`${how}: ${card.name}${permanent.tapped ? ' (tapped)' : ''}`);
     this.onLandEnter(permanent, false);
     if (landInfo.special === 'chamber') this.chamberBounce(permanent);
@@ -560,8 +560,8 @@ export class AesiGame extends Game<AesiGame> {
       if (!landToReturn.tapped && this.manaSourceKind(landToReturn))
         this.tap(landToReturn, 'N');
     } else landToReturn = self;
-    removeIfPresent(this.battlefield, landToReturn);
-    this.hand.push(landToReturn.card);
+    this.takeFromBattlefieldIfThere(landToReturn);
+    this.putCard(landToReturn.card, 'hand');
     this.say(`${self.card.name} returns`, landToReturn.card);
   }
   /** Search the library for a basic land (the colour we need; only = Forest or Island). */
@@ -577,8 +577,8 @@ export class AesiGame extends Game<AesiGame> {
         : this.library.find((card) => card.land?.basic));
     if (!otherCard) return false;
     if (options.toHand) {
-      removeIfPresent(this.library, otherCard);
-      this.hand.push(otherCard);
+      this.takeCardIfThere(otherCard, 'library');
+      this.putCard(otherCard, 'hand');
       this.say('basic to hand:', otherCard);
     } else
       this.putLand(
@@ -675,7 +675,7 @@ export class AesiGame extends Game<AesiGame> {
       if (otherCard.land !== null)
         this.putLand(otherCard, 'hand', 'Kodama puts');
       else {
-        removeIfPresent(this.hand, otherCard);
+        this.takeCardIfThere(otherCard, 'hand');
         this.say('Kodama puts', otherCard);
         this.enter(otherCard);
       }
@@ -782,8 +782,8 @@ export class AesiGame extends Game<AesiGame> {
       return false;
     if (card.name === BSZ) {
       // shuffled into the library instead of the graveyard
-      removeIfPresent(this.graveyard, card);
-      this.library.push(card);
+      this.takeCardIfThere(card, 'graveyard');
+      this.putCard(card, 'library');
       this.shuffle();
     }
     return true;
@@ -829,7 +829,7 @@ export class AesiGame extends Game<AesiGame> {
   }
   suspendSearch(card: CardDef): boolean {
     if (!this.pay(Cost.parse('{G}'), true)) return false;
-    removeIfPresent(this.hand, card);
+    this.takeCardIfThere(card, 'hand');
     this.suspended.push({ card: card, left: 2 });
     this.say('suspend Search for Tomorrow');
     return true;
@@ -840,7 +840,7 @@ export class AesiGame extends Game<AesiGame> {
       removeIfPresent(this.suspended, entry);
       this.say('Search for Tomorrow comes out of suspend');
       this.resolve(entry.card);
-      this.graveyard.push(entry.card);
+      this.putCard(entry.card, 'graveyard');
     }
     // epic copies (Endless Swarm makes a Snake for each card in hand; Eternal Dominion takes a card)
     if (this.dominionCopies >= (this.config.dominion_win as number)) {
@@ -880,7 +880,7 @@ export class AesiGame extends Game<AesiGame> {
   putStolenLand(): void {
     const permanent = new Permanent(STOLEN_LAND, STOLEN_LAND.land);
     permanent.sick = false;
-    this.battlefield.push(permanent);
+    this.putOntoBattlefield(permanent);
     this.say('Eternal Dominion takes a land');
     this.onLandEnter(permanent, false);
   }
@@ -1074,8 +1074,8 @@ export class AesiGame extends Game<AesiGame> {
     for (const anotherPermanent of landsToReturn) {
       if (!anotherPermanent.tapped && this.manaSourceKind(anotherPermanent))
         this.tap(anotherPermanent, 'N'); // float its mana first
-      removeIfPresent(this.battlefield, anotherPermanent);
-      this.hand.push(anotherPermanent.card);
+      this.takeFromBattlefieldIfThere(anotherPermanent);
+      this.putCard(anotherPermanent.card, 'hand');
     }
     this.say(
       `Uyo copies ${card.name} (returning ${landsToReturn.map((permanent) => permanent.card.name).join(', ')})`,

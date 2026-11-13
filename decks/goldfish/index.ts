@@ -19,12 +19,12 @@ class GoldfishGame extends Game<null> {
     return [];
   }
   override setup(): void {
-    this.hand = this.library.splice(0, 7);
+    this.putCards(this.takeTopCardsOfLibrary(7), 'hand');
   }
   override takeTurn(): boolean {
     this.turn++;
     if (!(this.turn === 1 && this.onPlay) && this.library.length)
-      this.hand.push(this.library.shift()!);
+      this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
     return false;
   }
 }

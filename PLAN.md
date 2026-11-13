@@ -2,7 +2,7 @@
 
 Written 2026-11-13. The engine notes that were in this file moved to `ENGINE.md`.
 
-## Status (2026-11-13, end of the first session)
+## Status (2026-11-13): done
 
 Done and checked (`--regress check` IDENTICAL for all six decks, `--test` and `pod --test` pass, the fixed-seed pod run is unchanged):
 
@@ -26,10 +26,10 @@ Done and checked (`--regress check` IDENTICAL for all six decks, `--test` and `p
   - Tests in `--test`: a game played again gives the same log (20 seeds), and the board rebuilt from the log equals the game's real zones at the end of every turn (20 seeds; per name: how many, how many tapped, and the counters when there is only one). Gale, Meren, Sam & Frodo, Aesi and Codie: 0 differences. Mike: 42, because its own `draw` goes around the engine (package D).
   - Not as planned: `Board` in `log-board.ts` (the analyzer's board) keeps its own move code. It needs card data, a deck and a mana estimate, and it treats a sorcery on the battlefield as the stack; the new board is names only so that it also works for cards and tokens the simulator does not know. Sharing them is a refactor of the analyzer, for later.
 
-Open:
+- **Packages D and E** (2026-11-13): every deck changes zones only through the engine's functions. `--test` finds 0 zone changes that go around them for all six decks, the goldfish deck and 20 pod games, and now fails on any. The rebuilt board matches the game for all six decks (Mike included). The per-deck switch `recordsExactMoves` is gone. About 180 places were converted, most of them by a script (`removeOrThrow(game.hand, card)` to `game.takeCard(card, 'hand')` and the like); a few small engine functions were added for what the decks needed (`takeCardIfThere`, `takeCardAt`, `takeAllCards`, `putCards`, `putCardAt`, `takeFromBattlefieldIfThere`).
 
-- **Packages D and E** under step 3: the decks one at a time (a small model), then the clean-up. Counts of zone changes that still go around the engine's functions (50 seeds): Sam & Frodo 117, Gale 310, Codie 639, Meren 1252, Aesi 2197, Mike 3543. The plain goldfish deck logs nothing at all (its own `setup` and `takeTurn`).
-- **Step 10**: ROADMAP (when D and E are done). README and ENGINE.md are up to date.
+The plan is done. Left over, for when it matters:
+
 - What step 4 of the roadmap (the web page) can call, all free of `console.log`: `listRuns`, `readRunInfo`, `readIndex`, `readGame` (`game-log-files.ts`), `boardAt` (`game-log-board.ts`), `readArchidektLog`, `archidektLines` (`game-log-archidekt.ts`), `replayGame` (`game-log-replay.ts`), `formatGameLog`, `highlightsOf` (`game-log-text.ts`), `formatGameOfRun`, `describeGameResult` (`game-log-run.ts`).
 - Meren is about 30% slower with the log (7.4 s against 5.7 s for 3,000 games); the other decks 1 to 7%.
 - A game that crashes keeps its log so far (written, not yet seen in practice: no game has crashed).
@@ -211,23 +211,13 @@ As built (it differs a little from the first sketch):
 **C. The safety net. Done 2026-11-13.**
 
 - `npm run sim -- <deck> --test` plays 50 seeds with the log on and prints how many zone changes went around the functions, with the seed, turn, log line and move of the first eight. `npm run pod -- --test` does the same for 20 pod games.
-- For a deck with `recordsExactMoves: true` in its `index.ts` any such change is BAD (the test fails). For the others it is a `--` line: the to-do list of package D. Counts on 2026-11-13: goldfish 0 (the engine alone), Sam & Frodo 117, Gale 310, Codie 639, Meren 1252, Aesi 2197, Mike 3543 (Mike has its own `draw`).
+- At first a deck could say with `recordsExactMoves` that it was converted, and only then a change failed the test. Counts before the decks were converted: goldfish 0 (the engine alone), Sam & Frodo 117, Gale 310, Codie 639, Meren 1252, Aesi 2197, Mike 3543 (Mike has its own `draw`).
 - Time for 3,000 games with the log against without: Meren 7.5 s / 5.6 s, Gale 29.0 / 27.1. Recording did not make the log cheaper: the comparison still runs at every line (it is the safety net and gives tapped and counters).
 - The round trip was done with step 9, against the new board in `game-log-board.ts` instead of `Board` in `log-board.ts`: see "Status".
 
-**D. The decks, one at a time (a small model, one deck per session). Smallest first: Mike (7 places), Sam & Frodo (8), Meren (17), Gale (20), Aesi (27), Codie (43).**
+**D. The decks. Done 2026-11-13** (all six and the goldfish deck, in one pass). A script rewrote the plain cases in each deck's folder; the rest was done by hand: Gale's Scion and Gifts, Codie's Treasures, Lim-Dul's Vault and Reiterate loop, Meren's end-of-turn exile, Sam & Frodo's Crypt Incursion, Aesi's land puts and cast from the top. The order of every list and the moment of each change are as before: `--regress check` IDENTICAL for all six decks. Code that works on a copy of the game or on a kill-search state (Gale's `kill-moves.ts`, Codie's `solver.ts`) was left alone: those are not the game's zones.
 
-For each deck:
-
-1. Run `npm run sim -- <deck> --test` and read the zone changes the safety net lists (it shows eight; raise `CHANGES_SHOWN` in `engine/game-log.test.ts` to see more). Each names the log line it was found at, which leads to the code.
-2. Replace each direct zone change in the deck's folder (`this.hand.push(card)`, `removeOrThrow(this.library, card)`, `this.battlefield.push(permanent)`...) with `takeCard` / `putCard` / `moveCard` / `takeTopCardsOfLibrary` / `putOntoBattlefield` / `takeFromBattlefield`, or the engine function that already does it (`draw`, `discard`, `toGraveyard`, `enter`, `dies`). Keep the order of the lists and the moment of each change as they are.
-3. Where three decks do the same thing by hand, make it an engine function (rule of three) and note it here.
-4. Set `recordsExactMoves: true` in the deck's `index.ts`.
-5. Done when: the deck's `--test` prints no BAD line, `--regress check` is IDENTICAL for all six decks (the engine may have got a new function), `npm run pod -- --test` passes, and a `--trace 2 --moves` of the deck reads right.
-
-A deck that is not converted yet keeps its zone moves from the comparison, so the logs work all along and get exact deck by deck.
-
-**E. Clean up (a small model).** When all six decks are converted: remove `recordsExactMoves` (the test is then strict for every deck) and tick 3b and 3c in "Status". The comparison stays: it is the safety net and gives tapped and counters.
+**E. Clean up. Done 2026-11-13.** `recordsExactMoves` is removed, so the tests are strict for every deck. The comparison stays: it is the safety net and gives tapped and counters.
 
 Later, outside this plan: with every zone change in one place, the engine can also take over the rules that hang on them ("when this leaves the battlefield", "whenever a card goes to your graveyard") instead of each deck calling its own hooks.
 

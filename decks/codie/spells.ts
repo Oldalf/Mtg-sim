@@ -25,7 +25,7 @@ import { stackLibraryWithVault } from './solver-actions';
 import type { CodieGame } from './game';
 import { CardDef } from '../../engine/cards';
 import { Permanent } from '../../engine/game-types';
-import { firstMax, removeIfPresent } from '../../engine/lists';
+import { firstMax } from '../../engine/lists';
 
 export function resolveCodieSpell(game: CodieGame, spell: CardDef): boolean {
   return (
@@ -76,7 +76,7 @@ function resolveManaSpell(game: CodieGame, spell: CardDef): boolean {
       return true;
     case BRASS_BOUNTY:
       for (let i = 0; i < game.landsOnBattlefield().length; i++)
-        game.battlefield.push(new Permanent(TREASURE));
+        game.putOntoBattlefield(new Permanent(TREASURE));
       return true;
     case 'Manamorphose': {
       const colours = coloursWeAreShortOf(game);
@@ -117,15 +117,15 @@ function resolveCardSelection(game: CodieGame, spell: CardDef): boolean {
             : card.land !== null || game.developmentValue(card) < 45),
       );
       for (const card of unwanted) {
-        removeIfPresent(game.hand, card);
-        game.library.push(card);
+        game.takeCardIfThere(card, 'hand');
+        game.putCard(card, 'library');
       }
       game.draw(unwanted.length + 1);
       return true;
     }
     case 'Windfall': {
       const handSize = game.hand.length;
-      for (const card of game.hand.splice(0)) game.toGraveyard(card);
+      for (const card of game.takeAllCards('hand')) game.toGraveyard(card);
       game.draw(Math.max(handSize, 7));
       return true;
     }
@@ -212,15 +212,15 @@ export function fetchLand(
   const candidates = game.library.filter(isWantedKind);
   if (!candidates.length) return null;
   const pick = firstMax(candidates, score);
-  removeIfPresent(game.library, pick);
+  game.takeCardIfThere(pick, 'library');
   game.shuffle();
-  if (toHand) game.hand.push(pick);
+  if (toHand) game.putCard(pick, 'hand');
   else {
     const entersTapped =
       tapped || game.entersTapped(pick) || pick.land!.etb === 'tapped';
     const land = new Permanent(pick, pick.land, entersTapped);
     land.sick = false;
-    game.battlefield.push(land);
+    game.putOntoBattlefield(land);
     game.onLandEnter(land, false);
   }
   return pick;
@@ -251,7 +251,7 @@ export function sacrificeLand(game: CodieGame): void {
       .filter((basicLand) => basicLand.land?.basic)
       .sort((first, second) => +second.tapped - +first.tapped)[0] ??
     game.landsOnBattlefield()[0];
-  if (permanent) removeIfPresent(game.battlefield, permanent);
+  if (permanent) game.takeFromBattlefieldIfThere(permanent);
 }
 
 export function putCardsBackOnLibrary(game: CodieGame, count: number): void {
@@ -259,8 +259,8 @@ export function putCardsBackOnLibrary(game: CodieGame, count: number): void {
     const card = game.hand.reduce((best, candidate) =>
       game.cardValue(candidate) < game.cardValue(best) ? candidate : best,
     );
-    removeIfPresent(game.hand, card);
-    game.library.unshift(card);
+    game.takeCardIfThere(card, 'hand');
+    game.putCardsOnTopOfLibrary([card]);
   }
 }
 
@@ -269,10 +269,10 @@ export function lookAtTopAndKeep(
   lookCount: number,
   keepCount: number,
 ): void {
-  const top = game.library.splice(0, lookCount);
+  const top = game.takeTopCardsOfLibrary(lookCount);
   top.sort((first, second) => game.cardValue(second) - game.cardValue(first));
-  game.hand.push(...top.slice(0, keepCount));
-  game.library.push(...top.slice(keepCount));
+  game.putCards(top.slice(0, keepCount), 'hand');
+  game.putCards(top.slice(keepCount), 'library');
 }
 
 /** The card the AI wants most from the library (the missing piece of a kill; see wantList). */
@@ -324,10 +324,10 @@ export function fetchCardFromLibrary(
   toTop: boolean,
 ): void {
   if (!card) return;
-  removeIfPresent(game.library, card);
+  game.takeCardIfThere(card, 'library');
   game.shuffle();
-  if (toTop) game.library.unshift(card);
-  else game.hand.push(card);
+  if (toTop) game.putCardsOnTopOfLibrary([card]);
+  else game.putCard(card, 'hand');
   game.say('tutor ->', card, toTop ? '(top)' : '');
 }
 
@@ -337,8 +337,8 @@ export function resolveAdNauseam(game: CodieGame): void {
   while (game.library.length && game.isStillAlive()) {
     const card = game.library[0];
     if (game.myLife - card.manaValue < floor) break;
-    game.library.shift();
-    game.hand.push(card);
+    game.takeTopCardsOfLibrary(1);
+    game.putCard(card, 'hand');
     game.loseLife(card.manaValue);
   }
   game.say('Ad Nauseam: hand', game.hand.length, 'life', game.myLife);

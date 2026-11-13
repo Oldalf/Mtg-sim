@@ -17,12 +17,11 @@ import { manamorphoseCost } from './candidates';
 import { lookAtTopAndKeep, putCardsBackOnLibrary } from './spells';
 import type { CodieGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { removeIfPresent } from '../../engine/lists';
 
 export function exileFromHand(game: CodieGame, name: string): void {
   const card = game.cardInHand(name)!;
-  removeIfPresent(game.hand, card);
-  game.exile.push(card);
+  game.takeCardIfThere(card, 'hand');
+  game.putCard(card, 'exile');
 }
 
 /** Cast a mana spell (and maybe copy it with a Reiterate that does not buy back). */
@@ -40,8 +39,8 @@ export function castManaSpell(
     const reiterateCard = game.cardInHand(REITERATE);
     if (!reiterateCard || !game.pay(cost, true)) return false;
     if (copy === 1) {
-      removeIfPresent(game.hand, reiterateCard);
-      game.graveyard.push(reiterateCard);
+      game.takeCardIfThere(reiterateCard, 'hand');
+      game.putCard(reiterateCard, 'graveyard');
     } // (with buyback it stays in hand)
     game.spellsCast += 1;
     game.resolve(card);
@@ -92,16 +91,16 @@ export function beginReiterateLoop(
   first: Cost,
 ): void {
   if (viaFlashback) {
-    removeIfPresent(game.graveyard, card);
-    game.exile.push(card);
+    game.takeCardIfThere(card, 'graveyard');
+    game.putCard(card, 'exile');
     const flashbackCard = game.cardInHand(FLASHBACK);
     if (flashbackCard) {
-      removeIfPresent(game.hand, flashbackCard);
-      game.graveyard.push(flashbackCard);
+      game.takeCardIfThere(flashbackCard, 'hand');
+      game.putCard(flashbackCard, 'graveyard');
     }
   } else {
-    removeIfPresent(game.hand, card);
-    game.graveyard.push(card);
+    game.takeCardIfThere(card, 'hand');
+    game.putCard(card, 'graveyard');
   }
   game.pay(first, true);
   if (manaPerLoopCopy(game, spell)[1] === 'R') game.pool.R += 99;
@@ -134,17 +133,17 @@ export function flashbackTutor(
   );
   if (!card || !targetCard || !spendSpell(game, FLASHBACK)) return false;
   if (!game.pay(game.effectiveCost(card, null, true), true)) return false;
-  removeIfPresent(game.graveyard, card);
-  game.exile.push(card);
-  removeIfPresent(game.library, targetCard);
-  game.hand.push(targetCard);
+  game.takeCardIfThere(card, 'graveyard');
+  game.putCard(card, 'exile');
+  game.takeCardIfThere(targetCard, 'library');
+  game.putCard(targetCard, 'hand');
   return true;
 }
 
 export function suspendProfaneTutor(game: CodieGame, card: CardDef): boolean {
   if (!game.pay(Cost.parse('{1}{B}'), true)) return false;
-  removeIfPresent(game.hand, card);
-  game.exile.push(card);
+  game.takeCardIfThere(card, 'hand');
+  game.putCard(card, 'exile');
   game.suspended.push(2);
   game.say('suspend Profane Tutor');
   return true;
@@ -160,8 +159,8 @@ export function spendSpell(
   if (!card) return null;
   const cost = game.effectiveCost(card, base);
   if (!game.pay(cost, true)) return null;
-  removeIfPresent(game.hand, card);
-  game.graveyard.push(card);
+  game.takeCardIfThere(card, 'hand');
+  game.putCard(card, 'graveyard');
   game.spellsCast += 1;
   return card;
 }
@@ -196,11 +195,11 @@ export function castTutor(
 ): boolean {
   const card = game.library.find((candidate) => candidate.name === target);
   if (!card || !spendSpell(game, spell)) return false;
-  removeIfPresent(game.library, card);
+  game.takeCardIfThere(card, 'library');
   if (top) {
-    game.library.unshift(card);
+    game.putCardsOnTopOfLibrary([card]);
     game.knownTop = 1;
-  } else game.hand.push(card);
+  } else game.putCard(card, 'hand');
   return true;
 }
 
@@ -247,8 +246,8 @@ export function castCantripDrawingTop(game: CodieGame, name: string): boolean {
     name === 'Manamorphose' ? manamorphoseCost(game) : null,
   );
   if (!card) return false;
-  const top = game.library.shift();
-  if (top) game.hand.push(top);
+  const [top] = game.takeTopCardsOfLibrary(1);
+  if (top) game.putCard(top, 'hand');
   if (name === 'Manamorphose') {
     game.pool.R += 1;
     game.pool.B += 1;
@@ -303,15 +302,15 @@ export function stackLibraryWithVault(game: CodieGame): void {
       bestScore = score;
     }
   }
-  const skipped = game.library.splice(0, 5 * best);
-  const win = game.library
-    .splice(0, 5)
+  const skipped = game.takeTopCardsOfLibrary(5 * best);
+  const win = game
+    .takeTopCardsOfLibrary(5)
     .sort(
       (first, second) => windowWeight(game, second) - windowWeight(game, first),
     );
-  game.library.push(...skipped);
+  game.putCards(skipped, 'library');
   game.shuffle();
-  game.library.unshift(...win);
+  game.putCardsOnTopOfLibrary(win);
   game.loseLife(best);
   game.knownTop = win.length;
   game.say("Lim-Dul's Vault: window", best + 1, 'on top, life', game.myLife);
@@ -337,10 +336,10 @@ export function activateCodieForTutor(
   game.codieArmed -= 1; // used right away
   if (!spendSpell(game, spell)) return false;
   if (spell === 'Dark Ritual') game.pool.B += 3;
-  removeIfPresent(game.library, profaneTutor);
-  removeIfPresent(game.library, card);
-  game.hand.push(card);
-  game.graveyard.push(profaneTutor);
+  game.takeCardIfThere(profaneTutor, 'library');
+  game.takeCardIfThere(card, 'library');
+  game.putCard(card, 'hand');
+  game.putCard(profaneTutor, 'graveyard');
   return true;
 }
 
@@ -355,7 +354,7 @@ export function castAdNauseamWithTeferi(game: CodieGame): boolean {
   spendSpell(game, TEFERIS_PROTECTION);
   spendSpell(game, AD_NAUSEAM);
   const keep = Math.min(game.library.length, game.config.ad_keep as number); // the bottom cards stay in the library (Pontus: all but the last 5)
-  game.hand.push(...game.library.splice(0, game.library.length - keep));
+  game.putCards(game.takeTopCardsOfLibrary(game.library.length - keep), 'hand');
   game.libraryInHand = true;
   return true;
 }

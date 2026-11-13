@@ -2,7 +2,6 @@ import { FOOD, SAGA, TOK, TREASURE } from './cards';
 import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards';
 import { Permanent, Zone } from '../../engine/game-types';
-import { removeIfPresent } from '../../engine/lists';
 
 // ================================================================ entering
 export function onPermanentEntered(
@@ -69,9 +68,9 @@ function tutorPartner(game: SamFrodoGame, permanent: Permanent): void {
   if (!partner || permanent.token) return;
   const card = game.library.find((candidate) => candidate.name === partner);
   if (card) {
-    removeIfPresent(game.library, card);
+    game.takeCardIfThere(card, 'library');
     game.shuffle();
-    game.hand.push(card);
+    game.putCard(card, 'hand');
     game.say('partner: tutor', card);
   }
 }
@@ -163,8 +162,8 @@ export function onFoodSacrificed(game: SamFrodoGame): void {
       game.battlefield.includes(permanent)
     ) {
       if (game.putBasic()) {
-        removeIfPresent(game.battlefield, permanent);
-        game.library.push(permanent.card);
+        game.takeFromBattlefieldIfThere(permanent);
+        game.putCard(permanent.card, 'library');
       }
     }
   }

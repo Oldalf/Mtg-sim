@@ -3,7 +3,6 @@ import { FOOD, GOLLUM } from './cards';
 import type { SamFrodoGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Permanent } from '../../engine/game-types';
-import { removeIfPresent } from '../../engine/lists';
 
 export function valueOfGainingLife(game: SamFrodoGame, amount: number): number {
   let value = 0;
@@ -73,7 +72,7 @@ export function castFarmerCotton(
   xValue: number,
 ): boolean {
   if (!game.pay(card.cost.withGeneric(xValue))) return false;
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   game.spellsCast += 1;
   game.say(`cast Farmer Cotton (X=${xValue})`);
   game.farmerCottonX = xValue;
@@ -89,7 +88,7 @@ export function returnCauldronFamiliar(
   const permanent = game.foodsOnBattlefield()[0];
   if (!permanent || !game.graveyard.includes(card)) return false;
   game.sacrifice(permanent);
-  removeIfPresent(game.graveyard, card);
+  game.takeCardIfThere(card, 'graveyard');
   game.say('Cauldron Familiar returns');
   game.enter(card, 'graveyard');
   return true;

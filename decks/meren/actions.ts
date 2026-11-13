@@ -2,13 +2,13 @@ import { TOKENS } from './cards';
 import type { MerenGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Permanent } from '../../engine/game-types';
-import { firstMin, removeIfPresent, sortDesc } from '../../engine/lists';
+import { firstMin, sortDesc } from '../../engine/lists';
 
 // ---------------------------------------------------------------- actions
 export function evokeCreature(game: MerenGame, card: CardDef): boolean {
   if (!game.pay(game.effectiveCost(card, Cost.parse('{1}{B}')), false))
     return false;
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   game.say('evoke', card);
   const permanent = game.enter(card, 'hand');
   game.sacrifice(permanent);
@@ -35,7 +35,7 @@ export function castEldritchEvolution(
   permanent: Permanent,
 ): boolean {
   if (!game.pay(game.effectiveCost(card), true)) return false;
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   const maxManaValue = permanent.card.manaValue + 2;
   game.sacrifice(permanent);
   game.say(
@@ -50,11 +50,11 @@ export function castEldritchEvolution(
     const chosen =
       game.tutorTarget((candidate) => cards.includes(candidate), false) ??
       cards[0];
-    removeIfPresent(game.library, chosen);
+    game.takeCardIfThere(chosen, 'library');
     game.shuffle();
     game.enter(chosen, 'library');
   }
-  game.exile.push(card);
+  game.putCard(card, 'exile');
   return true;
 }
 
@@ -64,7 +64,7 @@ export function castSawInHalf(
   permanent: Permanent,
 ): boolean {
   if (!game.pay(game.effectiveCost(card), true)) return false;
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   game.say('cast', card, 'on our', permanent.card);
   game.onCastInstantOrSorcery(false);
   const half =
@@ -73,7 +73,7 @@ export function castSawInHalf(
   game.dies(permanent);
   for (const token of game.createTokens(permanent.card, 2))
     token.powerMod = half;
-  game.graveyard.push(card);
+  game.putCard(card, 'graveyard');
   return true;
 }
 
@@ -83,10 +83,10 @@ export function castBeastWithin(
   permanent: Permanent,
 ): boolean {
   if (!game.pay(game.effectiveCost(card), true)) return false;
-  removeIfPresent(game.hand, card);
+  game.takeCardIfThere(card, 'hand');
   game.dies(permanent);
   game.createTokens(TOKENS.beast);
-  game.graveyard.push(card);
+  game.putCard(card, 'graveyard');
   return true;
 }
 
@@ -115,7 +115,7 @@ export function activateFaunaShaman(
     return false;
   permanent.tapped = true;
   const discarded = firstMin(cards, (card) => game.discardValue(card));
-  removeIfPresent(game.hand, discarded);
+  game.takeCardIfThere(discarded, 'hand');
   game.toGraveyard(discarded);
   game.doTutor((card) => card.isCreature, false);
   return true;
@@ -150,8 +150,8 @@ export function activateGrist(game: MerenGame, permanent: Permanent): boolean {
       `Grist -5: each opponent loses ${game.creaturesInGraveyard()}, ${game.describeOpponentLife()}`,
     );
     if (permanent.counters <= 0) {
-      removeIfPresent(game.battlefield, permanent);
-      game.graveyard.push(permanent.card);
+      game.takeFromBattlefieldIfThere(permanent);
+      game.putCard(permanent.card, 'graveyard');
     }
   } else {
     permanent.counters += 1;
@@ -191,10 +191,10 @@ export function activateInsidiousFungus(
   game.draw(1);
   const land = game.hand.find((card) => card.land !== null);
   if (land) {
-    removeIfPresent(game.hand, land);
+    game.takeCardIfThere(land, 'hand');
     const landPermanent = new Permanent(land, land.land, true);
     landPermanent.sick = false;
-    game.battlefield.push(landPermanent);
+    game.putOntoBattlefield(landPermanent);
   }
   return true;
 }
@@ -220,8 +220,8 @@ export function escapeWoeStrider(game: MerenGame, card: CardDef): boolean {
     (candidate) => -game.cardValue(candidate),
   ).slice(0, 4);
   for (const exiledCard of others) {
-    removeIfPresent(game.graveyard, exiledCard);
-    game.exile.push(exiledCard);
+    game.takeCardIfThere(exiledCard, 'graveyard');
+    game.putCard(exiledCard, 'exile');
   }
   const permanent = game.reanimate(card);
   permanent.counters += 2;

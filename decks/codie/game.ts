@@ -48,7 +48,6 @@ import { beginReiterateLoop, manaPerLoopCopy } from './solver-actions';
 import { CardDef, Cost } from '../../engine/cards';
 import { Candidate, KillSearcher, Permanent } from '../../engine/game-types';
 import { Game } from '../../engine/game';
-import { removeIfPresent } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -91,8 +90,8 @@ export class CodieGame extends Game<CodieGame> {
     if (this.config.mana_drain_flat && this.turn >= 2) {
       const card = this.cardInHand('Mana Drain');
       if (card) {
-        removeIfPresent(this.hand, card);
-        this.graveyard.push(card);
+        this.takeCardIfThere(card, 'hand');
+        this.putCard(card, 'graveyard');
         this.pool.C += 2 + Math.floor(this.rng.random() * 4);
       }
     }
@@ -216,7 +215,7 @@ export class CodieGame extends Game<CodieGame> {
   purgeTreasures(): void {
     for (const permanent of this.battlefield.slice())
       if (permanent.card === TREASURE && permanent.tapped)
-        this.battlefield.splice(this.battlefield.indexOf(permanent), 1);
+        this.takeFromBattlefield(permanent);
   }
   override ritualCandidates(_cands: Candidate[]): Candidate[] {
     return [];
@@ -292,9 +291,9 @@ export class CodieGame extends Game<CodieGame> {
     const parked = this.hand.filter(
       (card) => card.name === 'Glacial Chasm' || card.name === 'Maze of Ith',
     );
-    for (const parkedLand of parked) removeIfPresent(this.hand, parkedLand);
+    for (const parkedLand of parked) this.takeCardIfThere(parkedLand, 'hand');
     super.playLand();
-    this.hand.push(...parked);
+    this.putCards(parked, 'hand');
   }
   override landBias(card: CardDef): number {
     if (card.name === 'Vesuva') return -2;
@@ -433,7 +432,7 @@ export class CodieGame extends Game<CodieGame> {
       const skipped: CardDef[] = [];
       let found: CardDef | null = null;
       while (this.library.length) {
-        const exiledCard = this.library.shift()!;
+        const exiledCard = this.takeTopCardsOfLibrary(1)[0];
         if (
           exiledCard.isInstantOrSorcery &&
           exiledCard.manaValue < card.manaValue
@@ -444,7 +443,7 @@ export class CodieGame extends Game<CodieGame> {
         skipped.push(exiledCard);
       }
       this.rng.shuffle(skipped);
-      this.library.push(...skipped);
+      this.putCards(skipped, 'library');
       if (found) {
         this.say('Codie: free', found);
         const first = Cost.parse('{1}{R}{R}').plus(new Cost(3));
@@ -459,14 +458,13 @@ export class CodieGame extends Game<CodieGame> {
           );
           this.loopUsed = found.name;
           beginReiterateLoop(this, found.name, found, false, first);
-          this.graveyard = this.graveyard.filter(
-            (candidate) => candidate !== found,
-          );
-          this.graveyard.push(found);
+          // every copy of it leaves the graveyard, one comes back at the end
+          while (this.takeCardIfThere(found, 'graveyard')) continue;
+          this.putCard(found, 'graveyard');
           continue;
         }
         this.resolve(found);
-        this.graveyard.push(found);
+        this.putCard(found, 'graveyard');
       }
     }
   }

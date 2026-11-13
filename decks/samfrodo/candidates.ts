@@ -25,7 +25,6 @@ import { eatFood } from './combat';
 import type { SamFrodoGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
 import { Candidate, Permanent } from '../../engine/game-types';
-import { removeIfPresent } from '../../engine/lists';
 
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
 type AddCandidate = (
@@ -328,8 +327,8 @@ function addTradingPostCandidate(
   else if (deadCard && (hasSanguineBond || game.isOnBattlefield(GOLLUM)))
     add(46, new Cost(1), false, () =>
       activateTradingPost(game, tradingPost, () => {
-        removeIfPresent(game.hand, deadCard);
-        game.graveyard.push(deadCard);
+        game.takeCardIfThere(deadCard, 'hand');
+        game.putCard(deadCard, 'graveyard');
         game.gainLife(4);
       }),
     );
