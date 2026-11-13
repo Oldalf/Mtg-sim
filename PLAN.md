@@ -71,7 +71,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 
 | Task | What | Needs | Who | Status |
 |---|---|---|---|---|
-| 0 | The shapes and the skeleton | - | big model, first and alone | taken (Claude, 2026-11-13) |
+| 0 | The shapes and the skeleton | - | big model, first and alone | done (2026-11-13) |
 | 1 | Reports as data | 0 | small model | open |
 | 2 | Runs that report progress and can be stopped | 0 | big model | open |
 | 3 | Decks and decklists on the server | 0 | small model | open |
@@ -208,11 +208,10 @@ The main new thing of this step.
 
 For a person or an agent who starts without knowing the project. Read `CLAUDE.md` (the coding standards and the commands), this file, and before changing `engine/` the rules at the top of `ENGINE.md`.
 
-1. **Pick a task** whose "Needs" are all `done` in the table above and whose status is `open`. Task 0 comes first and must be merged into `main` before any other task starts: it creates the folders and the shared shapes everything else builds on.
-2. **Take it:** set its status to `taken (<who>, <date>)` in the table, in a commit of its own on `main`, before starting. That is how others see it is in work.
-3. **Work on a branch** named `step4/<task number>-<short-name>` (for example `step4/3-decks-on-the-server`), one task per branch. Commit as you go: a commit before any large or scripted edit, so that a bad one can be undone.
-4. **It is done when** the task's own "Done when" holds and `npm run verify` ends with VERIFY OK. For a task that changes the page, `ng build` in `app/web/` must pass too. A task that only touches the page and `app/server/` may skip nothing: the verify run is what shows the simulator still gives the same results.
-5. **Hand it back:** merge the branch into `main`, set the status to `done (<date>)`, and add one or two lines under the task about anything that differs from this plan or that the next task should know.
+1. **Pick a task** whose "Needs" are all `done` in the table above and whose status is `open`. Task 0 (done) created the folders and the shared shapes everything else builds on.
+2. **Work on a branch** named `step4/<task number>-<short-name>` (for example `step4/3-decks-on-the-server`), one task per branch. Commit as you go: a commit before any large or scripted edit, so that a bad one can be undone.
+3. **It is done when** the task's own "Done when" holds and `npm run verify` ends with VERIFY OK. For a task that changes the page, `ng build` in `app/web/` must pass too. A task that only touches the page and `app/server/` may skip nothing: the verify run is what shows the simulator still gives the same results.
+4. **Hand it back:** merge the branch into `main`, set the status to `done (<date>)`, and add one or two lines under the task about anything that differs from this plan or that the next task should know.
 
 Things that trip people up here:
 
