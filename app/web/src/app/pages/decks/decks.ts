@@ -52,13 +52,17 @@ import { ErrorBox } from '../../shared/error-box/error-box';
     }
     // every card the same size, whatever its commanders are called
     mat-card {
-      height: 120px;
+      height: 140px;
     }
-    mat-card-title,
-    mat-card-subtitle {
+    mat-card-title {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    // two lines for the commanders, so a partner pair still fits
+    mat-card-subtitle {
+      overflow: hidden;
+      white-space: normal;
     }
     mat-card:hover {
       border-color: var(--mat-sys-primary);

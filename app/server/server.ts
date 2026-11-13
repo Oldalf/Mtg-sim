@@ -196,13 +196,17 @@ async function answerApiCall(
   request: http.IncomingMessage,
   url: URL,
 ): Promise<ApiAnswer> {
+  // one path can have several routes (GET and POST), so the method decides
+  let isPathKnown = false;
   for (const route of ROUTES) {
     const match = route.path.exec(url.pathname);
     if (!match) continue;
-    if (route.method !== request.method)
-      return errorAnswer(405, `${request.method} is not allowed here`);
-    return route.answer(match.groups ?? {}, url, request);
+    isPathKnown = true;
+    if (route.method === request.method)
+      return route.answer(match.groups ?? {}, url, request);
   }
+  if (isPathKnown)
+    return errorAnswer(405, `${request.method} is not allowed here`);
   return errorAnswer(404, `no API call ${url.pathname}`);
 }
 

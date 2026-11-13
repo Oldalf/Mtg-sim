@@ -99,6 +99,20 @@ export async function runDecksRoutesTests(): Promise<boolean> {
       '/api/decks/nope/lists/decklist.txt',
     );
     allGood &&= check('an unknown deck is 404', unknownDeck.status === 404);
+
+    // a path with a GET route and a POST route (the image update) once answered 405 to the POST
+    const wrongMethod = await fetch(`http://127.0.0.1:${port}/api/health`, {
+      method: 'POST',
+    });
+    allGood &&= check('a wrong method is 405', wrongMethod.status === 405);
+    const stopWithNothingRunning = await fetch(
+      `http://127.0.0.1:${port}/api/runs/current/stop`,
+      { method: 'POST' },
+    );
+    allGood &&= check(
+      'a POST route answers its POST',
+      stopWithNothingRunning.status === 200,
+    );
   } finally {
     server.close();
   }
