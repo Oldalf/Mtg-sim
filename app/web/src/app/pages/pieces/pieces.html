@@ -1,0 +1,72 @@
+<h1>Shared pieces</h1>
+<p>
+  Every piece the pages are built from, with made-up data. The server says:
+  <strong>{{ health()?.status ?? 'nothing (is it running?)' }}</strong>
+</p>
+
+<mat-card appearance="outlined">
+  <mat-card-header><mat-card-title>Cards</mat-card-title></mat-card-header>
+  <mat-card-content class="row">
+    <app-card-image name="Sol Ring" typeLine="Artifact" manaCost="{1}" />
+    <app-card-image name="Sol Ring" [isTapped]="true" />
+    <app-card-image name="Treasure" typeLine="Token Artifact — Treasure" />
+    <app-card-image
+      name="A card the server does not know"
+      typeLine="Creature — Fish"
+      manaCost="{2}{U}"
+    />
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined">
+  <mat-card-header><mat-card-title>Tags</mat-card-title></mat-card-header>
+  <mat-card-content class="row">
+    <app-tag-chip tag="fastest" [count]="5" />
+    <app-tag-chip tag="win-stopped" [count]="3" />
+    <app-tag-chip tag="average" />
+    <app-tag-chip tag="error" [count]="1" />
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Results table</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <app-results-table
+      labelHeading="List"
+      [columns]="sampleColumns"
+      [rows]="sampleRows"
+      [compareToFirst]="true"
+      [noisePoints]="2"
+    />
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Run progress</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="column">
+    <app-run-progress [run]="sampleRun()" (stop)="stopSampleRun()" />
+    <app-run-progress [run]="failedRun" />
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined">
+  <mat-card-header><mat-card-title>Errors</mat-card-title></mat-card-header>
+  <mat-card-content class="column">
+    <app-error-box
+      title="The game would not load"
+      message="no game 9999 in 01-gale-decklist"
+    >
+      <button mat-button type="button">Try again</button>
+    </app-error-box>
+    <div>
+      <button mat-stroked-button type="button" (click)="askForMissingDeck()">
+        Ask the server for a deck that does not exist
+      </button>
+      (the error answer shows in a snack bar)
+    </div>
+  </mat-card-content>
+</mat-card>

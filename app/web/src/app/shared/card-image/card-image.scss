@@ -1,0 +1,55 @@
+// A Magic card is 63 x 88 mm; its corners are rounded about 3 mm.
+:host {
+  display: inline-block;
+  width: 146px;
+  aspect-ratio: 63 / 88;
+  transition: rotate 150ms;
+}
+
+:host(.is-tapped) {
+  rotate: 90deg;
+}
+
+img,
+.text-card {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 4.5% / 3.4%;
+}
+
+img {
+  display: block;
+  object-fit: cover;
+}
+
+.text-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  overflow: hidden;
+  background-color: var(--mat-sys-surface-container-high);
+  border: 1px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-label-medium);
+}
+
+.title-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.name {
+  font-weight: 500;
+}
+
+.mana-cost {
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.type-line {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+}

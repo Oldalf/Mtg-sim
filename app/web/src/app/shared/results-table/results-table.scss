@@ -1,0 +1,23 @@
+:host {
+  display: block;
+  overflow-x: auto;
+}
+
+table {
+  width: auto;
+  min-width: 100%;
+}
+
+.number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.difference {
+  margin-left: 6px;
+  color: var(--mat-sys-primary);
+}
+
+.difference.is-noise {
+  color: var(--mat-sys-on-surface-variant);
+}
