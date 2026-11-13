@@ -72,7 +72,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | Task | What | Needs | Who | Status |
 |---|---|---|---|---|
 | 0 | The shapes and the skeleton | - | big model, first and alone | done (2026-11-13) |
-| 1 | Reports as data | 0 | small model | open |
+| 1 | Reports as data | 0 | small model | done (2026-11-13) |
 | 2 | Runs that report progress and can be stopped | 0 | big model | open |
 | 3 | Decks and decklists on the server | 0 | small model | open |
 | 4 | Starting, following and stopping a run on the server | 1, 2 | big model | open |
@@ -111,6 +111,7 @@ The page needs the numbers, not printed text.
 - `report.ts`: split `printCompare` and `printDiag` into a function that returns the data and one that prints it. `pod-report.ts`: the same for `printPod` (win rates, win rounds, how the wins came, first out, by seat, the interaction table).
 - The printed output must not change at all: save the output of a list comparison, a `--diag` run and a pod run with fixed seeds before, and compare after.
 - Done when: those outputs are the same, and the data functions have the types from `app/api-types.ts`.
+- Notes (task 1, 2026-11-13): `buildKillTurnReport` and `buildDiagReport` (`report.ts`) and `buildPodReport` (`pod-report.ts`) return the shapes of `app/api-types.ts`; `printCompare`, `printDiag` and `printPod` now take that report and only print it (`printSingle` is unchanged: a one-list run is a `KillTurnReport` with one row). Differences from the types as task 0 wrote them: `runFolder` is optional in the reports (the server fills it in, the engine does not know it), and `declaredPercent` / `standingPercent` of a pod deck are `null` when it never won. A kill-turn row's label is the list's file name without its folder.
 
 ### 2. Runs that report progress and can be stopped (engine)
 

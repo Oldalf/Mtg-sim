@@ -4,7 +4,7 @@
  */
 import { Config } from '../engine/game-types';
 import * as Pod from '../engine/pod';
-import { printPod } from '../engine/pod-report';
+import { buildPodReport, printPod } from '../engine/pod-report';
 import { runPodTests } from '../engine/pod.test';
 import { runPodExactMoveTests, runPodLogTests } from '../engine/game-log.test';
 import { describePodResult } from '../engine/pod-report';
@@ -82,7 +82,7 @@ export async function runPodCommand(
     runFolder,
   );
   logSession.finishRun(runFolder, result.logRows);
-  printPod(spec, result.games);
+  printPod(buildPodReport(spec, result.games));
   logSession.printGamesWorthALook();
   console.log(`\n(${((Date.now() - startTime) / 1000).toFixed(0)}s)`);
 }

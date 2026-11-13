@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as C from './cards';
 import { Config } from './game-types';
-import { printCompare, table } from './report';
+import { buildKillTurnReport, printCompare, table } from './report';
 import { Deck, simulate } from './runner';
 
 const signed = (x: number, decimals: number) =>
@@ -165,12 +165,14 @@ export async function cuts(
     `\nEach card replaced by 1 ${replacement}. A difference near 0 or positive means the land does as well.`,
   );
   printCompare(
-    listFiles,
-    tables,
-    config,
-    gameCount,
-    deck.metrics,
-    deck.compareTurns,
+    buildKillTurnReport(
+      listFiles,
+      tables,
+      config,
+      gameCount,
+      deck.metrics,
+      deck.compareTurns,
+    ),
   );
   console.log(`\nVariant lists are saved in ${outDir}.`);
 }
