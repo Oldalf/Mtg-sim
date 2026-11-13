@@ -50,6 +50,16 @@ import { ErrorBox } from '../../shared/error-box/error-box';
       text-decoration: none;
       color: inherit;
     }
+    // every card the same size, whatever its commanders are called
+    mat-card {
+      height: 120px;
+    }
+    mat-card-title,
+    mat-card-subtitle {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     mat-card:hover {
       border-color: var(--mat-sys-primary);
     }
