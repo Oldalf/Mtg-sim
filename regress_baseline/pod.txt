@@ -1,0 +1,27 @@
+200 pod games, 4 players, at most 17 rounds. An even pod would give each deck 25%.
+Noise: about +/-7 points on a win rate.
+
+deck           wins  avg turn  10%-90% turn  declared  standing  out first    seat 1  seat 2  seat 3  seat 4
+gale          18.5%      7.24          5-10    100.0%      0.0%      43.5%     23.4%   21.1%   19.1%   10.2%
+meren         22.5%      9.24          7-11      0.0%    100.0%       9.0%     18.8%   28.9%   26.9%   16.4%
+samfrodo      32.0%      9.42          8-12      0.0%    100.0%       5.0%     34.0%   30.8%   42.0%   20.0%
+aesi          27.0%      7.72           6-9     88.9%     11.1%      12.0%     26.9%   34.8%   25.5%   21.6%
+
+Won by the end of round (share of all games):
+deck              4      5      6      7      8      9     10     11     12     14
+gale           0.0%   2.5%   5.5%  11.0%  16.0%  16.5%  18.0%  18.5%  18.5%  18.5%
+meren          0.0%   0.0%   0.0%   3.5%   7.5%  14.0%  18.0%  21.0%  21.0%  22.5%
+samfrodo       0.0%   0.0%   1.0%   1.5%  10.5%  18.0%  26.0%  28.0%  30.5%  32.0%
+aesi           0.5%   1.0%   5.0%  10.0%  20.0%  25.0%  27.0%  27.0%  27.0%  27.0%
+
+No winner by round 17: 0.0%. Average game length: 8.52 rounds.
+
+Interaction, per game:
+deck          win attempts   stopped  turns waited  spells countered  removal taken  shielded  answers used  removal / wipes cast
+gale                  0.28     36.8%          0.00              0.00           0.04      0.00          0.30                  0.13
+meren                 0.00         -          0.00              0.14           0.13      0.00          0.13                  0.11
+samfrodo              0.00         -          0.00              0.02           0.29      0.00          0.10                  0.18
+aesi                  0.31     24.2%          0.00              0.16           0.10      0.04          0.15                  0.10
+
+How each deck went out (share of its games): gale: life 61.0%, decked 2.0%; meren: life 36.0%, commander 0.5%, decked 3.5%; samfrodo: life 24.5%, commander 0.5%, decked 2.5%; aesi: life 57.5%.
+"declared" = the deck's own win (a combo, a kill line, its win rule) with others still alive; "standing" = it was the last one left.

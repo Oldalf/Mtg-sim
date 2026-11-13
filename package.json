@@ -10,8 +10,9 @@
     "logs": "npm run -s build && node --enable-source-maps dist/sim.js logs",
     "eco": "npm run -s build && node --enable-source-maps dist/sim.js --eco",
     "check": "tsc --noEmit",
-    "format": "prettier --write \"**/*.ts\"",
-    "format:check": "prettier --check \"**/*.ts\""
+    "verify": "node scripts/verify.mjs",
+    "format": "prettier --write \"**/*.ts\" \"scripts/*.mjs\"",
+    "format:check": "prettier --check \"**/*.ts\" \"scripts/*.mjs\""
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

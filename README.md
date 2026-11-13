@@ -41,6 +41,7 @@ npm run sim -- gale --test                           # the deck's kill-finder te
 npm run sim -- gale --regress check                  # after a refactor: results must be IDENTICAL
 npm run pod -- gale meren samfrodo aesi mike -n 1000 # a pod: the decks play against each other (3 to 6 decks; see POD_PLAN.md)
 npm run check                                        # type-check the code
+npm run verify                                       # every check a change must pass (must end with VERIFY OK; -- --eco for power-save)
 ```
 
 `npm run sim` bundles the code with esbuild (a few milliseconds) and runs it. Games run in parallel on all cores but one (`-w N` to change).

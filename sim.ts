@@ -80,7 +80,9 @@ async function runSpecialCommand(
     const areMovesRecorded = runExactMoveTests(deck);
     const isReplaySame = runReplayTests(deck);
     const isBoardRight = runBoardTests(deck);
-    const deckTestsPassed = TESTS[deck.name]();
+    // a deck without tests of its own (the goldfish) only gets the log checks above
+    const deckTests = TESTS[deck.name];
+    const deckTestsPassed = deckTests ? deckTests() : true;
     const logTestsPassed =
       isLogHarmless && areMovesRecorded && isReplaySame && isBoardRight;
     process.exit(logTestsPassed && deckTestsPassed ? 0 : 1);

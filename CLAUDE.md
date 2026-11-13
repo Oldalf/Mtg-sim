@@ -12,6 +12,7 @@ A goldfish simulator for Commander decks, written in TypeScript and run on Node.
 ## Commands
 
 - `npm run sim -- <deck> ...`: run a deck (see README.md).
+- `npm run verify`: every check a change must pass, in one go (type-check, formatting, `--regress check` and `--test` for every deck, the pod tests and a fixed-seed pod run). It must end with VERIFY OK. `-- --eco` runs it in power-save mode.
 - `npm run check`: type-check.
 - `npm run format`: format all code with Prettier. Run it before finishing a change.
 - `npm run format:check`: check formatting without changing files.
