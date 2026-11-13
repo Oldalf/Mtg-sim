@@ -11,6 +11,7 @@ import { describePodResult } from '../engine/pod-report';
 import { formatGameLog } from '../engine/game-log-text';
 import { PodSpec } from '../engine/pod-types';
 import { addMissingCards } from '../engine/scryfall';
+import { createPodRunFolder } from '../engine/logged-runs';
 import { Deck } from '../engine/runner';
 import { Args, wantsEcoMode } from './args';
 import { enableEcoMode } from './eco';
@@ -69,11 +70,7 @@ export async function runPodCommand(
   const games = args.gamesGiven ? args.games : DEFAULT_GAMES;
   const startTime = Date.now();
   const logSession = new LogSession(!args.noLog);
-  const runFolder = logSession.startRun(
-    `pod-${spec.decks.join('-')}`,
-    { mode: 'pod', gameCount: games, decks: spec.decks, pod: spec },
-    spec.lists,
-  );
+  const runFolder = logSession.startRun(() => createPodRunFolder(spec, games));
   const result = await Pod.simulatePod(
     spec,
     games,

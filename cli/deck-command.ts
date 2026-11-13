@@ -16,6 +16,7 @@ import {
   table,
 } from '../engine/report';
 import { cuts, rank } from '../engine/ranking';
+import { createGoldfishRunFolder } from '../engine/logged-runs';
 import { Args } from './args';
 import { LogSession } from './log-session';
 
@@ -75,18 +76,8 @@ export async function runDeckCommand(
     what: 'kills' | 'diag',
     labelSuffix = '',
   ) => {
-    const listName = path.basename(listFile, path.extname(listFile));
-    const runFolder = logSession.startRun(
-      `${deck.name}-${listName}${labelSuffix}`,
-      {
-        mode: 'goldfish',
-        gameCount: games,
-        decks: [deck.name],
-        config,
-        gameMode: what === 'kills' ? 'protected' : 'any',
-        killTurnNames: Runner.killTurnNamesOf(deck),
-      },
-      [listFile],
+    const runFolder = logSession.startRun(() =>
+      createGoldfishRunFolder(deck, listFile, games, config, what, labelSuffix),
     );
     const result = await Runner.simulate(
       deck,

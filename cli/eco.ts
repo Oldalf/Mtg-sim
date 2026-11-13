@@ -1,25 +1,20 @@
 /** Power-save mode (--eco): the simulation runs in the background without loading the machine. */
-import * as os from 'os';
+import {
+  POWER_SAVE_BUSY_PERCENT,
+  powerSaveWorkers,
+  setLowPriority,
+} from '../engine/power-save';
 import { cpuCores } from '../engine/runner';
 import { Args } from './args';
-
-/** Share of the time the workers are busy in eco mode unless --duty says otherwise. */
-const DEFAULT_DUTY_PERCENT = 70;
 
 /** A quarter of the cores (at least 1) unless -w is given, below-normal priority, and the workers rest between chunks. */
 export function enableEcoMode(args: Args): {
   workers: number;
   dutyPercent: number;
 } {
-  const workers = args.workersGiven
-    ? args.workers
-    : Math.max(1, Math.floor(cpuCores() / 4));
-  const dutyPercent = args.dutyPercent ?? DEFAULT_DUTY_PERCENT;
-  try {
-    os.setPriority(os.constants.priority.PRIORITY_BELOW_NORMAL);
-  } catch {
-    /* not allowed here: the other limits still apply */
-  }
+  const workers = args.workersGiven ? args.workers : powerSaveWorkers();
+  const dutyPercent = args.dutyPercent ?? POWER_SAVE_BUSY_PERCENT;
+  setLowPriority(true);
   console.log(
     `eco mode: ${workers} worker(s), below-normal priority, busy about ${dutyPercent}% of the time`,
   );

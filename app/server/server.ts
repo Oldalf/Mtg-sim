@@ -7,6 +7,7 @@ import * as http from 'http';
 import * as path from 'path';
 import type { ErrorAnswer, HealthAnswer } from '../api-types';
 import { answerDecklist, answerDecks, RequestError } from './decks-routes';
+import { answerCurrentRun, startRun, stopCurrentRun } from './runs';
 
 /** The built page (`ng build` in app/web/ writes it here). */
 export const WEB_FOLDER = path.join('dist', 'web');
@@ -53,24 +54,42 @@ const ROUTES: Route[] = [
       ),
   },
   {
-    method: 'GET',
-    path: /^\/api\/decks$/,
-    answer: (_pathParts, url) =>
-      ok(answerDecks(url.searchParams.get('all') === '1')),
+    method: 'POST',
+    path: /^\/api\/runs$/,
+    answer: async (_pathParts, _url, request) =>
+      ok(startRun(await readJsonBody(request))),
   },
   {
-    // the list name may hold slashes (lists/proposed.txt) and encoded characters
     method: 'GET',
-    path: /^\/api\/decks\/(?<deck>[^/]+)\/lists\/(?<list>.+)$/,
-    answer: (pathParts) =>
-      ok(
-        answerDecklist(
-          decodeURIComponent(pathParts.deck),
-          decodeURIComponent(pathParts.list),
-        ),
-      ),
+    path: /^\/api\/runs\/current$/,
+    answer: () => ok(answerCurrentRun()),
+  },
+  {
+    method: 'POST',
+    path: /^\/api\/runs\/current\/stop$/,
+    answer: () => ok(stopCurrentRun()),
   },
 ];
+
+/** A request body is small JSON (a run request); anything bigger is refused. */
+const MAX_BODY_BYTES = 100_000;
+
+/** The JSON body of a request; a 400 answer when it is not JSON. */
+async function readJsonBody(request: http.IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let byteCount = 0;
+  for await (const chunk of request) {
+    byteCount += (chunk as Buffer).length;
+    if (byteCount > MAX_BODY_BYTES)
+      throw new RequestError(413, 'the request body is too big');
+    chunks.push(chunk as Buffer);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf-8'));
+  } catch {
+    throw new RequestError(400, 'the request body is not JSON');
+  }
+}
 
 /** A 200 answer. The type parameter names the shape in api-types.ts the body must have. */
 function ok<Body>(body: Body): ApiAnswer {

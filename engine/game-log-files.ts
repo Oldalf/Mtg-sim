@@ -72,6 +72,19 @@ export function createRunFolder(
   return runFolder;
 }
 
+/** A stopped run played fewer games than it asked for: run.json then says how many it played. */
+export function correctGameCount(runFolder: string, gamesPlayed: number): void {
+  const runInfo: RunInfo = {
+    ...readRunInfo(runFolder),
+    gameCount: gamesPlayed,
+  };
+  fs.writeFileSync(
+    path.join(runFolder, RUN_INFO_FILE),
+    JSON.stringify(runInfo, null, 2),
+    'utf-8',
+  );
+}
+
 /** The name of the games file of a worker job. */
 export function gamesFileName(jobNumber: number): string {
   return `games-${String(jobNumber).padStart(3, '0')}.jsonl.gz`;
