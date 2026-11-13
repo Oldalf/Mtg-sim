@@ -1,0 +1,29 @@
+// The look (PLAN.md decision 11): dark, dense, one accent colour (orange).
+// Angular Material's mat.theme() defines the CSS variables (--mat-sys-*) that its
+// components and our own styles use: https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+// The fonts (Roboto, Material Symbols) ship with the page, so it works without the network
+// (decision 7): they are in the "styles" list of angular.json.
+
+html {
+  height: 100%;
+  color-scheme: dark;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$orange-palette,
+        tertiary: mat.$orange-palette,
+      ),
+      typography: Roboto,
+      density: -2,
+    )
+  );
+}
+
+body {
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+  height: 100%;
+}

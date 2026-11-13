@@ -9,10 +9,12 @@
     "cards": "npm run -s build && node --enable-source-maps dist/sim.js cards",
     "logs": "npm run -s build && node --enable-source-maps dist/sim.js logs",
     "eco": "npm run -s build && node --enable-source-maps dist/sim.js --eco",
+    "app": "npm run -s build && npm --prefix app/web run -s build && node --enable-source-maps dist/sim.js app",
+    "app:dev": "npm run -s build && node scripts/app-dev.mjs",
     "check": "tsc --noEmit",
     "verify": "node scripts/verify.mjs",
-    "format": "prettier --write \"**/*.ts\" \"scripts/*.mjs\"",
-    "format:check": "prettier --check \"**/*.ts\" \"scripts/*.mjs\""
+    "format": "prettier --write \"**/*.ts\" \"scripts/*.mjs\" \"app/web/src/**/*.{html,scss}\"",
+    "format:check": "prettier --check \"**/*.ts\" \"scripts/*.mjs\" \"app/web/src/**/*.{html,scss}\""
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

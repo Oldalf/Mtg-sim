@@ -1,0 +1,14 @@
+<main>
+  <h1>Goldfish: it works</h1>
+  <p>
+    The server says:
+    @if (health.hasValue()) {
+      <strong>{{ health.value().status }}</strong>
+    } @else if (health.error()) {
+      <strong class="error">no answer (is the server running?)</strong>
+    } @else {
+      asking…
+    }
+  </p>
+</main>
+<router-outlet />

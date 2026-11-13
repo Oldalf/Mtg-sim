@@ -3,20 +3,11 @@ import * as path from 'path';
 import * as C from './cards';
 import { Config } from './game-types';
 import { Deck, DiagRow, KillTurns } from './runner';
+import type { KillKind, Table } from './run-types';
 
-/** The two kinds of kill a game reports: any kill found, and a kill with counterspell backup ("protected"). */
-type KillKind = 'any' | 'protected';
+export type { Table };
+
 const KILL_KINDS: readonly KillKind[] = ['any', 'protected'];
-
-/** The kill-turn results of many games of one list. */
-export interface Table {
-  /** percentOnTurn[kind][turn] = % of games whose first kill is on that turn (index 0 is unused). */
-  percentOnTurn: Record<KillKind, number[]>;
-  /** The average turn of the games that killed. */
-  averageTurn: Record<KillKind, number>;
-  /** % of games that killed at all. */
-  percentKilled: Record<KillKind, number>;
-}
 
 /** What the two numbers a game returns mean, when the deck doesn't say: [long name, short column name] for each. */
 const DEFAULT_METRICS: [[string, string], [string, string]] = [

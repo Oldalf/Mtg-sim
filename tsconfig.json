@@ -11,5 +11,12 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["sim.ts", "cli/**/*.ts", "engine/**/*.ts", "decks/**/*.ts"]
+  "include": [
+    "sim.ts",
+    "cli/**/*.ts",
+    "engine/**/*.ts",
+    "decks/**/*.ts",
+    "app/api-types.ts",
+    "app/server/**/*.ts"
+  ]
 }

@@ -3,8 +3,9 @@ import { Cost, CardDef } from './cards';
 import { LandInfo } from './card-facts';
 import { Answer } from './answers';
 import type { Game } from './game';
+import type { Config } from './run-types';
 
-export type Config = Record<string, number | boolean>;
+export type { Config };
 
 export class Permanent {
   tapped: boolean;

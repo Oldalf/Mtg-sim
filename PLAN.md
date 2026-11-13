@@ -20,7 +20,7 @@ Local only, never published. Everything the command line does today keeps workin
 - **Game logs:** all there, and free of `console.log`: `listRuns`, `readRunInfo`, `readIndex`, `readGame` (`game-log-files.ts`), `finishLoggedRun`, `describeGameResult` (`game-log-run.ts`), `boardAt`, `TableBoards` (`game-log-board.ts`), `highlightsOf`, `formatGameLog` (`game-log-text.ts`), `replayGame` (`game-log-replay.ts`), `readArchidektLog` (`game-log-archidekt.ts`). `cli/log-session.ts` starts and finishes a logged run for the command line.
 - **Decks:** `DECKS` in `decks/index.ts`; each `Deck` has `dir`, `defaultList`, `config`, `metrics`. Lists are `.txt` files in the deck folder and its `lists/` folder; `C.loadDecklist(file)` reads one (commanders, library, the section of each card, missing and generic cards).
 - **Cards:** `data/cards.json` has every card the lists use, with `scryfall_id`. No images are stored. Tokens have no card data.
-- **Tools:** esbuild bundles `sim.ts` into `dist/sim.js`. Node 22. No web framework yet, no test runner (the simulator's tests are functions that print `OK` / `BAD`).
+- **Tools:** esbuild bundles `sim.ts` into `dist/sim.js`. Node 26 (Angular 22 needs at least 22.22.3; `.nvmrc`). No web framework yet, no test runner (the simulator's tests are functions that print `OK` / `BAD`).
 
 ## Decisions (say so if you want one changed)
 
@@ -28,10 +28,10 @@ Local only, never published. Everything the command line does today keeps workin
 1b. **The page is an Angular app with Angular Material** (agreed 2026-11-13). Pontus knows Angular, and he is the one who reads and maintains the page.
     - It is its own project in `app/web/`, with its own `package.json`, `angular.json` and `tsconfig.json`, so Angular's packages and its TypeScript version stay apart from the simulator's.
     - `ng build` writes the finished page to `dist/web/`; the Node server serves that folder. While developing, `ng serve` with a proxy to the Node server gives live reload.
-    - Current Angular style: standalone components, signals for state, the built-in control flow (`@if`, `@for`), the Angular router, `HttpClient` and Angular forms. No extra state library.
+    - Current Angular style: standalone components, signals for state, the built-in control flow (`@if`, `@for`), the Angular router, `HttpClient` / `httpResource` and Signal Forms (stable in Angular 22, agreed 2026-11-13). No extra state library.
     - Angular Material gives the theme (dark, one accent colour) and the ready-made pieces: toolbar, table, form fields, buttons, progress bar, chips, tabs.
     - The official Angular agent skills (`angular-developer`, `angular-new-app`; https://angular.dev/ai/agent-skills) are installed inside `app/web/`, so that an agent working on the page follows Angular's own current practice. `app/web/` also gets a short `CLAUDE.md` that points to them and to the rules of this plan.
-    - Shared with the rest of the project as plain TypeScript imports: `app/api-types.ts` and `engine/game-log-board.ts`.
+    - Shared with the rest of the project as plain TypeScript imports: `app/api-types.ts` and the engine's plain type files (`engine/game-log-types.ts`, `engine/run-types.ts`, `engine/pod-types.ts`). Nothing else from `engine/` builds in the page: it reaches Node code (see task 13).
 2. **The server is a command of the existing bundle:** `npm run app` runs `dist/sim.js app`. That way the worker threads work unchanged.
 3. **Folders:** `app/server/` (the server and its routes), `app/web/` (the Angular project of the page), `app/api-types.ts` (the shapes both sides share). The page is built into `dist/web/`.
 4. **One run at a time.** A second run can be started when the first is done or stopped. This keeps the server simple and the machine usable.
@@ -63,7 +63,7 @@ All answers are JSON. Errors are `{ error: "message" }` with a 4xx or 5xx status
 | `GET /api/cards/<name>/image` | the card's image (fetched from Scryfall and kept on disk the first time) |
 | `GET /` and other paths | the page and its files |
 
-The board of a game is worked out in the page: `game-log-board.ts` has no Node code in it, so the Angular app imports it and can step through a game without asking the server.
+The board of a game is worked out in the page, so it can step through a game without asking the server. How it gets the board code is open: see the note under task 13.
 
 ## The tasks
 
@@ -98,6 +98,11 @@ After task 0, tasks 1, 2, 3, 5, 6 and 7 can all go side by side.
 - The official Angular agent skills inside `app/web/`: run `npx skills add https://github.com/angular/skills` there (check https://angular.dev/ai/agent-skills first, the command may have changed), and add `app/web/CLAUDE.md` that points to them, to `app/api-types.ts` and to the rules at the end of this plan.
 - Keep the two worlds apart: the root `tsconfig.json`, `npm run check` and Prettier keep covering the simulator and `app/server/`; the page is checked by its own `ng build` and formatted by the same Prettier settings (`npm run format` covers `app/web/src` too). `.gitignore`: `app/web/node_modules/` and Angular's cache folder.
 - Done when: after `npm install` in the root and in `app/web/`, `npm run app` opens the page and the page shows the server's answer; `npm run sim` and `npm run pod` work as before and are as fast as before (they do not build the page).
+- Notes (task 0, 2026-11-13):
+  - Importing an engine type into the page made Angular type-check every engine file behind it (Node's `fs`, stricter settings: 44 errors). So the plain types moved into Node-free files: `engine/game-log-types.ts` (`GameLog`, `GameEvent`, `CardMove`, `LogPlayer`, `EventKind`) and `engine/run-types.ts` (`Config`, `KillTurns`, `Table`, `RunInfo`, `GameIndexRow`). The old files re-export them, so no other import changed; `dist/sim.js` came out the same apart from comments. Keep these files free of Node and engine code.
+  - `app/api-types.ts` holds the full report shapes (`KillTurnReport`, `DiagReport`, `PodReport`), taken from the print functions: task 1 produces exactly these. A run request has `mode: 'goldfish' | 'pod'` to tell the two apart, and the goldfish one has `turns` (as `--turns`).
+  - The page loads its fonts from npm packages (`@fontsource/roboto`, `material-symbols`), not from Google, so it works offline. Angular's CLI MCP server is set up in `app/web/.mcp.json`; `app/web/CLAUDE.md` has Angular's practice in short.
+  - `npm run app:dev` runs `scripts/app-dev.mjs` (the server with `--no-open` plus `ng serve` with `app/web/proxy.conf.json`). The server answers `GET /api/health` only; the `index.html` fallback for routes is task 6.
 
 ### 1. Reports as data (engine)
 
@@ -158,7 +163,7 @@ The page needs the numbers, not printed text.
 
 ### 9. Page: simulate
 
-- The form (an Angular reactive form): deck, one or more lists (the first is the base), number of games (default 5,000), turns, the deck's settings with their defaults, `--diag` on or off, power-save on or off.
+- The form (Signal Forms): deck, one or more lists (the first is the base), number of games (default 5,000), turns, the deck's settings with their defaults, `--diag` on or off, power-save on or off.
 - While it runs: a progress bar, games played, seconds, a stop button.
 - The result: for one list the kill-turn table (both results, per turn and by turn); for several lists the comparison table with the differences to the base and the noise note; for `--diag` the deck's measures per list.
 - Under it, "Games worth a look" per list: the tagged games with their result, each a link into the game viewer, and a link to all games of the run.
@@ -170,7 +175,7 @@ The page needs the numbers, not printed text.
 
 ### 11. Page: pod
 
-- The form (a reactive form with a list of seats): 3 to 6 seats, a deck and a list for each (the same deck twice is allowed), games (default 1,000), round cap, the pod settings (`threat`, `policy`), power-save.
+- The form (Signal Forms, with a list of seats): 3 to 6 seats, a deck and a list for each (the same deck twice is allowed), games (default 1,000), round cap, the pod settings (`threat`, `policy`), power-save.
 - The result: win rates against an even pod, win rounds, how the wins came, who went out first, by seat, and the interaction table.
 - "Games worth a look" with the pod's tags, linking into the game viewer.
 
@@ -191,6 +196,7 @@ The main new thing of this step.
 - A switch for the card moves under each line (what `--moves` shows).
 - A real Archidekt log opens in the same viewer (one player, no life totals, a line per card move).
 - Done when: a goldfish game, a 4-player pod game and a real log can be stepped from the opening hand to the end, and the last board equals what `npm run logs -- <run> --seed N --board` prints.
+- Note from task 0: `engine/game-log-board.ts` cannot be imported into the page as it is: it imports `game-log.ts`, which imports `cards.ts` (reads files with Node). The way to go (Pontus, 2026-11-13): as with the types in task 0, move what the board needs out of the engine into a shared folder that both the engine and the page import, free of Node and engine code. The plain type files of task 0 (`engine/game-log-types.ts`, `engine/run-types.ts`, `engine/pod-types.ts`) move into that folder at the same time.
 
 ### 14. Finish
 
@@ -212,7 +218,7 @@ Things that trip people up here:
 
 - **Results must not change.** The simulator is used to compare decklists, so the same seeds must give the same games. `--regress check` printing DIFFERENT for a deck you did not mean to change is a bug in your change, not a baseline to re-record.
 - **Simulations take minutes and load the machine.** If Pontus is there, ask whether to run them in power-save mode. If you work unattended, use power-save: `npm run verify -- --eco` (same results, about three times as long).
-- **Angular version:** task 0 writes the version it installed here: _(not set up yet)_. Later tasks use that version and do not upgrade it.
+- **Angular version:** Angular 22.2.7, Angular Material 22.2.7, TypeScript 6.0 in `app/web/` (the simulator keeps its own TypeScript 5.7), Node 26.13.1 (installed with fnm, which reads `.nvmrc`). Later tasks use that version and do not upgrade it.
 - **Network:** tasks 0 and 7 need it (`npm install`, the Angular skills, Scryfall). Everything else works without.
 - **Shell:** this is a Windows machine. Backslashes get lost when a script is written through a shell heredoc: write files with an editor tool, not with `echo` or `cat <<EOF`.
 - **Search and replace across the project:** whole word, match case, `*.ts` only, and commit first. A loose replace once changed card data and baselines.
