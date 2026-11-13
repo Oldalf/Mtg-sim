@@ -78,7 +78,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 4 | Starting, following and stopping a run on the server | 1, 2 | big model | done (2026-11-13) |
 | 5 | Game logs on the server | 0 | small model | done (2026-11-13) |
 | 6 | The app shell, the theme and the shared components | 0 | big model | done (2026-11-13) |
-| 7 | Card images | 0 | small model | open |
+| 7 | Card images | 0 | small model | done (2026-11-13) |
 | 8 | Page: decks and decklists | 3, 6 | small model | open |
 | 9 | Page: simulate | 4, 6 | big model | open |
 | 10 | Charts for the results | 9 | small model | open |
@@ -161,6 +161,8 @@ The page needs the numbers, not printed text.
 - `GET /api/cards/<name>/image`: looks up the card's `scryfall_id` in the card data, serves the file from `data/scryfall/images/` if it is there, otherwise fetches it from Scryfall, saves it and serves it. A card without an id, a token, or a failed fetch answers 404, and the page then shows the text card of task 6.
 - Follow Scryfall's rules for automated use (a pause between requests, a plain client name; nothing about Pontus or the project in the request).
 - Done when: a test asks for one known card twice (the second time without the network) and for a token (404).
+- Notes (task 7, 2026-11-13): `engine/card-images.ts` holds the store (`data/scryfall/images/<scryfall id>.jpg`, the `normal` size, 100 ms between requests, `MtgGoldfishSim/1.0` as client name) and `updateImages` (every card of `data/cards.json` without an image). `npm run cards -- images` runs it. `app/server/cards-routes.ts`: `GET /api/cards/<name>/image` (a file, handled in `server.ts` outside the JSON route table; a failed fetch is not tried again for 5 minutes), and `GET`/`POST /api/cards/images/update` (`ImageUpdateState`; the POST downloads in the background). The toolbar has the refresh button (`shared/image-refresh`). The card with no image is a placeholder of the same size in the card's colour (`card-colour.ts`, from the mana cost passed to `app-card-image`; the pages must pass `manaCost` and `typeLine`). Test: `app/server/cards-routes.test.ts` (needs the network once, for Sol Ring).
+- Choosing a print (not built, only prepared): `GET /api/cards/<name>/image?print=<scryfall id>` and the `print` input of `app-card-image` already show any print. What is missing is the choice itself: the bulk data has one print per card, so the list of prints of a card has to come from Scryfall (`cards/search?q=oracleid:<id>&unique=prints`), and the decklists need a place to keep the choice (an Archidekt-style `(SET) 123` after the name is the obvious form, which `loadDecklist` does not parse yet). Left for task 8 or later; it is in ROADMAP.md.
 
 ### 8. Page: decks and decklists
 

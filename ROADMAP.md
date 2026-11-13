@@ -31,3 +31,4 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 - Pod mode: pick 3 to 6 decks, a list for each, and the number of games.
 - Open a tagged game from a run, read its log and step through it as it plays out (needs step 3).
 - Comes after steps 2 and 3.
+- Pick the print of a card in a decklist (for its image): the image call and the card component already take a Scryfall id (`?print=`); still to do are the list of prints of a card (from Scryfall's search, not in the bulk data) and a place for the choice in the decklist file.

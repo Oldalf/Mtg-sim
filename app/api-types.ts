@@ -270,3 +270,13 @@ export type GameAnswer = GameLog;
 
 /** GET /api/decks/<deck>/logs: the file names in the deck's logs/ folder. */
 export type RealLogsAnswer = string[];
+
+/** GET /api/cards/images/update (the state) and POST /api/cards/images/update (starts it, answers the state). */
+export interface ImageUpdateState {
+  isRunning: boolean;
+  /** Images saved or failed so far in the current (or last) update; 0 of 0 before the first one. */
+  imagesDone: number;
+  imagesTotal: number;
+  /** Cards whose image could not be fetched in the last update. */
+  failedCards: string[];
+}

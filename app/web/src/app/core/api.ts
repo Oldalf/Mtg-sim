@@ -8,6 +8,7 @@ import type {
   GameAnswer,
   GamesAnswer,
   HealthAnswer,
+  ImageUpdateState,
   LogsAnswer,
   RealLogsAnswer,
   RunRequest,
@@ -99,8 +100,22 @@ export class ApiService {
     );
   }
 
-  /** Where a card's image is (an <img> loads it; 404 when there is none). */
-  cardImageUrl(cardName: string): string {
-    return `/api/cards/${encodeURIComponent(cardName)}/image`;
+  /**
+   * Where a card's image is (an <img> loads it; 404 when there is none). `print` is the Scryfall id of a specific
+   * print; without it the server uses the print it has for the card.
+   */
+  cardImageUrl(cardName: string, print?: string): string {
+    const url = `/api/cards/${encodeURIComponent(cardName)}/image`;
+    return print ? `${url}?print=${encodeURIComponent(print)}` : url;
+  }
+
+  /** How the download of all missing card images is going. */
+  imageUpdate(): Observable<ImageUpdateState> {
+    return this.http.get<ImageUpdateState>('/api/cards/images/update');
+  }
+
+  /** Starts downloading every missing card image (nothing happens when that is already going). */
+  startImageUpdate(): Observable<ImageUpdateState> {
+    return this.http.post<ImageUpdateState>('/api/cards/images/update', {});
   }
 }

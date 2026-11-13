@@ -12,6 +12,10 @@ mat-toolbar {
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
+.spacer {
+  flex: 1;
+}
+
 .app-name {
   color: var(--mat-sys-primary);
   font: var(--mat-sys-title-medium);

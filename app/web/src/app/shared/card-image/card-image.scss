@@ -29,9 +29,48 @@ img {
   gap: 4px;
   padding: 6px;
   overflow: hidden;
-  background-color: var(--mat-sys-surface-container-high);
-  border: 1px solid var(--mat-sys-outline-variant);
+  --card-colour: #c9c5ca;
+  background-color: color-mix(
+    in srgb,
+    var(--card-colour) 30%,
+    var(--mat-sys-surface-container-high)
+  );
+  border: 3px solid var(--card-colour);
   font: var(--mat-sys-label-medium);
+}
+
+// the colours of the five kinds of mana, gold for more than one, brown for a land
+.text-card[data-colour='white'] {
+  --card-colour: #f3eed0;
+}
+.text-card[data-colour='blue'] {
+  --card-colour: #4aa3d8;
+}
+.text-card[data-colour='black'] {
+  --card-colour: #6b5f6b;
+}
+.text-card[data-colour='red'] {
+  --card-colour: #e0643f;
+}
+.text-card[data-colour='green'] {
+  --card-colour: #4f9d69;
+}
+.text-card[data-colour='gold'] {
+  --card-colour: #d9b44a;
+}
+.text-card[data-colour='land'] {
+  --card-colour: #a98b64;
+}
+
+// centred in what is left, like the art box of a card
+.placeholder-icon {
+  align-self: center;
+  margin-top: auto;
+  margin-bottom: auto;
+  width: 40%;
+  height: auto;
+  font-size: 48px;
+  opacity: 0.35;
 }
 
 .title-line {

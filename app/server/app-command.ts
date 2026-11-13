@@ -4,7 +4,7 @@
  *   npm run app                  build the simulator and the page, start the server, open the browser
  *   npm run app -- --port 5000   another port than 4173
  *   npm run app:dev              the server plus `ng serve` (live reload while working on the page)
- *   npm run app -- --test        the app's tests (progress and stopping of runs, deck calls, run calls)
+ *   npm run app -- --test        the app's tests (progress and stopping of runs, deck calls, card image calls, run calls)
  *
  * It runs inside the simulator's bundle (dist/sim.js app), so the worker threads of a run start as they always do.
  */
@@ -12,6 +12,7 @@ import { spawn } from 'child_process';
 import { DECKS } from '../../decks/index';
 import { runRunControlTests } from '../../engine/worker-pool.test';
 import { clearSessionLogs } from '../../engine/game-log-files';
+import { runCardsRoutesTests } from './cards-routes.test';
 import { runDecksRoutesTests } from './decks-routes.test';
 import { runLogsRoutesTests } from './logs-routes.test';
 import { runRunsTests } from './runs.test';
@@ -65,10 +66,15 @@ export async function runAppCommand(argv: string[]): Promise<void> {
   if (options.runsTests) {
     const runControlPassed = await runRunControlTests(DECKS);
     const decksPassed = await runDecksRoutesTests();
+    const cardsPassed = await runCardsRoutesTests();
     const logsPassed = await runLogsRoutesTests();
     const runsPassed = await runRunsTests();
     const testsPassed =
-      runControlPassed && decksPassed && logsPassed && runsPassed;
+      runControlPassed &&
+      decksPassed &&
+      cardsPassed &&
+      logsPassed &&
+      runsPassed;
     process.exit(testsPassed ? 0 : 1);
   }
   // every run of this session stays on disk until the app starts again (PLAN.md decision 6)
