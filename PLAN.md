@@ -75,7 +75,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 1 | Reports as data | 0 | small model | done (2026-11-13) |
 | 2 | Runs that report progress and can be stopped | 0 | big model | done (2026-11-13) |
 | 3 | Decks and decklists on the server | 0 | small model | done (2026-11-13) |
-| 4 | Starting, following and stopping a run on the server | 1, 2 | big model | open |
+| 4 | Starting, following and stopping a run on the server | 1, 2 | big model | done (2026-11-13) |
 | 5 | Game logs on the server | 0 | small model | open |
 | 6 | The app shell, the theme and the shared components | 0 | big model | open |
 | 7 | Card images | 0 | small model | open |
@@ -136,6 +136,7 @@ The page needs the numbers, not printed text.
 - `powerSave` uses what `--eco` uses (`cli/eco.ts`: fewer workers, a rest between chunks, lower priority).
 - `session-logs/` is cleared once, when the server starts.
 - Done when: a test starts a small goldfish run and a small pod run through the API, polls until done, and reads the report and the run folder; a second `POST` during a run gets 409; stop works.
+- Notes (task 4, 2026-11-13): `app/server/runs.ts` holds the run and plays it; `app/server/run-requests.ts` checks the request (400 with the reason; a list file that does not exist is 404 from `resolveListFile`). The run folders are made by `engine/logged-runs.ts` (`createGoldfishRunFolder`, `createPodRunFolder`), which `cli/log-session.ts` now uses too; power-save numbers are in `engine/power-save.ts`, used by `cli/eco.ts`. A stopped run has status `stopped` and no report, but its run folders are finished (tagged, indexed) and `run.json` says how many games were played (`correctGameCount`). `POST /api/runs/current/stop` with nothing running just answers the state. Settings equal to the default do not count as changed (one list with only those is a plain run). `secondsSoFar` has one decimal. The test is `app/server/runs.test.ts` (in `npm run app -- --test`); it removes the run folders it wrote.
 
 ### 5. Game logs on the server
 
@@ -213,7 +214,7 @@ For a person or an agent who starts without knowing the project. Read `CLAUDE.md
 
 1. **Pick a task** whose "Needs" are all `done` in the table above and whose status is `open`. Task 0 (done) created the folders and the shared shapes everything else builds on.
 2. **Work on a branch** named `step4/<task number>-<short-name>` (for example `step4/3-decks-on-the-server`), one task per branch. Commit as you go: a commit before any large or scripted edit, so that a bad one can be undone.
-3. **It is done when** the task's own "Done when" holds and `npm run verify` ends with VERIFY OK. For a task that changes the page, `ng build` in `app/web/` must pass too. A task that only touches the page and `app/server/` may skip nothing: the verify run is what shows the simulator still gives the same results.
+3. **It is done when** the task's own "Done when" holds and `npm run verify` ends with VERIFY OK. Verify runs the slow regress checks only where the change can alter results (see `CLAUDE.md`), so a task that touches only `app/` verifies in a minute or two. For a task that changes the page, `ng build` in `app/web/` must pass too. A task that only touches the page and `app/server/` may skip nothing: the verify run is what shows the simulator still gives the same results.
 4. **Hand it back:** merge the branch into `main`, set the status to `done (<date>)`, and add one or two lines under the task about anything that differs from this plan or that the next task should know.
 
 Things that trip people up here:
