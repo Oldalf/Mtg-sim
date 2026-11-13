@@ -4,13 +4,14 @@
  *   npm run app                  build the simulator and the page, start the server, open the browser
  *   npm run app -- --port 5000   another port than 4173
  *   npm run app:dev              the server plus `ng serve` (live reload while working on the page)
- *   npm run app -- --test        the app's tests (for now: progress and stopping of runs)
+ *   npm run app -- --test        the app's tests (progress and stopping of runs, deck calls)
  *
  * It runs inside the simulator's bundle (dist/sim.js app), so the worker threads of a run start as they always do.
  */
 import { spawn } from 'child_process';
 import { DECKS } from '../../decks/index';
 import { runRunControlTests } from '../../engine/worker-pool.test';
+import { runDecksRoutesTests } from './decks-routes.test';
 import { startServer } from './server';
 
 const DEFAULT_PORT = 4173;
@@ -59,7 +60,9 @@ function openBrowser(url: string): void {
 export async function runAppCommand(argv: string[]): Promise<void> {
   const options = parseAppOptions(argv);
   if (options.runsTests) {
-    const testsPassed = await runRunControlTests(DECKS);
+    const runControlPassed = await runRunControlTests(DECKS);
+    const decksPassed = await runDecksRoutesTests();
+    const testsPassed = runControlPassed && decksPassed;
     process.exit(testsPassed ? 0 : 1);
   }
   await startServer(options.port);
