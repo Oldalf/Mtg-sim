@@ -248,6 +248,7 @@ export class PodTable {
         deckName: this.spec.decks[player],
         commanders: game.commanderNames,
         seat: this.seatOf[player],
+        librarySize: loadDecklistOnce(this.spec.lists[player]).library.length,
       })),
       events: this.log,
     };
@@ -301,6 +302,14 @@ export class PodTable {
     for (const event of gameLog.slice(this.loggedLineCount))
       this.logGameLine(this.currentPlayer, event);
     this.loggedLineCount = gameLog.length;
+  }
+
+  /** Puts what the players' games logged before the first turn (their opening hands) into the pod log. */
+  logOpeningHands(): void {
+    if (!this.verbose) return;
+    for (const player of this.turnOrder)
+      for (const event of this.games[player].log)
+        this.logGameLine(player, event);
   }
 
   /** Marks the start of a player's turn for the log. */

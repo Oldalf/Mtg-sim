@@ -10,6 +10,7 @@
  * with ">>". A goldfish game looks the same with "== Turn 3 ==" headers.
  */
 import { GameEvent, GameLog } from './game-log';
+import { TableBoards, describeBoard } from './game-log-board';
 
 export interface GameLogTextOptions {
   /** The first line: what the game was and how it ended. */
@@ -17,11 +18,15 @@ export interface GameLogTextOptions {
   tags?: string[];
   /** Show the card moves under each line. */
   showMoves?: boolean;
+  /** Show the board of the player whose turn it was at the end of each turn. */
+  showBoard?: boolean;
 }
 
 const PLAIN_LINE_START = '   ';
 const HIGHLIGHT_LINE_START = '>> ';
 const MOVE_LINE_START = '        ';
+const BOARD_FIRST_LINE_START = '   [board] ';
+const BOARD_LINE_START = '           ';
 const LINES_AROUND_A_HIGHLIGHT = 2;
 
 function isPodGame(gameLog: GameLog): boolean {
@@ -52,7 +57,11 @@ function turnHeader(gameLog: GameLog, event: GameEvent): string {
   const turnName = isPodGame(gameLog)
     ? `Round ${event.turn}, ${gameLog.players[event.activePlayer].name}`
     : `Turn ${event.turn}`;
-  return `== ${turnName} ==   life: ${describeLife(gameLog, event.life)}`;
+  // a real Archidekt log has no life totals
+  const life = event.life.length
+    ? `   life: ${describeLife(gameLog, event.life)}`
+    : '';
+  return `== ${turnName} ==${life}`;
 }
 
 function eventLine(gameLog: GameLog, event: GameEvent): string {
@@ -92,17 +101,28 @@ export function formatGameLog(
     );
   if (options.tags?.length) lines.push('Tags: ' + options.tags.join(', '));
 
+  const table = new TableBoards(gameLog);
+  const boardLines = (player: number) =>
+    describeBoard(table.boards[player]).map(
+      (line, index) =>
+        (index === 0 ? BOARD_FIRST_LINE_START : BOARD_LINE_START) + line,
+    );
   let shownTurn = -1;
   let shownActivePlayer = -1;
   for (const event of gameLog.events) {
     if (event.turn !== shownTurn || event.activePlayer !== shownActivePlayer) {
+      if (options.showBoard && shownActivePlayer >= 0)
+        lines.push(...boardLines(shownActivePlayer));
       lines.push('', turnHeader(gameLog, event));
       shownTurn = event.turn;
       shownActivePlayer = event.activePlayer;
     }
     if (event.text !== '') lines.push(eventLine(gameLog, event));
     if (options.showMoves) lines.push(...moveLines(gameLog, event));
+    table.apply(event);
   }
+  if (options.showBoard && shownActivePlayer >= 0)
+    lines.push(...boardLines(shownActivePlayer));
   return lines.join('\n');
 }
 
@@ -125,6 +145,6 @@ export function highlightsOf(gameLog: GameLog): GameLog {
 /** The events of one player's own game as plain "T3: cast Opt" lines (the log analyzer's replay). */
 export function formatPlainLines(events: GameEvent[]): string[] {
   return events
-    .filter((event) => event.text !== '')
+    .filter((event) => event.text !== '' && event.turn > 0)
     .map((event) => `T${event.turn}: ${event.text}`);
 }

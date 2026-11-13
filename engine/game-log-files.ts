@@ -71,7 +71,8 @@ export function clearSessionLogs(): void {
   fs.mkdirSync(SESSION_LOGS_FOLDER, { recursive: true });
 }
 
-function hashOfFile(file: string): string {
+/** A short hash of a file's contents (to see later whether a decklist changed). */
+export function hashOfFile(file: string): string {
   return crypto
     .createHash('sha256')
     .update(fs.readFileSync(file))

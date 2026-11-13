@@ -15,12 +15,23 @@ Done and checked (`--regress check` IDENTICAL for all six decks, `--test` and `p
 - **Step 7**: `engine/game-log-tags.ts`, `engine/game-log-run.ts`. The list under a report shows two games per tag in full and the other seeds on one line.
 - **Step 8**: `npm run logs` with `--seed`, `--tag`, `--highlights`, `--moves`.
 
+- **Steps 3b and 3c**, packages A to C (under step 3): the renames, the engine's zone functions (`takeCard`, `putCard`, `moveCard`...) and the safety net in `--test`.
+- **Step 9** and the rest of step 8 (2026-11-13):
+  - `engine/game-log-board.ts`: `boardAt(gameLog, eventIndex)` and `TableBoards` (the same, event by event). `npm run logs -- <run> --seed N --board` shows the board of the player whose turn it was at the end of each turn.
+  - `engine/game-log-archidekt.ts`: `readArchidektLog(file)` (`npm run logs -- decks/meren/logs/game1_t9_gray_merchant.txt --board` shows a real game the same way) and `archidektLines(gameLog, player)` (`--archidekt`).
+  - `engine/game-log-replay.ts`: `replayGame(allDecks, runFolder, seed)` (`--replay` in the viewer). It stops with a clear message if a list changed since the run (the hash in `run.json`).
+  - Every game now starts with an `opening hand [...]` line on turn 0 (round 0 in a pod), which carries the opening hand and the mulligans, as T0 does in a real log. The log analyzer's replay leaves it out, so `--regress check` stays IDENTICAL.
+  - Tapped and counters are now compared per permanent, not per name (Aesi's returned and replayed lands came out wrong per name).
+  - A tapped permanent is untapped in the log before it leaves the battlefield, and the board takes an untapped one off. A log tells permanents apart by name only, so this keeps the number of tapped ones right when one of several leaves.
+  - Tests in `--test`: a game played again gives the same log (20 seeds), and the board rebuilt from the log equals the game's real zones at the end of every turn (20 seeds; per name: how many, how many tapped, and the counters when there is only one). Gale, Meren, Sam & Frodo, Aesi and Codie: 0 differences. Mike: 42, because its own `draw` goes around the engine (package D).
+  - Not as planned: `Board` in `log-board.ts` (the analyzer's board) keeps its own move code. It needs card data, a deck and a mana estimate, and it treats a sorcery on the battlefield as the stack; the new board is names only so that it also works for cards and tokens the simulator does not know. Sharing them is a refactor of the analyzer, for later.
+
 Open:
 
-- **Steps 3b and 3c**, as work packages A to E under step 3: A the renames, B the engine's zone functions and C the safety net are done, D the decks one at a time and E the clean-up (a small model).
-- **Step 8**, the parts that need step 9: `--board`, `--archidekt`, and reading a real Archidekt log.
-- **Step 9**: `boardAt`, `readArchidektLog`, the Archidekt export, `replayGame`.
-- **Step 10**: ROADMAP (when the rest is done). README and ENGINE.md are up to date.
+- **Packages D and E** under step 3: the decks one at a time (a small model), then the clean-up. Counts of zone changes that still go around the engine's functions (50 seeds): Sam & Frodo 117, Gale 310, Codie 639, Meren 1252, Aesi 2197, Mike 3543. The plain goldfish deck logs nothing at all (its own `setup` and `takeTurn`).
+- **Step 10**: ROADMAP (when D and E are done). README and ENGINE.md are up to date.
+- What step 4 of the roadmap (the web page) can call, all free of `console.log`: `listRuns`, `readRunInfo`, `readIndex`, `readGame` (`game-log-files.ts`), `boardAt` (`game-log-board.ts`), `readArchidektLog`, `archidektLines` (`game-log-archidekt.ts`), `replayGame` (`game-log-replay.ts`), `formatGameLog`, `highlightsOf` (`game-log-text.ts`), `formatGameOfRun`, `describeGameResult` (`game-log-run.ts`).
+- Meren is about 30% slower with the log (7.4 s against 5.7 s for 3,000 games); the other decks 1 to 7%.
 - A game that crashes keeps its log so far (written, not yet seen in practice: no game has crashed).
 
 ## The goal
@@ -197,12 +208,12 @@ As built (it differs a little from the first sketch):
 - All of the engine uses them (`game-core.ts`, `game.ts`, `pod-arena.ts`, `pod-table.ts`). Left as they are: whole-zone replacements, test setups, and `rockFirst`'s try-out of a rock (pushed and popped at once).
 - The order of every list is as before: `--regress check` IDENTICAL for all six decks.
 
-**C. The safety net. Done 2026-11-13, except the Archidekt round trip (with step 9).**
+**C. The safety net. Done 2026-11-13.**
 
 - `npm run sim -- <deck> --test` plays 50 seeds with the log on and prints how many zone changes went around the functions, with the seed, turn, log line and move of the first eight. `npm run pod -- --test` does the same for 20 pod games.
 - For a deck with `recordsExactMoves: true` in its `index.ts` any such change is BAD (the test fails). For the others it is a `--` line: the to-do list of package D. Counts on 2026-11-13: goldfish 0 (the engine alone), Sam & Frodo 117, Gale 310, Codie 639, Meren 1252, Aesi 2197, Mike 3543 (Mike has its own `draw`).
 - Time for 3,000 games with the log against without: Meren 7.5 s / 5.6 s, Gale 29.0 / 27.1. Recording did not make the log cheaper: the comparison still runs at every line (it is the safety net and gives tapped and counters).
-- Open: export simulated games as Archidekt text and rebuild them with `Board` in `log-board.ts` (step 9 has the export).
+- The round trip was done with step 9, against the new board in `game-log-board.ts` instead of `Board` in `log-board.ts`: see "Status".
 
 **D. The decks, one at a time (a small model, one deck per session). Smallest first: Mike (7 places), Sam & Frodo (8), Meren (17), Gale (20), Aesi (27), Codie (43).**
 

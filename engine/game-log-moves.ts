@@ -49,11 +49,13 @@ type CountByName = Map<string, number>;
 interface TableState {
   cardsInZone: Record<CardZone, CountByName>;
   tokens: CountByName;
-  /** Permanents (cards and tokens) with that name that are tapped, and that are untapped. */
-  tapped: CountByName;
-  untapped: CountByName;
-  /** The +1/+1 counters of each permanent with that name, lowest first. */
-  counters: Map<string, number[]>;
+  /** Each permanent's tapped state and +1/+1 counters. */
+  permanents: Map<Permanent, PermanentState>;
+}
+
+interface PermanentState {
+  isTapped: boolean;
+  counters: number;
 }
 
 /** A card that left its zone and has not shown up in another one yet (a spell that is still resolving). */
@@ -70,6 +72,8 @@ interface RecordedMove {
   card: string;
   fromZone: string | null;
   toZone: string;
+  /** Set for a line that is not a zone change ("untapped"): it is written instead of the move. */
+  otherAction?: string;
 }
 
 function addToCount(counts: CountByName, name: string, change: number): void {
@@ -99,9 +103,7 @@ function readTableState(zones: TableZones): TableState {
       commandZone: countNames(zones.command),
     },
     tokens: new Map(),
-    tapped: new Map(),
-    untapped: new Map(),
-    counters: new Map(),
+    permanents: new Map(),
   };
   for (const permanent of zones.battlefield) {
     const name = permanent.card.name;
@@ -109,13 +111,11 @@ function readTableState(zones: TableZones): TableState {
       permanent.token ? state.tokens : state.cardsInZone.battlefield,
       name,
     );
-    addOne(permanent.tapped ? state.tapped : state.untapped, name);
-    const counters = state.counters.get(name);
-    if (counters) counters.push(permanent.counters);
-    else state.counters.set(name, [permanent.counters]);
+    state.permanents.set(permanent, {
+      isTapped: permanent.tapped,
+      counters: permanent.counters,
+    });
   }
-  for (const counters of state.counters.values())
-    counters.sort((first, second) => first - second);
   return state;
 }
 
@@ -137,18 +137,6 @@ function namesIn(...maps: Map<string, unknown>[]): string[] {
   return [...names];
 }
 
-/** The values of `after` that `before` does not have (both sorted, with repeats). */
-function valuesAdded(before: number[], after: number[]): number[] {
-  const unmatched = before.slice();
-  const added: number[] = [];
-  for (const value of after) {
-    const index = unmatched.indexOf(value);
-    if (index >= 0) unmatched.splice(index, 1);
-    else added.push(value);
-  }
-  return added;
-}
-
 export class MoveRecorder {
   /** The table at the last log event, kept up to date with the zone changes the game reports. */
   private lastState: TableState;
@@ -163,12 +151,19 @@ export class MoveRecorder {
     this.lastState = zones ? readTableState(zones) : emptyTableState();
   }
 
-  /** A recorder that goes on from the same point (for a copy of the game that may replace the game). */
-  copy(): MoveRecorder {
+  /** A recorder that goes on from the same point, for a copy of the game that may replace the game. The copy has
+   *  its own permanents: `permanentsOfCopy[i]` is the copy of `permanents[i]`. */
+  copy(permanents: Permanent[], permanentsOfCopy: Permanent[]): MoveRecorder {
     const copy = new MoveRecorder(null);
     const state = this.lastState;
+    const statesOfCopies = new Map<Permanent, PermanentState>();
+    permanents.forEach((permanent, index) => {
+      const permanentState = state.permanents.get(permanent);
+      if (permanentState)
+        statesOfCopies.set(permanentsOfCopy[index], permanentState);
+    });
     copy.lastState = {
-      ...state, // tapped, untapped and counters are never changed, only replaced
+      permanents: statesOfCopies,
       tokens: copyOfCounts(state.tokens),
       cardsInZone: {
         library: copyOfCounts(state.cardsInZone.library),
@@ -182,6 +177,24 @@ export class MoveRecorder {
     copy.cardsOnTheirWay = this.cardsOnTheirWay.slice();
     copy.recordedMoves = this.recordedMoves.slice();
     return copy;
+  }
+
+  /**
+   * The game took a permanent off the battlefield. If the log has it as tapped it is untapped first: a log tells
+   * permanents apart by name only, so whoever replays it takes an untapped one off the battlefield (see applyMove
+   * in game-log-board.ts), and the number of tapped ones stays right.
+   */
+  notePermanentLeft(permanent: Permanent): void {
+    const card = permanent.card.name;
+    if (this.lastState.permanents.get(permanent)?.isTapped)
+      this.recordedMoves.push({
+        card,
+        fromZone: 'battlefield',
+        toZone: 'battlefield',
+        otherAction: 'untapped',
+      });
+    this.lastState.permanents.delete(permanent);
+    this.noteCardLeft(card, 'battlefield', permanent.token);
   }
 
   /** The game took a card out of a zone. A token that leaves the battlefield is gone. */
@@ -228,10 +241,10 @@ export class MoveRecorder {
     this.unrecordedChanges.push(...foundByComparing.map(describeAction));
     const actions = [
       ...this.takeRecordedMoves(),
+      ...untapsOfPermanentsThatLeft(before, after),
       ...foundByComparing,
       ...(settleCardsOnTheirWay ? this.settleCardsOnTheirWay() : []),
-      ...tapChanges(before, after),
-      ...counterChanges(before, after),
+      ...permanentChanges(before, after),
     ];
     return actions.map(([card, action]) => ({ player, card, action }));
   }
@@ -240,7 +253,8 @@ export class MoveRecorder {
   private takeRecordedMoves(): CardAction[] {
     const actions = this.recordedMoves.map((move): CardAction => [
       move.card,
-      `moved ${move.fromZone ?? UNKNOWN_ZONE} => ${move.toZone}`,
+      move.otherAction ??
+        `moved ${move.fromZone ?? UNKNOWN_ZONE} => ${move.toZone}`,
     ]);
     this.recordedMoves = [];
     return actions;
@@ -249,7 +263,8 @@ export class MoveRecorder {
   /** A reported arrival of this card that does not know yet where the card came from. */
   private arrivalWithoutOrigin(card: string): RecordedMove | undefined {
     return this.recordedMoves.find(
-      (move) => move.card === card && move.fromZone === null,
+      (move) =>
+        move.card === card && move.fromZone === null && !move.otherAction,
     );
   }
 
@@ -333,35 +348,32 @@ function tokenChanges(before: TableState, after: TableState): CardAction[] {
   return actions;
 }
 
-/** A permanent counts as tapped (or untapped) when one more with its name is tapped and one fewer is untapped; a
- *  permanent that enters tapped counts as tapped too, as in a real log. */
-function tapChanges(before: TableState, after: TableState): CardAction[] {
+/** Tapped permanents that left the battlefield without the game saying so: untapped first (see notePermanentLeft). */
+function untapsOfPermanentsThatLeft(
+  before: TableState,
+  after: TableState,
+): CardAction[] {
   const actions: CardAction[] = [];
-  for (const name of namesIn(after.tapped, after.untapped)) {
-    const moreTapped =
-      (after.tapped.get(name) ?? 0) - (before.tapped.get(name) ?? 0);
-    const moreUntapped =
-      (after.untapped.get(name) ?? 0) - (before.untapped.get(name) ?? 0);
-    for (let i = 0; i < moreTapped; i++) actions.push([name, 'tapped']);
-    const untappedCount = Math.min(-moreTapped, moreUntapped);
-    for (let i = 0; i < untappedCount; i++) actions.push([name, 'untapped']);
-  }
+  for (const [permanent, earlier] of before.permanents)
+    if (earlier.isTapped && !after.permanents.has(permanent))
+      actions.push([permanent.card.name, 'untapped']);
   return actions;
 }
 
-function counterChanges(before: TableState, after: TableState): CardAction[] {
+/** Permanents that were tapped or untapped, or whose +1/+1 counters changed. A permanent that is new and tapped
+ *  counts as tapped, as in a real log. */
+function permanentChanges(before: TableState, after: TableState): CardAction[] {
   const actions: CardAction[] = [];
-  for (const [name, countersAfter] of after.counters) {
-    const countersBefore = before.counters.get(name) ?? [];
-    let newPermanents = countersAfter.length - countersBefore.length;
-    for (const counters of valuesAdded(countersBefore, countersAfter)) {
-      // a permanent that just entered without counters is not a counter change
-      if (counters === 0 && newPermanents > 0) {
-        newPermanents--;
-        continue;
-      }
-      actions.push([name, `counter:${PLUS_ONE_COUNTER}=${counters}`]);
-    }
+  for (const [permanent, now] of after.permanents) {
+    const name = permanent.card.name;
+    const earlier = before.permanents.get(permanent) ?? {
+      isTapped: false,
+      counters: 0,
+    };
+    if (now.isTapped !== earlier.isTapped)
+      actions.push([name, now.isTapped ? 'tapped' : 'untapped']);
+    if (now.counters !== earlier.counters)
+      actions.push([name, `counter:${PLUS_ONE_COUNTER}=${now.counters}`]);
   }
   return actions;
 }

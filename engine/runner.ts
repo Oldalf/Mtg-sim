@@ -200,7 +200,13 @@ export function runJob(deck: Deck, job: Job): JobResult {
     });
     gamesAsJson.push(
       JSON.stringify(
-        goldfishGameLog(seed, deck.name, decklist.commanders, game?.log ?? []),
+        goldfishGameLog(
+          seed,
+          deck.name,
+          decklist.commanders,
+          decklist.library.length,
+          game?.log ?? [],
+        ),
       ),
     );
   };
@@ -366,6 +372,7 @@ export function trace(
       seed,
       deck.name,
       decklist.commanders,
+      decklist.library.length,
       game.log,
     );
     const title = `Game, seed ${seed}: ${describeKillTurns(killTurns, killTurnNamesOf(deck))}`;

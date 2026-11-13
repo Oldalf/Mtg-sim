@@ -735,11 +735,7 @@ export abstract class GameCore<S = unknown> {
   /** Takes a permanent off the battlefield (it must be there). A token is gone; put a card somewhere with putCard. */
   takeFromBattlefield(permanent: Permanent): void {
     removeOrThrow(this.battlefield, permanent);
-    this.moveRecorder?.noteCardLeft(
-      permanent.card.name,
-      'battlefield',
-      permanent.token,
-    );
+    this.moveRecorder?.notePermanentLeft(permanent);
   }
 
   toGraveyard(card: CardDef, _fromLibrary = false): void {
@@ -1759,7 +1755,11 @@ export abstract class GameCore<S = unknown> {
           // try the action on a copy; keep it only if the kill survives
           const rolloutCopy = this.clone();
           // this copy becomes the game if the kill survives, so its moves are recorded
-          rolloutCopy.moveRecorder = this.moveRecorder?.copy() ?? null;
+          rolloutCopy.moveRecorder =
+            this.moveRecorder?.copy(
+              this.battlefield,
+              rolloutCopy.battlefield,
+            ) ?? null;
           if (rolloutCopy.orderedCandidates(main2)[index].action() === false)
             continue;
           if (
@@ -1881,6 +1881,7 @@ export abstract class GameCore<S = unknown> {
     this.highTidesThisTurn = this.muck = 0;
     this.spellsCast = 0;
     this.mulligan();
+    this.say('opening hand', formatList(this.hand.map((card) => card.name)));
   }
 
   /** One full turn of ours. Returns true when the game ended in it (a win, or we lost). A pod plays the decks' turns in seat order. */

@@ -6,6 +6,8 @@
  */
 import * as C from './cards';
 import { Game } from './game';
+import { goldfishGameLog } from './game-log';
+import { PlayerBoard, TableBoards } from './game-log-board';
 import { playPod, playRounds, podSpec, seatPlayers } from './pod';
 import { Rng } from './rng';
 import { Deck, resolveList } from './runner';
@@ -13,6 +15,8 @@ import { Deck, resolveList } from './runner';
 const GOLDFISH_SEEDS = 50;
 const POD_SEEDS = 50;
 const POD_EXACT_MOVE_SEEDS = 20;
+const REPLAY_SEEDS = 20;
+const BOARD_SEEDS = 20;
 const POD_DECKS = ['gale', 'meren', 'samfrodo', 'aesi'];
 const POD_ROUNDS_CAP = 17;
 
@@ -71,17 +75,29 @@ function reportUnrecordedMoves(
   unrecordedMoves: string[],
   mustBeNone: boolean,
 ): boolean {
-  const isGood = unrecordedMoves.length === 0 || !mustBeNone;
-  const status =
-    unrecordedMoves.length === 0 ? 'OK ' : mustBeNone ? 'BAD' : '-- ';
-  console.log(
-    `${status} ${label}: ${unrecordedMoves.length} zone changes went around takeCard / putCard` +
-      (mustBeNone || !unrecordedMoves.length
-        ? ''
-        : ' (deck not converted yet)'),
+  return reportDifferences(
+    label,
+    'zone changes went around takeCard / putCard',
+    unrecordedMoves,
+    mustBeNone,
   );
-  for (const move of unrecordedMoves.slice(0, CHANGES_SHOWN))
-    console.log(`      ${move}`);
+}
+
+/** Prints a count of things that should not be there, and the first few. They fail the test only if mustBeNone. */
+function reportDifferences(
+  label: string,
+  whatTheyAre: string,
+  differences: string[],
+  mustBeNone: boolean,
+): boolean {
+  const isGood = differences.length === 0 || !mustBeNone;
+  const status = differences.length === 0 ? 'OK ' : mustBeNone ? 'BAD' : '-- ';
+  console.log(
+    `${status} ${label}: ${differences.length} ${whatTheyAre}` +
+      (mustBeNone || !differences.length ? '' : ' (deck not converted yet)'),
+  );
+  for (const difference of differences.slice(0, CHANGES_SHOWN))
+    console.log(`      ${difference}`);
   return isGood;
 }
 
@@ -129,6 +145,169 @@ export function runPodExactMoveTests(allDecks: Record<string, Deck>): boolean {
     'card moves in a pod are recorded when they happen',
     unrecordedMoves,
     POD_DECKS.every((name) => allDecks[name].recordsExactMoves === true),
+  );
+}
+
+function newLoggedGame(deck: Deck, seed: number): Game<unknown> {
+  const decklist = C.loadDecklist(resolveList(deck, deck.defaultList));
+  return new deck.Game(
+    decklist.commanders,
+    decklist.library,
+    new Rng(seed),
+    { ...deck.config },
+    true,
+    'protected',
+  );
+}
+
+/** A game played again gives the same log (what replayGame in game-log-replay.ts relies on). */
+export function runReplayTests(deck: Deck): boolean {
+  const logOfGame = (seed: number) => {
+    const game = newLoggedGame(deck, seed);
+    game.play();
+    return JSON.stringify(game.log);
+  };
+  const differingSeeds: number[] = [];
+  for (let seed = 1; seed <= REPLAY_SEEDS; seed++)
+    if (logOfGame(seed) !== logOfGame(seed)) differingSeeds.push(seed);
+  return report(
+    'a game played again gives the same log',
+    differingSeeds,
+    REPLAY_SEEDS,
+  );
+}
+
+/** The zones of a board or a game as text that is equal when the same cards are in the same zones. */
+function describeZones(zones: {
+  hand: string[];
+  graveyard: string[];
+  exile: string[];
+  commandZone: string[];
+  battlefield: string[];
+  librarySize: number;
+}): Record<string, string> {
+  const sorted = (names: string[]) => names.slice().sort().join(' | ');
+  return {
+    hand: sorted(zones.hand),
+    graveyard: sorted(zones.graveyard),
+    exile: sorted(zones.exile),
+    'command zone': sorted(zones.commandZone),
+    battlefield: sorted(zones.battlefield),
+    library: String(zones.librarySize),
+  };
+}
+
+/** The items of the first "a | b | c" list that the second one does not have. */
+function itemsOnlyInFirst(first: string, second: string): string[] {
+  const unmatched = second.split(' | ');
+  return first
+    .split(' | ')
+    .filter((item) => item !== '')
+    .filter((item) => {
+      const index = unmatched.indexOf(item);
+      if (index < 0) return true;
+      unmatched.splice(index, 1);
+      return false;
+    });
+}
+
+/** What two "a | b | c" lists do not share. */
+function describeDifference(fromLog: string, fromGame: string): string {
+  return `only in the log [${itemsOnlyInFirst(fromLog, fromGame).join(', ')}], only in the game [${itemsOnlyInFirst(fromGame, fromLog).join(', ')}]`;
+}
+
+/** The battlefield as a log can know it. A log tells cards apart by name only, so of two Cats it cannot say which
+ *  one was tapped or got a counter: what must match per name is how many there are and how many are tapped, and
+ *  the counters when there is only one. */
+function describeBattlefield(
+  permanents: { name: string; isTapped: boolean; counters: number }[],
+): string[] {
+  const totals = new Map<string, [number, number, number]>();
+  for (const permanent of permanents) {
+    const total = totals.get(permanent.name) ?? [0, 0, 0];
+    total[0] += 1;
+    total[1] += permanent.isTapped ? 1 : 0;
+    total[2] += permanent.counters;
+    totals.set(permanent.name, total);
+  }
+  return [...totals].map(
+    ([name, [count, tappedCount, counters]]) =>
+      `${name} x${count}, ${tappedCount} tapped` +
+      (count === 1 ? `, ${counters} counters` : ''),
+  );
+}
+
+const zonesOfBoard = (board: PlayerBoard) =>
+  describeZones({
+    ...board,
+    battlefield: describeBattlefield(
+      board.battlefield.map((permanent) => ({
+        name: permanent.name,
+        isTapped: permanent.tapped,
+        counters: permanent.counters,
+      })),
+    ),
+  });
+
+const zonesOfGame = (game: Game<unknown>) => {
+  const names = (cards: C.CardDef[]) => cards.map((card) => card.name);
+  return describeZones({
+    hand: names(game.hand),
+    graveyard: names(game.graveyard),
+    exile: names(game.exile),
+    commandZone: names(game.command),
+    battlefield: describeBattlefield(
+      game.battlefield.map((permanent) => ({
+        name: permanent.card.name,
+        isTapped: permanent.tapped,
+        counters: permanent.counters,
+      })),
+    ),
+    librarySize: game.library.length,
+  });
+};
+
+/** The board rebuilt from the card moves of the log equals the game's real zones at the end of every turn. */
+export function runBoardTests(deck: Deck): boolean {
+  const differences: string[] = [];
+  for (let seed = 1; seed <= BOARD_SEEDS; seed++) {
+    const game = newLoggedGame(deck, seed);
+    const gameLog = goldfishGameLog(
+      seed,
+      deck.name,
+      game.commanderNames,
+      game.library.length,
+      game.log,
+    );
+    const table = new TableBoards(gameLog);
+    let eventsApplied = 0;
+    game.setup();
+    for (;;) {
+      const isGameOver =
+        game.turn >= (game.config.max_turn as number) || game.takeTurn();
+      game.logCardMovesSoFar();
+      for (const event of game.log.slice(eventsApplied)) table.apply(event);
+      eventsApplied = game.log.length;
+      const rebuilt = zonesOfBoard(table.boards[0]);
+      const real = zonesOfGame(game);
+      // a deck that logs nothing (the goldfish) has no log to rebuild from
+      if (!game.log.length) break;
+      // the log's exile also holds cards that left the game (a Wishclaw Talisman given away)
+      if (!itemsOnlyInFirst(real.exile, rebuilt.exile).length)
+        rebuilt.exile = real.exile;
+      for (const zone of Object.keys(real))
+        if (rebuilt[zone] !== real[zone])
+          differences.push(
+            `seed ${seed} T${game.turn} ${zone}: ${describeDifference(rebuilt[zone], real[zone])}`,
+          );
+      if (isGameOver || differences.length > 200) break;
+    }
+  }
+  return reportDifferences(
+    `the board rebuilt from the log matches the game (${BOARD_SEEDS} seeds)`,
+    'turn ends differ',
+    differences,
+    deck.recordsExactMoves === true,
   );
 }
 

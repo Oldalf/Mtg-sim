@@ -27,7 +27,7 @@ export interface CardMove {
 }
 
 export interface GameEvent {
-  /** The turn; in a pod, the round. */
+  /** The turn; in a pod, the round. 0 = before the first turn (the opening hand). */
   turn: number;
   /** Who does it (index into GameLog.players). In a pod this can differ from whose turn it is. */
   player: number;
@@ -54,6 +54,8 @@ export interface LogPlayer {
   commanders: string[];
   /** 0 = first to play. */
   seat: number;
+  /** The cards in the library before the opening hand is drawn. */
+  librarySize: number;
 }
 
 export interface GameLog {
@@ -105,11 +107,12 @@ export function goldfishGameLog(
   seed: number,
   deckName: string,
   commanders: string[],
+  librarySize: number,
   events: GameEvent[],
 ): GameLog {
   return {
     seed,
-    players: [{ name: deckName, deckName, commanders, seat: 0 }],
+    players: [{ name: deckName, deckName, commanders, seat: 0, librarySize }],
     events,
   };
 }

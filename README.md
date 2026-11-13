@@ -22,7 +22,10 @@ npm run sim -- gale --set planner=0                  # same list, default AI vs 
 npm run sim -- gale --turns 10                       # look further than turn 8
 npm run sim -- gale --trace 3                        # play-by-play of 3 games, to check the AI's lines (--moves adds the card moves)
 npm run logs                                         # the games of the last sim / pod command: its runs and their tagged games
-npm run logs -- 1 --seed 412                         # one game of run 1 as text (--moves: card moves, --highlights: only the key lines)
+npm run logs -- 1 --seed 412                         # one game of run 1 as text (--moves: card moves, --highlights: only the key lines,
+                                                     #   --board: the board at the end of each turn, --archidekt: as an Archidekt log,
+                                                     #   --replay: play the game again instead of reading the stored log)
+npm run logs -- decks/meren/logs/game1_t9_gray_merchant.txt --board   # a real Archidekt log, shown the same way
 npm run logs -- 1 --tag fastest                      # every game of run 1 with that tag
 npm run sim -- gale --no-log                         # don't write the games to session-logs/
 npm run sim -- gale --rank                           # rank cards by how much seeing them by turn 4 helps

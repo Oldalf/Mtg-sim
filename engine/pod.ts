@@ -56,6 +56,7 @@ export function seatPlayers(
     for (const game of table.games) game.arena = arena;
   }
   for (const game of table.games) game.setup();
+  table.logOpeningHands();
   return table;
 }
 

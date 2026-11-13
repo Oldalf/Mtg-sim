@@ -7,7 +7,16 @@
  *   npm run logs -- 1 --tag average            every game with that tag
  *   npm run logs -- 1 --seed 412 --highlights  only the highlights, with two lines around each
  *   npm run logs -- 1 --seed 412 --moves       with the card moves under each line
+ *   npm run logs -- 1 --seed 412 --board       with the board at the end of each turn
+ *   npm run logs -- 1 --seed 412 --archidekt   the game as an Archidekt log (a pod: each player's in turn)
+ *   npm run logs -- 1 --seed 412 --replay      play the game again instead of reading the stored log
+ *   npm run logs -- decks/meren/logs/game1_t9_gray_merchant.txt --board   a real Archidekt log, shown the same way
  */
+import * as fs from 'fs';
+import { archidektLines, readArchidektLog } from '../engine/game-log-archidekt';
+import { GameLog } from '../engine/game-log';
+import { replayGame } from '../engine/game-log-replay';
+import { Deck } from '../engine/runner';
 import {
   GameIndexRow,
   listRuns,
@@ -17,7 +26,11 @@ import {
   runFolderOf,
 } from '../engine/game-log-files';
 import { describeGameResult, formatGameOfRun } from '../engine/game-log-run';
-import { highlightsOf } from '../engine/game-log-text';
+import {
+  GameLogTextOptions,
+  formatGameLog,
+  highlightsOf,
+} from '../engine/game-log-text';
 import { Args } from './args';
 
 /** The run asked for: its full name, its number ("1", "01"), or nothing for the latest. */
@@ -70,21 +83,59 @@ function printTaggedGames(runName: string): void {
   );
 }
 
-function printGames(runName: string, rows: GameIndexRow[], args: Args): void {
+/** How the options ask a game to be shown. The board needs every event, so it is left out with --highlights. */
+function textOptions(args: Args): GameLogTextOptions {
+  return {
+    showMoves: args.showMoves,
+    showBoard: args.showBoard && !args.highlights,
+  };
+}
+
+/** --archidekt: the card moves of each player as an Archidekt log. */
+function printAsArchidektLog(gameLog: GameLog): void {
+  gameLog.players.forEach((player, playerIndex) => {
+    if (gameLog.players.length > 1) console.log(`\n# ${player.name}`);
+    console.log(archidektLines(gameLog, playerIndex).join('\n'));
+  });
+}
+
+function printGames(
+  runName: string,
+  rows: GameIndexRow[],
+  args: Args,
+  decks: Record<string, Deck>,
+): void {
   const runFolder = runFolderOf(runName);
   const runInfo = readRunInfo(runFolder);
   for (const row of rows) {
-    const wholeGame = readGame(runFolder, row);
+    const wholeGame = args.replay
+      ? replayGame(decks, runFolder, row.seed)
+      : readGame(runFolder, row);
+    if (args.archidekt) {
+      printAsArchidektLog(wholeGame);
+      continue;
+    }
     const gameLog = args.highlights ? highlightsOf(wholeGame) : wholeGame;
     console.log(
-      formatGameOfRun(runInfo, row, gameLog, { showMoves: args.showMoves }) +
-        '\n',
+      formatGameOfRun(runInfo, row, gameLog, textOptions(args)) + '\n',
     );
     if (row.error !== undefined) console.log(row.error + '\n');
   }
 }
 
-export function runLogsCommand(args: Args): void {
+/** A real Archidekt log file, shown like a simulated game. */
+function printArchidektFile(file: string, args: Args): void {
+  const wholeGame = readArchidektLog(file);
+  const gameLog = args.highlights ? highlightsOf(wholeGame) : wholeGame;
+  console.log(
+    formatGameLog(gameLog, { title: file, ...textOptions(args) }) + '\n',
+  );
+}
+
+export function runLogsCommand(args: Args, decks: Record<string, Deck>): void {
+  const askedFile = args.lists[0];
+  if (askedFile !== undefined && fs.existsSync(askedFile))
+    return printArchidektFile(askedFile, args);
   const runs = listRuns();
   if (!runs.length) {
     console.log(
@@ -108,5 +159,5 @@ export function runLogsCommand(args: Args): void {
         ? `no game with tag ${args.tag} in ${runName}`
         : `no game with seed ${args.seed} in ${runName}`,
     );
-  printGames(runName, rows, args);
+  printGames(runName, rows, args, decks);
 }

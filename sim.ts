@@ -27,7 +27,12 @@
 import { isMainThread, parentPort, workerData } from 'worker_threads';
 import * as Runner from './engine/runner';
 import { regress } from './engine/regress';
-import { runExactMoveTests, runGoldfishLogTests } from './engine/game-log.test';
+import {
+  runBoardTests,
+  runExactMoveTests,
+  runGoldfishLogTests,
+  runReplayTests,
+} from './engine/game-log.test';
 import * as Pod from './engine/pod';
 import { PodJob } from './engine/pod-types';
 import { Args, parseArgs, wantsEcoMode } from './cli/args';
@@ -43,7 +48,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2), Object.keys(DECKS));
   if (args.deck === 'pod') return runPodCommand(args, DECKS);
   if (args.deck === 'cards') return runCardsCommand(args);
-  if (args.deck === 'logs') return runLogsCommand(args);
+  if (args.deck === 'logs') return runLogsCommand(args, DECKS);
   const deck = DECKS[args.deck];
   if (!deck)
     throw new Error(
@@ -73,8 +78,12 @@ async function runSpecialCommand(
   if (args.test) {
     const isLogHarmless = runGoldfishLogTests(deck);
     const areMovesRecorded = runExactMoveTests(deck);
+    const isReplaySame = runReplayTests(deck);
+    const isBoardRight = runBoardTests(deck);
     const deckTestsPassed = TESTS[deck.name]();
-    process.exit(isLogHarmless && areMovesRecorded && deckTestsPassed ? 0 : 1);
+    const logTestsPassed =
+      isLogHarmless && areMovesRecorded && isReplaySame && isBoardRight;
+    process.exit(logTestsPassed && deckTestsPassed ? 0 : 1);
   }
   if (args.regress) {
     const identical = await regress(

@@ -17,6 +17,9 @@ export interface Args {
   seedGiven: boolean;
   tag: string | null; // --tag: the logs viewer shows every game with this tag
   highlights: boolean; // --highlights: the logs viewer shows only the highlights of a game
+  showBoard: boolean; // --board: the logs viewer shows the board at the end of each turn
+  archidekt: boolean; // --archidekt: the logs viewer prints the game as an Archidekt log
+  replay: boolean; // --replay: the logs viewer plays the game again instead of reading the stored log
   showMoves: boolean; // --moves: show the card moves under each line of a traced game
   noLog: boolean; // --no-log: don't write the games to session-logs/
   mode: 'any' | 'protected';
@@ -50,6 +53,9 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     seedGiven: false,
     tag: null,
     highlights: false,
+    showBoard: false,
+    archidekt: false,
+    replay: false,
     showMoves: false,
     noLog: false,
     mode: 'any',
@@ -89,6 +95,9 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
       args.seedGiven = true;
     } else if (option === '--tag') args.tag = nextValue();
     else if (option === '--highlights') args.highlights = true;
+    else if (option === '--board') args.showBoard = true;
+    else if (option === '--archidekt') args.archidekt = true;
+    else if (option === '--replay') args.replay = true;
     else if (option === '--moves') args.showMoves = true;
     else if (option === '--no-log') args.noLog = true;
     else if (option === '--mode')
