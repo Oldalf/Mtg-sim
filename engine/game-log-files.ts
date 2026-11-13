@@ -17,51 +17,14 @@ import * as path from 'path';
 import * as zlib from 'zlib';
 import * as C from './cards';
 import { GameLog } from './game-log';
-import { Config } from './game-types';
-import type { PodGame, PodSpec } from './pod-types';
-import type { KillTurns } from './runner';
+import type { GameIndexRow, RunInfo } from './run-types';
+
+export type { GameIndexRow, RunInfo };
 
 export const SESSION_LOGS_FOLDER = path.join(C.ROOT, 'session-logs');
 const RUN_INFO_FILE = 'run.json';
 const INDEX_FILE = 'index.json';
 const TAGGED_FOLDER = 'tagged';
-
-/** What was run, enough to play any of its games again. */
-export interface RunInfo {
-  /** The folder name, e.g. "01-meren-decklist". */
-  name: string;
-  mode: 'goldfish' | 'pod';
-  date: string;
-  gameCount: number;
-  /** The deck names (a goldfish run has one). */
-  decks: string[];
-  /** Each deck's list file, relative to the project folder, and a hash of its contents when the run started. */
-  lists: string[];
-  listHashes: string[];
-  /** Goldfish: the settings, and how the games were played ("protected" for the normal table, "any" for --diag). */
-  config?: Config;
-  gameMode?: 'any' | 'protected';
-  /** Goldfish: short names of the two kill turns of a game, e.g. ["win", "1st dead"] (see Deck.metrics). */
-  killTurnNames?: [string, string];
-  /** Pod: the pod as it was run. */
-  pod?: PodSpec;
-}
-
-/** One game of a run: its result and where its log is. The list of these lets a viewer filter thousands of games
- *  without reading their events. */
-export interface GameIndexRow {
-  seed: number;
-  /** The games file, and the line in it (0 = the first). */
-  file: string;
-  line: number;
-  tags: string[];
-  /** The game hit a simulator bug: the message. Its log holds what happened up to then. */
-  error?: string;
-  /** Goldfish: the two kill turns (see Deck.metrics). */
-  killTurns?: KillTurns;
-  /** Pod: the finished game, without its log. */
-  pod?: PodGame;
-}
 
 // ================================================================ writing a run
 

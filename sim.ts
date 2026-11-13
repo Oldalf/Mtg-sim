@@ -18,6 +18,8 @@
  *   npm run sim -- aesi lists/a.txt --hands -n 8000       how opening hands do (by land count and contents), for mulligan advice
  *   npm run logs                                         read the games of the last run (see cli/logs-command.ts);
  *                                                        every run writes its games to session-logs/ unless --no-log is given
+ *   npm run app                                          the app: a local server and a page in the browser
+ *                                                        (see app/server/app-command.ts)
  *   npm run sim -- gale --test                           the deck's kill-finder tests
  *   npm run sim -- gale --regress check                  after a refactor: results must be IDENTICAL
  *                                                        (--regress record saves a new baseline)
@@ -41,10 +43,13 @@ import { enableEcoMode, reportCpuUseAtExit } from './cli/eco';
 import { runCardsCommand } from './cli/cards-command';
 import { runPodCommand } from './cli/pod-command';
 import { runLogsCommand } from './cli/logs-command';
+import { runAppCommand } from './app/server/app-command';
 import { addMissingCards } from './engine/scryfall';
 import { DECKS, REGRESS, TESTS } from './decks/index';
 
 async function main(): Promise<void> {
+  const [command, ...appArguments] = process.argv.slice(2);
+  if (command === 'app') return runAppCommand(appArguments);
   const args = parseArgs(process.argv.slice(2), Object.keys(DECKS));
   if (args.deck === 'pod') return runPodCommand(args, DECKS);
   if (args.deck === 'cards') return runCardsCommand(args);

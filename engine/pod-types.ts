@@ -1,7 +1,6 @@
 /** The shapes of the data that go into and come out of a pod game. */
-import { GameLog } from './game-log';
-import type { GameIndexRow } from './game-log-files';
-import { Config } from './game-types';
+import type { GameLog } from './game-log-types';
+import type { Config, GameIndexRow } from './run-types';
 
 export interface PodSpec {
   decks: string[]; // deck names, in the order given on the command line

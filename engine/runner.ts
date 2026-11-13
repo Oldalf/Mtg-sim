@@ -10,6 +10,7 @@ import * as C from './cards';
 import { Config } from './game-types';
 import { Game } from './game';
 import { goldfishGameLog } from './game-log';
+import type { KillTurns } from './run-types';
 import { GameIndexRow, gamesFileName, writeGamesFile } from './game-log-files';
 import { describeKillTurns } from './game-log-run';
 import { formatGameLog } from './game-log-text';
@@ -63,8 +64,7 @@ export function killTurnNamesOf(deck: Deck): [string, string] {
   return [deck.metrics[0][1] || 'win', deck.metrics[1][1]];
 }
 
-/** The two kill turns of a game (see Deck.metrics): the first turn with any kill, and with counter backup. Null = none. */
-export type KillTurns = [number | null, number | null];
+export type { KillTurns };
 
 /** What a game reports for --diag: its win turn ("win") and the deck's own numbers from Game.diag(). */
 export type DiagRow = Record<string, number | null>;
