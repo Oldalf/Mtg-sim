@@ -77,7 +77,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 3 | Decks and decklists on the server | 0 | small model | done (2026-11-13) |
 | 4 | Starting, following and stopping a run on the server | 1, 2 | big model | done (2026-11-13) |
 | 5 | Game logs on the server | 0 | small model | done (2026-11-13) |
-| 6 | The app shell, the theme and the shared components | 0 | big model | open |
+| 6 | The app shell, the theme and the shared components | 0 | big model | done (2026-11-13) |
 | 7 | Card images | 0 | small model | open |
 | 8 | Page: decks and decklists | 3, 6 | small model | open |
 | 9 | Page: simulate | 4, 6 | big model | open |
@@ -154,6 +154,7 @@ The page needs the numbers, not printed text.
 - An `ApiService` on `HttpClient` with one typed method per call of the API table, and one place that turns an error answer into a message on the page (a Material snack bar).
 - The shared components the pages are built from, each in its own folder: a card (image with a text fallback), a tag chip, a results table, a run progress panel (bar, games played, seconds, stop button), an error box. Use Material's own components where one exists instead of writing a new one.
 - Done when: a sample route shows every shared piece, and the other pages can be built from them without new styles.
+- Notes (task 6, 2026-11-13): the routes are in `app.routes.ts`; each page route still loads `pages/page-to-come.ts`, and the task that builds the page points its route to its own component (route params and data reach a page as inputs: `withComponentInputBinding`). `/pieces` shows every shared piece with made-up data (not in the toolbar). `ApiService` is `core/api.ts` (Observables, so a page uses `rxResource` or `toSignal`); `core/show-http-errors.ts` is an interceptor that shows every failed call in a snack bar (the same message once while it is on screen) and still passes the error on. Shared pieces in `shared/`: `app-card-image` (width set by the parent, `isTapped`; falls back to a text card when `/api/cards/<name>/image` fails, so it works before task 7), `app-tag-chip`, `app-results-table` (`ResultColumn` has the shape of a diag measure; `compareToFirst` and `noisePoints` show differences to the base row as the command line does), `app-run-progress` (a `RunState`, a `stop` output), `app-error-box`. `mat-icon` uses the Material Symbols font (set in `app.config.ts`). The server sends `index.html` for a path with no file when the browser asks for HTML (`Accept: text/html`); other missing files stay 404.
 
 ### 7. Card images
 
