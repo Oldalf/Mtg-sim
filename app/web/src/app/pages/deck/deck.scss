@@ -1,0 +1,84 @@
+.lists,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.is-chosen {
+  background: var(--mat-sys-secondary-container);
+}
+
+.count.is-warning {
+  color: var(--mat-sys-error);
+}
+
+.note {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.list-and-card {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.cards {
+  flex: 1;
+  min-width: 0;
+}
+
+h2 {
+  font: var(--mat-sys-title-small);
+  text-transform: capitalize;
+  margin: 16px 0 4px;
+  color: var(--mat-sys-primary);
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 2fr) 90px 3fr;
+  gap: 8px;
+  width: 100%;
+  padding: 2px 4px;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--mat-sys-surface-container-high);
+  }
+}
+
+.card-cost,
+.card-type {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.shown-card {
+  position: sticky;
+  top: 72px;
+  width: 244px;
+  flex: none;
+}
+
+@media (max-width: 700px) {
+  .list-and-card {
+    flex-direction: column-reverse;
+  }
+  .shown-card {
+    position: static;
+  }
+  .card-row {
+    grid-template-columns: 1fr 80px;
+  }
+  .card-type {
+    display: none;
+  }
+}

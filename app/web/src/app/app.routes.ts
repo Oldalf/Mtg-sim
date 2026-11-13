@@ -9,14 +9,14 @@ export const routes: Routes = [
   {
     path: 'decks',
     title: 'Decks',
-    loadComponent: loadPageToCome,
-    data: { title: 'Decks', task: 8 },
+    loadComponent: () =>
+      import('./pages/decks/decks').then((module) => module.Decks),
   },
   {
     path: 'decks/:deck',
     title: 'Deck',
-    loadComponent: loadPageToCome,
-    data: { title: 'Deck', task: 8 },
+    loadComponent: () =>
+      import('./pages/deck/deck').then((module) => module.Deck),
   },
   {
     path: 'simulate',

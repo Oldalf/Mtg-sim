@@ -1,0 +1,116 @@
+<a routerLink="/decks">&larr; Decks</a>
+<h1>{{ deck() }}</h1>
+
+@if (decks.isLoading() || decklist.isLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (decks.hasValue() && !summary()) {
+  <app-error-box
+    title="No such deck"
+    [message]="'There is no deck called ' + deck() + '.'"
+  />
+}
+
+@if (summary(); as summary) {
+  <nav class="lists" aria-label="Lists of the deck">
+    @for (listFile of summary.lists; track listFile) {
+      <a
+        mat-button
+        [routerLink]="['/decks', deck()]"
+        [queryParams]="{ list: listFile }"
+        [class.is-chosen]="listFile === chosenList()"
+      >
+        {{ listLabel(listFile) }}
+      </a>
+    }
+  </nav>
+
+  @if (decklist.value(); as decklist) {
+    <div class="actions">
+      <a
+        mat-flat-button
+        routerLink="/simulate"
+        [queryParams]="{ deck: deck(), lists: [decklist.list] }"
+      >
+        Simulate this list
+      </a>
+      <a
+        mat-stroked-button
+        routerLink="/simulate"
+        [queryParams]="{ deck: deck(), lists: [decklist.list], compare: 1 }"
+      >
+        Compare with...
+      </a>
+    </div>
+
+    <p class="count" [class.is-warning]="hasWrongCardCount()">
+      {{ decklist.cardCount }} cards
+      @if (hasWrongCardCount()) {
+        (a Commander deck has 100)
+      }
+    </p>
+    @if (decklist.missing.length > 0) {
+      <app-error-box
+        title="Cards without data (they cannot be played)"
+        [message]="decklist.missing.join(', ')"
+      />
+    }
+    @if (decklist.generic.length > 0) {
+      <p class="note">
+        Played by their type only (no rules of their own):
+        {{ decklist.generic.join(', ') }}
+      </p>
+    }
+
+    <div class="list-and-card">
+      <div class="cards">
+        <h2>Commander</h2>
+        @for (card of decklist.commanders; track card.name) {
+          <button
+            type="button"
+            class="card-row"
+            (mouseenter)="showCard(card)"
+            (focus)="showCard(card)"
+            (click)="showCard(card)"
+          >
+            <span class="card-name">{{ card.name }}</span>
+            <span class="card-cost">{{ card.manaCost }}</span>
+            <span class="card-type">{{ card.typeLine }}</span>
+          </button>
+        }
+        @for (section of decklist.sections; track section.name) {
+          <h2>{{ section.name }} ({{ section.cards.length }})</h2>
+          @for (card of section.cards; track card.name) {
+            <button
+              type="button"
+              class="card-row"
+              (mouseenter)="showCard(card)"
+              (focus)="showCard(card)"
+              (click)="showCard(card)"
+            >
+              <span class="card-name">
+                @if (card.count > 1) {
+                  {{ card.count }}x
+                }
+                {{ card.name }}
+              </span>
+              <span class="card-cost">{{ card.manaCost }}</span>
+              <span class="card-type">{{ card.typeLine }}</span>
+            </button>
+          }
+        }
+      </div>
+      @if (shownCard(); as card) {
+        <div class="shown-card">
+          <app-card-image
+            [name]="card.name"
+            [typeLine]="card.typeLine"
+            [manaCost]="card.manaCost"
+            [print]="card.scryfallId"
+          />
+        </div>
+      }
+    </div>
+  }
+}
