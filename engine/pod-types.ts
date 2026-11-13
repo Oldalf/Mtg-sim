@@ -50,4 +50,6 @@ export type PodJobResult = {
   /** One row per logged game (see game-log-files.ts). */
   logRows?: GameIndexRow[];
   errors: [number, string][];
+  /** Set on the merged result of a run: true if it was stopped before every game was played. */
+  wasStopped?: boolean;
 };
