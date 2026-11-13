@@ -71,7 +71,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 
 | Task | What | Needs | Who | Status |
 |---|---|---|---|---|
-| 0 | The shapes and the skeleton | - | big model, first and alone | open |
+| 0 | The shapes and the skeleton | - | big model, first and alone | taken (Claude, 2026-11-13) |
 | 1 | Reports as data | 0 | small model | open |
 | 2 | Runs that report progress and can be stopped | 0 | big model | open |
 | 3 | Decks and decklists on the server | 0 | small model | open |
