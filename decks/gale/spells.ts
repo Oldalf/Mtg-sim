@@ -42,7 +42,7 @@ function resolveMissionBriefing(game: GaleGame, spell: CardDef): void {
       card.isInstantOrSorcery &&
       card !== spell &&
       game.instantOrSorceryDevValue(card, true) > 0 &&
-      game.canPay(game.effCost(card, null, true), true),
+      game.canPay(game.effectiveCost(card, null, true), true),
   );
   if (options.length) {
     const recast = firstMax(options, (card) =>
@@ -58,7 +58,7 @@ function resolveWindfall(game: GaleGame): void {
   const handSize = game.hand.length;
   for (const card of game.hand.slice()) {
     removeOrThrow(game.hand, card);
-    game.toGy(card);
+    game.toGraveyard(card);
   }
   const events: number[] = [];
   for (let i = 0; i < game.life.length; i++)
@@ -91,7 +91,7 @@ function resolveGiftsUngiven(game: GaleGame): void {
     const [picks, binned] = pile;
     for (const card of picks) removeOrThrow(game.library, card);
     game.shuffle();
-    for (const card of binned) game.toGy(card);
+    for (const card of binned) game.toGraveyard(card);
     game.hand.push(...picks.filter((card) => !binned.includes(card)));
     game.say(
       'Gifts ->',
@@ -126,7 +126,7 @@ function resolveGiftsUngiven(game: GaleGame): void {
     (card) =>
       game.cardValue(card) * (card.isInstantOrSorcery && galeOut ? 0.3 : 1.0),
   );
-  for (const card of picks.slice(0, 2)) game.toGy(card);
+  for (const card of picks.slice(0, 2)) game.toGraveyard(card);
   game.hand.push(...picks.slice(2));
   game.say('Gifts ->', picks);
 }

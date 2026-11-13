@@ -22,6 +22,7 @@ import { Config } from './game-types';
 import { Game } from './game';
 import { Board, BoardGame, LogEvent, parseLog } from './log-board';
 import { Rng } from './rng';
+import { formatPlainLines } from './game-log-text';
 import { Deck } from './runner';
 
 const percentText = (fraction: number) => `${Math.round(fraction * 100)}%`;
@@ -392,5 +393,9 @@ function replayWithAi(
   );
   const [killTurn] = shownGame.play();
   console.log(`\n  One AI replay (kill turn ${killTurn}):`);
-  console.log(shownGame.log.map((line) => '    ' + line).join('\n'));
+  console.log(
+    formatPlainLines(shownGame.log)
+      .map((line) => '    ' + line)
+      .join('\n'),
+  );
 }

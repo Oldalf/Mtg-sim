@@ -133,7 +133,9 @@ export const REDUCE_BLUE = new Set([
   'Nightscape Familiar',
   'Sapphire Medallion',
 ]);
-export const REDUCE_FROM_GY2 = new Set(['Emet-Selch of the Third Seat']);
+export const REDUCE_FROM_GRAVEYARD_BY_2 = new Set([
+  'Emet-Selch of the Third Seat',
+]);
 
 export const COUNTERS = new Set([
   "An Offer You Can't Refuse",
@@ -212,7 +214,7 @@ export const KNOWN = new Set<string>([
   ...REDUCE_INSTANT_SORCERY_COST,
   ...REDUCE_NONCREATURE,
   ...REDUCE_BLUE,
-  ...REDUCE_FROM_GY2,
+  ...REDUCE_FROM_GRAVEYARD_BY_2,
   ...COUNTERS,
   ...TUTORS,
   ...Object.keys(DRAW_SPELLS),

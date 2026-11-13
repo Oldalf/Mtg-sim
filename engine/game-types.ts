@@ -6,7 +6,7 @@ import type { Game } from './game';
 
 export type Config = Record<string, number | boolean>;
 
-export class Perm {
+export class Permanent {
   tapped: boolean;
   sick: boolean;
   exhausted = false;
@@ -37,8 +37,8 @@ export class Perm {
     return this.card.isCreature;
   }
 
-  copy(): Perm {
-    const permanent = new Perm(this.card, this.land, this.tapped);
+  copy(): Permanent {
+    const permanent = new Permanent(this.card, this.land, this.tapped);
     permanent.sick = this.sick;
     permanent.exhausted = this.exhausted;
     permanent.transformed = this.transformed;
@@ -76,7 +76,7 @@ export interface LogBoardView {
 }
 
 /** Something the AI may do now. act() returns false if it couldn't be done after all. */
-export interface Cand {
+export interface Candidate {
   score: number;
   cost: Cost;
   isInstantOrSorcery: boolean;
@@ -116,7 +116,7 @@ export const emptyPool = (): ManaPool => ({
 export type Evasion = 'none' | 'flying' | 'skulk' | 'unblockable';
 /** A creature in a pod combat, as both sides see it. */
 export interface Fighter {
-  permanent: Perm;
+  permanent: Permanent;
   name: string;
   power: number;
   toughness: number;
@@ -148,7 +148,7 @@ export interface WinAttempt {
 }
 /** An opposing permanent, as a removal spell sees it. */
 export interface Target {
-  permanent: Perm;
+  permanent: Permanent;
   name: string;
   value: number;
   power: number;

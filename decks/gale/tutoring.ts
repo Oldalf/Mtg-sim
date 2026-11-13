@@ -187,11 +187,11 @@ function choosePackageCard(
   return firstMin(options, (card) => card.manaValue);
 }
 
-/** Kill-next-turn score if toHand goes to hand and toGy to the graveyard. */
+/** Kill-next-turn score if toHand goes to hand and toGraveyard to the graveyard. */
 export function valueOfGiftsSplit(
   game: GaleGame,
   toHand: CardDef[],
-  toGy: CardDef[],
+  toGraveyard: CardDef[],
   budget: number,
 ): number {
   const state = buildKillSearchState(
@@ -201,11 +201,13 @@ export function valueOfGiftsSplit(
   );
   state.graveyardSpells = [
     ...state.graveyardSpells,
-    ...toGy.filter((card) => card.isInstantOrSorcery).map((card) => card.name),
+    ...toGraveyard
+      .filter((card) => card.isInstantOrSorcery)
+      .map((card) => card.name),
   ].sort();
   state.graveyardCreatures = [
     ...state.graveyardCreatures,
-    ...toGy.filter((card) => card.isCreature).map((card) => card.name),
+    ...toGraveyard.filter((card) => card.isCreature).map((card) => card.name),
   ].sort();
   if (!game.killReachable(state)) return 0;
   return search.search(state, budget);

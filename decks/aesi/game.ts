@@ -65,10 +65,10 @@ import { castFromTopOfLibrary } from './actions';
 import { resolveAesiSpell } from './spells';
 import { CardDef, Cost, makeToken } from '../../engine/cards';
 import {
-  Cand,
+  Candidate,
   KillSearcher,
   LogBoardView,
-  Perm,
+  Permanent,
   WinAttempt,
   Zone,
 } from '../../engine/game-types';
@@ -78,7 +78,9 @@ import { MulliganRule } from '../../engine/mulligan';
 import { MULLIGAN } from './mulligan';
 
 export type Way =
-  { kind: 'drop' } | { kind: 'putter'; permanent: Perm } | { kind: 'patron' };
+  | { kind: 'drop' }
+  | { kind: 'putter'; permanent: Permanent }
+  | { kind: 'patron' };
 
 export class AesiGame extends Game<AesiGame> {
   override mulliganRule(): MulliganRule | null {
@@ -131,7 +133,7 @@ export class AesiGame extends Game<AesiGame> {
       if (this.unprotectedKillTurn === null) {
         this.unprotectedKillTurn = this.turn;
         this.say(
-          `WIN: opp life [${this.life.join(', ')}], libraries [${this.opponentLibrarySizes.join(', ')}]`,
+          `WIN: ${this.describeOpponentLife()}, libraries [${this.opponentLibrarySizes.join(', ')}]`,
         );
       }
       return 2;
@@ -263,9 +265,7 @@ export class AesiGame extends Game<AesiGame> {
       search: (game: AesiGame) => {
         const lives = game.areOpponentsBeaten();
         game.comboSolve();
-        killSearcher.lastLine = game.log.map((line) =>
-          line.replace(/^T\d+: /, ''),
-        );
+        killSearcher.lastLine = game.log.map((event) => event.text);
         if (!lives && game.areOpponentsBeaten()) return 1;
         if (
           game.battlefield.some(
@@ -335,7 +335,7 @@ export class AesiGame extends Game<AesiGame> {
       card.land.cond !== 'fast'
     );
   }
-  readyPutters(): Perm[] {
+  readyPutters(): Permanent[] {
     const landCount = this.landsOnBattlefield().length;
     return this.battlefield.filter(
       (permanent) =>
@@ -402,7 +402,7 @@ export class AesiGame extends Game<AesiGame> {
       (card) =>
         card.land === null &&
         !HOLD.has(card.name) &&
-        this.effCost(card).manaValue === avail + 1,
+        this.effectiveCost(card).manaValue === avail + 1,
     );
   }
   wantColour(): string {
@@ -503,7 +503,7 @@ export class AesiGame extends Game<AesiGame> {
         !HOLD.has(top.name) &&
         this.battlefieldValue(top) >= 50 &&
         !(top.types.has('legendary') && this.isOnBattlefield(top.name)) &&
-        this.canPay(this.effCost(top))
+        this.canPay(this.effectiveCost(top))
       ) {
         castFromTopOfLibrary(this, top);
       } else return;
@@ -517,13 +517,13 @@ export class AesiGame extends Game<AesiGame> {
     from: 'hand' | 'library',
     how: string,
     tapped = false,
-  ): Perm | null {
+  ): Permanent | null {
     removeIfPresent(from === 'hand' ? this.hand : this.library, card);
     const landInfo = card.land!;
     if (landInfo.special === 'wilds') {
       this.graveyard.push(card);
       this.say(`${how}: ${card.name} (cracked)`);
-      this.onLandEnter(new Perm(card, landInfo), true);
+      this.onLandEnter(new Permanent(card, landInfo), true);
       this.fetchBasic({
         tapped: !(
           card.name === PASSAGE && this.landsOnBattlefield().length >= 3
@@ -531,7 +531,7 @@ export class AesiGame extends Game<AesiGame> {
       });
       return null;
     }
-    const permanent = new Perm(
+    const permanent = new Permanent(
       card,
       landInfo,
       tapped || this.entersTapped(card),
@@ -544,12 +544,12 @@ export class AesiGame extends Game<AesiGame> {
     return permanent;
   }
   /** Simic Growth Chamber: return a land (a tapped basic; tap an untapped one for mana first). */
-  chamberBounce(self: Perm): void {
+  chamberBounce(self: Permanent): void {
     const others = this.landsOnBattlefield().filter(
       (permanent) =>
         permanent !== self && permanent.land!.special !== 'chamber',
     );
-    let landToReturn: Perm | null = null;
+    let landToReturn: Permanent | null = null;
     const loop = this.hasUntapper() && findLoopPutter(this) !== null; // returning itself sets up the Retreat loop
     if (others.length && !loop) {
       landToReturn = firstMax(
@@ -592,7 +592,7 @@ export class AesiGame extends Game<AesiGame> {
   }
 
   // ================================================================ landfall and enter triggers
-  override onLandEnter(permanent: Perm, _gone: boolean): void {
+  override onLandEnter(permanent: Permanent, _gone: boolean): void {
     if (this.aesiDraw === null && this.isOnBattlefield(AESI))
       this.aesiDraw = this.turn;
     if (permanent.land?.scry && !_gone) this.scry(1); // Temple of Mystery
@@ -684,7 +684,7 @@ export class AesiGame extends Game<AesiGame> {
     }
   }
 
-  override onEnter(permanent: Perm, _from: Zone): void {
+  override onEnter(permanent: Permanent, _from: Zone): void {
     const name = permanent.card.name;
     if (name === AESI && this.aesiOut === null) this.aesiOut = this.turn;
     if (name === HARU && !permanent.token) this.draw(1);
@@ -731,7 +731,10 @@ export class AesiGame extends Game<AesiGame> {
     }
     return mana;
   }
-  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+  override manaSourceKind(
+    permanent: Permanent,
+    ignoreSick = false,
+  ): string | null {
     if (
       permanent.land !== null &&
       permanent.sick &&
@@ -746,20 +749,20 @@ export class AesiGame extends Game<AesiGame> {
     if (this.infMana) return true;
     return super.pay(cost, isInstantOrSorcery, commit);
   }
-  override effCost(
+  override effectiveCost(
     card: CardDef,
     base: Cost | null = null,
-    fromGy = false,
+    fromGraveyard = false,
   ): Cost {
     // Omniscience: spells from hand are free (an X spell then has X = 0, so Blue Sun's Zenith is paid normally)
     if (
       base === null &&
-      !fromGy &&
+      !fromGraveyard &&
       this.isOnBattlefield(OMNI) &&
       this.hand.includes(card)
     )
       return new Cost();
-    return super.effCost(card, base, fromGy);
+    return super.effectiveCost(card, base, fromGraveyard);
   }
   override castPerm(card: CardDef, fromCommand = false): boolean {
     if (this.epic) return false;
@@ -769,13 +772,13 @@ export class AesiGame extends Game<AesiGame> {
   }
   override castInstantOrSorcery(
     card: CardDef,
-    fromGy = false,
+    fromGraveyard = false,
     base: Cost | null = null,
     mode: string | null = null,
     triggers: Record<string, unknown> = {},
   ): boolean {
     if (this.epic) return false;
-    if (!super.castInstantOrSorcery(card, fromGy, base, mode, triggers))
+    if (!super.castInstantOrSorcery(card, fromGraveyard, base, mode, triggers))
       return false;
     if (card.name === BSZ) {
       // shuffled into the library instead of the graveyard
@@ -875,7 +878,7 @@ export class AesiGame extends Game<AesiGame> {
   }
 
   putStolenLand(): void {
-    const permanent = new Perm(STOLEN_LAND, STOLEN_LAND.land);
+    const permanent = new Permanent(STOLEN_LAND, STOLEN_LAND.land);
     permanent.sick = false;
     this.battlefield.push(permanent);
     this.say('Eternal Dominion takes a land');
@@ -967,7 +970,7 @@ export class AesiGame extends Game<AesiGame> {
           ? [anotherPermanent]
           : []),
       ];
-      const size = (permanent: Perm) =>
+      const size = (permanent: Permanent) =>
         permanent === anotherPermanent ? druidLandSize : 2;
       if (pool.length)
         this.arenaCombat(
@@ -1009,7 +1012,7 @@ export class AesiGame extends Game<AesiGame> {
     }
     this.say(
       `attack with ${attackers.length} creature(s)${druidLandSize && attackers.length > flyers.length ? ' + the Druid Class land' : ''}: ` +
-        `${damage} damage, opp life [${this.life.join(', ')}]`,
+        `${damage} damage, ${this.describeOpponentLife()}`,
     );
     this.checkKill();
   }
@@ -1029,7 +1032,7 @@ export class AesiGame extends Game<AesiGame> {
   /** The turn planner may pick any of its best few plays, but with aesi_first it never passes up casting Aesi. */
   override plan(options: number[], main2: boolean): number {
     if (this.config.aesi_first && this.command.length) {
-      const candidates = this.orderedCands(main2);
+      const candidates = this.orderedCandidates(main2);
       const i = options.find(
         (optionIndex) => candidates[optionIndex]?.score === 96,
       ); // (the commander's score; nothing else uses 96)
@@ -1037,7 +1040,7 @@ export class AesiGame extends Game<AesiGame> {
     }
     return super.plan(options, main2);
   }
-  candidates(main2: boolean): Cand[] {
+  candidates(main2: boolean): Candidate[] {
     return buildCandidates(this, main2);
   }
 
@@ -1048,7 +1051,7 @@ export class AesiGame extends Game<AesiGame> {
   /** Uyo outside a loop: copy a ramp / draw spell (returning two lands we replay with spare drops). */
   override castTriggers(
     card: CardDef,
-    _fromGy: boolean,
+    _fromGraveyard: boolean,
     _trig: Record<string, unknown>,
   ): void {
     if (!UYO_COPY.has(card.name) || !this.isOnBattlefield(UYO) || this.epic)
@@ -1083,10 +1086,11 @@ export class AesiGame extends Game<AesiGame> {
   // ================================================================ spells
   override resolve(
     card: CardDef,
-    fromGy = false,
+    fromGraveyard = false,
     mode: string | null = null,
   ): void {
-    if (!resolveAesiSpell(this, card, mode)) super.resolve(card, fromGy, mode);
+    if (!resolveAesiSpell(this, card, mode))
+      super.resolve(card, fromGraveyard, mode);
   }
 
   // ================================================================ the planner's score

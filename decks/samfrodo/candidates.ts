@@ -24,7 +24,7 @@ import {
 import { eatFood } from './combat';
 import type { SamFrodoGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand, Perm } from '../../engine/game-types';
+import { Candidate, Permanent } from '../../engine/game-types';
 import { removeIfPresent } from '../../engine/lists';
 
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
@@ -37,8 +37,11 @@ type AddCandidate = (
 ) => void;
 
 /** Everything the AI may do now, with a score each (higher first). */
-export function buildCandidates(game: SamFrodoGame, main2: boolean): Cand[] {
-  const candidates: Cand[] = [];
+export function buildCandidates(
+  game: SamFrodoGame,
+  main2: boolean,
+): Candidate[] {
+  const candidates: Candidate[] = [];
   const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
     candidates.push({
       score,
@@ -52,7 +55,7 @@ export function buildCandidates(game: SamFrodoGame, main2: boolean): Cand[] {
   for (const commander of game.command.slice())
     add(
       commander.name === SAM ? 90 : 86,
-      game.commanderCost(commander, game.effCost(commander)),
+      game.commanderCost(commander, game.effectiveCost(commander)),
       false,
       () => game.castPerm(commander, true),
     );
@@ -88,7 +91,7 @@ function addOwnRemovalOnRapaciousGuest(
   if (removal)
     add(
       Math.min(97, 50 + 4 * game.power(guest)),
-      game.effCost(removal),
+      game.effectiveCost(removal),
       true,
       () => game.castInstantOrSorcery(removal),
     );
@@ -103,7 +106,7 @@ function addCardInHandCandidate(
   hasSanguineBond: boolean,
 ): void {
   const name = card.name;
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   let score = game.battlefieldValue(card);
   if (RAMP_EARLY.has(name)) score = isEarly ? 85 : 25;
   switch (name) {
@@ -227,11 +230,11 @@ function addAbilityCandidates(
 /** The ability of one permanent: Witch's Oven, Lobelia, Trading Post, the Food makers and so on. */
 function addPermanentAbilityCandidate(
   game: SamFrodoGame,
-  permanent: Perm,
+  permanent: Permanent,
   add: AddCandidate,
   main2: boolean,
   hasSanguineBond: boolean,
-  spareFodder: Perm[],
+  spareFodder: Permanent[],
 ): void {
   const name = permanent.card.name;
   const isReady =
@@ -308,7 +311,7 @@ function addPermanentAbilityCandidate(
 /** Trading Post: sacrifice an artifact to draw, discard a dead card for life, or lose 1 life for a Goat. */
 function addTradingPostCandidate(
   game: SamFrodoGame,
-  tradingPost: Perm,
+  tradingPost: Permanent,
   add: AddCandidate,
   main2: boolean,
   hasSanguineBond: boolean,

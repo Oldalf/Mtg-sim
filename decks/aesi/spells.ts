@@ -13,7 +13,7 @@ import {
 import { tutorLand } from './candidates';
 import type { AesiGame } from './game';
 import { CardDef } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { firstMax, removeIfPresent } from '../../engine/lists';
 
 /** What Aesi's ramp and utility spells do when they resolve (the engine handles the draw spells and the rest). */
@@ -131,7 +131,7 @@ function resolveLandMover(
 }
 
 /** The land to sacrifice: a tapped basic, else any tapped land, else any land. */
-function chooseLandToSacrifice(game: AesiGame): Perm | undefined {
+function chooseLandToSacrifice(game: AesiGame): Permanent | undefined {
   const lands = game.landsOnBattlefield();
   return (
     lands.find((permanent) => permanent.tapped && permanent.land!.basic) ??
@@ -140,7 +140,7 @@ function chooseLandToSacrifice(game: AesiGame): Perm | undefined {
   );
 }
 
-function sacrificeLand(game: AesiGame, land: Perm | undefined): void {
+function sacrificeLand(game: AesiGame, land: Permanent | undefined): void {
   if (!land) return;
   removeIfPresent(game.battlefield, land);
   game.graveyard.push(land.card);

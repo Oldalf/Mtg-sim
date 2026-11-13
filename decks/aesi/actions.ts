@@ -1,11 +1,14 @@
 import { MELOKU, MINDSWEEPER, RETURNERS, TOK, UYO } from './cards';
 import type { AesiGame } from './game';
 import { CardDef, Cost, makeToken } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { firstMax, firstMin, removeIfPresent } from '../../engine/lists';
 
 // ---------------------------------------------------------------- actions
-export function bounceAndReplayLand(game: AesiGame, permanent: Perm): boolean {
+export function bounceAndReplayLand(
+  game: AesiGame,
+  permanent: Permanent,
+): boolean {
   const [abilityMana, , kind] = RETURNERS[permanent.card.name];
   const cost = game.abilityCost(new Cost(abilityMana));
   const basics = game
@@ -71,7 +74,7 @@ export function melokuEndOfTurn(game: AesiGame): boolean {
 }
 
 /** Moonfolk offering: the least useful moonfolk (not a loop piece). */
-export function chooseOfferingFodder(game: AesiGame): Perm | null {
+export function chooseOfferingFodder(game: AesiGame): Permanent | null {
   const keepers = new Set([MELOKU, UYO, MINDSWEEPER, 'Oboro Breezecaller']);
   const permanents = game.battlefield.filter(
     (permanent) =>
@@ -85,7 +88,7 @@ export function chooseOfferingFodder(game: AesiGame): Perm | null {
 export function castPatronWithOffering(
   game: AesiGame,
   card: CardDef,
-  permanent: Perm,
+  permanent: Permanent,
   cost: Cost,
 ): boolean {
   if (!game.battlefield.includes(permanent) || !game.pay(cost)) return false;
@@ -122,7 +125,8 @@ export function castBeanstalkGiant(game: AesiGame, card: CardDef): boolean {
 }
 
 export function castFromTopOfLibrary(game: AesiGame, card: CardDef): boolean {
-  if (game.library[0] !== card || !game.pay(game.effCost(card))) return false;
+  if (game.library[0] !== card || !game.pay(game.effectiveCost(card)))
+    return false;
   game.library.shift();
   game.spellsCast += 1;
   game.say('cast from the top (Case):', card);
@@ -130,7 +134,7 @@ export function castFromTopOfLibrary(game: AesiGame, card: CardDef): boolean {
   return true;
 }
 
-export function sacrificeKhalni(game: AesiGame, permanent: Perm): boolean {
+export function sacrificeKhalni(game: AesiGame, permanent: Permanent): boolean {
   game.sacrifice(permanent);
   game.say('Khalni Heart Expedition: two basics');
   game.fetchBasic({ tapped: true });
@@ -138,7 +142,10 @@ export function sacrificeKhalni(game: AesiGame, permanent: Perm): boolean {
   return true;
 }
 
-export function useDemolitionField(game: AesiGame, permanent: Perm): boolean {
+export function useDemolitionField(
+  game: AesiGame,
+  permanent: Permanent,
+): boolean {
   if (!game.pay(new Cost(2))) return false;
   permanent.tapped = true;
   removeIfPresent(game.battlefield, permanent);
@@ -151,7 +158,7 @@ export function useDemolitionField(game: AesiGame, permanent: Perm): boolean {
 
 export function levelUpDruidClass(
   game: AesiGame,
-  permanent: Perm,
+  permanent: Permanent,
   cost: Cost,
 ): boolean {
   if (!game.pay(cost)) return false;
@@ -162,7 +169,7 @@ export function levelUpDruidClass(
 
 export function useLootDig(
   game: AesiGame,
-  permanent: Perm,
+  permanent: Permanent,
   cost: Cost,
 ): boolean {
   if (!game.pay(cost)) return false;
@@ -185,7 +192,11 @@ export function useLootDig(
   return true;
 }
 
-export function useDokai(game: AesiGame, permanent: Perm, cost: Cost): boolean {
+export function useDokai(
+  game: AesiGame,
+  permanent: Permanent,
+  cost: Cost,
+): boolean {
   if (!game.pay(cost)) return false;
   permanent.tapped = true;
   const size = game.landsOnBattlefield().length;

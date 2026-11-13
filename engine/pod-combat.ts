@@ -111,11 +111,16 @@ export function fightOpponent(
     damage = 0;
     isKill = false;
     for (const row of rows) row.attackerDies = row.blockerDies = false;
-    table.sayAs(defenderPlayer, 'prevents all combat damage this turn');
+    table.sayAs(
+      defenderPlayer,
+      'prevents all combat damage this turn',
+      'answer',
+    );
   } else if (defence === 'bounce') {
     table.sayAs(
       defenderPlayer,
       "returns the attacking creatures to their owner's hand",
+      'answer',
     );
     table.stats.removals[defenderPlayer]++;
     return {
@@ -143,6 +148,8 @@ export function fightOpponent(
     table.sayAs(
       defenderPlayer,
       `${row.blocker.name} blocks ${row.attacker.name}${outcome}`,
+      'note',
+      [row.blocker.name, row.attacker.name],
     );
     if (row.blockerDies) defender.dies(row.blocker.permanent);
   }

@@ -15,6 +15,7 @@ import {
 } from '../engine/report';
 import { cuts, rank } from '../engine/ranking';
 import { Args } from './args';
+import { LogSession } from './log-session';
 
 /** The deck's settings, plus --turns, as the "default" to compare against; and with --set applied on top of that. */
 function buildConfigs(
@@ -56,15 +57,56 @@ export async function runDeckCommand(
       args.seed,
       args.trace,
       args.mode,
+      args.showMoves,
     );
     return;
   }
   const { games, workers } = args;
   const maxTurn = defaultConfig.max_turn as number;
+  // the normal table, list comparisons and --diag are logged; the many small runs of --rank, --cut and --hands are not
+  const isLogged = !args.noLog && !args.hands && !args.rank && !args.cutCards;
+  const logSession = new LogSession(isLogged);
+  /** Plays a list's games; with the log on, every game goes to a new run folder in session-logs/. */
+  const simulateLogged = async (
+    listFile: string,
+    config: Config,
+    what: 'kills' | 'diag',
+    labelSuffix = '',
+  ) => {
+    const listName = path.basename(listFile, path.extname(listFile));
+    const runFolder = logSession.startRun(
+      `${deck.name}-${listName}${labelSuffix}`,
+      {
+        mode: 'goldfish',
+        gameCount: games,
+        decks: [deck.name],
+        config,
+        gameMode: what === 'kills' ? 'protected' : 'any',
+        killTurnNames: Runner.killTurnNamesOf(deck),
+      },
+      [listFile],
+    );
+    const result = await Runner.simulate(
+      deck,
+      listFile,
+      games,
+      config,
+      workers,
+      what,
+      7,
+      runFolder,
+    );
+    logSession.finishRun(runFolder, result.logRows);
+    return result;
+  };
   /** The kill-turn table of a list played with the given settings. */
-  const killTable = async (listFile: string, config: Config) =>
+  const killTable = async (
+    listFile: string,
+    config: Config,
+    labelSuffix = '',
+  ) =>
     table(
-      (await Runner.simulate(deck, listFile, games, config, workers)).kills!,
+      (await simulateLogged(listFile, config, 'kills', labelSuffix)).kills!,
       maxTurn,
     );
 
@@ -74,16 +116,7 @@ export async function runDeckCommand(
     const rowsPerList: Runner.DiagRow[][] = [];
     for (const listFile of listFiles)
       rowsPerList.push(
-        (
-          await Runner.simulate(
-            deck,
-            listFile,
-            games,
-            configWithSettings,
-            workers,
-            'diag',
-          )
-        ).diag!,
+        (await simulateLogged(listFile, configWithSettings, 'diag')).diag!,
       );
     printDiag(
       deck,
@@ -105,8 +138,12 @@ export async function runDeckCommand(
     );
   } else if (listFiles.length === 1 && args.settings.length) {
     // one list, default settings against the --set ones
-    const defaultTable = await killTable(firstList, defaultConfig);
-    const settingsTable = await killTable(firstList, configWithSettings);
+    const defaultTable = await killTable(firstList, defaultConfig, '-default');
+    const settingsTable = await killTable(
+      firstList,
+      configWithSettings,
+      '-changed',
+    );
     printCompare(
       ['default', args.settings.join(' ')],
       [defaultTable, settingsTable],
@@ -141,6 +178,7 @@ export async function runDeckCommand(
       deck.compareTurns,
     );
   }
+  logSession.printGamesWorthALook();
   console.log(`\n(${((Date.now() - startTime) / 1000).toFixed(0)}s)`);
 }
 

@@ -192,7 +192,7 @@ function addCostReductions(game: GaleGame, state: KillSearchState): void {
   state.reductionFromGraveyard =
     2 *
     game.battlefield.filter((permanent) =>
-      Facts.REDUCE_FROM_GY2.has(permanent.card.name),
+      Facts.REDUCE_FROM_GRAVEYARD_BY_2.has(permanent.card.name),
     ).length;
 }
 

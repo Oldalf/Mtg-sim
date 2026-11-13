@@ -206,3 +206,9 @@ function printHowDecksWentOut(report: Report): void {
     `"declared" = the deck's own win (a combo, a kill line, its win rule) with others still alive; "standing" = it was the last one left.`,
   );
 }
+
+/** How a pod game ended, in a few words: "samfrodo wins in round 8 (last standing)". */
+export function describePodResult(spec: PodSpec, game: PodGame): string {
+  if (game.winner === null) return `no winner after round ${game.turn}`;
+  return `${spec.decks[game.winner]} wins in round ${game.turn} (${game.how})`;
+}

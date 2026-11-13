@@ -24,7 +24,7 @@ import { findKillLine } from './solver';
 import { stackLibraryWithVault } from './solver-actions';
 import type { CodieGame } from './game';
 import { CardDef } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { firstMax, removeIfPresent } from '../../engine/lists';
 
 export function resolveCodieSpell(game: CodieGame, spell: CardDef): boolean {
@@ -76,7 +76,7 @@ function resolveManaSpell(game: CodieGame, spell: CardDef): boolean {
       return true;
     case BRASS_BOUNTY:
       for (let i = 0; i < game.landsOnBattlefield().length; i++)
-        game.battlefield.push(new Perm(TREASURE));
+        game.battlefield.push(new Permanent(TREASURE));
       return true;
     case 'Manamorphose': {
       const colours = coloursWeAreShortOf(game);
@@ -125,7 +125,7 @@ function resolveCardSelection(game: CodieGame, spell: CardDef): boolean {
     }
     case 'Windfall': {
       const handSize = game.hand.length;
-      for (const card of game.hand.splice(0)) game.toGy(card);
+      for (const card of game.hand.splice(0)) game.toGraveyard(card);
       game.draw(Math.max(handSize, 7));
       return true;
     }
@@ -218,7 +218,7 @@ export function fetchLand(
   else {
     const entersTapped =
       tapped || game.entersTapped(pick) || pick.land!.etb === 'tapped';
-    const land = new Perm(pick, pick.land, entersTapped);
+    const land = new Permanent(pick, pick.land, entersTapped);
     land.sick = false;
     game.battlefield.push(land);
     game.onLandEnter(land, false);

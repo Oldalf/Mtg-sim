@@ -46,7 +46,7 @@ import {
 import { findKillLine } from './solver';
 import { beginReiterateLoop, manaPerLoopCopy } from './solver-actions';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand, KillSearcher, Perm } from '../../engine/game-types';
+import { Candidate, KillSearcher, Permanent } from '../../engine/game-types';
 import { Game } from '../../engine/game';
 import { removeIfPresent } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
@@ -153,10 +153,10 @@ export class CodieGame extends Game<CodieGame> {
   cardInHand(name: string): CardDef | undefined {
     return this.hand.find((card) => card.name === name);
   }
-  override commanderCost(_cd: CardDef, cost: Cost): Cost {
+  override commanderCost(_card: CardDef, cost: Cost): Cost {
     return cost.withGeneric(cost.generic + 2 * this.commanderCasts);
   }
-  override onCommanderCast(_cd: CardDef): void {
+  override onCommanderCast(_card: CardDef): void {
     this.commanderCasts += 1;
   }
   /** Generic costs: tap colourless, then green and white lands first; keep red (Reiterate), black (the finishers) and blue (counters). */
@@ -205,7 +205,10 @@ export class CodieGame extends Game<CodieGame> {
     }
     return colours;
   }
-  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+  override manaSourceKind(
+    permanent: Permanent,
+    ignoreSick = false,
+  ): string | null {
     if (permanent.card === TREASURE) return 'A';
     return super.manaSourceKind(permanent, ignoreSick);
   }
@@ -215,17 +218,18 @@ export class CodieGame extends Game<CodieGame> {
       if (permanent.card === TREASURE && permanent.tapped)
         this.battlefield.splice(this.battlefield.indexOf(permanent), 1);
   }
-  override ritualCandidates(_cands: Cand[]): Cand[] {
+  override ritualCandidates(_cands: Candidate[]): Candidate[] {
     return [];
   }
 
   // ================================================================ spells
   override resolve(
     card: CardDef,
-    fromGy = false,
+    fromGraveyard = false,
     mode: string | null = null,
   ): void {
-    if (!resolveCodieSpell(this, card)) super.resolve(card, fromGy, mode);
+    if (!resolveCodieSpell(this, card))
+      super.resolve(card, fromGraveyard, mode);
   }
   isStillAlive(): boolean {
     return !this.died;
@@ -279,7 +283,7 @@ export class CodieGame extends Game<CodieGame> {
       this.config.ad_end_step &&
       this.myLife >= 33 &&
       this.library.length > 30 &&
-      this.canPay(this.effCost(card), true)
+      this.canPay(this.effectiveCost(card), true)
     )
       this.castInstantOrSorcery(card);
   }
@@ -297,7 +301,7 @@ export class CodieGame extends Game<CodieGame> {
     if (card.name === 'Volatile Fault') return -3;
     return 0;
   }
-  candidates(_main2: boolean): Cand[] {
+  candidates(_main2: boolean): Candidate[] {
     return buildCandidates(this, _main2);
   }
 
@@ -368,7 +372,7 @@ export class CodieGame extends Game<CodieGame> {
     return `${hand}|${open}|${this.landsOnBattlefield().length}|${JSON.stringify(this.pool)}|${this.battlefield.filter((permanent) => permanent.card === TREASURE).length}`;
   }
   /** A kill is conceivable at all: a finisher, a tutor or Ad Nauseam is in hand. */
-  override killReachable(_st: CodieGame): boolean {
+  override killReachable(_state: CodieGame): boolean {
     const hasCard = (name: string) => this.inHand(name);
     return (
       FINISHERS.some(hasCard) ||
@@ -421,7 +425,7 @@ export class CodieGame extends Game<CodieGame> {
    *  free; the other cards go to the bottom in a random order. The effects are the AI's own (rituals add mana, tutors fetch, ...). */
   override castTriggers(
     card: CardDef,
-    _fromGy: boolean,
+    _fromGraveyard: boolean,
     _trig: Record<string, unknown>,
   ): void {
     while (this.codieArmed > 0) {

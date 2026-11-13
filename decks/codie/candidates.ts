@@ -21,7 +21,7 @@ import {
 } from './solver-actions';
 import type { CodieGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand } from '../../engine/game-types';
+import { Candidate } from '../../engine/game-types';
 
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
 type AddCandidate = (
@@ -32,9 +32,9 @@ type AddCandidate = (
 ) => void;
 
 /** Everything the AI may do now while it develops its mana and finds pieces, with a score each. */
-export function buildCandidates(game: CodieGame, _main2: boolean): Cand[] {
+export function buildCandidates(game: CodieGame, _main2: boolean): Candidate[] {
   game.purgeTreasures();
-  const candidates: Cand[] = [];
+  const candidates: Candidate[] = [];
   const add: AddCandidate = (score, cost, isInstantOrSorcery, action) =>
     candidates.push({
       score,
@@ -48,7 +48,7 @@ export function buildCandidates(game: CodieGame, _main2: boolean): Cand[] {
   for (const commander of game.command.slice())
     add(
       game.config.codie_early ? 95 : 45,
-      game.commanderCost(commander, game.effCost(commander)),
+      game.commanderCost(commander, game.effectiveCost(commander)),
       false,
       () => game.castPerm(commander, true),
     );
@@ -82,7 +82,7 @@ function addCodieCandidates(game: CodieGame, add: AddCandidate): void {
     for (const name of TRIGGER_SPELLS) {
       const card = game.cardInHand(name);
       if (card)
-        add(92, game.effCost(card), true, () =>
+        add(92, game.effectiveCost(card), true, () =>
           game.castInstantOrSorcery(card),
         );
     }
@@ -130,7 +130,9 @@ function addVaultCandidate(game: CodieGame, add: AddCandidate): void {
     ].includes(card.name),
   );
   if (vault && hasCantrip && game.myLife >= 25 && game.library.length >= 30)
-    add(64, game.effCost(vault), true, () => game.castInstantOrSorcery(vault));
+    add(64, game.effectiveCost(vault), true, () =>
+      game.castInstantOrSorcery(vault),
+    );
 }
 
 /** One card in hand: land fetchers, cantrips, tutors and Windfall; the cards only the solver uses are skipped. */
@@ -140,7 +142,7 @@ function addCardInHandCandidate(
   add: AddCandidate,
 ): void {
   const name = card.name;
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   const score = game.developmentValue(card);
   const cast = () => game.castInstantOrSorcery(card);
   const fetcher = FETCH[name];

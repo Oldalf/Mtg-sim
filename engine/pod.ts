@@ -26,6 +26,7 @@
  */
 import { Worker } from 'worker_threads';
 import { Config } from './game-types';
+import { gamesFileName, writeGamesFile } from './game-log-files';
 import { buildArena } from './pod-arena';
 import { useRemovalAfterTurn } from './pod-interaction';
 import { PodTable } from './pod-table';
@@ -39,13 +40,27 @@ export function playPod(
   seed: number,
   verbose = false,
 ): PodGame {
+  return playRounds(seatPlayers(allDecks, spec, seed, verbose), spec);
+}
+
+/** A new table with every player seated and holding an opening hand. */
+function seatPlayers(
+  allDecks: Record<string, Deck>,
+  spec: PodSpec,
+  seed: number,
+  verbose: boolean,
+): PodTable {
   const table = new PodTable(allDecks, spec, seed, verbose);
   if (table.isRealCombat) {
     const arena = buildArena(table);
     for (const game of table.games) game.arena = arena;
   }
   for (const game of table.games) game.setup();
+  return table;
+}
 
+/** Plays the game at a table to its end. */
+function playRounds(table: PodTable, spec: PodSpec): PodGame {
   for (table.round = 1; table.round <= spec.cap; table.round++) {
     for (const player of table.turnOrder) {
       if (!table.isAlive[player]) continue;
@@ -53,6 +68,7 @@ export function playPod(
       if (finishedGame) return finishedGame;
     }
   }
+  table.logRemainingCardMoves();
   return table.result(null, spec.cap, 'cap');
 }
 
@@ -85,7 +101,8 @@ function playTurn(table: PodTable, player: number): PodGame | null {
   if (declaredWin && table.isAlive[player]) {
     // the deck says it has won: a combo, a kill line, or its own win rule
     const how = left.length === 1 ? 'last standing' : 'declared';
-    table.say(`R${round}: ${table.playerName(player)} WINS (${how})`);
+    table.sayAs(player, `WINS (${how})`, 'win');
+    table.logRemainingCardMoves();
     return table.result(player, round, how);
   }
   if (left.length === 1) return lastStandingWins(table, left[0]);
@@ -96,9 +113,8 @@ function playTurn(table: PodTable, player: number): PodGame | null {
 }
 
 function lastStandingWins(table: PodTable, winner: number): PodGame {
-  table.say(
-    `R${table.round}: ${table.playerName(winner)} WINS (last standing)`,
-  );
+  table.sayAs(winner, 'WINS (last standing)', 'win');
+  table.logRemainingCardMoves();
   return table.result(winner, table.round, 'last standing');
 }
 
@@ -107,31 +123,67 @@ export function runPodJob(
   job: PodJob,
 ): PodJobResult {
   const result: PodJobResult = { games: [], errors: [] };
+  const logFolder = job.logFolder;
+  const isLogged = logFolder !== undefined;
+  const gamesAsJson: string[] = [];
+  if (isLogged) result.logRows = [];
+  /** Keeps the log of a game for the job's games file, and its result for the index. */
+  const keepLog = (
+    seed: number,
+    table: PodTable | null,
+    game?: PodGame,
+    error?: string,
+  ) => {
+    if (!isLogged || table === null) return;
+    result.logRows!.push({
+      seed,
+      file: gamesFileName(job.jobNumber!),
+      line: gamesAsJson.length,
+      tags: [],
+      pod: game,
+      error,
+    });
+    gamesAsJson.push(JSON.stringify(table.gameLog()));
+  };
+
   for (const seed of job.seeds) {
+    let table: PodTable | null = null;
     try {
-      result.games.push(playPod(all, job.pod, seed));
+      table = seatPlayers(all, job.pod, seed, isLogged);
+      // the log goes to the games file, not back to the main thread
+      const game: PodGame = { ...playRounds(table, job.pod), log: undefined };
+      result.games.push(game);
+      keepLog(seed, table, game);
     } catch (error) {
-      result.errors.push([
-        seed,
-        error instanceof Error ? (error.stack ?? error.message) : String(error),
-      ]);
+      const message =
+        error instanceof Error ? (error.stack ?? error.message) : String(error);
+      result.errors.push([seed, message]);
+      keepLog(seed, table, undefined, message); // the log up to the crash
     }
   }
+  if (isLogged) writeGamesFile(logFolder, job.jobNumber!, gamesAsJson);
   return result;
 }
 
-/** Play seeds 1..n in worker threads (the same bundle runs as each worker; see sim.ts). */
+/** Play seeds 1..n in worker threads (the same bundle runs as each worker; see sim.ts).
+ *  logFolder: a run folder (game-log-files.ts) to write every game's log to. */
 export async function simulatePod(
   spec: PodSpec,
   gameCount: number,
   workers: number,
   duty: number,
+  logFolder?: string,
 ): Promise<PodJobResult> {
   const seeds = Array.from({ length: gameCount }, (_, i) => i + 1);
   const chunk = Math.max(1, Math.floor(gameCount / (workers * 8)));
   const jobs: PodJob[] = [];
   for (let i = 0; i < gameCount; i += chunk)
-    jobs.push({ pod: spec, seeds: seeds.slice(i, i + chunk) });
+    jobs.push({
+      pod: spec,
+      seeds: seeds.slice(i, i + chunk),
+      logFolder,
+      jobNumber: jobs.length,
+    });
   const results: PodJobResult[] = new Array(jobs.length);
   let next = 0;
   const pool = Array.from(
@@ -167,6 +219,8 @@ export async function simulatePod(
     games: results.flatMap((jobResult) => jobResult.games),
     errors: results.flatMap((jobResult) => jobResult.errors),
   };
+  if (logFolder !== undefined)
+    all.logRows = results.flatMap((jobResult) => jobResult.logRows ?? []);
   if (all.errors.length)
     console.log(
       `!! ${all.errors.length} game(s) hit a simulator bug and were skipped (seeds ${all.errors

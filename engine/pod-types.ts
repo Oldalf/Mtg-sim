@@ -1,4 +1,6 @@
 /** The shapes of the data that go into and come out of a pod game. */
+import { GameLog } from './game-log';
+import type { GameIndexRow } from './game-log-files';
 import { Config } from './game-types';
 
 export interface PodSpec {
@@ -32,12 +34,21 @@ export interface PodGame extends PodStats {
   why: string[]; // why[i] = how deck i was eliminated ("" = it wasn't): life | commander | poison | decked
   out: number[]; // players eliminated, in order
   seat: number[]; // seat[i] = the seat (0 = first to play) of deck i
-  log?: string[];
+  /** The game's log (only when it was played with the log on). */
+  log?: GameLog;
 }
 
 export interface PodJob {
   pod: PodSpec;
   seeds: number[];
+  /** Set to log the games: the run folder the job writes its games file to, and the job's number in the run. */
+  logFolder?: string;
+  jobNumber?: number;
 }
 
-export type PodJobResult = { games: PodGame[]; errors: [number, string][] };
+export type PodJobResult = {
+  games: PodGame[];
+  /** One row per logged game (see game-log-files.ts). */
+  logRows?: GameIndexRow[];
+  errors: [number, string][];
+};

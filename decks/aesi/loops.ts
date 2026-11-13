@@ -24,7 +24,7 @@ import {
 } from './cards';
 import type { AesiGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { firstMax, removeIfPresent } from '../../engine/lists';
 
 /** What the loops on the battlefield give right now (see loops()). */
@@ -38,13 +38,13 @@ export interface Loops {
   lock: boolean; // every opponent's land bounced (lands are creatures: Kiri-Onna or Mirror-Mage over and over)
   replay: boolean;
   start: number; // mana needed to keep a loop going (kept in reserve while the solver casts things)
-  putter: Perm | null; // the "put a land" creature a Retreat loop uses (Retreat untaps it after every land) // a way to replay a land (Retreat + putter, or Kodama + Meloku)
+  putter: Permanent | null; // the "put a land" creature a Retreat loop uses (Retreat untaps it after every land) // a way to replay a land (Retreat + putter, or Kodama + Meloku)
   how: string[];
 }
 
 // ================================================================ the loop solver
 /** A creature that can put a land onto the battlefield over and over (Retreat untaps it). */
-export function findLoopPutter(game: AesiGame): Perm | null {
+export function findLoopPutter(game: AesiGame): Permanent | null {
   const permanents = game.battlefield.filter(
     (permanent) =>
       PUTTERS.has(permanent.card.name) &&
@@ -68,7 +68,7 @@ export function uyoTarget(game: AesiGame, budget: number): CardDef | null {
     (card) => card.isInstantOrSorcery && !HOLD.has(card.name),
   );
   const cost = (card: CardDef) =>
-    card.name === BSZ ? 4 : game.effCost(card).manaValue;
+    card.name === BSZ ? 4 : game.effectiveCost(card).manaValue;
   const otherCards = cards.filter((card) => cost(card) <= budget);
   if (!otherCards.length) return null;
   const priority = (card: CardDef) =>
@@ -89,7 +89,7 @@ interface LoopContext {
   manaPerReplayedLand: number; // 0 when lands are summoning-sick creatures (Nature's Revolt, Natural Affinity)
   untappedLands: number; // lands that come back untapped
   availableMana: number;
-  putter: Perm | null; // the "put a land" creature a Retreat loop uses
+  putter: Permanent | null; // the "put a land" creature a Retreat loop uses
   hasKodamaAndMeloku: boolean;
 }
 
@@ -414,7 +414,9 @@ export function winFromLoops(game: AesiGame, loops: Loops): boolean {
       game.library.push(bszHand);
       game.shuffle();
       game.millOut(target);
-      game.say(`endless mana: Blue Sun's Zenith mills opponent ${target + 1}`);
+      game.say(
+        `endless mana: Blue Sun's Zenith mills ${game.opponentName(target)}`,
+      );
     }
     return game.areOpponentsBeaten();
   }
@@ -450,12 +452,12 @@ export function dumpLandsFromHand(game: AesiGame): boolean {
       const anotherCard = game.library.find((card) => card.land?.basic);
       if (anotherCard && game.library.length > game.libraryCardsToKeep()) {
         removeIfPresent(game.library, anotherCard);
-        const permanent = new Perm(anotherCard, anotherCard.land, true);
+        const permanent = new Permanent(anotherCard, anotherCard.land, true);
         permanent.sick = false;
         game.battlefield.push(permanent);
       }
     } else {
-      const otherPermanent = new Perm(
+      const otherPermanent = new Permanent(
         otherCard,
         otherCard.land,
         otherCard.land!.etb === 'tapped',
@@ -487,7 +489,7 @@ export function castForLoops(game: AesiGame): boolean {
     if (
       canPayKeepingReserve(
         game,
-        game.commanderCost(card, game.effCost(card)),
+        game.commanderCost(card, game.effectiveCost(card)),
       ) &&
       game.castPerm(card, true)
     )
@@ -497,11 +499,11 @@ export function castForLoops(game: AesiGame): boolean {
     const otherCard = game.hand.find((card) => card.name === name);
     if (!otherCard) continue;
     if (name === 'Graceful Adept' && game.hand.length <= 8) continue;
-    if (name === OMNI && !game.canPay(game.effCost(otherCard))) continue;
+    if (name === OMNI && !game.canPay(game.effectiveCost(otherCard))) continue;
     if (game.isOnBattlefield(name) && otherCard.types.has('legendary'))
       continue;
     if (
-      canPayKeepingReserve(game, game.effCost(otherCard)) &&
+      canPayKeepingReserve(game, game.effectiveCost(otherCard)) &&
       game.castPerm(otherCard)
     )
       return true;

@@ -1,7 +1,7 @@
 import { FOOD, FRODO, GOLLUM, SAM, isHalfling } from './cards';
 import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 
 // ================================================================ combat
 /** Goldfish combat: only Frodo (for the Ring) and Gollum (for its end-step drain) attack, unless everything kills the table. */
@@ -16,12 +16,12 @@ export function playCombat(game: SamFrodoGame): void {
   if (tryAllInAttack(game)) return;
   const frodo = game.findPermanent(FRODO);
   const gollum = game.findPermanent(GOLLUM);
-  const isReady = (permanent: Perm | null) =>
+  const isReady = (permanent: Permanent | null) =>
     permanent !== null && !permanent.sick && !permanent.tapped;
   // Frodo wants 3 life gained this turn before attacking: crack a Food (cheaper with Sam)
   if (isReady(frodo) && game.lifeGainedThisTurn < 3)
     eatFoodsToGainLife(game, 3 - game.lifeGainedThisTurn);
-  const attackers: Perm[] = [];
+  const attackers: Permanent[] = [];
   if (isReady(frodo) && (game.lifeGainedThisTurn >= 3 || game.ringTempts >= 1))
     attackers.push(frodo!);
   if (isReady(gollum)) attackers.push(gollum!);
@@ -60,7 +60,7 @@ export function playCombat(game: SamFrodoGame): void {
   }
   if (dealtDamage) makeFoodsForRapaciousGuests(game);
   game.say(
-    `attack with ${attackers.map((permanent) => permanent.card.name.split(',')[0]).join(' + ')}: opp life [${game.life.join(', ')}]`,
+    `attack with ${attackers.map((permanent) => permanent.card.name.split(',')[0]).join(' + ')}: ${game.describeOpponentLife()}`,
   );
   game.checkKill();
 }
@@ -101,7 +101,7 @@ function resolveRingTemptation(game: SamFrodoGame): void {
 export function playPodCombat(game: SamFrodoGame): void {
   const frodo = game.findPermanent(FRODO);
   const gollum = game.findPermanent(GOLLUM);
-  const isReady = (permanent: Perm | null) =>
+  const isReady = (permanent: Permanent | null) =>
     permanent !== null && !permanent.sick && !permanent.tapped;
   if (isReady(frodo) && game.lifeGainedThisTurn < 3)
     eatFoodsToGainLife(game, 3 - game.lifeGainedThisTurn);
@@ -139,9 +139,9 @@ export function playPodCombat(game: SamFrodoGame): void {
   if (dealtDamage) makeFoodsForRapaciousGuests(game);
   if (attackerNames.length)
     game.say(
-      `attack with ${attackerNames.join(' + ')}: opp life [${game.life.join(', ')}]`,
+      `attack with ${attackerNames.join(' + ')}: ${game.describeOpponentLife()}`,
     );
-  const went = new Set<Perm>([
+  const went = new Set<Permanent>([
     ...(frodoTarget ? [frodo!] : []),
     ...(gollumTarget ? [gollum!] : []),
   ]);
@@ -161,7 +161,7 @@ export function playPodCombat(game: SamFrodoGame): void {
 /** Pippin: sacrifice four Foods, the other creatures get +3/+3 and haste: only for an attack that kills a player. */
 function tryPippinPumpAttack(
   game: SamFrodoGame,
-  alreadyAttacked: Set<Perm>,
+  alreadyAttacked: Set<Permanent>,
 ): void {
   const pippin = game.findPermanent('Pippin, Warden of Isengard');
   if (
@@ -179,8 +179,9 @@ function tryPippinPumpAttack(
         permanent !== pippin &&
         !alreadyAttacked.has(permanent),
     );
-  const pumpedPower = (permanent: Perm) => game.power(permanent) + 3;
-  const pumpedToughness = (permanent: Perm) => game.toughness(permanent) + 3;
+  const pumpedPower = (permanent: Permanent) => game.power(permanent) + 3;
+  const pumpedToughness = (permanent: Permanent) =>
+    game.toughness(permanent) + 3;
   for (let slot = 0; slot < game.life.length && team.length; slot++) {
     if (!game.isOpponentAlive(slot)) continue;
     const plan = game.planAttack(slot, team, pumpedPower, pumpedToughness);
@@ -197,7 +198,7 @@ function tryPippinPumpAttack(
       pumpedToughness,
     );
     game.say(
-      `Pippin: +3/+3 and haste, attack opponent ${slot + 1} with ${plan.attackers.length} creature(s): ${result.damage} damage`,
+      `Pippin: +3/+3 and haste, attack ${game.opponentName(slot)} with ${plan.attackers.length} creature(s): ${result.damage} damage`,
     );
     break;
   }
@@ -212,7 +213,7 @@ export function eatFoodsToGainLife(game: SamFrodoGame, need: number): void {
   }
 }
 
-export function eatFood(game: SamFrodoGame, permanent: Perm): boolean {
+export function eatFood(game: SamFrodoGame, permanent: Permanent): boolean {
   if (!game.pay(new Cost(game.isOnBattlefield(SAM) ? 1 : 2))) return false;
   game.say('eat a Food');
   game.sacrifice(permanent);
@@ -224,7 +225,7 @@ export function eatFood(game: SamFrodoGame, permanent: Perm): boolean {
  *  Opponents block half the ground attackers (rounded down), the biggest; flyers connect. */
 export function tryAllInAttack(game: SamFrodoGame): boolean {
   if (!game.config.all_in) return false;
-  const deal = (pump: boolean): [Perm[], number] => {
+  const deal = (pump: boolean): [Permanent[], number] => {
     const pip = game.findPermanent('Pippin, Warden of Isengard');
     const attackers = game
       .creatures()
@@ -235,7 +236,7 @@ export function tryAllInAttack(game: SamFrodoGame): boolean {
           (pump || !permanent.sick || permanent.card.haste) &&
           game.power(permanent) + (pump ? 3 : 0) > 0,
       );
-    const pumpedPower = (permanent: Perm) =>
+    const pumpedPower = (permanent: Permanent) =>
       game.power(permanent) + (pump ? 3 : 0);
     const fly = attackers.filter((permanent) => permanent.card.flying),
       ground = attackers
@@ -276,7 +277,7 @@ export function tryAllInAttack(game: SamFrodoGame): boolean {
   }
   game.allInWin = game.hasWon();
   game.say(
-    `all-in attack${pump ? ' (Pippin)' : ''}: ${damage} damage, opp life [${game.life.join(', ')}]`,
+    `all-in attack${pump ? ' (Pippin)' : ''}: ${damage} damage, ${game.describeOpponentLife()}`,
   );
   game.checkKill();
   return true;

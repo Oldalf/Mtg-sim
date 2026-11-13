@@ -1,13 +1,13 @@
 import { FOOD, SAGA, TOK, TREASURE } from './cards';
 import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards';
-import { Perm, Zone } from '../../engine/game-types';
+import { Permanent, Zone } from '../../engine/game-types';
 import { removeIfPresent } from '../../engine/lists';
 
 // ================================================================ entering
 export function onPermanentEntered(
   game: SamFrodoGame,
-  permanent: Perm,
+  permanent: Permanent,
   _from: Zone,
 ): void {
   triggerOtherPermanents(game, permanent);
@@ -16,7 +16,10 @@ export function onPermanentEntered(
 }
 
 /** Merry, Belladonna Took, Prosperous Innkeeper and Mentor of the Meek react to something entering. */
-function triggerOtherPermanents(game: SamFrodoGame, permanent: Perm): void {
+function triggerOtherPermanents(
+  game: SamFrodoGame,
+  permanent: Permanent,
+): void {
   const card = permanent.card;
   if (
     card.types.has('artifact') &&
@@ -55,7 +58,7 @@ function triggerOtherPermanents(game: SamFrodoGame, permanent: Perm): void {
 }
 
 /** Partner with: Merry fetches Pippin from the library and the other way round. */
-function tutorPartner(game: SamFrodoGame, permanent: Perm): void {
+function tutorPartner(game: SamFrodoGame, permanent: Permanent): void {
   const name = permanent.card.name;
   const partner =
     name === 'Merry, Warden of Isengard'
@@ -74,7 +77,10 @@ function tutorPartner(game: SamFrodoGame, permanent: Perm): void {
 }
 
 /** The permanent's own enter trigger (tokens, Food, counters, the Saga's first chapter). */
-function resolveOwnEnterTrigger(game: SamFrodoGame, permanent: Perm): void {
+function resolveOwnEnterTrigger(
+  game: SamFrodoGame,
+  permanent: Permanent,
+): void {
   const card = permanent.card;
   const name = card.name;
   if (name === 'Cauldron Familiar') {
@@ -119,7 +125,10 @@ function resolveOwnEnterTrigger(game: SamFrodoGame, permanent: Perm): void {
 }
 
 /** Put into the graveyard from the battlefield (sacrificed, destroyed; tokens too). */
-export function onPermanentDied(game: SamFrodoGame, permanent: Perm): void {
+export function onPermanentDied(
+  game: SamFrodoGame,
+  permanent: Permanent,
+): void {
   const art = permanent.card.types.has('artifact'),
     cre = permanent.card.isCreature;
   if (!art && !cre) return;

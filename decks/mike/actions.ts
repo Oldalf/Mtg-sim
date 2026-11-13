@@ -2,7 +2,7 @@ import * as C from '../../engine/cards';
 import { MARK_UNBLOCKABLE_THIS_TURN } from './cards';
 import type { MikeGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { removeIfPresent } from '../../engine/lists';
 
 export function castTreasureCruise(
@@ -10,7 +10,7 @@ export function castTreasureCruise(
   card: CardDef,
   delveCount: number,
 ): boolean {
-  const base = game.effCost(card);
+  const base = game.effectiveCost(card);
   const cost = base.withGeneric(base.generic - delveCount);
   if (!game.pay(cost, true)) return false;
   for (let i = 0; i < delveCount; i++) game.exile.push(game.graveyard.pop()!);
@@ -26,7 +26,7 @@ export function castTreasureCruise(
 
 export function payAndTap(
   game: MikeGame,
-  permanent: Perm,
+  permanent: Permanent,
   cost: string,
   effect: () => void,
 ): boolean {
@@ -38,7 +38,7 @@ export function payAndTap(
 
 export function levelUpWizardClass(
   game: MikeGame,
-  permanent: Perm,
+  permanent: Permanent,
   cost: string,
   effect: () => void,
 ): boolean {
@@ -50,8 +50,8 @@ export function levelUpWizardClass(
 
 export function equipTo(
   game: MikeGame,
-  permanent: Perm,
-  carrier: Perm,
+  permanent: Permanent,
+  carrier: Permanent,
   mark: number,
 ): boolean {
   if (!game.pay(new Cost(2))) return false;
@@ -63,8 +63,8 @@ export function equipTo(
 
 export function useRoguesPassage(
   game: MikeGame,
-  permanent: Perm,
-  blockedAttacker: Perm,
+  permanent: Permanent,
+  blockedAttacker: Permanent,
 ): boolean {
   if (!game.pay(Cost.parse('{4}'))) return false;
   permanent.tapped = true;
@@ -74,8 +74,8 @@ export function useRoguesPassage(
 
 export function activateHarmonizedTrio(
   game: MikeGame,
-  permanent: Perm,
-  others: Perm[],
+  permanent: Permanent,
+  others: Permanent[],
 ): boolean {
   if (!game.pay(Cost.parse('{U}'))) return false;
   permanent.tapped = true;
@@ -89,13 +89,16 @@ export function activateHarmonizedTrio(
 }
 
 /** Jace +1: mill ourselves two (when the mill is the plan) and draw. */
-export function activateJacePlusOne(game: MikeGame, permanent: Perm): boolean {
+export function activateJacePlusOne(
+  game: MikeGame,
+  permanent: Permanent,
+): boolean {
   permanent.exhausted = true;
   permanent.counters += 1;
   const mill = game.library.length > 3 && game.hasMillWinPiece();
   if (mill) {
     for (let i = 0; i < 2 && game.library.length; i++)
-      game.toGy(game.library.shift()!);
+      game.toGraveyard(game.library.shift()!);
   }
   game.say('Jace +1' + (mill ? ' (mills us two)' : ''));
   game.draw(1);

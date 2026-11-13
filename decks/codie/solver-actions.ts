@@ -133,7 +133,7 @@ export function flashbackTutor(
     (candidate) => candidate.name === target,
   );
   if (!card || !targetCard || !spendSpell(game, FLASHBACK)) return false;
-  if (!game.pay(game.effCost(card, null, true), true)) return false;
+  if (!game.pay(game.effectiveCost(card, null, true), true)) return false;
   removeIfPresent(game.graveyard, card);
   game.exile.push(card);
   removeIfPresent(game.library, targetCard);
@@ -158,7 +158,7 @@ export function spendSpell(
 ): CardDef | null {
   const card = game.cardInHand(name);
   if (!card) return null;
-  const cost = game.effCost(card, base);
+  const cost = game.effectiveCost(card, base);
   if (!game.pay(cost, true)) return null;
   removeIfPresent(game.hand, card);
   game.graveyard.push(card);

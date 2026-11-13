@@ -1,12 +1,13 @@
 import { TOKENS } from './cards';
 import type { MerenGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { firstMin, removeIfPresent, sortDesc } from '../../engine/lists';
 
 // ---------------------------------------------------------------- actions
 export function evokeCreature(game: MerenGame, card: CardDef): boolean {
-  if (!game.pay(game.effCost(card, Cost.parse('{1}{B}')), false)) return false;
+  if (!game.pay(game.effectiveCost(card, Cost.parse('{1}{B}')), false))
+    return false;
   removeIfPresent(game.hand, card);
   game.say('evoke', card);
   const permanent = game.enter(card, 'hand');
@@ -17,10 +18,10 @@ export function evokeCreature(game: MerenGame, card: CardDef): boolean {
 export function sacrificeThenCast(
   game: MerenGame,
   card: CardDef,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
   if (
-    !game.canPay(game.effCost(card), card.isInstantOrSorcery) ||
+    !game.canPay(game.effectiveCost(card), card.isInstantOrSorcery) ||
     !game.battlefield.includes(permanent)
   )
     return false;
@@ -31,9 +32,9 @@ export function sacrificeThenCast(
 export function castEldritchEvolution(
   game: MerenGame,
   card: CardDef,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
-  if (!game.pay(game.effCost(card), true)) return false;
+  if (!game.pay(game.effectiveCost(card), true)) return false;
   removeIfPresent(game.hand, card);
   const maxManaValue = permanent.card.manaValue + 2;
   game.sacrifice(permanent);
@@ -60,9 +61,9 @@ export function castEldritchEvolution(
 export function castSawInHalf(
   game: MerenGame,
   card: CardDef,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
-  if (!game.pay(game.effCost(card), true)) return false;
+  if (!game.pay(game.effectiveCost(card), true)) return false;
   removeIfPresent(game.hand, card);
   game.say('cast', card, 'on our', permanent.card);
   game.onCastInstantOrSorcery(false);
@@ -79,9 +80,9 @@ export function castSawInHalf(
 export function castBeastWithin(
   game: MerenGame,
   card: CardDef,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
-  if (!game.pay(game.effCost(card), true)) return false;
+  if (!game.pay(game.effectiveCost(card), true)) return false;
   removeIfPresent(game.hand, card);
   game.dies(permanent);
   game.createTokens(TOKENS.beast);
@@ -91,9 +92,9 @@ export function castBeastWithin(
 
 export function activatePriest(
   game: MerenGame,
-  permanent: Perm,
-  firstSacrifice: Perm,
-  secondSacrifice: Perm,
+  permanent: Permanent,
+  firstSacrifice: Permanent,
+  secondSacrifice: Permanent,
 ): boolean {
   permanent.tapped = true;
   game.sacrifice(firstSacrifice);
@@ -105,19 +106,25 @@ export function activatePriest(
   return true;
 }
 
-export function activateFaunaShaman(game: MerenGame, permanent: Perm): boolean {
+export function activateFaunaShaman(
+  game: MerenGame,
+  permanent: Permanent,
+): boolean {
   const cards = game.hand.filter((card) => card.isCreature);
   if (!cards.length || !game.pay(new Cost(0, 0, 0, 0, 0, 0, 1), false))
     return false;
   permanent.tapped = true;
   const discarded = firstMin(cards, (card) => game.discardValue(card));
   removeIfPresent(game.hand, discarded);
-  game.toGy(discarded);
+  game.toGraveyard(discarded);
   game.doTutor((card) => card.isCreature, false);
   return true;
 }
 
-export function activateLiliana(game: MerenGame, permanent: Perm): boolean {
+export function activateLiliana(
+  game: MerenGame,
+  permanent: Permanent,
+): boolean {
   if (!game.pay(Cost.parse('{5}{B}'), false)) return false;
   const card = game.bestCreatureInGraveyard();
   if (!card) return false;
@@ -134,13 +141,13 @@ export function castGrist(game: MerenGame, card: CardDef): boolean {
   return true;
 }
 
-export function activateGrist(game: MerenGame, permanent: Perm): boolean {
+export function activateGrist(game: MerenGame, permanent: Permanent): boolean {
   game.gristUsed = true;
   if (permanent.counters >= 5 && game.creaturesInGraveyard() >= 6) {
     permanent.counters -= 5;
     game.drainEach(game.creaturesInGraveyard());
     game.say(
-      `Grist -5: each opponent loses ${game.creaturesInGraveyard()}, opp life [${game.life.join(', ')}]`,
+      `Grist -5: each opponent loses ${game.creaturesInGraveyard()}, ${game.describeOpponentLife()}`,
     );
     if (permanent.counters <= 0) {
       removeIfPresent(game.battlefield, permanent);
@@ -154,7 +161,10 @@ export function activateGrist(game: MerenGame, permanent: Perm): boolean {
   return true;
 }
 
-export function castPreparedSpell(game: MerenGame, permanent: Perm): boolean {
+export function castPreparedSpell(
+  game: MerenGame,
+  permanent: Permanent,
+): boolean {
   if (permanent.card.name === 'Studious First-Year') {
     if (!game.pay(Cost.parse('{1}{G}'), true)) return false;
     game.prepared.delete(permanent);
@@ -174,7 +184,7 @@ export function castPreparedSpell(game: MerenGame, permanent: Perm): boolean {
 
 export function activateInsidiousFungus(
   game: MerenGame,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
   if (!game.pay(new Cost(2), false)) return false;
   game.sacrifice(permanent);
@@ -182,7 +192,7 @@ export function activateInsidiousFungus(
   const land = game.hand.find((card) => card.land !== null);
   if (land) {
     removeIfPresent(game.hand, land);
-    const landPermanent = new Perm(land, land.land, true);
+    const landPermanent = new Permanent(land, land.land, true);
     landPermanent.sick = false;
     game.battlefield.push(landPermanent);
   }
@@ -191,7 +201,7 @@ export function activateInsidiousFungus(
 
 export function activateVampiricRites(
   game: MerenGame,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
   if (!game.pay(Cost.parse('{1}{B}'), false)) return false;
   game.sacrifice(permanent);
@@ -201,7 +211,7 @@ export function activateVampiricRites(
 }
 
 export function escapeWoeStrider(game: MerenGame, card: CardDef): boolean {
-  if (!game.pay(game.effCost(card, Cost.parse('{3}{B}{B}')), false))
+  if (!game.pay(game.effectiveCost(card, Cost.parse('{3}{B}{B}')), false))
     return false;
   const others = sortDesc(
     game.graveyard.filter(

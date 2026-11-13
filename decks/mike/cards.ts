@@ -52,7 +52,7 @@ export const TOK = {
   faerie: makeToken('Faerie', 1, 1, 'blue', ['flying']),
 };
 
-/** Perm.marks bits. */
+/** Permanent.marks bits. */
 export const MARK_AQUEOUS_FORM = 1; // enchanted with Aqueous Form (can't be blocked)
 export const MARK_HAND_OF_VECNA = 2; // equipped with Hand of Vecna
 export const MARK_NERD_RAGE = 4; // enchanted with Nerd Rage

@@ -63,11 +63,13 @@ function everyOpponentDiscardsAndDraws(
   );
   for (const opponent of opponents) {
     const opponentGame = table.games[opponent];
-    for (const card of opponentGame.hand.splice(0)) opponentGame.toGy(card);
+    for (const card of opponentGame.hand.splice(0))
+      opponentGame.toGraveyard(card);
     opponentGame.draw(cardsToDraw);
   }
-  table.say(
-    `R${table.round}: every other player discards its hand and draws ${cardsToDraw}`,
+  table.sayAs(
+    table.playerOf(game),
+    `every other player discards its hand and draws ${cardsToDraw}`,
   );
   return cardsToDraw;
 }

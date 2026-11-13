@@ -16,7 +16,7 @@ import {
   Fighter,
   FightResult,
   KillSearcher,
-  Perm,
+  Permanent,
   Target,
   WinAttempt,
 } from './game-types';
@@ -25,6 +25,18 @@ import { removeOrThrow } from './lists';
 export abstract class Game<S = unknown> extends GameCore<S> {
   /** Set in a pod game: real opponents with real blockers. */
   arena: Arena | null = null;
+  /** Set in a pod game: the name of each opponent, for the log. */
+  opponentNames: string[] | null = null;
+
+  override opponentName(slot: number): string {
+    return this.opponentNames?.[slot] ?? super.opponentName(slot);
+  }
+  override describeOpponentLife(): string {
+    if (this.opponentNames === null) return super.describeOpponentLife();
+    return this.opponentNames
+      .map((name, slot) => `${name} ${this.life[slot]}`)
+      .join(', ');
+  }
 
   override podAllowsKill(): boolean {
     return !this.inArena() || this.arena!.go(this);
@@ -42,7 +54,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return this.arena !== null && !this.inRollout && this.arena.real(this);
   }
   /** How this attacker gets past blockers. Decks override it (or evasive()). */
-  evasion(permanent: Perm): Evasion {
+  evasion(permanent: Permanent): Evasion {
     return this.evasive(permanent)
       ? permanent.card.flying
         ? 'flying'
@@ -50,21 +62,21 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       : 'none';
   }
   /** What we'd pay to keep this creature: decides which creatures trade or chump block. */
-  blockValue(permanent: Perm): number {
+  blockValue(permanent: Permanent): number {
     return (
       (permanent.token ? 5 : 10 + 10 * permanent.card.manaValue) +
       (this.isCommander(permanent) ? 100 : 0)
     );
   }
-  isCommander(permanent: Perm): boolean {
+  isCommander(permanent: Permanent): boolean {
     return (
       !permanent.token && this.commanderNames.includes(permanent.card.name)
     );
   }
   fighter(
-    permanent: Perm,
-    powerOf?: (otherPermanent: Perm) => number,
-    toughnessOf?: (otherPermanent: Perm) => number,
+    permanent: Permanent,
+    powerOf?: (otherPermanent: Permanent) => number,
+    toughnessOf?: (otherPermanent: Permanent) => number,
   ): Fighter {
     const keywords = permanent.card.keywords;
     return {
@@ -98,10 +110,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   /** Attack opponent `slot` for real: blockers are declared, creatures die, the damage that connects is dealt. */
   strike(
     slot: number,
-    attackers: Perm[],
-    powerOf?: (permanent: Perm) => number,
-    toughnessOf?: (permanent: Perm) => number,
-  ): { damage: number; connected: Perm[] } {
+    attackers: Permanent[],
+    powerOf?: (permanent: Permanent) => number,
+    toughnessOf?: (permanent: Permanent) => number,
+  ): { damage: number; connected: Permanent[] } {
     const fightResult = this.arena!.fight(
       this,
       slot,
@@ -138,10 +150,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
    *  would be blocked without killing its blocker, or would die for less than it kills; a lethal attack sends everything. */
   planAttack(
     slot: number,
-    pool: Perm[],
-    powerOf?: (permanent: Perm) => number,
-    toughnessOf?: (permanent: Perm) => number,
-  ): { attackers: Perm[]; score: number; damage: number } {
+    pool: Permanent[],
+    powerOf?: (permanent: Permanent) => number,
+    toughnessOf?: (permanent: Permanent) => number,
+  ): { attackers: Permanent[]; score: number; damage: number } {
     let attackers = pool.slice();
     let fightResult: FightResult = { rows: [], damage: 0, kills: false };
     for (let round = 0; round < 6 && attackers.length; round++) {
@@ -189,10 +201,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   /** The opponent to attack with these creatures (the attack that does the most; a kill first), or null if no attack is worth it.
    *  `prefer` adds to an opponent's score. */
   pickDefender(
-    pool: Perm[],
+    pool: Permanent[],
     prefer?: (slot: number) => number,
-  ): { slot: number; attackers: Perm[] } | null {
-    let best: { slot: number; attackers: Perm[] } | null = null,
+  ): { slot: number; attackers: Permanent[] } | null {
+    let best: { slot: number; attackers: Permanent[] } | null = null,
       bestScore = 0;
     for (let i = 0; i < this.life.length; i++) {
       if (!this.isOpponentAlive(i)) continue;
@@ -213,7 +225,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
 
   /** Creatures to keep home as blockers: enough that the biggest board among the opponents can't kill us next turn
    *  (each blocker stops their biggest attacker). None if we couldn't stop it anyway. */
-  homeGuard(pool: Perm[], powerOf: (permanent: Perm) => number): Set<Perm> {
+  homeGuard(
+    pool: Permanent[],
+    powerOf: (permanent: Permanent) => number,
+  ): Set<Permanent> {
     let need = 0;
     for (let i = 0; i < this.life.length; i++) {
       if (!this.isOpponentAlive(i)) continue;
@@ -226,7 +241,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
         sum -= opponentPowers[strongestRemoved++];
       need = Math.max(need, strongestRemoved);
     }
-    const stay = new Set<Perm>();
+    const stay = new Set<Permanent>();
     if (!need) return stay;
     const others = this.creatures().filter(
       (permanent) => !permanent.tapped && !pool.includes(permanent),
@@ -246,14 +261,14 @@ export abstract class Game<S = unknown> extends GameCore<S> {
 
   /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage. */
   override arenaCombat(
-    pool: Perm[],
-    powerOf?: (permanent: Perm) => number,
-    toughnessOf?: (permanent: Perm) => number,
+    pool: Permanent[],
+    powerOf?: (permanent: Permanent) => number,
+    toughnessOf?: (permanent: Permanent) => number,
   ): void {
-    const power = powerOf ?? ((permanent: Perm) => this.power(permanent));
+    const power = powerOf ?? ((permanent: Permanent) => this.power(permanent));
     let best: {
       slot: number;
-      attackers: Perm[];
+      attackers: Permanent[];
       score: number;
       damage: number;
     } | null = null;
@@ -284,7 +299,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     while (rest.length && groups.length < 3) {
       let next: {
         slot: number;
-        attackers: Perm[];
+        attackers: Permanent[];
         score: number;
         damage: number;
       } | null = null;
@@ -306,7 +321,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     for (const permanent of sent)
       if (!permanent.card.keywords.has('vigilance')) permanent.tapped = true;
     const joined = this.onAttack(sent);
-    const connected: Perm[] = [];
+    const connected: Permanent[] = [];
     let total = 0;
     groups.forEach((group, groupIndex) => {
       const all = [
@@ -317,8 +332,9 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       const strikeResult = this.strike(group.slot, all, powerOf, toughnessOf);
       connected.push(...strikeResult.connected);
       total += strikeResult.damage;
-      this.say(
-        `attack opponent ${group.slot + 1} with ${all.length} creature(s): ${strikeResult.damage} damage, opp life [${this.life.join(', ')}]`,
+      this.sayEvent(
+        'attack',
+        `attack ${this.opponentName(group.slot)} with ${all.length} creature(s): ${strikeResult.damage} damage (${this.opponentName(group.slot)} ${this.life[group.slot]})`,
       );
     });
     this.onCombatDamage(
@@ -353,11 +369,13 @@ export abstract class Game<S = unknown> extends GameCore<S> {
         return;
       const cards = this.hand
         .filter(
-          (card) => card.isCreature && this.canPay(this.effCost(card), false),
+          (card) =>
+            card.isCreature && this.canPay(this.effectiveCost(card), false),
         )
         .sort(
           (first, second) =>
-            this.effCost(first).manaValue - this.effCost(second).manaValue,
+            this.effectiveCost(first).manaValue -
+            this.effectiveCost(second).manaValue,
         );
       if (!cards.length || !this.castPerm(cards[0])) return;
       this.say(
@@ -382,7 +400,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   answerCost(card: CardDef): Cost {
     const answer = this.answer(card);
-    return this.effCost(card, answer?.cost ? Cost.parse(answer.cost) : null);
+    return this.effectiveCost(
+      card,
+      answer?.cost ? Cost.parse(answer.cost) : null,
+    );
   }
   /** Mana to leave untapped on our own turn for the cheapest instant-speed answer in hand (from round config.hold_from, default 5). */
   override podReserve(): number {
@@ -457,7 +478,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
         out.push({ card: card.name, target, how: 'countered', answer: answer });
         continue;
       }
-      let permanent: Perm | undefined;
+      let permanent: Permanent | undefined;
       for (const x of winAttempt.perms) {
         permanent = owner.battlefield.find(
           (otherPermanent) =>
@@ -480,7 +501,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return out;
   }
   /** May an opponent's removal spell target this permanent of ours? (Hexproof, shroud, the spell's own limits.) */
-  podCanTarget(permanent: Perm, answer: Answer): boolean {
+  podCanTarget(permanent: Permanent, answer: Answer): boolean {
     if (this.config.pod_legal === false) return true; // (a check: every permanent is a legal target)
     const keywords = permanent.card.keywords;
     if (
@@ -498,13 +519,13 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return true;
   }
   /** Creatures we already protected this turn (Kira counters only the first spell aimed at each creature). */
-  podShielded = new Set<Perm>();
+  podShielded = new Set<Permanent>();
   /** This turn we keep mana up for an answer (the pod decides it each turn: --set hold_chance, default always). */
   podHold = true;
   /** An opponent aims a spell at this permanent of ours: do we counter it? Kira, Great Glass-Spinner (the first time each
    *  creature is targeted each turn), Soratami Rainshaper ({3} and a land back to hand: shroud), Siren Stormtamer ({U},
    *  sacrifice it). Returns the card that did it. */
-  podShield(permanent: Perm): string | null {
+  podShield(permanent: Permanent): string | null {
     if (!permanent.card.isCreature || this.config.pod_legal === false)
       return null;
     if (
@@ -541,7 +562,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return null;
   }
   /** One of our permanents was removed by this answer: what we get for it (a 3/3, a basic land, life, a 2/2). */
-  podGet(permanent: Perm, answer: Answer): void {
+  podGet(permanent: Permanent, answer: Answer): void {
     if (answer.gives === 'token3')
       this.createTokens(C.makeToken('Beast', 3, 3, 'Green'));
     else if (answer.gives === 'manifest')
@@ -563,13 +584,13 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     }
   }
   /** Removed by an opponent's answer: off the battlefield, and the owner gets what the card gives. */
-  podSuffer(permanent: Perm, answer: Answer): void {
+  podSuffer(permanent: Permanent, answer: Answer): void {
     if (!this.battlefield.includes(permanent)) return;
     this.podRemove(permanent, answer.how ?? 'destroy');
     this.podGet(permanent, answer);
   }
   /** One of our permanents is removed by an opponent. A commander goes back to the command zone (the tax counts its casts). */
-  podRemove(permanent: Perm, how: string): void {
+  podRemove(permanent: Permanent, how: string): void {
     if (!this.battlefield.includes(permanent)) return;
     if (this.isCommander(permanent)) {
       removeOrThrow(this.battlefield, permanent);
@@ -608,7 +629,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       return;
     }
     const card = C.get(name);
-    if (how === 'countered') this.tapMana(this.effCost(card).manaValue);
+    if (how === 'countered') this.tapMana(this.effectiveCost(card).manaValue);
     const take = (cards: CardDef[]) => {
       const i = cards.findIndex((otherCard) => otherCard.name === name);
       if (i < 0) return false;

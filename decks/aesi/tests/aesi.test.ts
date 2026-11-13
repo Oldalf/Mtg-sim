@@ -1,7 +1,7 @@
 /** Rules checks on hand-built boards. Run: npm run sim -- aesi --test */
 import * as C from '../../../engine/cards';
 import { Cost } from '../../../engine/cards';
-import { Perm } from '../../../engine/game-types';
+import { Permanent } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
 import { keepsHand, DEFAULT_MULLIGAN } from '../../../engine/mulligan';
@@ -42,12 +42,12 @@ function board(
   game.command = [];
   for (const landName of lands) {
     const card = C.get(landName);
-    const permanent = new Perm(card, card.land);
+    const permanent = new Permanent(card, card.land);
     permanent.sick = false;
     game.battlefield.push(permanent);
   }
   for (const cardName of battlefieldNames) {
-    const otherPermanent = new Perm(C.get(cardName));
+    const otherPermanent = new Permanent(C.get(cardName));
     otherPermanent.sick = false;
     game.battlefield.push(otherPermanent);
   }

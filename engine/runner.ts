@@ -9,6 +9,10 @@ import { Worker } from 'worker_threads';
 import * as C from './cards';
 import { Config } from './game-types';
 import { Game } from './game';
+import { goldfishGameLog } from './game-log';
+import { GameIndexRow, gamesFileName, writeGamesFile } from './game-log-files';
+import { describeKillTurns } from './game-log-run';
+import { formatGameLog } from './game-log-text';
 import { Rng } from './rng';
 
 /** What a deck folder exports (decks/<name>/index.ts). */
@@ -53,6 +57,12 @@ export interface Deck {
   ) => Game<unknown>;
 }
 
+/** Short names of a deck's two kill turns, for a line of text: ["win", "1st dead"]. */
+export function killTurnNamesOf(deck: Deck): [string, string] {
+  if (!deck.metrics) return ['win', 'win with backup'];
+  return [deck.metrics[0][1] || 'win', deck.metrics[1][1]];
+}
+
 /** The two kill turns of a game (see Deck.metrics): the first turn with any kill, and with counter backup. Null = none. */
 export type KillTurns = [number | null, number | null];
 
@@ -71,6 +81,9 @@ export interface Job {
   what: JobKind;
   /** hands: 7 = the raw opening 7, 6 = draw 7 and bottom the least useful card (a mulligan to 6). */
   size?: number;
+  /** Set to log the games: the run folder the job writes its games file to, and the job's number in the run. */
+  logFolder?: string;
+  jobNumber?: number;
 }
 
 /** A game's win turn and a list of card names: the opening hand (--hands), or the cards seen by turn 4 (--rank). */
@@ -81,6 +94,8 @@ export type JobResult = {
   seen4?: WinTurnAndCards[];
   diag?: DiagRow[];
   hands?: WinTurnAndCards[];
+  /** One row per logged game (see game-log-files.ts). */
+  logRows?: GameIndexRow[];
   errors: [number, string][];
 };
 
@@ -159,33 +174,63 @@ export function runJob(deck: Deck, job: Job): JobResult {
   else if (job.what === 'diag') result.diag = [];
   else if (job.what === 'hands') result.hands = [];
   else result.kills = [];
+
+  const logFolder = job.logFolder;
+  const isLogged = logFolder !== undefined;
+  const gamesAsJson: string[] = [];
+  if (isLogged) result.logRows = [];
+  /** Keeps the log of a game for the job's games file, and its result for the index. */
+  const keepLog = (
+    seed: number,
+    game: Game<unknown> | null,
+    killTurns?: KillTurns,
+    error?: string,
+  ) => {
+    if (!isLogged) return;
+    result.logRows!.push({
+      seed,
+      file: gamesFileName(job.jobNumber!),
+      line: gamesAsJson.length,
+      tags: [],
+      killTurns,
+      error,
+    });
+    gamesAsJson.push(
+      JSON.stringify(
+        goldfishGameLog(seed, deck.name, decklist.commanders, game?.log ?? []),
+      ),
+    );
+  };
+
   for (const seed of job.seeds) {
+    let game: Game<unknown> | null = null;
     try {
       if (job.what === 'hands') {
         result.hands!.push(playOpeningHand(deck, decklist, seed, job));
-      } else if (job.what === 'diag') {
-        const game = newGame(deck, decklist, seed, job.config, 'any');
-        const [anyKillTurn] = game.play();
+        continue;
+      }
+      // "kills": one game gives both kill turns: until the first kill appears the "any" and "protected" games
+      // make identical choices, and the protected game records that first kill too
+      const mode = job.what === 'kills' ? 'protected' : 'any';
+      game = newGame(deck, decklist, seed, job.config, mode, isLogged);
+      const killTurns = game.play();
+      const [anyKillTurn] = killTurns;
+      if (job.what === 'diag')
         result.diag!.push({ win: anyKillTurn, ...game.diag() });
-      } else if (job.what === 'seen4') {
-        const game = newGame(deck, decklist, seed, job.config, 'any');
-        const [anyKillTurn] = game.play();
+      else if (job.what === 'seen4') {
         if (game.seen4 !== null)
           result.seen4!.push([anyKillTurn, [...game.seen4]]);
-      } else {
-        // one game gives both kill turns: until the first kill appears the "any" and "protected" games
-        // make identical choices, and the protected game records that first kill too
-        const game = newGame(deck, decklist, seed, job.config, 'protected');
-        result.kills!.push(game.play());
-      }
+      } else result.kills!.push(killTurns);
+      keepLog(seed, game, killTurns);
     } catch (error) {
       // a simulator bug in one game must not kill the whole run
-      result.errors.push([
-        seed,
-        error instanceof Error ? (error.stack ?? error.message) : String(error),
-      ]);
+      const message =
+        error instanceof Error ? (error.stack ?? error.message) : String(error);
+      result.errors.push([seed, message]);
+      keepLog(seed, game, undefined, message); // the log up to the crash
     }
   }
+  if (isLogged) writeGamesFile(logFolder, job.jobNumber!, gamesAsJson);
   return result;
 }
 
@@ -213,7 +258,8 @@ function playOpeningHand(
   return [anyKillTurn, handNames];
 }
 
-/** Play seeds 1..n in worker threads; the same bundle (dist/sim.js) runs as each worker. */
+/** Play seeds 1..n in worker threads; the same bundle (dist/sim.js) runs as each worker.
+ *  logFolder: a run folder (game-log-files.ts) to write every game's log to. */
 export async function simulate(
   deck: Deck,
   listFile: string,
@@ -222,6 +268,7 @@ export async function simulate(
   workers: number,
   what: JobKind = 'kills',
   handSize = 7,
+  logFolder?: string,
 ): Promise<JobResult> {
   const seeds = Array.from({ length: gameCount }, (_, i) => i + 1);
   const chunkSize = Math.max(1, Math.floor(gameCount / (workers * 8)));
@@ -234,6 +281,8 @@ export async function simulate(
       config: config,
       what,
       size: handSize,
+      logFolder,
+      jobNumber: jobs.length,
     });
   const resultOfJob: JobResult[] = new Array(jobs.length);
   let nextJob = 0;
@@ -281,6 +330,8 @@ function mergeResults(what: JobKind, results: JobResult[]): JobResult {
   else if (what === 'hands')
     merged.hands = results.flatMap((result) => result.hands ?? []);
   else merged.kills = results.flatMap((result) => result.kills ?? []);
+  if (results.some((result) => result.logRows))
+    merged.logRows = results.flatMap((result) => result.logRows ?? []);
   merged.errors = results.flatMap((result) => result.errors);
   if (merged.errors.length) {
     console.log(
@@ -302,14 +353,19 @@ export function trace(
   firstSeed: number,
   gameCount: number,
   mode: 'any' | 'protected',
+  showMoves = false,
 ): void {
   const decklist = C.loadDecklist(listFile);
   for (let seed = firstSeed; seed < firstSeed + gameCount; seed++) {
     const game = newGame(deck, decklist, seed, config, mode, true);
-    const [anyKillTurn, protectedKillTurn] = game.play();
-    console.log(
-      `\n===== game seed ${seed}: any-win turn ${anyKillTurn}, protected-win turn ${protectedKillTurn}`,
+    const killTurns = game.play();
+    const gameLog = goldfishGameLog(
+      seed,
+      deck.name,
+      decklist.commanders,
+      game.log,
     );
-    console.log(game.log.join('\n'));
+    const title = `Game, seed ${seed}: ${describeKillTurns(killTurns, killTurnNamesOf(deck))}`;
+    console.log('\n' + formatGameLog(gameLog, { title, showMoves }));
   }
 }

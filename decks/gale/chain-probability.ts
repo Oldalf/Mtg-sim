@@ -39,9 +39,9 @@ class World extends KillSearchState {
   override creatureCardsMilled(
     i: number,
     count: number,
-    fromLib: boolean,
+    fromLibrary: boolean,
   ): number {
-    if (fromLib)
+    if (fromLibrary)
       return this.take(this.deck[i < 0 ? this.deck.length - 1 : i], count);
     let hits = 0;
     for (let draw = 0; draw < count; draw++)

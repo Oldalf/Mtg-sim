@@ -1,37 +1,298 @@
-# Simulator: engine notes
+# Plan: game logs (roadmap step 3)
 
-The shared engine and how the project is run. Each deck keeps its own plan (`decks/<name>/PLAN.md`: rules, results, what is open), the phases and next steps are in `ROADMAP.md`, commands and layout in `README.md`. This file used to hold Gale's whole history; that moved to `decks/gale/PLAN.md`.
+Written 2026-11-13. The engine notes that were in this file moved to `ENGINE.md`.
 
-## Rules for changing the engine
+## Status (2026-11-13, end of the first session)
 
-- **Safety net:** after any engine change run `npm run sim -- <deck> --regress check` for all four decks (gale, meren, samfrodo, aesi). It replays 600 seeds, the log analyses and the tests and must print IDENTICAL. If a change is meant to alter a deck, check that only that deck differs, then `--regress record` for it. A new test also shows up as DIFFERENT: check that only the tests differ, then re-record.
-- **Speed-ups** must be IDENTICAL. Behaviour changes must stay within noise on 2,000+ games, or be the intended change.
-- **Noise:** about ±2.6 points at 3,000 games for a percentage. A different list order deals different hands, so lists are not paired: the same cards in another order differed by 2.4 points at 4,000 games and under 1 at 16,000. Use 16,000 games for decisions.
-- **Pitfalls found the hard way:**
-  - A subclass's field initializers run after the base constructor, so a deck's state is set in field initializers, not in a hook the base constructor calls.
-  - `pay(..., commit = false)` taps lands and then undoes it (only `tapped` and the pool). Side effects in `tap()` (life loss, sacrifices) leak into every payment check: do them when `pay` commits.
-  - A card's X is 0 in the card data. Backslashes get lost in heredocs and JS template strings written through the shell: check regexes after writing them.
-  - Card data comes from Scryfall's bulk files (`engine/scryfall.ts`, `npm run cards -- update`, run by hand when new sets are out). Cards a list needs are copied into `data/cards.json` automatically before a run.
+Done and checked (`--regress check` IDENTICAL for all six decks, `--test` and `pod --test` pass, the fixed-seed pod run is unchanged):
 
-## What the engine provides
+- **Step 1**: `engine/game-log.test.ts`. `npm run sim -- <deck> --test` and `npm run pod -- --test` play 50 seeds with the log on and off.
+- **Step 2**: events (`engine/game-log.ts`), `sayEvent` and `sayHighlight` in `GameCore`. The old and new `--trace` outputs hold the same lines.
+- **Step 3a**: `engine/game-log-moves.ts`. Added to the plan: `logCardMovesSoFar()` between the actions of a turn, so a land's or a spell's moves sit under its own line. A card that left every zone (a spell still resolving) waits and is written when it arrives; what never arrives is written as exiled at the end of the turn.
+- **Step 4**: the pod log is events with names (`opponentName`, `describeOpponentLife` in the decks' lines too).
+- **Step 5**: `session-logs/`, `--no-log`. Changed from the plan: the games files are gzipped (`games-000.jsonl.gz`), because with the moves a game is 20 to 60 KB of JSON. Gzipped: 3,000 games are 3.7 MB (Gale) to 8.2 MB (Sam & Frodo), 16,000 Meren games 31 MB, 1,000 pod games 8 MB. Time for 3,000 games with the log against without: Gale 31.2 s / 30.8 s, Aesi 37.9 / 36.3, Sam & Frodo 43.3 / 40.6, Meren 7.8 / 6.0, 1,000 pod games 25.2 / 22.5. Meren is over the 10% of step 3c (short games, so the fixed work per event weighs more); open whether that matters at 1.8 s.
+- **Step 6**: `engine/game-log-text.ts` (`--trace` uses it; `--moves` works on `--trace` too).
+- **Step 7**: `engine/game-log-tags.ts`, `engine/game-log-run.ts`. The list under a report shows two games per tag in full and the other seeds on one line.
+- **Step 8**: `npm run logs` with `--seed`, `--tag`, `--highlights`, `--moves`.
 
-- **Cards** (`engine/cards.ts`): data from Scryfall, with facts that hold in any deck (lands, rocks, cost reducers, counters, tutors, draw spells). Unknown lands are read from their text (colours, "enters tapped", `LandInfo.cond` / `pain` / `colourless` / `colourIf`). **Lands play by their real text for every deck** (`Game.entersTapped`): always-tapped lands, snarls (reveal a card of the types from the hand), check lands (control a land of those types, battle lands count), fast lands (two or fewer other lands), slow lands and battle lands (two or more basic lands), Sunken Hollow. Pain lands deal 1 damage only when tapped for a pain colour (a generic cost uses the free {C}, or the free colour of Murmuring Bosk), dealt when a payment is made, not when it is only tested. Tainted Wood makes coloured mana only with a Swamp. Not modelled: filter lands (Twilight Mire is played as a dual), Hideaway, Bojuka Bog's exile. Mana kinds: a colour, `A` (either of the deck's colours), `UB` / `GU`-style pairs, `C<n>` (n colourless).
-- **Game** (`engine/game-core.ts`, plus the pod parts in `engine/game.ts`): zones, mana and payment, lands, casting, creatures (power / toughness, counters, tokens), enter and death triggers, sacrifice, devotion, life and damage, the turn loop, mulligans, and the turn planner. A deck subclasses `Game` and fills in the hooks listed in the header of `game-core.ts` (`candidates`, `cardValue`, `positionValue`, `tutorTarget`, `onEnter`, `onDies`, `upkeep`, `endStep`, `combat`, `onLandEnter`, `resolveOther`, `diag`, ...). Gale is the worked example for a kill-search deck, Meren for combat, Sam & Frodo for tokens, Aesi for loops.
-- **Mulligans:** one free mulligan (a new 7), then London. A deck's rule is plain data in `decks/<name>/mulligan.ts` (format and examples: `engine/mulligan.ts`): per attempt (the first 7, the free mulligan's 7, 6 cards) a list of "keep if" clauses, each a land range plus needs (a colour source, a card tag, a cheap spell), and a floor of cards that is always kept (5). A deck without a rule keeps 2–5 lands. `--set smart_mulligan=0` plays the old 2–5 rule for comparison. To change a rule: edit the file, compare with `--set smart_mulligan=0` on 8,000+ games, then re-record the baseline. `--hands` shows how opening hands do by land count and contents (the evidence behind the rules and the primers).
-- **Planner:** tries the best few plays on copies of the game and keeps the best (`planner_width`, `planner_rollouts`), with a deck-specific `positionValue`.
-- **Goldfish combat** (`creatureCombat`, agreed for creature decks): flyers connect; opponents block half of the other attackers (rounded down), the biggest; crackback = a full swing with nothing left home costs as much life as it dealt, each untapped creature kept home cuts a third; a fog creature (Spore Frog) removes it; an attack that wins is always taken; otherwise the biggest attack that keeps us above `combat_safety` (10). Decks may override (Sam & Frodo and Aesi attack with flyers or a few creatures only).
-- **Tools:** `--rank` (cards seen by turn 4; a deck's interaction is left out via `rankProtect`), `--cut`, `--analyze` (Archidekt logs: `logTrackers`, `logToken`, `logSacOnTap`, `syncFromLog` per deck), `--diag` (a deck's own consistency measures: `Deck.diagMetrics` and `Game.diag()`; `Game.spent` / `spentEnd` track the mana paid for every deck, Aesi and Meren use them for the slow-start measure), `--hands` (raw opening 7s by land count and by a deck's `handFeatures`, with the average mulligan to 6 as the yardstick; the basis of the primers' MULLIGANS sections), `--trace`, `--regress`.
-- **Power-save mode** (`--eco`, `--duty N`, `-w N`): `setDuty` in the runner makes each worker rest after a chunk so it is busy only that share of the time; `cli/eco.ts` sets below-normal priority and a quarter of the cores. The seeds don't depend on the worker count, so results are identical (checked with `--regress check --eco`). Use it for long runs while Pontus plays.
-- **Speed:** 3,000 games take about 11 s (Meren), 25 s (Aesi), 45 s (Gale) and 50 s (Sam & Frodo, big token boards).
+Open:
 
-## History (one line each)
+- **Steps 3b and 3c**, as work packages A to E under step 3: A the renames (done), B `moveCard` in the engine and C the safety net (the big model), D the decks one at a time and E the clean-up (a small model).
+- **Step 8**, the parts that need step 9: `--board`, `--archidekt`, and reading a real Archidekt log.
+- **Step 9**: `boardAt`, `readArchidektLog`, the Archidekt export, `replayGame`.
+- **Step 10**: ROADMAP (when the rest is done). README and ENGINE.md are up to date.
+- A game that crashes keeps its log so far (written, not yet seen in practice: no game has crashed).
 
-- 2026-11-04: Gale in Python → shared engine split from the deck (IDENTICAL) → port to TypeScript (about 5× faster; kill tests, 6 log analyses and kill rates matched) → five-colour mana, creatures, tokens, life and damage, goldfish combat → Meren (planner, crackback confirmed).
-- 2026-11-05: Sam & Frodo (two-colour lands, snarls, landfall hook, faster payment); Aesi (land drops, land puts, loop solver, `--diag`).
-- 2026-11-06: Aesi package list; dual lands with real conditions (Aesi only).
-- 2026-11-07: mulligan rules per deck; conditional lands and pain lands play by their text for every deck (Meren and Sam & Frodo re-recorded: about half a point and two points slower by turn 10); the old Python removed.
+## The goal
 
-## Ideas for later
+After a simulation or a pod run, Pontus can open a few games that stand out and a few average ones, and read them easily. In pod games it is always clear which player does what. In step 4 the web page reads the same data to list the games of a run, open one and step through it.
 
-- Play at instant speed on opponents' turns (Gale's Wizards of Thay, end-of-turn draws and tutors).
-- Planner only when the top plays are close (about 40% of Gale's run time).
+## What exists today (checked 2026-11-13)
+
+- `--trace N` already prints a play-by-play. Each `Game` collects lines with `say()` when `verbose` is on (about 40 calls in the engine, 110 in the decks). The pod merges the players' lines in `engine/pod-table.ts` (`say`, `sayAs`, `flushCurrentPlayerLog`).
+- Logging costs no measurable time: 300 games single-threaded took 11.1 s with the log and 12.5 s without (Gale), 4.0 s and 4.0 s (Meren); 100 pod games 10.9 s and 10.8 s.
+- Size as plain text: about 2 KB per game (Gale), 3.3 KB (Meren), 10.5 KB per 4-player pod game. As JSON expect 2 to 3 times that: roughly 130 MB for 16,000 Meren games, 30 MB for 1,000 pod games.
+- A game is fully decided by its seed, list and settings, so any game can be played again and gives the same log.
+- Pod lines are hard to follow today: `attack opponent 2 ... opp life [39, 38, 40]` is numbered from the acting player's own seat, so the reader has to work out who "opponent 2" is.
+- Cards move between zones in about 180 places in the engine and decks. There is no single "move a card" function.
+- The 13 real logs use Archidekt's simple format, and almost only four kinds of line: `moved <zone> => <zone>` (zones: library, hand, battlefield, graveyard, exile, commandZone, miscCards), `tapped`, `untapped` and `counter:<kind>=<number>`. `engine/log-board.ts` already rebuilds a board from such lines.
+
+## Decisions (say so if you want one changed)
+
+1. **Every game is logged as events, and each event carries its card moves in Archidekt's simple format** (agreed 2026-11-13). An event is the sim's own readable line ("cast Gray Merchant of Asphodel") plus the moves it caused (`Gray Merchant of Asphodel; moved hand => battlefield`, `Swamp; tapped`). Zone changes are recorded exactly, by one engine function that every zone change goes through (step 3). Reading is easy, and the moves alone are a real Archidekt log.
+2. **Goldfish and pod games share one format.** A goldfish game is a game with one player. One viewer and later one UI handle both. A real Archidekt log loads into the same format (moves without the readable lines), so the viewer and the UI can show Pontus's real games too.
+3. **The board is rebuilt from the moves, not stored.** Applying the moves from the start gives the board at any point (as `log-board.ts` does today). That is what step 4 uses for stepping through a game.
+4. **Folder `session-logs/`** at the top (not in git). `decks/<name>/logs/` stays what it is: Pontus's real games.
+5. **Cleared when a new `sim` or `pod` run starts.** Until step 4 there is no application to start, so "one session" means "the last run command". Looking at logs (`npm run logs`) never clears. A run that compares several lists keeps all of them.
+6. **Logged runs:** the normal table, list comparisons, `--diag` and pod runs. Not logged: `--rank`, `--cut`, `--hands`, `--regress`, `--test` (many runs of little interest each). `--no-log` switches it off.
+
+## The format
+
+One run = one folder:
+
+```
+session-logs/
+  01-meren-decklist/           one folder per list in a comparison (02-meren-test, ...)
+    run.json                   what was run, enough to replay it: decks, list files, settings, mode, game count, date
+    index.json                 one row per game: seed, result, tags, file, line
+    games-000.jsonl.gz ...     one file per worker job, one game per line, gzipped
+    tagged/fastest-seed-0412.txt   readable text of every tagged game
+```
+
+One game (a line of a `games-*.jsonl` file):
+
+```ts
+interface GameLog {
+  seed: number;
+  players: LogPlayer[]; // goldfish: one player
+  events: GameEvent[];
+}
+interface LogPlayer {
+  name: string; // the deck name, "gale#2" when a deck is in the pod twice
+  deckName: string;
+  commanders: string[];
+  seat: number; // 0 = first to play
+}
+interface GameEvent {
+  turn: number; // the round in a pod
+  player: number; // who does it (index into players); in a pod this can differ from whose turn it is
+  activePlayer: number; // whose turn it is
+  kind: EventKind;
+  text: string; // the readable line, e.g. "cast Gray Merchant of Asphodel"
+  cards: string[]; // card names in the line (for card images in step 4)
+  isHighlight: boolean; // worth jumping to: a win attempt, a counterspell, removal, a wipe, a player out, the win
+  moves: CardMove[]; // what changed on the table because of this event
+  life: number[]; // every player's life after the event (goldfish: ours, then the opponents')
+}
+/** One line of Archidekt's simple format, plus whose card it is. */
+interface CardMove {
+  player: number;
+  card: string;
+  action: string; // "moved hand => battlefield" | "tapped" | "untapped" | "counter:+1 / +1=3"
+}
+type EventKind =
+  'turn-start' | 'land' | 'cast' | 'attack' | 'answer' | 'out' | 'win' | 'turn-end' | 'note';
+```
+
+Archidekt's format has no column for the player and no life totals, which is why `CardMove.player` and `GameEvent.life` are extra. An Archidekt export of a pod game is one file per player.
+
+`index.json` rows hold the result (goldfish: both kill turns; pod: winner, round, how, the `PodStats` numbers) and the tags, so the UI can list and filter 16,000 games without reading their events.
+
+## Tags
+
+Worked out in the main thread after the run, from the index rows. Each tag is given to at most 5 games (lowest seeds first), so the list stays short.
+
+| Goldfish | Meaning |
+|---|---|
+| `fastest` | the earliest wins |
+| `slowest` | the latest wins |
+| `no-win` | no win within the turns played |
+| `average` | the win turn equals the median |
+| `error` | the game hit a simulator bug (the log up to the crash is kept) |
+
+| Pod | Meaning |
+|---|---|
+| `fastest`, `slowest`, `average` | by the round the game ended |
+| `no-winner` | reached the round cap |
+| `win-stopped` | a win attempt was answered |
+| `most-interaction` | the most answers, counters and removal |
+| `waited` | a deck held a kill for counter backup |
+| `commander-kill`, `poison`, `decked` | someone went out this way |
+| `error` | as above |
+
+Deck-specific tags (a hook on `Deck`) can come later, when a deck needs one.
+
+## Steps
+
+Each step ends with `npm run check`, `npm run format`, `--regress check` IDENTICAL for all decks, `npm run pod -- --test`, and the same output from a fixed-seed pod run saved before the step (`npm run pod -- gale meren samfrodo aesi -n 200`).
+
+### 1. Prove that logging does not change a game
+
+- Save the fixed-seed pod output and a `--trace 3` output per deck before changing anything.
+- Add a test (in `engine/pod.test.ts` and each deck's regress set, or one shared helper): play 50 seeds with `verbose` on and off, the results must be equal. If a deck differs, fix it first: logging must only read.
+
+### 2. Events instead of plain lines (`engine/game-log.ts`)
+
+- New file with the types above and `GameEvent` builders.
+- `GameCore.log` becomes `GameEvent[]`. `say(...parts)` keeps its signature and makes a `note` event; the cards are collected from the `CardDef` parts it already receives. Add `sayEvent(kind, ...parts)` and use it in the few central places: playing a land, casting, attacking, turn start and end, the kill found.
+- The 110 `say()` calls in the decks stay as they are.
+- `--trace` prints the events through one function `formatGameLog` (step 6). Compare with the saved trace outputs: same information.
+
+### 3. Card moves in Archidekt's simple format (`engine/game-log-moves.ts`, `engine/game-core.ts`)
+
+Agreed 2026-11-13: zone changes are recorded exactly, by the engine. Today the zones are arrays on `GameCore`, but the code changes them directly (`this.hand.push(card)`) in about 45 places in the engine and 125 in the decks (Codie 43, Aesi 27, Gale 20, Meren 17, Sam & Frodo 8, Mike 7). The direction: the engine owns the zones, a deck says what it wants done.
+
+**3a. The comparison (gives moves for every deck from the start)**
+
+- A small recorder keeps what the table looked like at the last event: the card names in each zone, and each permanent's tapped state and counters. At the next event it compares, writes the differences as `CardMove`s on that event and remembers the new state. A turn's last changes go on the `turn-end` event.
+- A card that left one zone and showed up in another is `moved A => B`. A token that appears is `moved miscCards => battlefield` and one that disappears goes back to `miscCards`, as in the real logs. Permanents are compared one by one (tapped, untapped, `counter:+1 / +1=N`).
+- Only the real game records (not the planner's copies), and only when the log is on.
+- Limits: a card that moves twice between two events shows as one move (a sorcery goes hand => graveyard), and the order of moves inside one event is not known. 3b removes both for zones.
+- Tapped and counters stay with the comparison for good: a payment that is only tested taps lands and undoes it, and the log should show the end result.
+
+**3b and 3c. One engine function for every zone change, and its safety net**
+
+Split into work packages (2026-11-13), in the order to do them. Each one ends with the checks under "Steps" above and stands on its own, so it can be done in its own session. "Who" says what the package needs: Pontus in VS Code, a small model, or the big model.
+
+**A. The renames. Done 2026-11-13** (by script: whole word, match case, `*.ts` only; `red` → `reduction` only in `effectiveCost`, `tot` → `totalValue`). **No behaviour change.**
+
+Rule 0 names the big refactor missed. Done when `npm run check` passes and `--regress check` is IDENTICAL for all six decks.
+
+Required (the rest of 3b uses these names):
+
+| Old | New | How |
+|---|---|---|
+| `toGy` (method, `engine/game-core.ts`) | `toGraveyard` | F2 on the method: calls in the engine and the decks follow |
+| `onToGy` (hook, `engine/game-core.ts`) | `onToGraveyard` | F2 on the method in `GameCore`: the decks' overrides follow |
+| `fromGy`, `_fromGy` (parameters, about 50 places) | `fromGraveyard`, `_fromGraveyard` | search and replace in `*.ts`, whole word, match case (F2 only renames one function at a time) |
+| `fromLib`, `_fromLib` (parameters) | `fromLibrary`, `_fromLibrary` | the same |
+
+Good to do in the same pass (same rule, not needed by 3b):
+
+| Old | New | How |
+|---|---|---|
+| `effCost` (method, about 90 uses) | `effectiveCost` | F2 |
+| `orderedCands` (method) | `orderedCandidates` | F2 |
+| `Cand` (type, `engine/game-types.ts`) | `Candidate` | F2 |
+| `Perm` (class, `engine/game-types.ts`, about 300 uses) | `Permanent` | F2 |
+| `fmt`, `fmtList`, `fmtPool` (`engine/log-format.ts`) | `formatLogPart`, `formatList`, `formatPool` | F2 |
+| `REDUCE_FROM_GY2` (`engine/card-facts.ts`) | `REDUCE_FROM_GRAVEYARD_BY_2` | F2 |
+| `_cd`, `_st`, `trig` (hook parameters) | `_card`, `_state`, `triggerOptions` | F2 on each, or search and replace whole word |
+| `red`, `tot`, `nRoll`, `maxt`, `pool0` (locals in `game-core.ts`) | `reduction`, `total`, `rolloutCount`, `maxTurn`, `poolBefore` | F2 on each |
+
+Watch out for:
+
+- After the search and replace, look at the diff for a scope that now has two `fromGraveyard` (none today: `seeTheTruth` already has its own).
+- The header comment of `game-core.ts` lists the hooks by name (`onToGy`): F2 does not change comments. Search the old names once more in `*.ts` and `*.md` at the end (`ENGINE.md`, the decks' `PLAN.md`).
+- Log texts must not change (`'(from graveyard)'` stays). The regress check compares the log analyses, so it catches that.
+- Run `npm run format` at the end (longer names move line breaks).
+
+**B. `moveCard` in the engine (the big model). The design work.**
+
+- Add to `GameCore`: `moveCard(card, fromZone, toZone, libraryPosition = 'top')`. It takes the card out of `fromZone` (throws if it is not there, like `removeOrThrow`), puts it in `toZone` and, when the game has a `moveRecorder`, records the move at that moment. Zones: the six of `CARD_ZONES` in `game-log-moves.ts` (Archidekt's names). `libraryPosition`: `'top' | 'bottom'` or an index.
+- Permanents are `Perm`s, not cards, so the battlefield gets its own two paths that record the same way: entering (`enter`, `createTokens`, `playLand`; a token comes from `miscCards`) and leaving (`dies`, the pod's `podRemove`, a bounce; a token goes back to `miscCards`).
+- The recorder gets a second way in: `recordMove(card, fromZone, toZone)` puts the move in a list that the next log line takes (as `collectMoves` does today). Tapped and counters stay with the comparison for good.
+- A game needs a switch for which way its zone moves come from: `Deck.recordsExactMoves` (false until the deck is converted in package D). With it on, the comparison no longer writes zone moves for that deck's games, only tapped and counters; the recorded moves are used instead. The engine's own functions record in both cases; with the switch off their records are dropped.
+- Convert the engine's own functions: `draw`, `discard`, `toGraveyard`, `scry`, `doTutor`, `enter`, `createTokens`, `dies`, `sacrifice`, `playLand`, `crackEvolvingWilds`, `returnLandToHand`, the cast functions, `flashback`, `transmute`, `cycle`, `wishclaw`, `mulligan`, the draw and tutor spells in `resolveCardSelection`, then the other direct changes in `game-core.ts` and `game.ts` (about 45 places; find them with a search for `.push(`, `.unshift(`, `.splice(`, `.shift(`, `.pop(` and `removeOrThrow(` on `library`, `hand`, `graveyard`, `exile`, `command`, `battlefield`).
+- Keep the order of every array exactly as it is today (a card pushed to the end stays pushed to the end): results depend on it. `--regress check` must be IDENTICAL.
+- Whole-zone replacements (`this.library = ...` for a shuffle or a test setup, `Object.assign(this, copy)` in `develop`) are not moves and stay.
+- With exact moves a sorcery can show the real path. Decide here: `hand => graveyard` in one move as today, or through Archidekt's `battlefield` as in the real logs.
+
+**C. The safety net (the big model, right after B, before any deck is converted).**
+
+- A test per deck (next to `runGoldfishLogTests` in `engine/game-log.test.ts`, so it runs with `--test`): play 50 seeds with the log on, and at every log line compare the zone moves that were recorded with the zone moves the comparison finds. A difference fails with the card, the two zones, the turn and the text of the log line. That line points at the place that went around `moveCard`.
+- For a deck with `recordsExactMoves` off the test only reports how many differences there are (the to-do list of package D). For a converted deck any difference is BAD. It also catches new deck code that goes around `moveCard` later.
+- The same for a pod: 20 seeds, every player's game.
+- Export a few simulated games as Archidekt text (one line per move: `T<turn>; <card>; <action>`) and run them through `parseLog` and `Board` in `log-board.ts`: the rebuilt board must match the game's real zones at the end of every turn.
+- Time and size for 3,000 games per deck, against the numbers in "Status". Recording at the moment should be cheaper than comparing the zones (Meren is 30% slower with the log today).
+
+**D. The decks, one at a time (a small model, one deck per session). Smallest first: Mike (7 places), Sam & Frodo (8), Meren (17), Gale (20), Aesi (27), Codie (43).**
+
+For each deck:
+
+1. Run `npm run sim -- <deck> --test` and read the differences the safety net lists.
+2. Replace each direct zone change in the deck's folder with `moveCard` or the engine function that already does it (`draw`, `discard`, `toGraveyard`, `enter`, `dies`, mill, return to hand). Keep the order of the arrays as it is.
+3. Where three decks do the same thing by hand, make it an engine function (rule of three) and note it here.
+4. Set `recordsExactMoves: true` in the deck's `index.ts`.
+5. Done when: the deck's `--test` prints no BAD line, `--regress check` is IDENTICAL for all six decks (the engine may have got a new function), `npm run pod -- --test` passes, and a `--trace 2 --moves` of the deck reads right.
+
+A deck that is not converted yet keeps its zone moves from the comparison, so the logs work all along and get exact deck by deck.
+
+**E. Clean up (a small model).** When all six decks are converted: remove `recordsExactMoves` and the zone part of the comparison (tapped and counters stay), update `ENGINE.md` ("Game logs": decks must use `moveCard`), and tick 3b and 3c in "Status".
+
+Later, outside this plan: with every zone change in one place, the engine can also take over the rules that hang on them ("when this leaves the battlefield", "whenever a card goes to your graveyard") instead of each deck calling its own hooks.
+
+### 4. Pod: say who does what (`engine/pod-table.ts`, `pod-combat.ts`, `pod-interaction.ts`)
+
+- The pod log becomes `GameEvent[]` with `player` and `activePlayer` set, instead of text with an `R3 meren:` prefix.
+- Replace "opponent 2" and `opp life [39, 38, 40]` with the deck names (agreed 2026-11-13): `attack samfrodo with 1 creature: 1 damage (samfrodo 38)`. The pod knows the mapping (`opponentsOf`, `playerName`). The same deck twice in a pod stays `gale` and `gale#2`.
+- A `turn-start` event carries every player's life, so each turn opens with the standings.
+- Mark highlights: win attempts and their answers, counterspells, removal and wipes, eliminations, the win.
+- This changes trace text only, not results. Check with the saved pod output.
+
+### 5. Write the logs during a run (`engine/game-log-files.ts`, `runner.ts`, `pod.ts`)
+
+- `Job` and `PodJob` get an optional `logFolder` and job number. With it set the worker plays with the log on, writes `games-<job>.jsonl` and returns one index row per game. A game that throws still writes its log so far.
+- The main thread clears `session-logs/`, creates the run folder, writes `run.json` before the run and `index.json` after it.
+- Add `session-logs/` to `.gitignore`. Add `--no-log` to `cli/args.ts`.
+- Note for the goldfish table: one game gives both kill turns and is played in "protected" mode, so its log runs past the first kill found. That line gets a highlight.
+- Measure a 16,000-game run per deck (time and folder size). If a folder passes about 300 MB, keep full events only for tagged games and replay the others on demand.
+
+### 6. Readable text (`engine/game-log-text.ts`)
+
+One function turns a `GameLog` into text. Used by `--trace`, the `tagged/` files and the viewer. The card moves are left out here (the readable lines say the same); `--moves` in the viewer shows them under each line. Sketch of a pod game:
+
+```
+Pod game, seed 1: samfrodo wins in round 8 (last standing)
+Seats: 1 aesi, 2 samfrodo, 3 meren, 4 gale
+Tags: win-stopped, average
+
+== Round 3, meren ==   life: aesi 39, samfrodo 38, meren 40, gale 36
+   play land Exotic Orchard
+   cast Grist, the Hunger Tide
+   attack samfrodo with 1 creature: 1 damage (samfrodo 37)
+>> gale: counters Victimize with Counterspell
+   end: hand Victimize, Swamp, Twilight Diviner
+```
+
+Lines by another player than the one whose turn it is start with that player's name. Highlights start with `>>`. A goldfish game looks the same with `== Turn 3 ==` headers.
+
+### 7. Tags (`engine/game-log-tags.ts`)
+
+- Two plain functions: goldfish rows in, tags out; pod rows in, tags out (the tables above).
+- After the run: write the tags into `index.json`, write each tagged game as text into `tagged/`, and print a short "Games worth a look" list under the report with tag, seed, result and file path.
+
+### 8. The viewer (`cli/logs-command.ts`, `npm run logs`)
+
+```
+npm run logs                               the runs of this session, with how many games carry each tag
+npm run logs -- 01-meren-decklist          the tagged games of a run
+npm run logs -- 01-meren-decklist --seed 412           one game as text
+npm run logs -- 01-meren-decklist --tag average        every game with that tag
+npm run logs -- 01-meren-decklist --seed 412 --highlights   only the highlights, with two lines around each
+npm run logs -- 01-meren-decklist --seed 412 --moves   with the card moves under each line
+npm run logs -- 01-meren-decklist --seed 412 --board   with the board at the end of each turn
+npm run logs -- 01-meren-decklist --seed 412 --archidekt   the game as an Archidekt log (a pod: one file per player)
+npm run logs -- decks/meren/logs/game1_t9_gray_merchant.txt --board   a real Archidekt log, shown the same way
+```
+
+The run name may be shortened to its number (`1`). Without a run, the latest is used.
+
+### 9. The board at any point, and replay (what step 4 builds on)
+
+- `boardAt(gameLog, eventIndex)` applies the moves up to that event and returns each player's hand, battlefield (tapped, counters), graveyard, exile, command zone, library size and life. Share the move-applying code with `Board` in `log-board.ts` instead of writing it twice.
+- `readArchidektLog(file)` turns a real log into a `GameLog` (one event per line, grouped by turn), so everything above works on Pontus's real games.
+- The Archidekt export: the moves of one player, one per line, as `T<turn>; <card>; <action>`. A simulated game can then be fed to `--analyze`.
+- `replayGame(runFolder, seed)` reads `run.json`, plays the seed again and returns the `GameLog`. Needed if step 3 or 5 ended up storing less than everything, and handy for debugging. It stops with a clear message if a list file changed since the run (store a hash of each list in `run.json`). Test: the replayed events equal the stored ones for 20 seeds per deck and for a pod.
+- The functions step 4 will call are then all there: `listRuns`, `readIndex`, `readGame`, `boardAt`, `readArchidektLog`, `replayGame`, `formatGameLog`. Keep them free of `console.log` so the web server can use them as they are.
+
+### 10. Finish
+
+- ENGINE.md: a "Game logs" entry under "What the engine provides".
+- README: the `npm run logs` commands, `--no-log`, the `session-logs/` row in the layout table.
+- ROADMAP: mark step 3 done, with the decisions above in two or three lines.
+- Re-record regress baselines only if a new test was added (results themselves must not change).
+
+## Order and size
+
+Steps 1 to 4 change existing code and need the most care (regress after each). Step 3b is the biggest part of the plan (one pass per deck) and does not hold up the rest: steps 4 to 9 only need 3a, so 3b can run alongside or after them. Steps 5 to 8 are new files and give the first usable result: after step 8 the goal is met for reading games. Step 9 prepares step 4 of the roadmap.

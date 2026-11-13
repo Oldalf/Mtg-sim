@@ -12,6 +12,7 @@
 import * as C from './cards';
 import { Config } from './game-types';
 import { Game } from './game';
+import { EventKind, GameEvent, GameLog, buildEvent } from './game-log';
 import { Rng } from './rng';
 import { Deck } from './runner';
 import { PodGame, PodSpec, PodStats } from './pod-types';
@@ -87,10 +88,13 @@ export class PodTable {
 
   /** The player whose turn it is (-1 between turns). */
   currentPlayer = -1;
+  /** Whose turn the log lines belong to: the current player, or between turns the player whose turn just ended. */
+  private turnPlayerInLog = -1;
   /** How many lines of the current player's own log are already in the pod log. */
   private loggedLineCount = 0;
-  private readonly log: string[] = [];
+  private readonly log: GameEvent[] = [];
   private readonly verbose: boolean;
+  private readonly seed: number;
 
   private opponentViews: OpponentView[];
   private offTurnDepth = 0;
@@ -104,6 +108,7 @@ export class PodTable {
     const playerCount = spec.decks.length;
     this.playerCount = playerCount;
     this.verbose = verbose;
+    this.seed = seed;
     this.decks = spec.decks.map((name) => allDecks[name]);
 
     this.turnOrder = Array.from({ length: playerCount }, (_, i) => i);
@@ -135,7 +140,13 @@ export class PodTable {
         spec.set.pod_protected ? 'protected' : 'any',
       );
       game.onPlay = this.seatOf[player] === 0; // only the first player skips the first draw
+      game.playerInLog = player;
       return game;
+    });
+    this.games.forEach((game, player) => {
+      game.opponentNames = this.opponentsOf[player].map((opponent) =>
+        this.playerName(opponent),
+      );
     });
 
     const set = spec.set;
@@ -222,44 +233,98 @@ export class PodTable {
       out: this.outOrder,
       why: this.outReason,
       seat: this.seatOf,
-      log: this.verbose ? this.log : undefined,
+      log: this.verbose ? this.gameLog() : undefined,
     };
   }
 
   // ================================================================ log
 
-  /** Writes a line to the pod log (only when tracing). */
-  say(text: string): void {
-    if (!this.verbose) return;
-    this.flushCurrentPlayerLog();
-    this.log.push(text);
+  /** The log of the game so far, with who played. */
+  gameLog(): GameLog {
+    return {
+      seed: this.seed,
+      players: this.games.map((game, player) => ({
+        name: this.playerName(player),
+        deckName: this.spec.decks[player],
+        commanders: game.commanderNames,
+        seat: this.seatOf[player],
+      })),
+      events: this.log,
+    };
   }
 
-  /** A line by one player, with the round and name in front. */
-  sayAs(player: number, text: string): void {
-    this.say(`R${this.round} ${this.playerName(player)}: ${text}`);
+  /** A line by one player in the pod log (only when the log is on). cards: the card names in the text. */
+  sayAs(
+    player: number,
+    text: string,
+    kind: EventKind = 'note',
+    cards: string[] = [],
+  ): void {
+    if (!this.verbose) return;
+    this.flushCurrentPlayerLog();
+    const event = buildEvent(kind, this.round, text, cards, this.lifeTotals());
+    event.player = player;
+    event.activePlayer =
+      this.turnPlayerInLog >= 0 ? this.turnPlayerInLog : player;
+    event.moves = this.collectCardMoves();
+    this.log.push(event);
+  }
+
+  /** A line worth jumping to when reading the game. */
+  sayHighlight(player: number, text: string, cards: string[] = []): void {
+    if (!this.verbose) return;
+    this.sayAs(player, text, 'note', cards);
+    this.log[this.log.length - 1].isHighlight = true;
+  }
+
+  private lifeTotals(): number[] {
+    return this.games.map((game) => game.myLife);
+  }
+
+  /** What changed on every player's table since their last log lines. */
+  private collectCardMoves(): GameEvent['moves'] {
+    return this.games.flatMap((game) => game.collectCardMoves());
+  }
+
+  /** Puts what changed after the last log line on that line (at the end of the game). */
+  logRemainingCardMoves(): void {
+    if (!this.verbose) return;
+    this.flushCurrentPlayerLog();
+    const lastEvent = this.log[this.log.length - 1];
+    if (lastEvent) lastEvent.moves.push(...this.collectCardMoves());
   }
 
   /** Copies what the current player's own game has logged since last time into the pod log. */
   flushCurrentPlayerLog(): void {
     if (!this.verbose || this.currentPlayer < 0) return;
     const gameLog = this.games[this.currentPlayer].log;
-    for (const line of gameLog.slice(this.loggedLineCount))
-      this.logGameLine(this.currentPlayer, line);
+    for (const event of gameLog.slice(this.loggedLineCount))
+      this.logGameLine(this.currentPlayer, event);
     this.loggedLineCount = gameLog.length;
   }
 
   /** Marks the start of a player's turn for the log. */
   startTurnLog(player: number): void {
     this.currentPlayer = player;
+    this.turnPlayerInLog = player;
     this.loggedLineCount = this.games[player].log.length;
   }
 
-  /** Copies the game lines of a player from `fromIndex` on (pod log lines have no turn number). */
-  private logGameLine(player: number, line: string): void {
-    this.log.push(
-      `R${this.round} ${this.playerName(player)}: ${line.replace(/^T\d+: /, '')}`,
-    );
+  /** Puts a line of a player's own game into the pod log: the round, who it is, and every player's life as that
+   *  player's game saw it when the line was written. */
+  private logGameLine(player: number, event: GameEvent): void {
+    const [ownLife, ...opponentLife] = event.life;
+    const life = this.lifeTotals();
+    life[player] = ownLife;
+    this.opponentsOf[player].forEach((opponent, slot) => {
+      if (this.isAlive[opponent]) life[opponent] = opponentLife[slot];
+    });
+    event.life = life;
+    event.turn = this.round;
+    event.player = player;
+    event.activePlayer =
+      this.turnPlayerInLog >= 0 ? this.turnPlayerInLog : player;
+    this.log.push(event);
   }
 
   // ================================================================ elimination
@@ -269,7 +334,7 @@ export class PodTable {
     this.isAlive[player] = false;
     this.outOrder.push(player);
     this.outReason[player] = reason;
-    this.say(`R${this.round}: ${this.playerName(player)} is out (${reason})`);
+    this.sayAs(player, `is out (${reason})`, 'out');
   }
 
   /** Eliminates every player who has lost by life, commander damage or poison. */
@@ -341,7 +406,7 @@ export class PodTable {
       );
       if (milled > 0) {
         for (let card = 0; card < milled; card++)
-          targetGame.toGy(targetGame.library.shift()!, true);
+          targetGame.toGraveyard(targetGame.library.shift()!, true);
         this.updateOtherViews(player, target, 'library', milled);
       }
       const poisonGained = game.poison[slot] - before.poison[slot];
@@ -375,9 +440,9 @@ export class PodTable {
       others.forEach((player, index) => {
         this.applyChangesFrom(player);
         if (this.verbose)
-          for (const line of this.games[player].log.slice(logLengths[index])) {
+          for (const event of this.games[player].log.slice(logLengths[index])) {
             this.flushCurrentPlayerLog();
-            this.logGameLine(player, line);
+            this.logGameLine(player, event);
           }
       });
       return result;

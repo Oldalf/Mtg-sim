@@ -20,7 +20,11 @@ npm run sim -- gale -n 20000                         # more games = less noise
 npm run sim -- gale decklist.txt lists/a.txt lists/b.txt   # compare lists on the same seeds (first = base)
 npm run sim -- gale --set planner=0                  # same list, default AI vs a changed setting
 npm run sim -- gale --turns 10                       # look further than turn 8
-npm run sim -- gale --trace 3                        # play-by-play of 3 games, to check the AI's lines
+npm run sim -- gale --trace 3                        # play-by-play of 3 games, to check the AI's lines (--moves adds the card moves)
+npm run logs                                         # the games of the last sim / pod command: its runs and their tagged games
+npm run logs -- 1 --seed 412                         # one game of run 1 as text (--moves: card moves, --highlights: only the key lines)
+npm run logs -- 1 --tag fastest                      # every game of run 1 with that tag
+npm run sim -- gale --no-log                         # don't write the games to session-logs/
 npm run sim -- gale --rank                           # rank cards by how much seeing them by turn 4 helps
 npm run sim -- gale --cut "Card A" "Card B"          # cut each card for an Island (--replace Swamp) and compare
 npm run sim -- gale --analyze logs/game6.txt -d lists/proposed.txt   # check a real game for missed kills
@@ -46,13 +50,15 @@ npm run check                                        # type-check the code
 
 | Folder / file | What it is |
 |---|---|
-| `engine/` | The shared engine: card data (`cards.ts`), card facts that hold in any deck (`card-facts.ts`, `land-text.ts` reads unknown lands from their text), the rules of one game (`game-core.ts`: zones, mana, lands, casting, draw/scry/tutor effects, turn loop, mulligans, turn planner; its header lists the hooks a deck fills in), the pod parts of a game (`game.ts`: blocks, removal, counterspells), shared types (`game-types.ts`), the pod (`pod.ts` plays the rounds, with `pod-table.ts`, `pod-combat.ts`, `pod-blocking.ts`, `pod-interaction.ts`, `pod-arena.ts`, `pod-report.ts`), the kill-search driver (`search.ts`), the runner (`runner.ts`: worker threads and games), the tables it prints (`report.ts`), card ranking and cut tests (`ranking.ts`), the Archidekt log analyzer (`analyze.ts`, with the board rebuilt from a log in `log-board.ts`), the Scryfall bulk data reader (`scryfall.ts`), the refactor safety net (`regress.ts`) and seeded random numbers (`rng.ts`). |
+| `engine/` | The shared engine: card data (`cards.ts`), card facts that hold in any deck (`card-facts.ts`, `land-text.ts` reads unknown lands from their text), the rules of one game (`game-core.ts`: zones, mana, lands, casting, draw/scry/tutor effects, turn loop, mulligans, turn planner; its header lists the hooks a deck fills in), the pod parts of a game (`game.ts`: blocks, removal, counterspells), shared types (`game-types.ts`), the pod (`pod.ts` plays the rounds, with `pod-table.ts`, `pod-combat.ts`, `pod-blocking.ts`, `pod-interaction.ts`, `pod-arena.ts`, `pod-report.ts`), the kill-search driver (`search.ts`), the runner (`runner.ts`: worker threads and games), the tables it prints (`report.ts`), card ranking and cut tests (`ranking.ts`), the Archidekt log analyzer (`analyze.ts`, with the board rebuilt from a log in `log-board.ts`), the Scryfall bulk data reader (`scryfall.ts`), the game logs (`game-log.ts` and the `game-log-*.ts` files: events, card moves, text, files, tags), the refactor safety net (`regress.ts`) and seeded random numbers (`rng.ts`). |
 | `decks/<name>/` | One deck: its AI (a `Game` subclass in `game.ts`), its card rules, settings (`config.ts`), `index.ts`, `decklist.txt`, test lists (`lists/`), real-game logs (`logs/`), tests (`tests/`). Gale also has a kill search (`kills.ts`) and card roles (`roles.ts`). |
 | `data/cards.json` | Oracle data for every card the lists use (no rulings: they stay in the bulk file, `rulingsFor` in `scryfall.ts` reads them), shared by all decks. The only card file the simulator reads. In git. |
 | `data/scryfall/` | Scryfall's bulk files (gzipped, never unzipped) and `bulk-info.json` (download date and latest set: when it is time to run `npm run cards -- update` again). Not in git. Filled by `npm run cards -- update`. |
-| `sim.ts`, `cli/` | The command line: `sim.ts` picks the command (and holds the code each worker thread runs), `cli/` has the options (`args.ts`), the deck report (`deck-command.ts`), the pod (`pod-command.ts`), card data (`cards-command.ts`) and power-save mode (`eco.ts`). `decks/index.ts` lists the decks. |
+| `sim.ts`, `cli/` | The command line: `sim.ts` picks the command (and holds the code each worker thread runs), `cli/` has the options (`args.ts`), the deck report (`deck-command.ts`), the pod (`pod-command.ts`), the log viewer (`logs-command.ts`, `log-session.ts`), card data (`cards-command.ts`) and power-save mode (`eco.ts`). `decks/index.ts` lists the decks. |
 | `regress_baseline/` | Saved results for `--regress check`. |
-| `PLAN.md` | Engine notes: rules for changing it, what it provides, history, ideas. Each deck has its own `PLAN.md`; phases and next steps are in `ROADMAP.md`. |
+| `session-logs/` | The log of every game of the last `sim` or `pod` command, one folder per run (`engine/game-log-files.ts` describes it). Cleared when the next command starts a run. Not in git. Read it with `npm run logs`. |
+| `ENGINE.md` | Engine notes: rules for changing it, what it provides, history, ideas. |
+| `PLAN.md` | The plan for the roadmap step in progress. Each deck has its own `PLAN.md`; phases and next steps are in `ROADMAP.md`. |
 
 Current decks:
 - `gale`: Gale, Waterdeep Prodigy + Scion of Halaster, Dimir spellslinger combo. See [decks/gale/README.md](decks/gale/README.md) and its `PLAN.md`.
@@ -69,7 +75,7 @@ The phases (Meren, Sam & Frodo, Simic landfall, Mike, then Codie) and what each 
 
 ## Adding a deck
 
-Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, config, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) in `decks/index.ts`. The subclass fills in the hooks listed in the header of `engine/game-core.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`buildKillSearchState`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGy`). Gale is the worked example.
+Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, config, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) in `decks/index.ts`. The subclass fills in the hooks listed in the header of `engine/game-core.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`buildKillSearchState`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGraveyard`). Gale is the worked example.
 
 The engine handles all five colours, creatures (power / toughness, counters, tokens), enter and death triggers, sacrifice, devotion, life totals and a goldfish combat model (`creatureCombat`: flyers connect, half the ground attackers are blocked, crackback unless blockers stay home or a fog creature is used).
 

@@ -237,7 +237,7 @@ export class KillSearchState {
   costOf(
     card: CardDef,
     base: Cost | null = null,
-    fromGy = false,
+    fromGraveyard = false,
     extraRed = 0,
   ): Cost {
     const cost = base ?? card.cost;
@@ -245,7 +245,7 @@ export class KillSearchState {
     if (card.isInstantOrSorcery) red += this.reductionInstantSorcery;
     if (!card.isCreature) red += this.reductionNoncreature;
     if (cost.blue || cost.hybrid) red += this.reductionBlue;
-    if (fromGy) red += this.reductionFromGraveyard;
+    if (fromGraveyard) red += this.reductionFromGraveyard;
     return cost.withGeneric(Math.max(0, cost.generic - red));
   }
 
@@ -289,10 +289,10 @@ export class KillSearchState {
   payForSpell(
     card: CardDef,
     base: Cost | null = null,
-    fromGy = false,
+    fromGraveyard = false,
   ): boolean {
     return this.spendMana(
-      this.costOf(card, base, fromGy),
+      this.costOf(card, base, fromGraveyard),
       card.isInstantOrSorcery,
     );
   }
@@ -399,7 +399,11 @@ export class KillSearchState {
 
   /** Creature cards among n cards put into graveyard i (-1 = our own) while Konrad is out.
    *  Here: the expected fraction, carried over between mills. World (below) uses real shuffles. */
-  creatureCardsMilled(i: number, amount: number, _fromLib: boolean): number {
+  creatureCardsMilled(
+    i: number,
+    amount: number,
+    _fromLibrary: boolean,
+  ): number {
     this.isAverageOnly = true;
     if (i < 0) {
       this.ownCreatureAccumulator += amount * this.ownCreatureDensity;
@@ -712,7 +716,7 @@ export class KillSearchState {
   }
 
   /** The ways to cast a spell: [variant, base cost]. */
-  castVariants(name: string, _fromGy: boolean): [string, Cost][] {
+  castVariants(name: string, _fromGraveyard: boolean): [string, Cost][] {
     const card = C.get(name);
     if (name === 'Maddening Cacophony')
       return [

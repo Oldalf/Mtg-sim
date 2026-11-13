@@ -16,6 +16,8 @@
  *                                                         --duty N sets the busy percentage, -w N the worker count)
  *   npm run sim -- aesi lists/a.txt --diag                the deck's own consistency measures per list (same seeds)
  *   npm run sim -- aesi lists/a.txt --hands -n 8000       how opening hands do (by land count and contents), for mulligan advice
+ *   npm run logs                                         read the games of the last run (see cli/logs-command.ts);
+ *                                                        every run writes its games to session-logs/ unless --no-log is given
  *   npm run sim -- gale --test                           the deck's kill-finder tests
  *   npm run sim -- gale --regress check                  after a refactor: results must be IDENTICAL
  *                                                        (--regress record saves a new baseline)
@@ -25,6 +27,7 @@
 import { isMainThread, parentPort, workerData } from 'worker_threads';
 import * as Runner from './engine/runner';
 import { regress } from './engine/regress';
+import { runGoldfishLogTests } from './engine/game-log.test';
 import * as Pod from './engine/pod';
 import { PodJob } from './engine/pod-types';
 import { Args, parseArgs, wantsEcoMode } from './cli/args';
@@ -32,6 +35,7 @@ import { runDeckCommand } from './cli/deck-command';
 import { enableEcoMode, reportCpuUseAtExit } from './cli/eco';
 import { runCardsCommand } from './cli/cards-command';
 import { runPodCommand } from './cli/pod-command';
+import { runLogsCommand } from './cli/logs-command';
 import { addMissingCards } from './engine/scryfall';
 import { DECKS, REGRESS, TESTS } from './decks/index';
 
@@ -39,6 +43,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2), Object.keys(DECKS));
   if (args.deck === 'pod') return runPodCommand(args, DECKS);
   if (args.deck === 'cards') return runCardsCommand(args);
+  if (args.deck === 'logs') return runLogsCommand(args);
   const deck = DECKS[args.deck];
   if (!deck)
     throw new Error(
@@ -65,7 +70,11 @@ async function runSpecialCommand(
   deck: Runner.Deck,
   listFiles: string[],
 ): Promise<boolean> {
-  if (args.test) process.exit(TESTS[deck.name]() ? 0 : 1);
+  if (args.test) {
+    const isLogHarmless = runGoldfishLogTests(deck);
+    const deckTestsPassed = TESTS[deck.name]();
+    process.exit(isLogHarmless && deckTestsPassed ? 0 : 1);
+  }
   if (args.regress) {
     const identical = await regress(
       deck,

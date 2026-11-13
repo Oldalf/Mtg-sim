@@ -6,11 +6,15 @@ import { Config } from '../engine/game-types';
 import * as Pod from '../engine/pod';
 import { printPod } from '../engine/pod-report';
 import { runPodTests } from '../engine/pod.test';
+import { runPodLogTests } from '../engine/game-log.test';
+import { describePodResult } from '../engine/pod-report';
+import { formatGameLog } from '../engine/game-log-text';
 import { PodSpec } from '../engine/pod-types';
 import { addMissingCards } from '../engine/scryfall';
 import { Deck } from '../engine/runner';
 import { Args, wantsEcoMode } from './args';
 import { enableEcoMode } from './eco';
+import { LogSession } from './log-session';
 
 const DEFAULT_ROUNDS_CAP = 17;
 const DEFAULT_GAMES = 1000;
@@ -40,7 +44,11 @@ export async function runPodCommand(
   decks: Record<string, Deck>,
 ): Promise<void> {
   const { deckSettings, threat, policy } = parsePodSettings(args.settings);
-  if (args.test) process.exit(runPodTests() ? 0 : 1);
+  if (args.test) {
+    const podTestsPassed = runPodTests();
+    const isLogHarmless = runPodLogTests(decks);
+    process.exit(podTestsPassed && isLogHarmless ? 0 : 1);
+  }
   const spec = Pod.podSpec(
     decks,
     args.lists,
@@ -59,8 +67,22 @@ export async function runPodCommand(
   if (wantsEcoMode(args)) ({ workers, dutyPercent } = enableEcoMode(args));
   const games = args.gamesGiven ? args.games : DEFAULT_GAMES;
   const startTime = Date.now();
-  const result = await Pod.simulatePod(spec, games, workers, dutyPercent);
+  const logSession = new LogSession(!args.noLog);
+  const runFolder = logSession.startRun(
+    `pod-${spec.decks.join('-')}`,
+    { mode: 'pod', gameCount: games, decks: spec.decks, pod: spec },
+    spec.lists,
+  );
+  const result = await Pod.simulatePod(
+    spec,
+    games,
+    workers,
+    dutyPercent,
+    runFolder,
+  );
+  logSession.finishRun(runFolder, result.logRows);
   printPod(spec, result.games);
+  logSession.printGamesWorthALook();
   console.log(`\n(${((Date.now() - startTime) / 1000).toFixed(0)}s)`);
 }
 
@@ -72,14 +94,9 @@ function printTracedGames(
 ): void {
   for (let seed = args.seed; seed < args.seed + args.trace; seed++) {
     const game = Pod.playPod(decks, spec, seed, true);
-    const seats = spec.decks
-      .map((deck, player) => `${deck}=${game.seat[player] + 1}`)
-      .join(', ');
-    const outcome =
-      game.winner === null ? 'no winner' : spec.decks[game.winner] + ' wins';
+    const title = `Pod game, seed ${seed}: ${describePodResult(spec, game)}`;
     console.log(
-      `\n===== pod game seed ${seed}: seats ${seats} -> ${outcome} in round ${game.turn} (${game.how})`,
+      '\n' + formatGameLog(game.log!, { title, showMoves: args.showMoves }),
     );
-    for (const line of game.log ?? []) console.log(line);
   }
 }

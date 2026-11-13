@@ -44,7 +44,7 @@ import {
   onPermanentEntered,
 } from './triggers';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand, Evasion, Perm, Zone } from '../../engine/game-types';
+import { Candidate, Evasion, Permanent, Zone } from '../../engine/game-types';
 import { GameWithoutKillSearch } from '../../engine/game';
 import { firstMax, removeIfPresent } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
@@ -84,7 +84,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     if (this.hasWon()) {
       if (this.unprotectedKillTurn === null) {
         this.unprotectedKillTurn = this.turn;
-        this.say(`WIN: opp life [${this.life.join(', ')}]`);
+        this.say(`WIN: ${this.describeOpponentLife()}`);
       }
       return 2;
     }
@@ -183,7 +183,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   // ================================================================ tokens
   /** Create tokens as one event: Peregrin Took and Tippy-Toe add a Food each, Academy Manufactor turns each
    *  Food / Clue / Treasure into one of each. Then each token enters (and "create" triggers fire). */
-  makeTokens(cds: CardDef[], options: { tapped?: boolean } = {}): Perm[] {
+  makeTokens(cds: CardDef[], options: { tapped?: boolean } = {}): Permanent[] {
     if (!cds.length) return [];
     const list = cds.slice();
     if (this.isOnBattlefield('Peregrin Took')) list.push(FOOD);
@@ -193,7 +193,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
           ART_TOKENS.has(card) ? [FOOD, CLUE, TREASURE] : [card],
         )
       : list;
-    const out: Perm[] = [];
+    const out: Permanent[] = [];
     for (const tokenCard of all) {
       const permanent = this.enter(tokenCard, 'token', {
         token: true,
@@ -216,12 +216,12 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   /** The best creature for a +1/+1 counter: Marionette Master (its power is the drain), Rapacious Guest, Frodo. */
-  bestCounterTarget(exclude: Perm | null = null): Perm | null {
+  bestCounterTarget(exclude: Permanent | null = null): Permanent | null {
     const permanents = this.creatures().filter(
       (permanent) => permanent !== exclude,
     );
     if (!permanents.length) return null;
-    const pri = (permanent: Perm) =>
+    const pri = (permanent: Permanent) =>
       permanent.card.name === 'Marionette Master'
         ? 5
         : permanent.card.name === 'Rapacious Guest'
@@ -236,7 +236,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     return firstMax(permanents, pri);
   }
 
-  foodsOnBattlefield(): Perm[] {
+  foodsOnBattlefield(): Permanent[] {
     return this.battlefield.filter((permanent) => permanent.card === FOOD);
   }
 
@@ -244,12 +244,12 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     return this.creatures().filter((permanent) => isHalfling(permanent.card))
       .length;
   }
-  override onEnter(permanent: Perm, _from: Zone): void {
+  override onEnter(permanent: Permanent, _from: Zone): void {
     return onPermanentEntered(this, permanent, _from);
   }
 
   // ================================================================ leaving
-  override sacrifice(permanent: Perm): void {
+  override sacrifice(permanent: Permanent): void {
     if (!this.battlefield.includes(permanent)) return;
     const food = permanent.card === FOOD;
     super.sacrifice(permanent); // -> dies -> onDies
@@ -265,12 +265,12 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     }
     if (food) onFoodSacrificed(this);
   }
-  override onDies(permanent: Perm): void {
+  override onDies(permanent: Permanent): void {
     return onPermanentDied(this, permanent);
   }
 
   /** Opponents' total life loss if this permanent were sacrificed now (the payoffs on the battlefield). */
-  sacrificeValue(permanent: Perm): number {
+  sacrificeValue(permanent: Permanent): number {
     const key = permanent.token
       ? permanent.card === FOOD
         ? 'F'
@@ -297,7 +297,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     return this.manaSourcesCache ?? super.manaSources();
   }
 
-  computeSacrificeValue(permanent: Perm): number {
+  computeSacrificeValue(permanent: Permanent): number {
     const alive = this.countOpponentsAlive();
     const art = permanent.card.types.has('artifact'),
       cre = permanent.card.isCreature;
@@ -320,7 +320,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
 
   /** Things we can sacrifice without losing anything we care about: tokens (Foods and Treasures kept as
    *  needed), worst first. */
-  spareSacrifices(): Perm[] {
+  spareSacrifices(): Permanent[] {
     const foods = this.foodsOnBattlefield();
     const keepFood =
       (this.isOnBattlefield(SAM) ? 0 : 1) +
@@ -332,7 +332,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     let treasureLeft =
       this.battlefield.filter((permanent) => permanent.card === TREASURE)
         .length - keepTreasure;
-    const out: Perm[] = [];
+    const out: Permanent[] = [];
     for (const battlefieldPermanent of this.battlefield) {
       if (!battlefieldPermanent.token) continue;
       if (battlefieldPermanent.card === FOOD) {
@@ -344,7 +344,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       else if (battlefieldPermanent.card === TOK.bird) continue;
       out.push(battlefieldPermanent);
     }
-    const rank = (permanent: Perm) =>
+    const rank = (permanent: Permanent) =>
       permanent.card === CLUE
         ? 0
         : permanent.card === TOK.goat
@@ -358,7 +358,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ lands
-  override onLandEnter(permanent: Perm, _gone: boolean): void {
+  override onLandEnter(permanent: Permanent, _gone: boolean): void {
     for (const battlefieldPermanent of this.battlefield.slice())
       if (battlefieldPermanent.card.name === 'Tireless Provisioner')
         this.makeTokens([this.manaSources() < 6 ? TREASURE : FOOD]);
@@ -395,7 +395,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       this.shuffle();
       if (toHand) this.hand.push(card);
       else {
-        const landPermanent = new Perm(card, card.land, true);
+        const landPermanent = new Permanent(card, card.land, true);
         landPermanent.sick = false;
         this.battlefield.push(landPermanent);
         this.say('basic land onto the battlefield:', card);
@@ -407,7 +407,10 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ mana
-  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+  override manaSourceKind(
+    permanent: Permanent,
+    ignoreSick = false,
+  ): string | null {
     if (permanent.card === TREASURE) return 'A';
     const name = permanent.card.name;
     if (name === 'Gilded Goose')
@@ -560,7 +563,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     return Math.min(1, closeness);
   }
   /** Skulk (Gollum) and the Ring-bearer (Frodo, once the Ring has tempted us): creatures with greater power can't block them. */
-  override evasion(permanent: Perm): Evasion {
+  override evasion(permanent: Permanent): Evasion {
     if (
       permanent.card.name === GOLLUM ||
       (permanent.card.name === FRODO && this.ringTempts >= 1)
@@ -570,7 +573,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ what to do
-  candidates(main2: boolean): Cand[] {
+  candidates(main2: boolean): Candidate[] {
     this.sacrificeValueCache = new Map();
     this.manaSourcesCache = super.manaSources();
     try {
@@ -584,7 +587,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   // ================================================================ spells
   override resolve(
     card: CardDef,
-    fromGy = false,
+    fromGraveyard = false,
     mode: string | null = null,
   ): void {
     const name = card.name;
@@ -622,7 +625,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
         else if (name === 'Path to Exile') this.putBasic();
         else this.loseLife(3);
       } else this.dies(guest); // destroyed: onDies drains its power (and the death triggers)
-    } else super.resolve(card, fromGy, mode);
+    } else super.resolve(card, fromGraveyard, mode);
   }
 
   // ================================================================ the planner's score

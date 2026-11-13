@@ -18,7 +18,7 @@
  * A deck subclasses Game (see decks/goldfish/index.ts for the smallest one, decks/gale for a full one) and fills in:
  *   must have:    buildKillSearchState / killSearchStateKey / killSearch (or extend GameWithoutKillSearch), candidates
  *   what it wants: cardValue, discardValue, instantOrSorceryDevValue, tutorTarget, positionValue, landWant, landBias
- *   card effects: resolveOther, castTriggers, beforeDraw, onToGy, onEnter, onDies, onLandEnter, powerBonus,
+ *   card effects: resolveOther, castTriggers, beforeDraw, onToGraveyard, onEnter, onDies, onLandEnter, powerBonus,
  *                 toughnessBonus, upkeep, endStep, commanderCost, onCommanderCast
  *   combat:       canAttack, fogBlocker, evasive, winsWith, onAttack, onCombatDamage (or combat() itself)
  *   setup:        initDeck, mulliganRule, diag (numbers to report per game)
@@ -29,15 +29,23 @@ import { Cost, CardDef } from './cards';
 import { LandInfo } from './card-facts';
 import { Rng } from './rng';
 import { MulliganRule, DEFAULT_MULLIGAN, keepsHand } from './mulligan';
-import { fmt, fmtList, fmtPool } from './log-format';
+import { formatLogPart, formatList, formatPool } from './log-format';
+import {
+  EventKind,
+  GameEvent,
+  buildEvent,
+  cardNamesAmong,
+  CardMove,
+} from './game-log';
+import { MoveRecorder } from './game-log-moves';
 import { firstMax, firstMin, removeOrThrow, sortDesc } from './lists';
 import {
-  Cand,
+  Candidate,
   Config,
   KillSearcher,
   LogBoardView,
   ManaPool,
-  Perm,
+  Permanent,
   Zone,
   emptyPool,
 } from './game-types';
@@ -105,7 +113,12 @@ export abstract class GameCore<S = unknown> {
   killNow = false;
   inRollout = false;
   seen4: Set<string> | null = null;
-  log: string[] = [];
+  /** The game's log (only filled when `verbose` is on). */
+  log: GameEvent[] = [];
+  /** Works out the card moves for the log. Only the real game with the log on has one (not the planner's copies). */
+  moveRecorder: MoveRecorder | null = null;
+  /** Which player of the log we are (a pod sets it; a goldfish game has one player). */
+  playerInLog = 0;
   library: CardDef[];
   command: CardDef[];
   /** Our commanders' names (this.command only holds the ones in the command zone right now). */
@@ -113,7 +126,7 @@ export abstract class GameCore<S = unknown> {
   hand: CardDef[] = [];
   graveyard: CardDef[] = [];
   exile: CardDef[] = [];
-  battlefield: Perm[] = [];
+  battlefield: Permanent[] = [];
   pool: ManaPool = emptyPool();
   /** The deck's colours: what an "either colour" source (Command Tower, a dual land) makes. */
   colors: string[] = ['U', 'B'];
@@ -173,6 +186,7 @@ export abstract class GameCore<S = unknown> {
     this.opponentGraveyardSizes = new Array(opponentCount).fill(0);
     this.poison = new Array(opponentCount).fill(0);
     this.onPlay = rng.random() < (config.on_play_chance as number);
+    if (verbose) this.moveRecorder = new MoveRecorder(this);
     this.initDeck();
   }
 
@@ -191,12 +205,59 @@ export abstract class GameCore<S = unknown> {
     copy.battlefield = this.battlefield.map((permanent) => permanent.copy());
     copy.pool = { ...this.pool };
     copy.rng = this.rng.clone();
+    copy.moveRecorder = null;
     return copy;
   }
 
+  /** Adds a line to the log: text, cards and lists of cards, joined by spaces. */
   say(...parts: unknown[]): void {
-    if (this.verbose)
-      this.log.push(`T${this.turn}: ` + parts.map(fmt).join(' '));
+    this.sayEvent('note', ...parts);
+  }
+
+  /** A log line of a known kind (a land, a cast, an attack, the win...). */
+  sayEvent(kind: EventKind, ...parts: unknown[]): void {
+    if (!this.verbose) return;
+    const event = buildEvent(
+      kind,
+      this.turn,
+      parts.map(formatLogPart).join(' '),
+      cardNamesAmong(parts),
+      [this.myLife, ...this.life],
+    );
+    event.moves = this.collectCardMoves(kind === 'turn-end');
+    this.log.push(event);
+  }
+
+  /** The card moves since the last log line (see game-log-moves.ts). isEndOfTurn: cards that left a zone and
+   *  went nowhere are written as exiled. */
+  collectCardMoves(isEndOfTurn = false): CardMove[] {
+    if (this.moveRecorder === null) return [];
+    return this.moveRecorder.collectMoves(this, this.playerInLog, isEndOfTurn);
+  }
+
+  /** Puts what changed since the last log line on that line. Called between the actions of a turn, so that the
+   *  moves of one action (a land entering after "play land") are not shown under the next one. */
+  logCardMovesSoFar(): void {
+    if (this.moveRecorder === null) return;
+    const lastEvent = this.log[this.log.length - 1];
+    if (lastEvent) lastEvent.moves.push(...this.collectCardMoves());
+  }
+
+  /** How a log line names opponent `slot`. A pod gives the player's name (see Game.opponentNames). */
+  opponentName(slot: number): string {
+    return `opponent ${slot + 1}`;
+  }
+
+  /** The opponents' life for a log line. */
+  describeOpponentLife(): string {
+    return `opp life [${this.life.join(', ')}]`;
+  }
+
+  /** A log line worth jumping to when reading the game. */
+  sayHighlight(...parts: unknown[]): void {
+    if (!this.verbose) return;
+    this.sayEvent('note', ...parts);
+    this.log[this.log.length - 1].isHighlight = true;
   }
 
   // ================================================================ helpers
@@ -206,13 +267,13 @@ export abstract class GameCore<S = unknown> {
     return false;
   }
 
-  findPermanent(name: string): Perm | null {
+  findPermanent(name: string): Permanent | null {
     for (const permanent of this.battlefield)
       if (permanent.card.name === name) return permanent;
     return null;
   }
 
-  landsOnBattlefield(): Perm[] {
+  landsOnBattlefield(): Permanent[] {
     return this.battlefield.filter((permanent) => permanent.land !== null);
   }
 
@@ -243,25 +304,31 @@ export abstract class GameCore<S = unknown> {
     return reduction;
   }
 
-  effCost(card: CardDef, base: Cost | null = null, fromGy = false): Cost {
+  effectiveCost(
+    card: CardDef,
+    base: Cost | null = null,
+    fromGraveyard = false,
+  ): Cost {
     const cost = base ?? card.cost;
-    let red = 0;
-    if (card.isInstantOrSorcery) red += this.instantOrSorceryCostReduction();
+    let reduction = 0;
+    if (card.isInstantOrSorcery)
+      reduction += this.instantOrSorceryCostReduction();
     if (!card.isCreature)
       for (const permanent of this.battlefield)
-        if (Facts.REDUCE_NONCREATURE.has(permanent.card.name)) red++;
+        if (Facts.REDUCE_NONCREATURE.has(permanent.card.name)) reduction++;
     if (cost.blue || cost.hybrid)
       for (const otherPermanent of this.battlefield)
-        if (Facts.REDUCE_BLUE.has(otherPermanent.card.name)) red++;
-    if (fromGy)
+        if (Facts.REDUCE_BLUE.has(otherPermanent.card.name)) reduction++;
+    if (fromGraveyard)
       for (const anotherPermanent of this.battlefield)
-        if (Facts.REDUCE_FROM_GY2.has(anotherPermanent.card.name)) red += 2;
-    if (card.name === 'Focus the Mind' && this.spellsCast > 0) red += 2;
-    return cost.withGeneric(Math.max(0, cost.generic - red));
+        if (Facts.REDUCE_FROM_GRAVEYARD_BY_2.has(anotherPermanent.card.name))
+          reduction += 2;
+    if (card.name === 'Focus the Mind' && this.spellsCast > 0) reduction += 2;
+    return cost.withGeneric(Math.max(0, cost.generic - reduction));
   }
 
   // ================================================================ mana
-  manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+  manaSourceKind(permanent: Permanent, ignoreSick = false): string | null {
     if (permanent.land !== null) {
       // "Activate only if you control a Swamp" (Tainted Wood): colourless without one
       const need = permanent.land.colourIf;
@@ -293,11 +360,11 @@ export abstract class GameCore<S = unknown> {
     return null;
   }
 
-  islandTyped(permanent: Perm): boolean {
+  islandTyped(permanent: Permanent): boolean {
     return permanent.land !== null && (!!permanent.land.island || this.energy);
   }
 
-  swampTyped(permanent: Perm): boolean {
+  swampTyped(permanent: Permanent): boolean {
     return permanent.land !== null && (!!permanent.land.swamp || this.energy);
   }
 
@@ -347,9 +414,9 @@ export abstract class GameCore<S = unknown> {
     return rank;
   }
 
-  private pick(short: string, isInstantOrSorcery: boolean): Perm | null {
+  private pick(short: string, isInstantOrSorcery: boolean): Permanent | null {
     const rank = RANK[short];
-    let best: Perm | null = null,
+    let best: Permanent | null = null,
       bestRank = 99;
     const feed = this.pool.U + this.pool.B + this.pool.C;
     for (const permanent of this.battlefield) {
@@ -384,7 +451,7 @@ export abstract class GameCore<S = unknown> {
 
   /** A pain land: the colour we need costs 1 life, {C} (for generic costs) is free. The engine taps lands to test a
    *  payment and then undoes it, so the damage is only counted here (painTaps) and dealt when pay() commits. */
-  private tapPain(permanent: Perm, short: string): void {
+  private tapPain(permanent: Permanent, short: string): void {
     permanent.tapped = true;
     const land = permanent.land!;
     const pain = land.pain ?? '';
@@ -411,7 +478,7 @@ export abstract class GameCore<S = unknown> {
     if (pain.includes(colour)) this.painTaps += 1;
   }
 
-  tap(permanent: Perm, short: string): void {
+  tap(permanent: Permanent, short: string): void {
     if (permanent.land?.pain) {
       this.tapPain(permanent, short);
       return;
@@ -494,10 +561,10 @@ export abstract class GameCore<S = unknown> {
 
   pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
     // undo = untap what this payment tapped and restore the pool (cheaper than a snapshot of a big board)
-    const pool0 = { ...this.pool };
-    const tapped: Perm[] = [];
+    const poolBefore = { ...this.pool };
+    const tapped: Permanent[] = [];
     const undo = () => {
-      this.pool = pool0;
+      this.pool = poolBefore;
       for (const permanent of tapped) permanent.tapped = false;
     };
     this.painTaps = 0;
@@ -561,11 +628,11 @@ export abstract class GameCore<S = unknown> {
       (this.unprotectedKillTurn === null || killLevel === 2)
     ) {
       this.say(
-        `--- state: mana ${fmtPool(this.killSearchStatePool(this.buildKillSearchState()))}, hand ${fmtList(this.hand.map((card) => card.name))}`,
+        `--- state: mana ${formatPool(this.killSearchStatePool(this.buildKillSearchState()))}, hand ${formatList(this.hand.map((card) => card.name))}`,
       );
       this.say(
-        `--- battlefield ${fmtList(this.battlefield.filter((permanent) => permanent.land === null).map((permanent) => permanent.name))}, ` +
-          `lands ${this.landsOnBattlefield().length}, graveyard ${fmtList(this.graveyard.map((card) => card.name))}`,
+        `--- battlefield ${formatList(this.battlefield.filter((permanent) => permanent.land === null).map((permanent) => permanent.name))}, ` +
+          `lands ${this.landsOnBattlefield().length}, graveyard ${formatList(this.graveyard.map((card) => card.name))}`,
       );
       for (const step of search.lastLine ?? []) this.say('      > ' + step);
     }
@@ -578,7 +645,8 @@ export abstract class GameCore<S = unknown> {
       killLevel === 2 ||
       (killLevel === 1 && this.mode === 'any' && this.podAllowsKill())
     ) {
-      this.say(
+      this.sayEvent(
+        'win',
         'KILL -> WIN' +
           (killLevel === 2 ? ' (with counter backup)' : ' (no counter backup)'),
       );
@@ -586,7 +654,7 @@ export abstract class GameCore<S = unknown> {
     }
     if (killLevel === 1) {
       this.podWaits++;
-      this.say(
+      this.sayHighlight(
         'kill available but no counter backup: keep the kill intact and look for protection',
       );
     }
@@ -594,9 +662,9 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ zones / drawing
-  toGy(card: CardDef, _fromLib = false): void {
+  toGraveyard(card: CardDef, _fromLibrary = false): void {
     this.graveyard.push(card);
-    this.onToGy(card);
+    this.onToGraveyard(card);
   }
 
   draw(count = 1): void {
@@ -615,7 +683,7 @@ export abstract class GameCore<S = unknown> {
         this.discardValue(otherCard),
       );
       removeOrThrow(this.hand, card);
-      this.toGy(card);
+      this.toGraveyard(card);
       this.say('discard', card);
     }
   }
@@ -631,7 +699,7 @@ export abstract class GameCore<S = unknown> {
       ).push(card);
     sortDesc(keep, (card) => this.cardValue(card));
     this.library.unshift(...keep);
-    if (surveil) for (const otherCard of away) this.toGy(otherCard);
+    if (surveil) for (const otherCard of away) this.toGraveyard(otherCard);
     else this.library.push(...away);
   }
 
@@ -655,14 +723,21 @@ export abstract class GameCore<S = unknown> {
 
   // ================================================================ effects of common cards
   /** What a spell does when it resolves, for the cards the engine knows. Other cards go to the deck's resolveOther(). */
-  resolve(card: CardDef, fromGy = false, mode: string | null = null): void {
-    if (this.resolveCardSelection(card, fromGy)) return;
+  resolve(
+    card: CardDef,
+    fromGraveyard = false,
+    mode: string | null = null,
+  ): void {
+    if (this.resolveCardSelection(card, fromGraveyard)) return;
     if (this.resolveManaOrTutor(card, mode)) return;
-    this.resolveOther(card, fromGy, mode);
+    this.resolveOther(card, fromGraveyard, mode);
   }
 
   /** Draw, scry and "look at the top cards" spells. Returns false if this isn't one of them. */
-  private resolveCardSelection(otherCard: CardDef, fromGy: boolean): boolean {
+  private resolveCardSelection(
+    otherCard: CardDef,
+    fromGraveyard: boolean,
+  ): boolean {
     switch (otherCard.name) {
       case 'Brainstorm': {
         this.draw(3);
@@ -716,7 +791,7 @@ export abstract class GameCore<S = unknown> {
         this.stockUp();
         return true;
       case 'See the Truth':
-        this.seeTheTruth(fromGy);
+        this.seeTheTruth(fromGraveyard);
         return true;
       case 'Energybending':
         this.energy = true;
@@ -793,7 +868,7 @@ export abstract class GameCore<S = unknown> {
     }
     for (const card of top) {
       if (keep.includes(card)) this.hand.push(card);
-      else this.toGy(card, true);
+      else this.toGraveyard(card, true);
     }
   }
 
@@ -854,7 +929,7 @@ export abstract class GameCore<S = unknown> {
     const tapped = this.battlefield.filter(
       (permanent) => permanent.land !== null && permanent.tapped,
     );
-    const key = (permanent: Perm) =>
+    const key = (permanent: Permanent) =>
       (!(this.highTidesThisTurn && this.islandTyped(permanent)) ? 2 : 0) +
       (permanent.land!.mana !== 'UB' ? 1 : 0);
     tapped.sort((first, second) => key(first) - key(second));
@@ -866,8 +941,8 @@ export abstract class GameCore<S = unknown> {
     card: CardDef,
     from: Zone = 'hand',
     options: { token?: boolean; tapped?: boolean } = {},
-  ): Perm {
-    const permanent = new Perm(card);
+  ): Permanent {
+    const permanent = new Permanent(card);
     if (options.token || card.isToken) permanent.token = true;
     if (options.tapped) permanent.tapped = true;
     this.battlefield.push(permanent);
@@ -883,8 +958,8 @@ export abstract class GameCore<S = unknown> {
     card: CardDef,
     count = 1,
     options: { tapped?: boolean } = {},
-  ): Perm[] {
-    const out: Perm[] = [];
+  ): Permanent[] {
+    const out: Permanent[] = [];
     for (let i = 0; i < count; i++)
       out.push(
         this.enter(card, 'token', { token: true, tapped: options.tapped }),
@@ -893,11 +968,11 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ creatures
-  creatures(): Perm[] {
+  creatures(): Permanent[] {
     return this.battlefield.filter((permanent) => permanent.card.isCreature);
   }
 
-  power(permanent: Perm): number {
+  power(permanent: Permanent): number {
     return Math.max(
       0,
       permanent.card.power +
@@ -907,7 +982,7 @@ export abstract class GameCore<S = unknown> {
     );
   }
 
-  toughness(permanent: Perm): number {
+  toughness(permanent: Permanent): number {
     return (
       permanent.card.toughness +
       permanent.counters +
@@ -916,15 +991,15 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** A creature dies (destroyed or sacrificed): tokens are gone, cards go to the graveyard. */
-  dies(permanent: Perm): void {
+  dies(permanent: Permanent): void {
     const i = this.battlefield.indexOf(permanent);
     if (i < 0) return;
     this.battlefield.splice(i, 1);
-    if (!permanent.token) this.toGy(permanent.card);
+    if (!permanent.token) this.toGraveyard(permanent.card);
     this.onDies(permanent);
   }
 
-  sacrifice(permanent: Perm): void {
+  sacrifice(permanent: Permanent): void {
     this.say('sacrifice', permanent.card);
     this.dies(permanent);
   }
@@ -991,7 +1066,7 @@ export abstract class GameCore<S = unknown> {
     this.myLife -= amount;
     if (this.myLife <= 0 && !this.died) {
       this.died = true;
-      this.say('we die');
+      this.sayEvent('out', 'we die');
     }
   }
 
@@ -1002,33 +1077,34 @@ export abstract class GameCore<S = unknown> {
   // ================================================================ casting
   castInstantOrSorcery(
     card: CardDef,
-    fromGy = false,
+    fromGraveyard = false,
     base: Cost | null = null,
     mode: string | null = null,
-    trig: Record<string, unknown> = {},
+    triggerOptions: Record<string, unknown> = {},
   ): boolean {
-    const cost = this.effCost(card, base, fromGy);
+    const cost = this.effectiveCost(card, base, fromGraveyard);
     if (!this.pay(cost, true)) return false;
-    removeOrThrow(fromGy ? this.graveyard : this.hand, card);
-    this.say(
+    removeOrThrow(fromGraveyard ? this.graveyard : this.hand, card);
+    this.sayEvent(
+      'cast',
       'cast',
       card,
-      fromGy ? '(from graveyard)' : '',
+      fromGraveyard ? '(from graveyard)' : '',
       mode ? `[${mode}]` : '',
     );
     this.spellsCast += 1;
-    this.onCastInstantOrSorcery(fromGy);
-    this.castTriggers(card, fromGy, trig);
+    this.onCastInstantOrSorcery(fromGraveyard);
+    this.castTriggers(card, fromGraveyard, triggerOptions);
     if (this.podCounters(card)) {
-      (fromGy ? this.exile : this.graveyard).push(card);
+      (fromGraveyard ? this.exile : this.graveyard).push(card);
       return true;
     }
-    this.resolve(card, fromGy, mode);
-    (fromGy ? this.exile : this.graveyard).push(card);
+    this.resolve(card, fromGraveyard, mode);
+    (fromGraveyard ? this.exile : this.graveyard).push(card);
     return true;
   }
 
-  onCastInstantOrSorcery(fromGy: boolean): void {
+  onCastInstantOrSorcery(fromGraveyard: boolean): void {
     this.isCast += 1;
     for (const permanent of this.battlefield.slice()) {
       const cardName = permanent.card.name;
@@ -1038,14 +1114,15 @@ export abstract class GameCore<S = unknown> {
         this.wallUsed = true;
         this.draw(1);
         this.discard(1);
-      } else if (cardName === 'Secrets of the Dead' && fromGy) this.draw(1);
+      } else if (cardName === 'Secrets of the Dead' && fromGraveyard)
+        this.draw(1);
     }
     if (this.caseSolved && this.isOnBattlefield('Case of the Ransacked Lab'))
       this.draw(1);
   }
 
   castPerm(card: CardDef, fromCommand = false): boolean {
-    let cost = this.effCost(card);
+    let cost = this.effectiveCost(card);
     if (fromCommand) cost = this.commanderCost(card, cost);
     if (!this.pay(cost, false)) return false;
     if (fromCommand) {
@@ -1053,7 +1130,7 @@ export abstract class GameCore<S = unknown> {
       this.onCommanderCast(card);
     } else removeOrThrow(this.hand, card);
     this.spellsCast += 1;
-    this.say('cast', card);
+    this.sayEvent('cast', 'cast', card);
     if (this.podCounters(card)) {
       // countered: a commander goes back to the command zone (its tax still counts this cast)
       (fromCommand ? this.command : this.graveyard).push(card);
@@ -1130,9 +1207,14 @@ export abstract class GameCore<S = unknown> {
       this.crackEvolvingWilds(land, landInfo);
       return;
     }
-    const permanent = new Perm(land, landInfo, this.landEntersTapped(land));
+    const permanent = new Permanent(
+      land,
+      landInfo,
+      this.landEntersTapped(land),
+    );
     permanent.sick = false;
-    this.say(
+    this.sayEvent(
+      'land',
       'play land',
       land.land !== null ? land : 'Inundated Archive (MDFC)',
       permanent.tapped ? '(tapped)' : '',
@@ -1237,7 +1319,7 @@ export abstract class GameCore<S = unknown> {
       R: (card) => card.cost.red,
       G: (card) => card.cost.green,
     };
-    const makesColour = (permanent: Perm, colour: string) => {
+    const makesColour = (permanent: Permanent, colour: string) => {
       const kind = this.manaSourceKind(permanent, true) ?? '';
       return kind === colour || kind === 'A';
     };
@@ -1301,12 +1383,12 @@ export abstract class GameCore<S = unknown> {
     if (basic) {
       removeOrThrow(this.library, basic);
       this.shuffle();
-      const basicPermanent = new Perm(basic, basic.land, true);
+      const basicPermanent = new Permanent(basic, basic.land, true);
       this.battlefield.push(basicPermanent);
-      this.onLandEnter(new Perm(wilds, wildsInfo), true);
+      this.onLandEnter(new Permanent(wilds, wildsInfo), true);
       this.onLandEnter(basicPermanent, false);
     }
-    this.say('play Evolving Wilds -> crack for', basic ?? 'None');
+    this.sayEvent('land', 'play Evolving Wilds -> crack for', basic ?? 'None');
   }
 
   /** A land that returns another land to hand (a bounce land): returns the best one, preferring a nonbasic and a tapped
@@ -1329,14 +1411,15 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */
-  onLandEnter(permanent: Perm, _gone: boolean): void {}
+  onLandEnter(permanent: Permanent, _gone: boolean): void {}
 
   // ================================================================ card actions
   flashback(card: CardDef): boolean {
-    if (!this.pay(this.effCost(card, new Cost(1, 1), true), true)) return false;
+    if (!this.pay(this.effectiveCost(card, new Cost(1, 1), true), true))
+      return false;
     removeOrThrow(this.graveyard, card);
     this.myLife -= 3;
-    this.say('flashback', card);
+    this.sayEvent('cast', 'flashback', card);
     this.spellsCast += 1;
     this.onCastInstantOrSorcery(true);
     this.resolve(card, true);
@@ -1345,7 +1428,8 @@ export abstract class GameCore<S = unknown> {
   }
 
   wishclaw(card: CardDef): boolean {
-    if (!this.pay(this.effCost(card).plus(new Cost(1)), false)) return false;
+    if (!this.pay(this.effectiveCost(card).plus(new Cost(1)), false))
+      return false;
     removeOrThrow(this.hand, card);
     this.say('Wishclaw Talisman (cast + activate)');
     this.doTutor(() => true, false);
@@ -1376,8 +1460,8 @@ export abstract class GameCore<S = unknown> {
 
   // ================================================================ choosing what to do
   /** Use a ritual only if it lets us cast something good we otherwise can't. */
-  ritualCandidates(candidates: Cand[]): Cand[] {
-    const out: Cand[] = [];
+  ritualCandidates(candidates: Candidate[]): Candidate[] {
+    const out: Candidate[] = [];
     const bestAffordable = () =>
       Math.max(
         0,
@@ -1400,7 +1484,7 @@ export abstract class GameCore<S = unknown> {
         continue;
       if (affordableBest === null) affordableBest = bestAffordable();
       const snapshot = this.takeSnapshot();
-      if (!this.pay(this.effCost(card), true)) {
+      if (!this.pay(this.effectiveCost(card), true)) {
         this.restore(snapshot);
         continue;
       }
@@ -1415,7 +1499,7 @@ export abstract class GameCore<S = unknown> {
       if (gain >= 60 && gain > affordableBest!)
         out.push({
           score: gain - 1,
-          cost: this.effCost(card),
+          cost: this.effectiveCost(card),
           isInstantOrSorcery: true,
           action: () => this.castRitual(card),
         });
@@ -1440,7 +1524,7 @@ export abstract class GameCore<S = unknown> {
 
   /** Energy Tap: the untapped creature with the highest mana value that isn't a mana source and isn't about to
    *  attack (a deck can refine this). */
-  energyTapTarget(): Perm | null {
+  energyTapTarget(): Permanent | null {
     const permanents = this.battlefield.filter(
       (permanent) =>
         permanent.card.isCreature &&
@@ -1453,7 +1537,7 @@ export abstract class GameCore<S = unknown> {
       : null;
   }
 
-  canTapForEnergy(permanent: Perm): boolean {
+  canTapForEnergy(permanent: Permanent): boolean {
     return true;
   }
 
@@ -1464,7 +1548,7 @@ export abstract class GameCore<S = unknown> {
 
   /** If casting a mana rock first still leaves enough (with the rock's own mana) for the best play,
    *  move the rock to the front: e.g. Waterskin, tap it, then Scion with the rest. */
-  rockFirst(candidates: Cand[]): void {
+  rockFirst(candidates: Candidate[]): void {
     const top = candidates.find(
       (candidate) =>
         candidate.score > 0 &&
@@ -1478,7 +1562,7 @@ export abstract class GameCore<S = unknown> {
       const snapshot = this.takeSnapshot();
       let topSpellPayable = false;
       if (this.pay(candidate.cost, false)) {
-        const permanent = new Perm(candidate.rock);
+        const permanent = new Permanent(candidate.rock);
         this.battlefield.push(permanent);
         topSpellPayable = this.canPay(top.cost, top.isInstantOrSorcery);
         this.battlefield.pop();
@@ -1492,7 +1576,7 @@ export abstract class GameCore<S = unknown> {
     }
   }
 
-  orderedCands(main2: boolean): Cand[] {
+  orderedCandidates(main2: boolean): Candidate[] {
     const candidates = this.candidates(main2);
     candidates.push(...this.ritualCandidates(candidates));
     sortDesc(candidates, (candidate) => candidate.score);
@@ -1506,10 +1590,10 @@ export abstract class GameCore<S = unknown> {
   plan(options: number[], main2: boolean): number {
     let best = options[0];
     let bestValue: number | null = null;
-    const nRoll = (this.config.planner_rollouts as number) ?? 2;
+    const rolloutCount = (this.config.planner_rollouts as number) ?? 2;
     for (const index of options) {
-      let tot: number | null = 0;
-      for (let rolloutIndex = 0; rolloutIndex < nRoll; rolloutIndex++) {
+      let totalValue: number | null = 0;
+      for (let rolloutIndex = 0; rolloutIndex < rolloutCount; rolloutIndex++) {
         const rolloutCopy = this.clone();
         rolloutCopy.verbose = false;
         rolloutCopy.inRollout = true;
@@ -1521,16 +1605,16 @@ export abstract class GameCore<S = unknown> {
         };
         rolloutCopy.rng = new Rng(Math.floor(this.rng.random() * 4294967296));
         rolloutCopy.rng.shuffle(rolloutCopy.library);
-        if (rolloutCopy.orderedCands(main2)[index].action() === false) {
-          tot = null;
+        if (rolloutCopy.orderedCandidates(main2)[index].action() === false) {
+          totalValue = null;
           break;
         }
-        tot += rolloutCopy.rolloutValue(main2);
+        totalValue += rolloutCopy.rolloutValue(main2);
       }
-      if (tot === null) continue;
-      if (bestValue === null || tot > bestValue) {
+      if (totalValue === null) continue;
+      if (bestValue === null || totalValue > bestValue) {
         best = index;
-        bestValue = tot;
+        bestValue = totalValue;
       }
     }
     return best;
@@ -1574,8 +1658,9 @@ export abstract class GameCore<S = unknown> {
 
   develop(main2 = false): boolean {
     for (let step = 0; step < 40; step++) {
+      this.logCardMovesSoFar();
       if (this.checkKill() === 2) return true;
-      const candidates = this.orderedCands(main2);
+      const candidates = this.orderedCandidates(main2);
       const afford: number[] = [];
       const reserve = this.podReserve();
       candidates.forEach((candidate, i) => {
@@ -1593,7 +1678,9 @@ export abstract class GameCore<S = unknown> {
         for (const index of afford) {
           // try the action on a copy; keep it only if the kill survives
           const rolloutCopy = this.clone();
-          if (rolloutCopy.orderedCands(main2)[index].action() === false)
+          // this copy becomes the game if the kill survives, so its moves are recorded
+          rolloutCopy.moveRecorder = this.moveRecorder?.copy() ?? null;
+          if (rolloutCopy.orderedCandidates(main2)[index].action() === false)
             continue;
           if (
             this.killSearch().search(
@@ -1719,21 +1806,26 @@ export abstract class GameCore<S = unknown> {
   /** One full turn of ours. Returns true when the game ended in it (a win, or we lost). A pod plays the decks' turns in seat order. */
   takeTurn(): boolean {
     this.startTurn();
+    this.sayEvent('turn-start');
     this.upkeep();
     if (!(this.turn === 1 && this.onPlay)) this.draw(1);
+    this.logCardMovesSoFar();
     this.playLand();
     if (this.developWin()) return true;
+    this.logCardMovesSoFar();
     this.combat();
+    this.logCardMovesSoFar();
     if (this.areOpponentsBeaten()) {
       if (this.unprotectedKillTurn === null)
         this.unprotectedKillTurn = this.turn;
       this.protectedKillTurn = this.turn;
-      this.say('Opponents beaten in combat');
+      this.sayEvent('win', 'Opponents beaten in combat');
       return true;
     }
     this.lastKey = null;
     if (this.developWin(true)) return true;
     if (this.inArena() && this.config.pod_defence !== false) this.podDefence();
+    this.logCardMovesSoFar();
     this.endTurn();
     if (this.turn === 4) {
       // for the card ranking: every card seen by the end of turn 4
@@ -1745,7 +1837,11 @@ export abstract class GameCore<S = unknown> {
       for (const permanent of this.battlefield)
         this.seen4.add(permanent.card.name);
     }
-    this.say('end: hand', fmtList(this.hand.map((card) => card.name)));
+    this.sayEvent(
+      'turn-end',
+      'end: hand',
+      formatList(this.hand.map((card) => card.name)),
+    );
     return false;
   }
 
@@ -1764,8 +1860,9 @@ export abstract class GameCore<S = unknown> {
   /** Play the game. Returns [first turn with any kill, first turn with a kill + counter backup]. */
   play(): [number | null, number | null] {
     this.setup();
-    const maxt = this.config.max_turn as number;
-    while (this.turn < maxt) if (this.takeTurn()) break;
+    const maxTurn = this.config.max_turn as number;
+    while (this.turn < maxTurn) if (this.takeTurn()) break;
+    this.logCardMovesSoFar();
     return [this.unprotectedKillTurn, this.protectedKillTurn];
   }
 
@@ -1779,16 +1876,16 @@ export abstract class GameCore<S = unknown> {
   /** A de-duplication key of a snapshot (the main kill check skips a search if nothing changed). */
   abstract killSearchStateKey(state: S): string;
   /** The snapshot's mana pool (for the verbose log). */
-  killSearchStatePool(_st: S): Record<string, number> {
+  killSearchStatePool(_state: S): Record<string, number> {
     return {};
   }
   /** Cheap pre-filter: is a kill conceivable at all? */
-  killReachable(_st: S): boolean {
+  killReachable(_state: S): boolean {
     return true;
   }
   abstract killSearch(): KillSearcher<S>;
   /** Everything the AI may do now. */
-  abstract candidates(main2: boolean): Cand[];
+  abstract candidates(main2: boolean): Candidate[];
 
   /** How much we want this card in hand (used for discards, scry, tutors, mulligans). */
   cardValue(card: CardDef): number {
@@ -1797,7 +1894,7 @@ export abstract class GameCore<S = unknown> {
   discardValue(card: CardDef): number {
     return this.cardValue(card);
   }
-  instantOrSorceryDevValue(_cd: CardDef, _fromGy = false): number {
+  instantOrSorceryDevValue(_card: CardDef, _fromGraveyard = false): number {
     return 0;
   }
   tutorTarget(
@@ -1818,14 +1915,14 @@ export abstract class GameCore<S = unknown> {
   /** Attack (the default goldfish deals no combat damage). */
   combat(): void {}
   /** Something entered the battlefield (ETB triggers, "whenever a creature enters"). */
-  onEnter(permanent: Perm, _from: Zone): void {}
+  onEnter(permanent: Permanent, _from: Zone): void {}
   /** A creature died (death triggers). It's already off the battlefield (and in the graveyard if a card). */
-  onDies(permanent: Perm): void {}
+  onDies(permanent: Permanent): void {}
   /** Extra power / toughness from static effects (e.g. +1/+1 per creature card in the graveyard). */
-  powerBonus(permanent: Perm): number {
+  powerBonus(permanent: Permanent): number {
     return 0;
   }
-  toughnessBonus(permanent: Perm): number {
+  toughnessBonus(permanent: Permanent): number {
     return 0;
   }
   /** At the beginning of our end step (before cleanup). */
@@ -1835,7 +1932,7 @@ export abstract class GameCore<S = unknown> {
 
   // ================================================================ goldfish combat for creature decks
   /** Can this creature attack now? (A deck may keep some home, e.g. Spore Frog.) */
-  canAttack(permanent: Perm): boolean {
+  canAttack(permanent: Permanent): boolean {
     return (
       permanent.card.isCreature &&
       !permanent.tapped &&
@@ -1845,7 +1942,7 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** A creature that stays home and stops all combat damage to us (Spore Frog), or null. */
-  fogBlocker(): Perm | null {
+  fogBlocker(): Permanent | null {
     return null;
   }
 
@@ -1859,7 +1956,7 @@ export abstract class GameCore<S = unknown> {
 
   /** Attack triggers, called with the attackers before damage. Returns creatures that join the attack
    *  (e.g. tokens put onto the battlefield tapped and attacking); they count for blocking too. */
-  onAttack(_attackers: Perm[]): Perm[] {
+  onAttack(_attackers: Permanent[]): Permanent[] {
     return [];
   }
 
@@ -1887,11 +1984,11 @@ export abstract class GameCore<S = unknown> {
       ? candidates.filter((permanent) => permanent !== fog)
       : candidates;
     pool.sort((first, second) => this.power(second) - this.power(first));
-    const untappedOthers = (attacking: Set<Perm>) =>
+    const untappedOthers = (attacking: Set<Permanent>) =>
       this.creatures().filter(
         (permanent) => !permanent.tapped && !attacking.has(permanent),
       ).length;
-    const connecting = (attackers: Perm[]) => {
+    const connecting = (attackers: Permanent[]) => {
       const fly = attackers.filter((permanent) => this.evasive(permanent)),
         ground = attackers.filter((permanent) => !this.evasive(permanent));
       const blocked = Math.floor(ground.length / 2);
@@ -1902,18 +1999,18 @@ export abstract class GameCore<S = unknown> {
         .slice(blocked);
       return [...fly, ...permanents];
     };
-    const deal = (attackers: Perm[]) =>
+    const deal = (attackers: Permanent[]) =>
       connecting(attackers).reduce(
         (total, permanent) => total + this.power(permanent),
         0,
       );
-    const crackback = (attackers: Perm[], damage: number) => {
+    const crackback = (attackers: Permanent[], damage: number) => {
       if (fog) return 0;
       const home = untappedOthers(new Set(attackers));
       return Math.round(damage * Math.max(0, 1 - home / 3));
     };
     const safety = (this.config.combat_safety as number) ?? 10;
-    let best: Perm[] = [],
+    let best: Permanent[] = [],
       bestDmg = 0;
     for (let attackerCount = 1; attackerCount <= pool.length; attackerCount++) {
       const attackers = pool.slice(0, attackerCount);
@@ -1949,8 +2046,9 @@ export abstract class GameCore<S = unknown> {
     this.onCombatDamage(connecting(all), total);
     this.pendingCrackback += crackback(best, total);
     if (fog) this.fogUsed = true;
-    this.say(
-      `attack with ${all.length} creature(s): ${total} damage, opp life [${this.life.join(', ')}]` +
+    this.sayEvent(
+      'attack',
+      `attack with ${all.length} creature(s): ${total} damage, ${this.describeOpponentLife()}` +
         (fog
           ? ` (${fog.card.name} stays home)`
           : `, crackback ${crackback(best, total)}`),
@@ -1958,11 +2056,11 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** Can this attacker not be blocked (flying, shadow, "can't be blocked")? Decks override it. */
-  evasive(permanent: Perm): boolean {
+  evasive(permanent: Permanent): boolean {
     return permanent.card.flying;
   }
   /** After combat damage: the attackers that connected and the total damage dealt. */
-  onCombatDamage(_connected: Perm[], _damage: number): void {}
+  onCombatDamage(_connected: Permanent[], _damage: number): void {}
 
   // ================================================================ hooks for pod games (game.ts fills them in)
   // A goldfish game has no other players, so these do nothing. Game (game.ts) overrides them with the pod rules.
@@ -1975,7 +2073,7 @@ export abstract class GameCore<S = unknown> {
     return true;
   }
   /** We cast this spell: does an opponent counter it? */
-  podCounters(_cd: CardDef): boolean {
+  podCounters(_card: CardDef): boolean {
     return false;
   }
   /** We declared a win: do the others answer it (true = it was stopped)? */
@@ -1990,9 +2088,9 @@ export abstract class GameCore<S = unknown> {
   podDefence(): void {}
   /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage. */
   arenaCombat(
-    _pool: Perm[],
-    _power?: (permanent: Perm) => number,
-    _toughness?: (permanent: Perm) => number,
+    _pool: Permanent[],
+    _power?: (permanent: Permanent) => number,
+    _toughness?: (permanent: Permanent) => number,
   ): void {}
   /** The steps of the kill the search found (Gale), for winAttempt(). */
   lastKillLine: string[] = [];
@@ -2010,15 +2108,19 @@ export abstract class GameCore<S = unknown> {
   pendingCrackback = 0;
   /** We attacked relying on the fog blocker: it must be used (sacrificed) before our next turn. */
   fogUsed = false;
-  onToGy(_cd: CardDef): void {}
+  onToGraveyard(_card: CardDef): void {}
   /** Replacement effects on a draw (e.g. look at the top cards first). */
   beforeDraw(): void {}
   /** Effects of cards the engine doesn't know. */
-  resolveOther(_cd: CardDef, _fromGy: boolean, _mode: string | null): void {}
+  resolveOther(
+    _card: CardDef,
+    _fromGraveyard: boolean,
+    _mode: string | null,
+  ): void {}
   /** "Whenever you cast" triggers that resolve before the spell (e.g. Gale's recast). */
   castTriggers(
-    _cd: CardDef,
-    _fromGy: boolean,
+    _card: CardDef,
+    _fromGraveyard: boolean,
     _trig: Record<string, unknown>,
   ): void {}
   /** Commander tax: {2} more for each earlier cast from the command zone. */
@@ -2032,9 +2134,9 @@ export abstract class GameCore<S = unknown> {
   commandCasts: string[] = [];
   /** [how much we want to cast c, its cost], to decide if a tapped land costs us mana now. */
   landWant(card: CardDef): [number, Cost] {
-    return [30, this.effCost(card)];
+    return [30, this.effectiveCost(card)];
   }
-  landBias(_cd: CardDef): number {
+  landBias(_card: CardDef): number {
     return 0;
   }
 
@@ -2051,6 +2153,6 @@ export abstract class GameCore<S = unknown> {
   logToken(_name: string): CardDef | null {
     return null;
   }
-  addManaToKillSearchState(_st: S, _n: number): void {}
-  addLandToKillSearchState(_st: S): void {}
+  addManaToKillSearchState(_state: S, _n: number): void {}
+  addLandToKillSearchState(_state: S): void {}
 }

@@ -2,7 +2,7 @@
 import { FOOD, GOLLUM } from './cards';
 import type { SamFrodoGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { removeIfPresent } from '../../engine/lists';
 
 export function valueOfGainingLife(game: SamFrodoGame, amount: number): number {
@@ -48,7 +48,7 @@ export function payAndActivate(
 
 export function payTapAndActivate(
   game: SamFrodoGame,
-  permanent: Perm,
+  permanent: Permanent,
   cost: Cost,
   effect: () => void,
 ): boolean {
@@ -59,7 +59,7 @@ export function payTapAndActivate(
 }
 
 /** An artifact to sacrifice for value: a Clue, a spare Food or Treasure. */
-export function artifactToSacrifice(game: SamFrodoGame): Perm | null {
+export function artifactToSacrifice(game: SamFrodoGame): Permanent | null {
   return (
     game
       .spareSacrifices()
@@ -97,8 +97,8 @@ export function returnCauldronFamiliar(
 
 export function activateWitchsOven(
   game: SamFrodoGame,
-  permanent: Perm,
-  victim: Perm,
+  permanent: Permanent,
+  victim: Permanent,
 ): boolean {
   if (!game.battlefield.includes(victim)) return false;
   permanent.tapped = true;
@@ -111,8 +111,8 @@ export function activateWitchsOven(
 
 export function activateLobelia(
   game: SamFrodoGame,
-  permanent: Perm,
-  artifact: Perm,
+  permanent: Permanent,
+  artifact: Permanent,
 ): boolean {
   permanent.tapped = true;
   game.say('Lobelia: sacrifice', artifact.card, '-> drain 2');
@@ -124,7 +124,7 @@ export function activateLobelia(
 
 export function activateTradingPost(
   game: SamFrodoGame,
-  permanent: Perm,
+  permanent: Permanent,
   effect: () => void,
 ): boolean {
   if (!game.pay(new Cost(1))) return false;
@@ -149,7 +149,7 @@ export function sacrificeFoodsToDraw(
 
 export function activateShireTerrace(
   game: SamFrodoGame,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
   if (!game.pay(new Cost(1))) return false;
   game.sacrifice(permanent);

@@ -34,10 +34,10 @@ import { buildKillSearchState } from './snapshot';
 import { resolveGaleSpell } from './spells';
 import { CardDef, Cost } from '../../engine/cards';
 import {
-  Cand,
+  Candidate,
   KillSearcher,
   LogBoardView,
-  Perm,
+  Permanent,
   WinAttempt,
 } from '../../engine/game-types';
 import { Game } from '../../engine/game';
@@ -100,7 +100,7 @@ export class GaleGame extends Game<KillSearchState> {
   }
 
   // ---------------------------------------------------------------- card rules only Gale uses
-  override onToGy(card: CardDef): void {
+  override onToGraveyard(card: CardDef): void {
     if (card.isCreature && this.isOnBattlefield('Syr Konrad, the Grim'))
       this.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, 1]);
   }
@@ -121,22 +121,22 @@ export class GaleGame extends Game<KillSearchState> {
           : secondCard;
       const keep = worse === topCard ? secondCard : topCard;
       this.library.splice(0, 2, keep);
-      this.toGy(worse);
+      this.toGraveyard(worse);
       this.say(`Scion: ${worse.name} -> graveyard`);
     }
   }
 
   override castTriggers(
     card: CardDef,
-    fromGy: boolean,
-    trig: Record<string, unknown>,
+    fromGraveyard: boolean,
+    triggerOptions: Record<string, unknown>,
   ): void {
     // Gale: casting an instant/sorcery from hand lets you cast one of the other type from the graveyard
-    const target = trig.galeTarget as CardDef | null | undefined;
-    if (target && !fromGy && this.isOnBattlefield(GALE)) {
-      const gcost = this.effCost(
+    const target = triggerOptions.galeTarget as CardDef | null | undefined;
+    if (target && !fromGraveyard && this.isOnBattlefield(GALE)) {
+      const gcost = this.effectiveCost(
         target,
-        (trig.galeBase as Cost | undefined) ?? null,
+        (triggerOptions.galeBase as Cost | undefined) ?? null,
         true,
       );
       if (this.pay(gcost, true)) {
@@ -234,7 +234,7 @@ export class GaleGame extends Game<KillSearchState> {
     let score = card.isInstantOrSorcery
       ? this.instantOrSorceryDevValue(card)
       : permScore(card.name, 30);
-    let cost = this.effCost(card);
+    let cost = this.effectiveCost(card);
     if (card.name === GALE) {
       cost = new Cost(cost.generic + 2 * this.galeCasts, cost.blue);
       score = 95;
@@ -253,10 +253,10 @@ export class GaleGame extends Game<KillSearchState> {
   }
   override resolveOther(
     card: CardDef,
-    _fromGy: boolean,
+    _fromGraveyard: boolean,
     _mode: string | null,
   ): void {
-    return resolveGaleSpell(this, card, _fromGy, _mode);
+    return resolveGaleSpell(this, card, _fromGraveyard, _mode);
   }
 
   buildKillSearchState(
@@ -325,7 +325,10 @@ export class GaleGame extends Game<KillSearchState> {
     return chooseTutorTarget(this, allowed, toTop, spent, rampOk);
   }
 
-  override instantOrSorceryDevValue(card: CardDef, fromGy = false): number {
+  override instantOrSorceryDevValue(
+    card: CardDef,
+    fromGraveyard = false,
+  ): number {
     const name = card.name;
     if (
       COMBO_SORC.has(name) ||
@@ -333,7 +336,7 @@ export class GaleGame extends Game<KillSearchState> {
       Facts.RITUALS.has(name)
     )
       return 0;
-    if (name === 'See the Truth') return fromGy ? 62 : 42;
+    if (name === 'See the Truth') return fromGraveyard ? 62 : 42;
     if (name in Facts.DRAW_SPELLS) {
       const value = 38 + 8 * Facts.DRAW_SPELLS[name];
       if (name === 'Windfall' && this.hand.length > 3) {
@@ -369,11 +372,11 @@ export class GaleGame extends Game<KillSearchState> {
     if (!card.known) return 15;
     return 0;
   }
-  candidates(main2: boolean): Cand[] {
+  candidates(main2: boolean): Candidate[] {
     return buildCandidates(this, main2);
   }
 
-  override canTapForEnergy(permanent: Perm): boolean {
+  override canTapForEnergy(permanent: Permanent): boolean {
     return !(
       permanent.card.name === 'The Mindskinner' &&
       !permanent.sick &&

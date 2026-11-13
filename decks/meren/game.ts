@@ -26,7 +26,12 @@ import {
 import { buildCandidates } from './candidates';
 import { onPermanentDied, onPermanentEntered } from './triggers';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand, LogBoardView, Perm, Zone } from '../../engine/game-types';
+import {
+  Candidate,
+  LogBoardView,
+  Permanent,
+  Zone,
+} from '../../engine/game-types';
 import { GameWithoutKillSearch } from '../../engine/game';
 import { firstMax, removeIfPresent, sortDesc } from '../../engine/lists';
 import { MulliganRule } from '../../engine/mulligan';
@@ -61,11 +66,11 @@ export class MerenGame extends GameWithoutKillSearch {
   morbidUsed = false; // Morbid Opportunist: once each turn
   divinerUsed = false; // Twilight Diviner: once each turn
   leftThisTurn = false; // a nonland permanent left the battlefield this turn (Decode Transmissions' void)
-  prepared = new Set<Perm>(); // Studious First-Year / Grave Researcher can cast their spell copy
+  prepared = new Set<Permanent>(); // Studious First-Year / Grave Researcher can cast their spell copy
   lilianaUsed = false;
   gristUsed = false; // Grist: one loyalty ability per turn
-  exileAtEnd: Perm[] = []; // Puppeteer Clique's stolen creature
-  sacAtEnd: Perm[] = []; // Mobilize warriors
+  exileAtEnd: Permanent[] = []; // Puppeteer Clique's stolen creature
+  sacAtEnd: Permanent[] = []; // Mobilize warriors
 
   // ================================================================ the win condition
   hasWon(): boolean {
@@ -109,7 +114,7 @@ export class MerenGame extends GameWithoutKillSearch {
       if (this.unprotectedKillTurn === null) {
         this.unprotectedKillTurn = this.turn;
         this.say(
-          `WIN: opp life [${this.life.join(', ')}], ${this.damageDealt} damage dealt`,
+          `WIN: ${this.describeOpponentLife()}, ${this.damageDealt} damage dealt`,
         );
       }
       return 2;
@@ -147,10 +152,11 @@ export class MerenGame extends GameWithoutKillSearch {
     const copy = super.clone();
     const map = new Map(
       this.battlefield.map(
-        (permanent, i) => [permanent, copy.battlefield[i]] as [Perm, Perm],
+        (permanent, i) =>
+          [permanent, copy.battlefield[i]] as [Permanent, Permanent],
       ),
     );
-    const toCopy = (permanent: Perm) => map.get(permanent) ?? permanent;
+    const toCopy = (permanent: Permanent) => map.get(permanent) ?? permanent;
     copy.prepared = new Set([...this.prepared].map(toCopy));
     copy.exileAtEnd = this.exileAtEnd.map(toCopy);
     copy.sacAtEnd = this.sacAtEnd.map(toCopy);
@@ -233,7 +239,10 @@ export class MerenGame extends GameWithoutKillSearch {
     return this.graveyard.filter((card) => card.isCreature).length;
   }
 
-  override manaSourceKind(permanent: Perm, ignoreSick = false): string | null {
+  override manaSourceKind(
+    permanent: Permanent,
+    ignoreSick = false,
+  ): string | null {
     return super.manaSourceKind(permanent, ignoreSick);
   }
 
@@ -249,7 +258,7 @@ export class MerenGame extends GameWithoutKillSearch {
   // ================================================================ zones
   millOurselves(count: number): void {
     for (let i = 0; i < count && this.library.length; i++)
-      this.toGy(this.library.shift()!, true);
+      this.toGraveyard(this.library.shift()!, true);
   }
 
   /** A basic land from the library onto the battlefield tapped. */
@@ -270,7 +279,7 @@ export class MerenGame extends GameWithoutKillSearch {
     if (!card) return;
     removeIfPresent(this.library, card);
     this.shuffle();
-    const basicLand = new Perm(card, card.land, true);
+    const basicLand = new Permanent(card, card.land, true);
     basicLand.sick = false;
     this.battlefield.push(basicLand);
   }
@@ -291,7 +300,7 @@ export class MerenGame extends GameWithoutKillSearch {
   reanimate(
     card: CardDef,
     options: { tapped?: boolean; counters?: number } = {},
-  ): Perm {
+  ): Permanent {
     removeIfPresent(this.graveyard, card);
     const permanent = this.enter(card, 'graveyard', { tapped: options.tapped });
     if (options.counters) permanent.counters += options.counters;
@@ -300,8 +309,8 @@ export class MerenGame extends GameWithoutKillSearch {
   }
 
   /** Our creatures in the order we'd sacrifice them (cheapest loss first). */
-  sacrificeOrder(exclude: Perm[] = []): Perm[] {
-    const sacValue = (permanent: Perm): number => {
+  sacrificeOrder(exclude: Permanent[] = []): Permanent[] {
+    const sacValue = (permanent: Permanent): number => {
       if (permanent.card === TOKENS.stolen) return 80;
       if (permanent.token) return 5 + this.power(permanent);
       if (DEATH_VALUE.has(permanent.card.name) && this.isOnBattlefield(MEREN))
@@ -327,7 +336,7 @@ export class MerenGame extends GameWithoutKillSearch {
     );
   }
 
-  findFreeSacrificeOutlet(): Perm | null {
+  findFreeSacrificeOutlet(): Permanent | null {
     for (const name of FREE_OUTLETS) {
       const permanent = this.findPermanent(name);
       if (permanent) return permanent;
@@ -336,20 +345,20 @@ export class MerenGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ triggers
-  override onEnter(permanent: Perm, from: Zone): void {
+  override onEnter(permanent: Permanent, from: Zone): void {
     onPermanentEntered(this, permanent, from);
   }
 
-  override onDies(permanent: Perm): void {
+  override onDies(permanent: Permanent): void {
     onPermanentDied(this, permanent);
   }
 
-  override powerBonus(permanent: Perm): number {
+  override powerBonus(permanent: Permanent): number {
     return permanent.card.name === 'Wight of the Reliquary'
       ? this.creaturesInGraveyard()
       : 0;
   }
-  override toughnessBonus(permanent: Perm): number {
+  override toughnessBonus(permanent: Permanent): number {
     return permanent.card.name === 'Wight of the Reliquary'
       ? this.creaturesInGraveyard()
       : 0;
@@ -459,14 +468,14 @@ export class MerenGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ combat
-  override canAttack(permanent: Perm): boolean {
+  override canAttack(permanent: Permanent): boolean {
     return super.canAttack(permanent) && permanent.card.name !== 'Spore Frog';
   }
-  override fogBlocker(): Perm | null {
+  override fogBlocker(): Permanent | null {
     return this.findPermanent('Spore Frog');
   }
-  override onAttack(attackers: Perm[]): Perm[] {
-    const extra: Perm[] = [];
+  override onAttack(attackers: Permanent[]): Permanent[] {
+    const extra: Permanent[] = [];
     for (const permanent of attackers) {
       if (permanent.card.name === 'Grave Titan')
         this.createTokens(TOKENS.zombie, 2);
@@ -503,7 +512,7 @@ export class MerenGame extends GameWithoutKillSearch {
     return Math.min(1, closeness);
   }
   /** A pod: Spore Frog is the fog, not a blocker. */
-  override blockValue(permanent: Perm): number {
+  override blockValue(permanent: Permanent): number {
     return permanent.card.name === 'Spore Frog'
       ? 500
       : super.blockValue(permanent);
@@ -572,14 +581,14 @@ export class MerenGame extends GameWithoutKillSearch {
         .find((card) => card) ??
       firstMax(candidates, (card) => this.battlefieldValue(card));
     removeIfPresent(this.library, chosen);
-    this.toGy(chosen, true);
+    this.toGraveyard(chosen, true);
     this.shuffle();
   }
 
   // ================================================================ spells
   override resolveOther(
     card: CardDef,
-    _fromGy: boolean,
+    _fromGraveyard: boolean,
     mode: string | null,
   ): void {
     const name = card.name;
@@ -609,7 +618,7 @@ export class MerenGame extends GameWithoutKillSearch {
         : null;
       for (const otherCard of top)
         if (otherCard === kept) this.hand.push(otherCard);
-        else this.toGy(otherCard, true);
+        else this.toGraveyard(otherCard, true);
     } else if (name === 'Persist') {
       const anotherCard = this.bestCreatureInGraveyard(
         (candidate) => !candidate.types.has('legendary'),
@@ -654,7 +663,7 @@ export class MerenGame extends GameWithoutKillSearch {
       else this.doTutor((candidate) => candidate.isCreature, false);
     }
   }
-  candidates(main2: boolean): Cand[] {
+  candidates(main2: boolean): Candidate[] {
     return buildCandidates(this, main2);
   }
 }

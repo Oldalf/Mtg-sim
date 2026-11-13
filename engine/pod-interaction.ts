@@ -8,7 +8,7 @@
 import { Answer } from './answers';
 import { CardDef } from './cards';
 import { Game } from './game';
-import { Perm, Target } from './game-types';
+import { Permanent, Target } from './game-types';
 import { PodTable } from './pod-table';
 
 /** Targeted removal on one's own turn only goes for permanents worth at least this much (unless set in the deck's config). */
@@ -57,7 +57,7 @@ export function hitWithRemoval(
   caster: number,
   cardName: string,
   owner: number,
-  permanent: Perm,
+  permanent: Permanent,
   answer: Answer,
 ): void {
   const shield = table.games[owner].podShield(permanent);
@@ -67,12 +67,16 @@ export function hitWithRemoval(
     table.sayAs(
       caster,
       `${cardName} on ${ownerName}'s ${permanent.card.name} is countered by ${shield}`,
+      'answer',
+      [cardName, permanent.card.name, shield],
     );
     return;
   }
   table.sayAs(
     caster,
     `${cardName} on ${ownerName}'s ${permanent.card.name} (${answer.how ?? 'destroy'})`,
+    'answer',
+    [cardName, permanent.card.name],
   );
   table.stats.removed[owner]++;
   table.games[owner].podSuffer(permanent, answer);
@@ -115,7 +119,9 @@ export function makeOpponentsSacrifice(
         ? creature
         : least,
     );
-    table.sayAs(opponent, `sacrifices ${leastValuable.card.name}`);
+    table.sayAs(opponent, `sacrifices ${leastValuable.card.name}`, 'note', [
+      leastValuable.card.name,
+    ]);
     opponentGame.podRemove(leastValuable, 'sacrifice');
   }
 }
@@ -245,6 +251,8 @@ function castBoardWipe(
   table.sayAs(
     player,
     `${card.name}: ${dying.length} creature(s) ${bounces ? 'return to hand' : 'die'}`,
+    'answer',
+    [card.name],
   );
   for (const creature of dying)
     table.games[creature.owner].podRemove(
@@ -276,7 +284,7 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
   if (!attempt || (!attempt.spells.length && !attempt.perms.length))
     return false;
   table.stats.tried[player]++;
-  table.say(`R${table.round}: ${table.playerName(player)} goes for the win`);
+  table.sayHighlight(player, 'goes for the win');
 
   const answersNeeded = attempt.backup + 1; // the winner may hold counterspells as backup
   const used: UsedAnswer[] = [];
@@ -296,8 +304,11 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
     table.stats.answers[answer.owner]++;
     if (answer.shield) {
       table.stats.shields[player]++;
-      table.say(
-        `R${table.round}: ${table.playerName(answer.owner)}'s ${answer.card} on ${answer.target} is countered by ${answer.shield}`,
+      table.sayAs(
+        answer.owner,
+        `${answer.card} on ${answer.target} is countered by ${answer.shield}`,
+        'answer',
+        [answer.card, answer.target, answer.shield],
       );
     }
   }
@@ -307,8 +318,11 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
     unshielded.slice(0, attempt.backup).map((usedAnswer) => usedAnswer.card),
   );
   for (let index = 0; index < counteredBack.length; index++)
-    table.say(
-      `R${table.round}: ${table.playerName(unshielded[index].owner)}'s ${unshielded[index].card} is countered by ${table.playerName(player)}'s ${counteredBack[index]}`,
+    table.sayAs(
+      player,
+      `counters ${table.playerName(unshielded[index].owner)}'s ${unshielded[index].card} with ${counteredBack[index]}`,
+      'answer',
+      [unshielded[index].card, counteredBack[index]],
     );
   const standing = unshielded.slice(counteredBack.length);
   if (!standing.length) return false;
@@ -317,8 +331,11 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
   const stopper = standing[0];
   game.podLose(stopper.target, stopper.how, stopper.answer);
   game.podWinStopped();
-  table.say(
-    `R${table.round}: ${table.playerName(stopper.owner)} stops it: ${stopper.card} on ${stopper.target}. ${table.playerName(player)} plays on.`,
+  table.sayAs(
+    stopper.owner,
+    `stops the win: ${stopper.card} on ${stopper.target}. ${table.playerName(player)} plays on.`,
+    'answer',
+    [stopper.card, stopper.target],
   );
   return true;
 }
@@ -376,11 +393,18 @@ export function counterSpell(
       table.sayAs(
         opponent,
         `${counter.name} on ${spell.name}; ${table.playerName(caster)} counters it with ${backupCounter.name}`,
+        'answer',
+        [counter.name, spell.name, backupCounter.name],
       );
       return false;
     }
     table.stats.countered[caster]++;
-    table.sayAs(opponent, `counters ${spell.name} with ${counter.name}`);
+    table.sayAs(
+      opponent,
+      `counters ${spell.name} with ${counter.name}`,
+      'answer',
+      [spell.name, counter.name],
+    );
     return true;
   }
   return false;

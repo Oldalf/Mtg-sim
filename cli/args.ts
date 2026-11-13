@@ -2,7 +2,7 @@
 import { defaultWorkers } from '../engine/runner';
 
 export interface Args {
-  deck: string; // a deck name, "pod" or "cards"
+  deck: string; // a deck name, "pod", "cards" or "logs"
   lists: string[]; // decklist files (for the pod: the decks, each as "deck" or "deck:list")
   games: number; // -n
   gamesGiven: boolean; // was -n on the command line? (the pod has its own default)
@@ -14,6 +14,11 @@ export interface Args {
   settings: string[]; // --set key=value, as typed
   trace: number; // --trace: how many games to print play by play
   seed: number; // --seed: the first seed
+  seedGiven: boolean;
+  tag: string | null; // --tag: the logs viewer shows every game with this tag
+  highlights: boolean; // --highlights: the logs viewer shows only the highlights of a game
+  showMoves: boolean; // --moves: show the card moves under each line of a traced game
+  noLog: boolean; // --no-log: don't write the games to session-logs/
   mode: 'any' | 'protected';
   rank: boolean; // --rank
   cutCards: string[] | null; // --cut: the cards to cut
@@ -42,6 +47,11 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     settings: [],
     trace: 0,
     seed: 1,
+    seedGiven: false,
+    tag: null,
+    highlights: false,
+    showMoves: false,
+    noLog: false,
     mode: 'any',
     rank: false,
     cutCards: null,
@@ -74,7 +84,13 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     else if (option === '--turns') args.turns = nextNumber();
     else if (option === '--set') args.settings.push(nextValue());
     else if (option === '--trace') args.trace = nextNumber();
-    else if (option === '--seed') args.seed = nextNumber();
+    else if (option === '--seed') {
+      args.seed = nextNumber();
+      args.seedGiven = true;
+    } else if (option === '--tag') args.tag = nextValue();
+    else if (option === '--highlights') args.highlights = true;
+    else if (option === '--moves') args.showMoves = true;
+    else if (option === '--no-log') args.noLog = true;
     else if (option === '--mode')
       args.mode = nextValue() as 'any' | 'protected';
     else if (option === '--rank') args.rank = true;

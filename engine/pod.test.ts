@@ -1,5 +1,5 @@
 /** Checks of the pod's shared blocking rule on hand-built combats. Run: npm run pod -- --test */
-import { Evasion, Fighter, Perm } from './game-types';
+import { Evasion, Fighter, Permanent } from './game-types';
 import { assignBlocks, duel } from './pod-blocking';
 import { ANSWERS } from './answers';
 import * as C from './cards';
@@ -26,7 +26,7 @@ function mike(
     ...battlefieldNames,
   ]) {
     const card = C.get(cardName);
-    const permanent = new Perm(card, card.land);
+    const permanent = new Permanent(card, card.land);
     permanent.sick = false;
     game.battlefield.push(permanent);
     if (cardName === VNWXT) game.command = [];
@@ -44,7 +44,7 @@ function makeFighter(
   overrides: Partial<Fighter> & { evasion?: Evasion } = {},
 ): Fighter {
   return {
-    permanent: { id: nextPermanentId++ } as unknown as Perm,
+    permanent: { id: nextPermanentId++ } as unknown as Permanent,
     name,
     power,
     toughness,

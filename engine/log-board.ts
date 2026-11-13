@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as C from './cards';
 import { Cost } from './cards';
-import { Config, Perm, emptyPool } from './game-types';
+import { Config, Permanent, emptyPool } from './game-types';
 import { Game } from './game';
 import { Rng } from './rng';
 import { Deck } from './runner';
@@ -309,7 +309,11 @@ export class Board {
     const cardDef = C.get(card);
     const gameBeforeCast = this.toGame(turn, config); // cost reducers in play
     gameBeforeCast.spellsCast = this.spellsCast;
-    let cost = gameBeforeCast.effCost(cardDef, null, from === 'graveyard');
+    let cost = gameBeforeCast.effectiveCost(
+      cardDef,
+      null,
+      from === 'graveyard',
+    );
     if (from === 'commandZone') {
       const earlierCasts = this.commanderCasts.get(card) ?? 0;
       cost = cost.withGeneric(cost.generic + 2 * earlierCasts);
@@ -344,7 +348,7 @@ export class Board {
         (cardDef.mdfcLand && !cardDef.isInstantOrSorcery
           ? cardDef.mdfcLand
           : null);
-      const gamePermanent = new Perm(cardDef, landInfo, permanent.tapped);
+      const gamePermanent = new Permanent(cardDef, landInfo, permanent.tapped);
       gamePermanent.sick = permanent.sick;
       gamePermanent.transformed = !!permanent.flipped;
       gamePermanent.token = !!permanent.token;

@@ -1,6 +1,6 @@
 /** Sanity checks: hand-built board states that must (or must not) be a kill. Run: npm run sim -- gale --test */
 import * as C from '../../../engine/cards';
-import { Perm } from '../../../engine/game-types';
+import { Permanent } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
 import { GaleGame } from '../game';
@@ -27,10 +27,10 @@ function board({
   game.turn = 5;
   for (const landName of lands) {
     const card = C.get(landName);
-    game.battlefield.push(new Perm(card, card.land));
+    game.battlefield.push(new Permanent(card, card.land));
   }
   for (const cardName of battlefieldNames) {
-    const permanent = new Perm(C.get(cardName));
+    const permanent = new Permanent(C.get(cardName));
     permanent.sick = false;
     game.battlefield.push(permanent);
   }

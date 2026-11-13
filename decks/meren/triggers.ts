@@ -8,14 +8,14 @@ import {
   TOKENS,
 } from './cards';
 import type { MerenGame } from './game';
-import { Perm, Zone } from '../../engine/game-types';
+import { Permanent, Zone } from '../../engine/game-types';
 import { firstMax, removeIfPresent } from '../../engine/lists';
 import { SHRIEKMAW } from '../../engine/answers';
 
 // ================================================================ entering the battlefield
 export function onPermanentEntered(
   game: MerenGame,
-  permanent: Perm,
+  permanent: Permanent,
   from: Zone,
 ): void {
   const name = permanent.card.name;
@@ -32,7 +32,10 @@ export function onPermanentEntered(
 }
 
 /** Liliana the Repentant (another creature or planeswalker enters: mill two) and Garruk's Packleader (power 3+: draw). */
-function triggerLilianaAndPackleader(game: MerenGame, permanent: Perm): void {
+function triggerLilianaAndPackleader(
+  game: MerenGame,
+  permanent: Permanent,
+): void {
   const name = permanent.card.name;
   if (
     name !== 'Liliana the Repentant' &&
@@ -51,7 +54,7 @@ function triggerLilianaAndPackleader(game: MerenGame, permanent: Perm): void {
 /** Twilight Diviner: creatures entering from a graveyard make a token copy of one of them (once a turn). */
 function triggerTwilightDiviner(
   game: MerenGame,
-  permanent: Perm,
+  permanent: Permanent,
   from: Zone,
 ): void {
   if (
@@ -68,14 +71,14 @@ function triggerTwilightDiviner(
 }
 
 /** Gray Merchant and Lotleth Giant. Returns true if the permanent was one of them. */
-function resolveDrainOnEnter(game: MerenGame, permanent: Perm): boolean {
+function resolveDrainOnEnter(game: MerenGame, permanent: Permanent): boolean {
   const name = permanent.card.name;
   if (name === GRAY_MERCHANT) {
     const devotion = game.devotion('B');
     const drained = game.drainEach(devotion);
     game.gainLife(drained);
     game.say(
-      `  Gray Merchant drains ${devotion} each (devotion ${devotion}), opp life [${game.life.join(', ')}]`,
+      `  Gray Merchant drains ${devotion} each (devotion ${devotion}), ${game.describeOpponentLife()}`,
     );
     return true;
   }
@@ -84,7 +87,7 @@ function resolveDrainOnEnter(game: MerenGame, permanent: Perm): boolean {
     if (target !== null)
       game.damageOpponent(target, game.creaturesInGraveyard());
     game.say(
-      `  Lotleth Giant deals ${game.creaturesInGraveyard()}, opp life [${game.life.join(', ')}]`,
+      `  Lotleth Giant deals ${game.creaturesInGraveyard()}, ${game.describeOpponentLife()}`,
     );
     return true;
   }
@@ -94,7 +97,7 @@ function resolveDrainOnEnter(game: MerenGame, permanent: Perm): boolean {
 /** Cards drawn, tutored, milled or returned from the graveyard when a creature enters. Returns true if handled. */
 function resolveCardAdvantageOnEnter(
   game: MerenGame,
-  permanent: Perm,
+  permanent: Permanent,
 ): boolean {
   const name = permanent.card.name;
   if (name === 'Twilight Diviner') {
@@ -112,7 +115,7 @@ function resolveCardAdvantageOnEnter(
     const land = top.find((card) => card.land !== null);
     for (const card of top)
       if (card === land) game.hand.push(card);
-      else game.toGy(card, true);
+      else game.toGraveyard(card, true);
   } else if (LAND_ETB.has(name)) {
     game.fetchBasic();
   } else if (name === 'Eternal Witness' || name === 'Timeless Witness') {
@@ -149,7 +152,7 @@ function resolveCardAdvantageOnEnter(
 }
 
 /** Creatures that make tokens when they enter. Returns true if handled. */
-function resolveTokensOnEnter(game: MerenGame, permanent: Perm): boolean {
+function resolveTokensOnEnter(game: MerenGame, permanent: Permanent): boolean {
   switch (permanent.card.name) {
     case 'Puppeteer Clique': {
       const stolen = game.enter(TOKENS.stolen, 'graveyard', { token: true });
@@ -173,7 +176,7 @@ function resolveTokensOnEnter(game: MerenGame, permanent: Perm): boolean {
 }
 
 /** Shriekmaw and the edicts (each player sacrifices a creature). */
-function resolveRemovalOnEnter(game: MerenGame, permanent: Perm): void {
+function resolveRemovalOnEnter(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
   if (name === 'Shriekmaw') {
     // a pod: destroy the biggest threat's best creature (nonartifact, nonblack isn't checked)
@@ -194,7 +197,7 @@ function resolveRemovalOnEnter(game: MerenGame, permanent: Perm): void {
 }
 
 // ================================================================ dying
-export function onPermanentDied(game: MerenGame, permanent: Perm): void {
+export function onPermanentDied(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
   if (!permanent.card.land) game.leftThisTurn = true;
   if (permanent.card.isCreature) triggerCreatureDeathPayoffs(game, permanent);
@@ -219,7 +222,10 @@ export function onPermanentDied(game: MerenGame, permanent: Perm): void {
 }
 
 /** Butcher of Malakir, Meren's experience, Morbid Opportunist and Grim Haruspex when a creature dies. */
-function triggerCreatureDeathPayoffs(game: MerenGame, permanent: Perm): void {
+function triggerCreatureDeathPayoffs(
+  game: MerenGame,
+  permanent: Permanent,
+): void {
   const name = permanent.card.name;
   // a pod: Butcher of Malakir (it or another creature of ours dies: each opponent sacrifices a creature)
   if (
@@ -242,7 +248,7 @@ function triggerCreatureDeathPayoffs(game: MerenGame, permanent: Perm): void {
 }
 
 /** What the creature itself does when it dies (draw, drain, reanimate, put creatures onto the battlefield). */
-function resolveDeathEffect(game: MerenGame, permanent: Perm): void {
+function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
   if (DRAW_ON_DEATH.has(name)) {
     game.draw(1);

@@ -1,6 +1,6 @@
 /** Rules and solver checks on hand-built boards. Run: npm run sim -- codie --test */
 import * as C from '../../../engine/cards';
-import { Perm } from '../../../engine/game-types';
+import { Permanent } from '../../../engine/game-types';
 import { Rng } from '../../../engine/rng';
 import { CFG } from '../config';
 import { CodieGame } from '../game';
@@ -29,12 +29,12 @@ function board(
   game.turn = 7;
   for (const landName of lands) {
     const card = C.get(landName);
-    const permanent = new Perm(card, card.land);
+    const permanent = new Permanent(card, card.land);
     permanent.sick = false;
     game.battlefield.push(permanent);
   }
   for (const cardName of battlefieldNames) {
-    const otherPermanent = new Perm(C.get(cardName));
+    const otherPermanent = new Permanent(C.get(cardName));
     otherPermanent.sick = false;
     game.battlefield.push(otherPermanent);
   }
@@ -310,7 +310,7 @@ export function runCodieTests(): boolean {
     true,
   );
   game = board(five, ['Ad Nauseam', "Teferi's Protection"], [], lib);
-  const permanent = new Perm(C.get('Codie, Vociferous Codex'));
+  const permanent = new Permanent(C.get('Codie, Vociferous Codex'));
   permanent.sick = false;
   game.battlefield.push(permanent);
   game.hand.push(C.get('Fog'));

@@ -37,7 +37,7 @@ import {
 } from './actions';
 import type { MikeGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand, Perm } from '../../engine/game-types';
+import { Candidate, Permanent } from '../../engine/game-types';
 import { removeIfPresent } from '../../engine/lists';
 
 // ================================================================ what to do
@@ -59,9 +59,9 @@ interface CandidateContext {
 }
 
 /** Everything the AI may do now, with a score each (higher first). */
-export function buildCandidates(game: MikeGame, main2: boolean): Cand[] {
+export function buildCandidates(game: MikeGame, main2: boolean): Candidate[] {
   game.purgeSpawns();
-  const candidates: Cand[] = [];
+  const candidates: Candidate[] = [];
   const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
     candidates.push({
       score,
@@ -77,8 +77,11 @@ export function buildCandidates(game: MikeGame, main2: boolean): Cand[] {
     isLibraryLow: game.library.length <= (game.config.maniac_at as number),
   };
   for (const commander of game.command.slice())
-    add(92, game.commanderCost(commander, game.effCost(commander)), false, () =>
-      game.castPerm(commander, true),
+    add(
+      92,
+      game.commanderCost(commander, game.effectiveCost(commander)),
+      false,
+      () => game.castPerm(commander, true),
     );
   const seenNames = new Set<string>();
   for (const card of game.hand.slice()) {
@@ -118,7 +121,7 @@ function addManaRockCandidate(
   add: AddCandidate,
   context: CandidateContext,
 ): boolean {
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   const castRock = () => game.castPerm(card);
   switch (card.name) {
     case 'Sol Ring':
@@ -146,7 +149,7 @@ function addEnginePieceCandidate(
   context: CandidateContext,
 ): boolean {
   const name = card.name;
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   const cast = () => game.castPerm(card);
   const handSize = game.hand.length;
   let score = game.value(card);
@@ -197,7 +200,7 @@ function addAuraAndEquipmentCandidate(
   add: AddCandidate,
 ): boolean {
   const name = card.name;
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   const cast = () => game.castPerm(card);
   const handSize = game.hand.length;
   switch (name) {
@@ -231,7 +234,7 @@ function addDrawSpellCandidate(
   context: CandidateContext,
 ): boolean {
   const name = card.name;
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   const cast = () => game.castInstantOrSorcery(card);
   const score = game.value(card);
   const winPieceBonus = context.hasWinPiece ? 40 : 0;
@@ -266,7 +269,7 @@ function addDrawSpellCandidate(
       return true;
     }
     case 'Treasure Cruise': {
-      const baseCost = game.effCost(card);
+      const baseCost = game.effectiveCost(card);
       const delve = Math.min(game.graveyard.length, baseCost.generic);
       const delvedCost = baseCost.withGeneric(baseCost.generic - delve);
       if (game.mayDraw(1))
@@ -292,7 +295,7 @@ function addRefillSpellCandidate(
   context: CandidateContext,
 ): void {
   const isFlux = card.name === 'Flux';
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   const cast = () => game.castInstantOrSorcery(card);
   const score = game.value(card);
   const discarded = game.hand.length - 1; // cards that get discarded (Flux: all of them when the mill is safe)
@@ -356,7 +359,7 @@ function addPermanentCandidate(
   ) {
     if (name === TEFERIS_AGELESS_INSIGHT && !game.mayDraw(2))
       score = Math.min(score, 30);
-    add(score, game.effCost(card), false, () => game.castPerm(card));
+    add(score, game.effectiveCost(card), false, () => game.castPerm(card));
   }
 }
 
@@ -371,7 +374,7 @@ interface AbilityContext {
 /** Activated abilities of the permanents on the battlefield. */
 export function abilityCandidates(
   game: MikeGame,
-  candidates: Cand[],
+  candidates: Candidate[],
   main2: boolean,
   drawRoom: number,
   hasWinPiece: boolean,
@@ -395,7 +398,7 @@ type AddAbility = (score: number, cost: Cost, action: () => boolean) => void;
 /** Abilities that draw cards or loot. Returns true if the permanent has one of them (even if not usable now). */
 function addDrawAbilityCandidate(
   game: MikeGame,
-  permanent: Perm,
+  permanent: Permanent,
   add: AddAbility,
   context: AbilityContext,
 ): boolean {
@@ -467,7 +470,7 @@ function addDrawAbilityCandidate(
 /** Abilities of the draw engines: Folio of Fancies, Ormos, Wizard Class, Jace and Harmonized Trio. */
 function addEngineAbilityCandidate(
   game: MikeGame,
-  permanent: Perm,
+  permanent: Permanent,
   add: AddAbility,
   context: AbilityContext,
 ): boolean {
@@ -548,7 +551,7 @@ function addOrmosCandidate(
       if (!game.pay(Cost.parse('{1}{U}{U}'))) return false;
       for (const card of picks) {
         removeIfPresent(game.hand, card);
-        game.toGy(card);
+        game.toGraveyard(card);
       }
       game.draw(5);
       return true;
@@ -558,7 +561,7 @@ function addOrmosCandidate(
 /** Abilities that help the attack: Thunderclap Drake, Rogue's Passage and the equipment. */
 function addCombatAbilityCandidate(
   game: MikeGame,
-  permanent: Perm,
+  permanent: Permanent,
   add: AddAbility,
   context: AbilityContext,
 ): void {

@@ -1,16 +1,16 @@
 /** How the game log prints cards, lists and mana pools. */
 import { CardDef } from './cards';
 
-export function fmt(x: unknown): string {
+export function formatLogPart(x: unknown): string {
   if (x instanceof CardDef) return x.name;
   if (Array.isArray(x))
-    return fmtList(
+    return formatList(
       x.map((item) => (item instanceof CardDef ? item.name : item)),
     );
   return String(x);
 }
 
-export function fmtList(items: unknown[]): string {
+export function formatList(items: unknown[]): string {
   return (
     '[' +
     items
@@ -20,7 +20,7 @@ export function fmtList(items: unknown[]): string {
   );
 }
 
-export function fmtPool(pool: Record<string, number>): string {
+export function formatPool(pool: Record<string, number>): string {
   return (
     '{' +
     Object.entries(pool)

@@ -38,7 +38,7 @@ import {
 import { findFinisherCast } from './finishers';
 import type { CodieGame } from './game';
 import { CardDef } from '../../engine/cards';
-import { Perm } from '../../engine/game-types';
+import { Permanent } from '../../engine/game-types';
 import { removeIfPresent } from '../../engine/lists';
 
 export interface Line {
@@ -330,7 +330,7 @@ export function findNextTurnKill(
   );
   if (land) {
     removeIfPresent(copy.hand, land);
-    const landPermanent = new Perm(land, land.land, false);
+    const landPermanent = new Permanent(land, land.land, false);
     landPermanent.sick = false;
     copy.battlefield.push(landPermanent);
   }

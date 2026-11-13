@@ -51,7 +51,7 @@ import {
 } from './actions';
 import type { AesiGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand, Perm } from '../../engine/game-types';
+import { Candidate, Permanent } from '../../engine/game-types';
 import { firstMax, removeIfPresent } from '../../engine/lists';
 
 // ================================================================ what to do
@@ -65,8 +65,8 @@ export type AddCandidate = (
 ) => void;
 
 /** Everything the AI may do now, with a score each (higher first). */
-export function buildCandidates(game: AesiGame, main2: boolean): Cand[] {
-  const candidates: Cand[] = [];
+export function buildCandidates(game: AesiGame, main2: boolean): Candidate[] {
+  const candidates: Candidate[] = [];
   const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
     candidates.push({
       score,
@@ -83,8 +83,11 @@ export function buildCandidates(game: AesiGame, main2: boolean): Cand[] {
     return candidates;
   }
   for (const commander of game.command.slice())
-    add(96, game.commanderCost(commander, game.effCost(commander)), false, () =>
-      game.castPerm(commander, true),
+    add(
+      96,
+      game.commanderCost(commander, game.effectiveCost(commander)),
+      false,
+      () => game.castPerm(commander, true),
     );
   addCardsInHandCandidates(game, add, main2, isEarly);
   if (game.footstepsExiled) {
@@ -121,7 +124,13 @@ function addCardsInHandCandidates(
     if (card.types.has('legendary') && game.isOnBattlefield(card.name))
       continue;
     if (card.name === 'Sol Ring') {
-      add(100, game.effCost(card), false, () => game.castPerm(card), card);
+      add(
+        100,
+        game.effectiveCost(card),
+        false,
+        () => game.castPerm(card),
+        card,
+      );
     } else if (card.isInstantOrSorcery) {
       spellCandidates(game, card, add, main2, isEarly);
     } else if (card.name === BEANSTALK) {
@@ -172,8 +181,11 @@ function permanentCandidate(
   if (name === 'Kira, Great Glass-Spinner' && !main2) return;
   if (name === REVOLT) {
     // it makes replayed lands summoning sick (no mana): only for a lethal attack with our lands now
-    if (!main2 && isLandAttackLethal(game, game.effCost(card).manaValue, false))
-      add(98, game.effCost(card), false, () => game.castPerm(card));
+    if (
+      !main2 &&
+      isLandAttackLethal(game, game.effectiveCost(card).manaValue, false)
+    )
+      add(98, game.effectiveCost(card), false, () => game.castPerm(card));
     return;
   }
   if (name === MAP && wantsComboLand(game)) score = 90;
@@ -189,7 +201,7 @@ function permanentCandidate(
       );
     }
   }
-  add(score, game.effCost(card), false, () => game.castPerm(card));
+  add(score, game.effectiveCost(card), false, () => game.castPerm(card));
 }
 
 /** Instants and sorceries. */
@@ -202,7 +214,7 @@ export function spellCandidates(
 ): void {
   if (rampSpellCandidates(game, spell, add, isEarly)) return;
   if (otherSpellCandidates(game, spell, add, main2, isEarly)) return;
-  add(game.battlefieldValue(spell), game.effCost(spell), true, () =>
+  add(game.battlefieldValue(spell), game.effectiveCost(spell), true, () =>
     game.castInstantOrSorcery(spell),
   );
 }
@@ -215,7 +227,7 @@ function rampSpellCandidates(
   isEarly: boolean,
 ): boolean {
   const name = spell.name;
-  const cost = game.effCost(spell);
+  const cost = game.effectiveCost(spell);
   const basicsInLibrary = game.library.filter(
     (card) => card.land?.basic,
   ).length;
@@ -309,7 +321,7 @@ function otherSpellCandidates(
   main2: boolean,
   isEarly: boolean,
 ): boolean {
-  const cost = game.effCost(spell);
+  const cost = game.effectiveCost(spell);
   const cast = () => game.castInstantOrSorcery(spell);
   switch (spell.name) {
     case 'Early Harvest': {
@@ -326,8 +338,8 @@ function otherSpellCandidates(
           card.land === null &&
           !HOLD.has(card.name) &&
           !card.isInstantOrSorcery &&
-          game.effCost(card).manaValue > game.availMana() &&
-          game.effCost(card).manaValue <= manaAfterCasting + tappedBasics,
+          game.effectiveCost(card).manaValue > game.availMana() &&
+          game.effectiveCost(card).manaValue <= manaAfterCasting + tappedBasics,
       );
       if (tappedBasics >= 4 && hasBigSpell) add(80, cost, true, cast);
       return true;
@@ -428,7 +440,7 @@ function addBounceReplayCandidate(
     return returner && returner[1] === 1 && returner[2] !== 'counter';
   });
   if (!moonfolk.length) return;
-  const abilityMana = (permanent: Perm) =>
+  const abilityMana = (permanent: Permanent) =>
     game.abilityCost(new Cost(RETURNERS[permanent.card.name][0])).manaValue;
   const effectBonus: Record<string, number> = {
     token: 6,
@@ -477,7 +489,7 @@ function addMelokuEndOfTurnCandidate(
 /** The ability of one permanent on the battlefield (a sacrifice for lands, a level up, a dig...). */
 function addPermanentAbilityCandidate(
   game: AesiGame,
-  permanent: Perm,
+  permanent: Permanent,
   add: AddCandidate,
   main2: boolean,
   landsInHand: number,
@@ -639,14 +651,20 @@ export function tutorLand(game: AesiGame, toBattlefield: boolean): void {
   game.shuffle();
 }
 
-export function useExpeditionMap(game: AesiGame, permanent: Perm): boolean {
+export function useExpeditionMap(
+  game: AesiGame,
+  permanent: Permanent,
+): boolean {
   if (!game.pay(new Cost(2))) return false;
   game.sacrifice(permanent);
   tutorLand(game, false);
   return true;
 }
 
-export function useMyriadLandscape(game: AesiGame, permanent: Perm): boolean {
+export function useMyriadLandscape(
+  game: AesiGame,
+  permanent: Permanent,
+): boolean {
   if (!game.pay(new Cost(2))) return false;
   removeIfPresent(game.battlefield, permanent);
   game.graveyard.push(permanent.card);

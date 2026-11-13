@@ -7,6 +7,7 @@
     "sim": "npm run -s build && node --enable-source-maps dist/sim.js",
     "pod": "npm run -s build && node --enable-source-maps dist/sim.js pod",
     "cards": "npm run -s build && node --enable-source-maps dist/sim.js cards",
+    "logs": "npm run -s build && node --enable-source-maps dist/sim.js logs",
     "eco": "npm run -s build && node --enable-source-maps dist/sim.js --eco",
     "check": "tsc --noEmit",
     "format": "prettier --write \"**/*.ts\"",

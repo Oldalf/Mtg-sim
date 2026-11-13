@@ -26,7 +26,7 @@ import {
 } from './actions';
 import type { MerenGame } from './game';
 import { CardDef, Cost } from '../../engine/cards';
-import { Cand, Perm } from '../../engine/game-types';
+import { Candidate, Permanent } from '../../engine/game-types';
 
 // ================================================================ what to do now
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
@@ -39,8 +39,8 @@ type AddCandidate = (
 ) => void;
 
 /** Everything the AI may do now, with a score each (higher first). */
-export function buildCandidates(game: MerenGame, main2: boolean): Cand[] {
-  const candidates: Cand[] = [];
+export function buildCandidates(game: MerenGame, main2: boolean): Candidate[] {
+  const candidates: Candidate[] = [];
   const add: AddCandidate = (score, cost, isInstantOrSorcery, action, rock) =>
     candidates.push({
       score,
@@ -52,8 +52,11 @@ export function buildCandidates(game: MerenGame, main2: boolean): Cand[] {
   const merenOut = game.isOnBattlefield(MEREN);
   const sacrificeOrder = game.sacrificeOrder();
   for (const commander of game.command.slice())
-    add(95, game.commanderCost(commander, game.effCost(commander)), false, () =>
-      game.castPerm(commander, true),
+    add(
+      95,
+      game.commanderCost(commander, game.effectiveCost(commander)),
+      false,
+      () => game.castPerm(commander, true),
     );
   const seenNames = new Set<string>();
   for (const card of game.hand.slice()) {
@@ -75,7 +78,7 @@ function addCreatureCandidate(
   card: CardDef,
   add: AddCandidate,
   merenOut: boolean,
-  sacrificeOrder: Perm[],
+  sacrificeOrder: Permanent[],
 ): void {
   const name = card.name;
   let score = game.battlefieldValue(card);
@@ -108,14 +111,14 @@ function addCreatureCandidate(
   if (name === 'Shriekmaw') {
     // evoke for {1}{B}: it dies right away (a cheap Meren target and an experience counter)
     if (merenOut)
-      add(48, game.effCost(card, Cost.parse('{1}{B}')), false, () =>
+      add(48, game.effectiveCost(card, Cost.parse('{1}{B}')), false, () =>
         evokeCreature(game, card),
       );
     score = 20;
   }
   if (name === 'Twilight Diviner' || FREE_OUTLETS.includes(name))
     score = Math.max(score, 80);
-  add(score, game.effCost(card), false, () => game.castPerm(card));
+  add(score, game.effectiveCost(card), false, () => game.castPerm(card));
 }
 
 /** Casting a noncreature card from hand. */
@@ -124,15 +127,17 @@ function addNonCreatureCandidate(
   card: CardDef,
   add: AddCandidate,
   merenOut: boolean,
-  sacrificeOrder: Perm[],
+  sacrificeOrder: Permanent[],
 ): void {
   if (addRampAndDrawCandidate(game, card, add, merenOut, sacrificeOrder))
     return;
   if (addReanimationCandidate(game, card, add, sacrificeOrder)) return;
   if (card.isInstantOrSorcery)
-    add(30, game.effCost(card), true, () => game.castInstantOrSorcery(card));
+    add(30, game.effectiveCost(card), true, () =>
+      game.castInstantOrSorcery(card),
+    );
   else if (card.types.has('artifact') || card.types.has('enchantment'))
-    add(40, game.effCost(card), false, () => game.castPerm(card));
+    add(40, game.effectiveCost(card), false, () => game.castPerm(card));
 }
 
 /** Mana, card draw, drain and tutor spells. Returns false if the card is not one of them. */
@@ -141,9 +146,9 @@ function addRampAndDrawCandidate(
   card: CardDef,
   add: AddCandidate,
   merenOut: boolean,
-  sacrificeOrder: Perm[],
+  sacrificeOrder: Permanent[],
 ): boolean {
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   switch (card.name) {
     case 'Sol Ring':
       add(100, cost, false, () => game.castPerm(card), card);
@@ -219,10 +224,10 @@ function addReanimationCandidate(
   game: MerenGame,
   card: CardDef,
   add: AddCandidate,
-  sacrificeOrder: Perm[],
+  sacrificeOrder: Permanent[],
 ): boolean {
   const name = card.name;
-  const cost = game.effCost(card);
+  const cost = game.effectiveCost(card);
   switch (name) {
     case 'Persist':
     case 'Unearth': {
@@ -283,7 +288,7 @@ function addPermanentAbilityCandidates(
   game: MerenGame,
   add: AddCandidate,
   main2: boolean,
-  sacrificeOrder: Perm[],
+  sacrificeOrder: Permanent[],
 ): void {
   for (const permanent of game.battlefield) {
     const name = permanent.card.name;
@@ -373,8 +378,8 @@ function addGraveyardAndMillCandidates(
     (card) => card.name === 'Reassembling Skeleton',
   );
   if (skeleton)
-    add(25, game.effCost(skeleton, Cost.parse('{1}{B}')), false, () => {
-      if (!game.pay(game.effCost(skeleton, Cost.parse('{1}{B}')), false))
+    add(25, game.effectiveCost(skeleton, Cost.parse('{1}{B}')), false, () => {
+      if (!game.pay(game.effectiveCost(skeleton, Cost.parse('{1}{B}')), false))
         return false;
       game.reanimate(skeleton, { tapped: true });
       return true;
@@ -386,7 +391,10 @@ function addGraveyardAndMillCandidates(
     game.graveyard.filter((card) => card !== woeStrider && !card.isCreature)
       .length >= 4
   )
-    add(40, game.effCost(woeStrider, Cost.parse('{3}{B}{B}')), false, () =>
-      escapeWoeStrider(game, woeStrider),
+    add(
+      40,
+      game.effectiveCost(woeStrider, Cost.parse('{3}{B}{B}')),
+      false,
+      () => escapeWoeStrider(game, woeStrider),
     );
 }
