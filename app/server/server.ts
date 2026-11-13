@@ -7,6 +7,13 @@ import * as http from 'http';
 import * as path from 'path';
 import type { ErrorAnswer, HealthAnswer } from '../api-types';
 import { answerDecklist, answerDecks, RequestError } from './decks-routes';
+import {
+  answerGame,
+  answerGames,
+  answerLogs,
+  answerRealLog,
+  answerRealLogs,
+} from './logs-routes';
 import { answerCurrentRun, startRun, stopCurrentRun } from './runs';
 
 /** The built page (`ng build` in app/web/ writes it here). */
@@ -50,6 +57,52 @@ const ROUTES: Route[] = [
         answerDecklist(
           decodeURIComponent(pathParts.deck),
           decodeURIComponent(pathParts.list),
+        ),
+      ),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/logs$/,
+    answer: () => ok(answerLogs()),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/logs\/(?<run>[^/]+)\/games$/,
+    answer: (pathParts, url) =>
+      ok(
+        answerGames(decodeURIComponent(pathParts.run), {
+          tag: url.searchParams.get('tag'),
+          winner: url.searchParams.get('winner'),
+          from: url.searchParams.get('from'),
+          count: url.searchParams.get('count'),
+        }),
+      ),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/logs\/(?<run>[^/]+)\/games\/(?<seed>[^/]+)$/,
+    answer: (pathParts) =>
+      ok(
+        answerGame(
+          decodeURIComponent(pathParts.run),
+          decodeURIComponent(pathParts.seed),
+        ),
+      ),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/decks\/(?<deck>[^/]+)\/logs$/,
+    answer: (pathParts) =>
+      ok(answerRealLogs(decodeURIComponent(pathParts.deck))),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/decks\/(?<deck>[^/]+)\/logs\/(?<file>.+)$/,
+    answer: (pathParts) =>
+      ok(
+        answerRealLog(
+          decodeURIComponent(pathParts.deck),
+          decodeURIComponent(pathParts.file),
         ),
       ),
   },

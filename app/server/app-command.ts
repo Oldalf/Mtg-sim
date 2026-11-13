@@ -13,6 +13,7 @@ import { DECKS } from '../../decks/index';
 import { runRunControlTests } from '../../engine/worker-pool.test';
 import { clearSessionLogs } from '../../engine/game-log-files';
 import { runDecksRoutesTests } from './decks-routes.test';
+import { runLogsRoutesTests } from './logs-routes.test';
 import { runRunsTests } from './runs.test';
 import { startServer } from './server';
 
@@ -64,8 +65,10 @@ export async function runAppCommand(argv: string[]): Promise<void> {
   if (options.runsTests) {
     const runControlPassed = await runRunControlTests(DECKS);
     const decksPassed = await runDecksRoutesTests();
+    const logsPassed = await runLogsRoutesTests();
     const runsPassed = await runRunsTests();
-    const testsPassed = runControlPassed && decksPassed && runsPassed;
+    const testsPassed =
+      runControlPassed && decksPassed && logsPassed && runsPassed;
     process.exit(testsPassed ? 0 : 1);
   }
   // every run of this session stays on disk until the app starts again (PLAN.md decision 6)

@@ -76,7 +76,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 2 | Runs that report progress and can be stopped | 0 | big model | done (2026-11-13) |
 | 3 | Decks and decklists on the server | 0 | small model | done (2026-11-13) |
 | 4 | Starting, following and stopping a run on the server | 1, 2 | big model | done (2026-11-13) |
-| 5 | Game logs on the server | 0 | small model | open |
+| 5 | Game logs on the server | 0 | small model | done (2026-11-13) |
 | 6 | The app shell, the theme and the shared components | 0 | big model | open |
 | 7 | Card images | 0 | small model | open |
 | 8 | Page: decks and decklists | 3, 6 | small model | open |
@@ -144,6 +144,8 @@ The page needs the numbers, not printed text.
 - Reading one game unzips its whole games file each time. Keep the last file that was unzipped in memory, so stepping between games of the same file is quick.
 - The real logs: `GET /api/decks/<deck>/logs` and `/api/decks/<deck>/logs/<file>` (decision 10). The file name must not reach outside the deck's `logs/` folder: answer 400.
 - Done when: a test writes a small run with the engine's functions, then lists and reads its games through the API; and every real log of every deck loads.
+
+- Notes (task 5, 2026-11-13): `app/server/logs-routes.ts` holds the five calls. The games call takes `tag`, `winner` (a deck's index in the pod, or `none` for games nobody won), `from` and `count` (default 50, at most 500); a bad number is 400, an unknown run or seed 404. `GameListRow.result` is `describeGameResult`. The last unzipped games file is kept in memory (`forgetUnzippedGamesFile` clears it). A run still going has no index yet, so its games list is empty. Real logs: a file name outside the deck's `logs/` folder, or not `.txt`, is 400. The test is `app/server/logs-routes.test.ts` (in `npm run app -- --test`); it removes its run folders.
 
 ### 6. The look of the page and its shared pieces
 
