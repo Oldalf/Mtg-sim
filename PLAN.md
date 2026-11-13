@@ -79,7 +79,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 5 | Game logs on the server | 0 | small model | done (2026-11-13) |
 | 6 | The app shell, the theme and the shared components | 0 | big model | done (2026-11-13) |
 | 7 | Card images | 0 | small model | done (2026-11-13) |
-| 8 | Page: decks and decklists | 3, 6 | small model | open |
+| 8 | Page: decks and decklists | 3, 6 | small model | done (2026-11-13) |
 | 9 | Page: simulate | 4, 6 | big model | open |
 | 10 | Charts for the results | 9 | small model | open |
 | 11 | Page: pod | 4, 6 (after 9: same pattern) | small model | open |
@@ -169,6 +169,7 @@ The page needs the numbers, not printed text.
 - The decks as a list with commanders and the number of lists. A deck's page: its lists, and the chosen list by section with card count, each card as a row (name, mana cost, type) that shows its image on hover or tap.
 - Notes the server gives are shown: cards without data, cards played generically, a list that is not 100 cards.
 - Buttons to go on: "simulate this list", "compare with..." (to the Simulate page with the lists filled in).
+- Notes (task 8, 2026-11-13): `pages/decks/decks.ts` (the deck cards) and `pages/deck/` (lists as buttons, `?list=` picks one, the default list otherwise; the card under the pointer, focus or tap is shown large on the right, the first commander at first). The two buttons go to `/simulate?deck=<deck>&lists=<list>` (`compare=1` is added for "Compare with..."): task 9 reads `deck`, `lists` (an array) and `compare` from the query string, and with `compare` lets the user add more lists. No page test yet (task 14).
 
 ### 9. Page: simulate
 
