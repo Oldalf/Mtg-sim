@@ -6,6 +6,11 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
 import type { ErrorAnswer, HealthAnswer } from '../api-types';
+import {
+  answerImageUpdate,
+  findCardImageFile,
+  startImageUpdate,
+} from './cards-routes';
 import { answerDecklist, answerDecks, RequestError } from './decks-routes';
 import {
   answerGame,
@@ -59,6 +64,16 @@ const ROUTES: Route[] = [
           decodeURIComponent(pathParts.list),
         ),
       ),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/cards\/images\/update$/,
+    answer: () => ok(answerImageUpdate()),
+  },
+  {
+    method: 'POST',
+    path: /^\/api\/cards\/images\/update$/,
+    answer: () => ok(startImageUpdate()),
   },
   {
     method: 'GET',
@@ -232,6 +247,22 @@ function sendPageFile(
   fs.createReadStream(file).pipe(response);
 }
 
+/** GET /api/cards/<name>/image[?print=<scryfall id>]: a file, not JSON, so it is not in the route table. */
+const CARD_IMAGE_PATH = /^\/api\/cards\/([^/]+)\/image$/;
+
+async function sendCardImage(
+  response: http.ServerResponse,
+  encodedName: string,
+  print: string | null,
+): Promise<void> {
+  const file = await findCardImageFile(decodeURIComponent(encodedName), print);
+  response.writeHead(200, {
+    'Content-Type': 'image/jpeg',
+    'Cache-Control': 'public, max-age=86400',
+  });
+  fs.createReadStream(file).pipe(response);
+}
+
 async function handleRequest(
   request: http.IncomingMessage,
   response: http.ServerResponse,
@@ -242,6 +273,15 @@ async function handleRequest(
     return;
   }
   try {
+    const imageCall = CARD_IMAGE_PATH.exec(url.pathname);
+    if (imageCall && request.method === 'GET') {
+      await sendCardImage(
+        response,
+        imageCall[1],
+        url.searchParams.get('print'),
+      );
+      return;
+    }
     sendJson(response, await answerApiCall(request, url));
   } catch (error) {
     if (error instanceof RequestError) {

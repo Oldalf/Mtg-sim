@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatToolbar } from '@angular/material/toolbar';
+import { ImageRefresh } from './shared/image-refresh/image-refresh';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 /** The four places of the app, in the toolbar. */
@@ -13,7 +14,14 @@ const PLACES = [
 
 /** The app shell: the toolbar with the four places, and the page of the route below it. */
 @Component({
-  imports: [MatButton, MatToolbar, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    ImageRefresh,
+    MatButton,
+    MatToolbar,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+  ],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',

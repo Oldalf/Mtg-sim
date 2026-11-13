@@ -41,6 +41,7 @@ npm run sim -- aesi --hands -n 8000                  # how opening hands do, by 
 npm run cards                                       # when the Scryfall data was downloaded, and its latest set
 npm run cards -- update                             # download Scryfall's bulk data (only when new sets are out)
 npm run cards -- refresh                            # update the cards in data/cards.json from it
+npm run cards -- images                             # download the card images that are missing (data/scryfall/images/, for the app)
 npm run sim -- gale --test                           # the deck's kill-finder tests (must print ALL OK)
 npm run sim -- gale --regress check                  # after a refactor: results must be IDENTICAL
 npm run pod -- gale meren samfrodo aesi mike -n 1000 # a pod: the decks play against each other (3 to 6 decks; see POD_PLAN.md)
