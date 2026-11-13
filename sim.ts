@@ -27,7 +27,7 @@
 import { isMainThread, parentPort, workerData } from 'worker_threads';
 import * as Runner from './engine/runner';
 import { regress } from './engine/regress';
-import { runGoldfishLogTests } from './engine/game-log.test';
+import { runExactMoveTests, runGoldfishLogTests } from './engine/game-log.test';
 import * as Pod from './engine/pod';
 import { PodJob } from './engine/pod-types';
 import { Args, parseArgs, wantsEcoMode } from './cli/args';
@@ -72,8 +72,9 @@ async function runSpecialCommand(
 ): Promise<boolean> {
   if (args.test) {
     const isLogHarmless = runGoldfishLogTests(deck);
+    const areMovesRecorded = runExactMoveTests(deck);
     const deckTestsPassed = TESTS[deck.name]();
-    process.exit(isLogHarmless && deckTestsPassed ? 0 : 1);
+    process.exit(isLogHarmless && areMovesRecorded && deckTestsPassed ? 0 : 1);
   }
   if (args.regress) {
     const identical = await regress(

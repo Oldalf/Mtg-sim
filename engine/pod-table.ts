@@ -406,7 +406,7 @@ export class PodTable {
       );
       if (milled > 0) {
         for (let card = 0; card < milled; card++)
-          targetGame.toGraveyard(targetGame.library.shift()!, true);
+          targetGame.toGraveyard(targetGame.takeTopCardsOfLibrary(1)[0], true);
         this.updateOtherViews(player, target, 'library', milled);
       }
       const poisonGained = game.poison[slot] - before.poison[slot];

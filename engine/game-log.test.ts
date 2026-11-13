@@ -6,12 +6,13 @@
  */
 import * as C from './cards';
 import { Game } from './game';
-import { playPod, podSpec } from './pod';
+import { playPod, playRounds, podSpec, seatPlayers } from './pod';
 import { Rng } from './rng';
 import { Deck, resolveList } from './runner';
 
 const GOLDFISH_SEEDS = 50;
 const POD_SEEDS = 50;
+const POD_EXACT_MOVE_SEEDS = 20;
 const POD_DECKS = ['gale', 'meren', 'samfrodo', 'aesi'];
 const POD_ROUNDS_CAP = 17;
 
@@ -59,6 +60,76 @@ function report(label: string, differingSeeds: number[], seedCount: number) {
       (isGood ? '' : `, different for seeds ${differingSeeds.join(', ')}`),
   );
   return isGood;
+}
+
+const CHANGES_SHOWN = 8;
+
+/** Reports the zone changes that went around the engine's functions. They fail the test if every deck that
+ *  played says it uses those functions (Deck.recordsExactMoves); otherwise they are the list of what is left to do. */
+function reportUnrecordedMoves(
+  label: string,
+  unrecordedMoves: string[],
+  mustBeNone: boolean,
+): boolean {
+  const isGood = unrecordedMoves.length === 0 || !mustBeNone;
+  const status =
+    unrecordedMoves.length === 0 ? 'OK ' : mustBeNone ? 'BAD' : '-- ';
+  console.log(
+    `${status} ${label}: ${unrecordedMoves.length} zone changes went around takeCard / putCard` +
+      (mustBeNone || !unrecordedMoves.length
+        ? ''
+        : ' (deck not converted yet)'),
+  );
+  for (const move of unrecordedMoves.slice(0, CHANGES_SHOWN))
+    console.log(`      ${move}`);
+  return isGood;
+}
+
+/** Every zone change of a deck's goldfish games is recorded at the moment it happens. */
+export function runExactMoveTests(deck: Deck): boolean {
+  const decklist = C.loadDecklist(resolveList(deck, deck.defaultList));
+  const unrecordedMoves: string[] = [];
+  for (let seed = 1; seed <= GOLDFISH_SEEDS; seed++) {
+    const game = new deck.Game(
+      decklist.commanders,
+      decklist.library,
+      new Rng(seed),
+      { ...deck.config },
+      true,
+      'protected',
+    );
+    game.play();
+    unrecordedMoves.push(
+      ...game.unrecordedCardMoves.map((move) => `seed ${seed} ${move}`),
+    );
+  }
+  return reportUnrecordedMoves(
+    'card moves are recorded when they happen',
+    unrecordedMoves,
+    deck.recordsExactMoves === true,
+  );
+}
+
+/** The same for pod games: every player's game. */
+export function runPodExactMoveTests(allDecks: Record<string, Deck>): boolean {
+  const spec = podSpec(allDecks, POD_DECKS, POD_ROUNDS_CAP, {});
+  const unrecordedMoves: string[] = [];
+  for (let seed = 1; seed <= POD_EXACT_MOVE_SEEDS; seed++) {
+    const table = seatPlayers(allDecks, spec, seed, true);
+    playRounds(table, spec);
+    table.games.forEach((game, player) =>
+      unrecordedMoves.push(
+        ...game.unrecordedCardMoves.map(
+          (move) => `seed ${seed} ${table.playerName(player)} ${move}`,
+        ),
+      ),
+    );
+  }
+  return reportUnrecordedMoves(
+    'card moves in a pod are recorded when they happen',
+    unrecordedMoves,
+    POD_DECKS.every((name) => allDecks[name].recordsExactMoves === true),
+  );
 }
 
 /** A deck's goldfish games end the same with the log on and off. */

@@ -12,6 +12,7 @@ import { ANSWERS, Answer, KEY_SPELLS } from './answers';
 import { GameCore } from './game-core';
 import {
   Arena,
+  CardListZone,
   Evasion,
   Fighter,
   FightResult,
@@ -427,8 +428,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   podCast(card: CardDef): boolean {
     const cost = this.answerCost(card);
     if (!this.hand.includes(card) || !this.pay(cost, true)) return false;
-    removeOrThrow(this.hand, card);
-    this.graveyard.push(card);
+    this.moveCard(card, 'hand', 'graveyard');
     const life = this.answer(card)?.pay ?? 0;
     if (life) this.loseLife(life);
     return true;
@@ -543,8 +543,8 @@ export abstract class Game<S = unknown> extends GameCore<S> {
           (otherPermanent) => otherPermanent.tapped,
         ) ?? this.landsOnBattlefield()[0];
       if (land) {
-        removeOrThrow(this.battlefield, land);
-        this.hand.push(land.card);
+        this.takeFromBattlefield(land);
+        this.putCard(land.card, 'hand');
       }
       return 'Soratami Rainshaper';
     }
@@ -577,7 +577,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
           ),
       );
       if (basic) {
-        removeOrThrow(this.library, basic);
+        this.takeCard(basic, 'library');
         this.enter(basic, 'library', { tapped: true });
         this.shuffle();
       }
@@ -593,18 +593,18 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   podRemove(permanent: Permanent, how: string): void {
     if (!this.battlefield.includes(permanent)) return;
     if (this.isCommander(permanent)) {
-      removeOrThrow(this.battlefield, permanent);
-      this.command.push(permanent.card);
+      this.takeFromBattlefield(permanent);
+      this.putCard(permanent.card, 'command');
     } else if (how === 'destroy' || how === 'sacrifice') {
       if (permanent.card.isCreature) this.dies(permanent);
       else {
-        removeOrThrow(this.battlefield, permanent);
-        if (!permanent.token) this.graveyard.push(permanent.card);
+        this.takeFromBattlefield(permanent);
+        if (!permanent.token) this.putCard(permanent.card, 'graveyard');
       }
     } else {
-      removeOrThrow(this.battlefield, permanent);
+      this.takeFromBattlefield(permanent);
       if (!permanent.token)
-        (how === 'bounce' ? this.hand : this.exile).push(permanent.card);
+        this.putCard(permanent.card, how === 'bounce' ? 'hand' : 'exile');
     }
   }
   /** Tap n of our untapped mana sources (mana spent on something that was answered). */
@@ -630,24 +630,24 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     }
     const card = C.get(name);
     if (how === 'countered') this.tapMana(this.effectiveCost(card).manaValue);
-    const take = (cards: CardDef[]) => {
-      const i = cards.findIndex((otherCard) => otherCard.name === name);
-      if (i < 0) return false;
-      cards.splice(i, 1);
+    /** Takes the card with that name out of a zone. False if it is not there. */
+    const take = (fromZone: CardListZone) => {
+      const found = this[fromZone].find((otherCard) => otherCard.name === name);
+      if (!found) return false;
+      this.takeCard(found, fromZone);
       return true;
     };
-    if (take(this.command)) this.command.push(card);
-    else if (take(this.hand))
-      (how === 'exile'
-        ? this.exile
-        : how === 'bounce'
-          ? this.hand
-          : this.graveyard
-      ).push(card);
-    else if (how === 'countered' && take(this.graveyard)) this.exile.push(card);
+    if (take('command')) this.putCard(card, 'command');
+    else if (take('hand'))
+      this.putCard(
+        card,
+        how === 'exile' ? 'exile' : how === 'bounce' ? 'hand' : 'graveyard',
+      );
+    else if (how === 'countered' && take('graveyard'))
+      this.putCard(card, 'exile');
     // a shortcut line (a loop that draws its finisher) still had it in the library
-    else if (take(this.library))
-      (how === 'exile' ? this.exile : this.graveyard).push(card);
+    else if (take('library'))
+      this.putCard(card, how === 'exile' ? 'exile' : 'graveyard');
   }
   /** After our win was stopped: the opponents' totals go back to before the combo. Decks add their own flags. */
   podWinStopped(): void {

@@ -44,6 +44,9 @@ export interface Deck {
   logSacOnTap?: string[];
   /** Pod games: settings that differ from the goldfish ones (e.g. a win rule that only made sense against goldfish opponents). */
   podCfg?: (players: number) => Config;
+  /** Every zone change in the deck's code goes through the engine's functions (takeCard, putCard, moveCard, draw,
+   *  enter...). Then `--test` fails on a zone change that goes around them. */
+  recordsExactMoves?: boolean;
   /** The deck handles drawing from its own empty library itself (Mike: Laboratory Maniac / Living Conundrum). */
   ownsDecking?: boolean;
   config: Config;

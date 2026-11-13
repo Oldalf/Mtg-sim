@@ -17,7 +17,7 @@ Done and checked (`--regress check` IDENTICAL for all six decks, `--test` and `p
 
 Open:
 
-- **Steps 3b and 3c**, as work packages A to E under step 3: A the renames (done), B `moveCard` in the engine and C the safety net (the big model), D the decks one at a time and E the clean-up (a small model).
+- **Steps 3b and 3c**, as work packages A to E under step 3: A the renames, B the engine's zone functions and C the safety net are done, D the decks one at a time and E the clean-up (a small model).
 - **Step 8**, the parts that need step 9: `--board`, `--archidekt`, and reading a real Archidekt log.
 - **Step 9**: `boardAt`, `readArchidektLog`, the Archidekt export, `replayGame`.
 - **Step 10**: ROADMAP (when the rest is done). README and ENGINE.md are up to date.
@@ -187,38 +187,36 @@ Watch out for:
 - Log texts must not change (`'(from graveyard)'` stays). The regress check compares the log analyses, so it catches that.
 - Run `npm run format` at the end (longer names move line breaks).
 
-**B. `moveCard` in the engine (the big model). The design work.**
+**B. Zone changes through engine functions. Done 2026-11-13.**
 
-- Add to `GameCore`: `moveCard(card, fromZone, toZone, libraryPosition = 'top')`. It takes the card out of `fromZone` (throws if it is not there, like `removeOrThrow`), puts it in `toZone` and, when the game has a `moveRecorder`, records the move at that moment. Zones: the six of `CARD_ZONES` in `game-log-moves.ts` (Archidekt's names). `libraryPosition`: `'top' | 'bottom'` or an index.
-- Permanents are `Perm`s, not cards, so the battlefield gets its own two paths that record the same way: entering (`enter`, `createTokens`, `playLand`; a token comes from `miscCards`) and leaving (`dies`, the pod's `podRemove`, a bounce; a token goes back to `miscCards`).
-- The recorder gets a second way in: `recordMove(card, fromZone, toZone)` puts the move in a list that the next log line takes (as `collectMoves` does today). Tapped and counters stay with the comparison for good.
-- A game needs a switch for which way its zone moves come from: `Deck.recordsExactMoves` (false until the deck is converted in package D). With it on, the comparison no longer writes zone moves for that deck's games, only tapped and counters; the recorded moves are used instead. The engine's own functions record in both cases; with the switch off their records are dropped.
-- Convert the engine's own functions: `draw`, `discard`, `toGraveyard`, `scry`, `doTutor`, `enter`, `createTokens`, `dies`, `sacrifice`, `playLand`, `crackEvolvingWilds`, `returnLandToHand`, the cast functions, `flashback`, `transmute`, `cycle`, `wishclaw`, `mulligan`, the draw and tutor spells in `resolveCardSelection`, then the other direct changes in `game-core.ts` and `game.ts` (about 45 places; find them with a search for `.push(`, `.unshift(`, `.splice(`, `.shift(`, `.pop(` and `removeOrThrow(` on `library`, `hand`, `graveyard`, `exile`, `command`, `battlefield`).
-- Keep the order of every array exactly as it is today (a card pushed to the end stays pushed to the end): results depend on it. `--regress check` must be IDENTICAL.
-- Whole-zone replacements (`this.library = ...` for a shuffle or a test setup, `Object.assign(this, copy)` in `develop`) are not moves and stay.
-- With exact moves a sorcery can show the real path. Decide here: `hand => graveyard` in one move as today, or through Archidekt's `battlefield` as in the real logs.
+As built (it differs a little from the first sketch):
 
-**C. The safety net (the big model, right after B, before any deck is converted).**
+- `GameCore` has the functions every zone change goes through (section "zones / drawing" of `game-core.ts`): `takeCard(card, zone)`, `putCard(card, zone)` (the end of the list; in the library the bottom), `moveCard(card, fromZone, toZone)`, `takeTopCardsOfLibrary(count)`, `putCardsOnTopOfLibrary(cards)`, and for permanents `putOntoBattlefield(permanent)` and `takeFromBattlefield(permanent)`. Taking and putting are two steps because a spell is in no zone while it resolves, and results depend on that (Cabal Ritual counts the graveyard).
+- With the log on they tell the recorder (`noteCardLeft`, `noteCardArrived` in `game-log-moves.ts`), so the move is written at that moment and in order. A card taken and not yet put is "on its way"; the move is written when it arrives (`hand => graveyard` for a sorcery, in one move: decided, as before).
+- There is no switch for where a deck's moves come from. The recorder keeps its picture of the table up to date with what it is told, and at every log line compares it with the real table. What differs went around the functions: it is still written as a move (as in 3a), and listed in `Game.unrecordedCardMoves` for the test. So a deck's log gets exact place by place. A deck that takes a card by hand and then calls an engine function (`enter`, `toGraveyard`) still gets the right move: the missing origin is filled in from the comparison.
+- All of the engine uses them (`game-core.ts`, `game.ts`, `pod-arena.ts`, `pod-table.ts`). Left as they are: whole-zone replacements, test setups, and `rockFirst`'s try-out of a rock (pushed and popped at once).
+- The order of every list is as before: `--regress check` IDENTICAL for all six decks.
 
-- A test per deck (next to `runGoldfishLogTests` in `engine/game-log.test.ts`, so it runs with `--test`): play 50 seeds with the log on, and at every log line compare the zone moves that were recorded with the zone moves the comparison finds. A difference fails with the card, the two zones, the turn and the text of the log line. That line points at the place that went around `moveCard`.
-- For a deck with `recordsExactMoves` off the test only reports how many differences there are (the to-do list of package D). For a converted deck any difference is BAD. It also catches new deck code that goes around `moveCard` later.
-- The same for a pod: 20 seeds, every player's game.
-- Export a few simulated games as Archidekt text (one line per move: `T<turn>; <card>; <action>`) and run them through `parseLog` and `Board` in `log-board.ts`: the rebuilt board must match the game's real zones at the end of every turn.
-- Time and size for 3,000 games per deck, against the numbers in "Status". Recording at the moment should be cheaper than comparing the zones (Meren is 30% slower with the log today).
+**C. The safety net. Done 2026-11-13, except the Archidekt round trip (with step 9).**
+
+- `npm run sim -- <deck> --test` plays 50 seeds with the log on and prints how many zone changes went around the functions, with the seed, turn, log line and move of the first eight. `npm run pod -- --test` does the same for 20 pod games.
+- For a deck with `recordsExactMoves: true` in its `index.ts` any such change is BAD (the test fails). For the others it is a `--` line: the to-do list of package D. Counts on 2026-11-13: goldfish 0 (the engine alone), Sam & Frodo 117, Gale 310, Codie 639, Meren 1252, Aesi 2197, Mike 3543 (Mike has its own `draw`).
+- Time for 3,000 games with the log against without: Meren 7.5 s / 5.6 s, Gale 29.0 / 27.1. Recording did not make the log cheaper: the comparison still runs at every line (it is the safety net and gives tapped and counters).
+- Open: export simulated games as Archidekt text and rebuild them with `Board` in `log-board.ts` (step 9 has the export).
 
 **D. The decks, one at a time (a small model, one deck per session). Smallest first: Mike (7 places), Sam & Frodo (8), Meren (17), Gale (20), Aesi (27), Codie (43).**
 
 For each deck:
 
-1. Run `npm run sim -- <deck> --test` and read the differences the safety net lists.
-2. Replace each direct zone change in the deck's folder with `moveCard` or the engine function that already does it (`draw`, `discard`, `toGraveyard`, `enter`, `dies`, mill, return to hand). Keep the order of the arrays as it is.
+1. Run `npm run sim -- <deck> --test` and read the zone changes the safety net lists (it shows eight; raise `CHANGES_SHOWN` in `engine/game-log.test.ts` to see more). Each names the log line it was found at, which leads to the code.
+2. Replace each direct zone change in the deck's folder (`this.hand.push(card)`, `removeOrThrow(this.library, card)`, `this.battlefield.push(permanent)`...) with `takeCard` / `putCard` / `moveCard` / `takeTopCardsOfLibrary` / `putOntoBattlefield` / `takeFromBattlefield`, or the engine function that already does it (`draw`, `discard`, `toGraveyard`, `enter`, `dies`). Keep the order of the lists and the moment of each change as they are.
 3. Where three decks do the same thing by hand, make it an engine function (rule of three) and note it here.
 4. Set `recordsExactMoves: true` in the deck's `index.ts`.
 5. Done when: the deck's `--test` prints no BAD line, `--regress check` is IDENTICAL for all six decks (the engine may have got a new function), `npm run pod -- --test` passes, and a `--trace 2 --moves` of the deck reads right.
 
 A deck that is not converted yet keeps its zone moves from the comparison, so the logs work all along and get exact deck by deck.
 
-**E. Clean up (a small model).** When all six decks are converted: remove `recordsExactMoves` and the zone part of the comparison (tapped and counters stay), update `ENGINE.md` ("Game logs": decks must use `moveCard`), and tick 3b and 3c in "Status".
+**E. Clean up (a small model).** When all six decks are converted: remove `recordsExactMoves` (the test is then strict for every deck) and tick 3b and 3c in "Status". The comparison stays: it is the safety net and gives tapped and counters.
 
 Later, outside this plan: with every zone change in one place, the engine can also take over the rules that hang on them ("when this leaves the battlefield", "whenever a card goes to your graveyard") instead of each deck calling its own hooks.
 

@@ -44,7 +44,7 @@ export function playPod(
 }
 
 /** A new table with every player seated and holding an opening hand. */
-function seatPlayers(
+export function seatPlayers(
   allDecks: Record<string, Deck>,
   spec: PodSpec,
   seed: number,
@@ -60,7 +60,7 @@ function seatPlayers(
 }
 
 /** Plays the game at a table to its end. */
-function playRounds(table: PodTable, spec: PodSpec): PodGame {
+export function playRounds(table: PodTable, spec: PodSpec): PodGame {
   for (table.round = 1; table.round <= spec.cap; table.round++) {
     for (const player of table.turnOrder) {
       if (!table.isAlive[player]) continue;

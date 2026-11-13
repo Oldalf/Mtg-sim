@@ -63,8 +63,10 @@ function everyOpponentDiscardsAndDraws(
   );
   for (const opponent of opponents) {
     const opponentGame = table.games[opponent];
-    for (const card of opponentGame.hand.splice(0))
+    for (const card of opponentGame.hand.slice()) {
+      opponentGame.takeCard(card, 'hand');
       opponentGame.toGraveyard(card);
+    }
     opponentGame.draw(cardsToDraw);
   }
   table.sayAs(

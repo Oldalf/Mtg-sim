@@ -37,10 +37,11 @@ import {
   cardNamesAmong,
   CardMove,
 } from './game-log';
-import { MoveRecorder } from './game-log-moves';
+import { CardZone, MoveRecorder } from './game-log-moves';
 import { firstMax, firstMin, removeOrThrow, sortDesc } from './lists';
 import {
   Candidate,
+  CardListZone,
   Config,
   KillSearcher,
   LogBoardView,
@@ -59,6 +60,14 @@ const BASIC_OF: Record<string, string> = {
   G: 'Forest',
 };
 type Snap = [ManaPool, boolean[]];
+/** What the game log calls each zone (Archidekt's names). */
+const LOG_ZONE: Record<CardListZone, CardZone> = {
+  library: 'library',
+  hand: 'hand',
+  graveyard: 'graveyard',
+  exile: 'exile',
+  command: 'commandZone',
+};
 
 /** How good a land that makes this kind of mana is to play (A = any colour, UB = blue and black, F = fetch land). */
 const LAND_MANA_SCORE: Record<string, number> = {
@@ -119,6 +128,9 @@ export abstract class GameCore<S = unknown> {
   moveRecorder: MoveRecorder | null = null;
   /** Which player of the log we are (a pod sets it; a goldfish game has one player). */
   playerInLog = 0;
+  /** Zone changes that did not go through takeCard / putCard and the like, each with the turn and the log line
+   *  it was found at (only with the log on). A test reads this to point at the code that made them. */
+  unrecordedCardMoves: string[] = [];
   library: CardDef[];
   command: CardDef[];
   /** Our commanders' names (this.command only holds the ones in the command zone right now). */
@@ -224,15 +236,25 @@ export abstract class GameCore<S = unknown> {
       cardNamesAmong(parts),
       [this.myLife, ...this.life],
     );
-    event.moves = this.collectCardMoves(kind === 'turn-end');
+    event.moves = this.collectCardMoves(kind === 'turn-end', event.text);
     this.log.push(event);
   }
 
   /** The card moves since the last log line (see game-log-moves.ts). isEndOfTurn: cards that left a zone and
    *  went nowhere are written as exiled. */
-  collectCardMoves(isEndOfTurn = false): CardMove[] {
-    if (this.moveRecorder === null) return [];
-    return this.moveRecorder.collectMoves(this, this.playerInLog, isEndOfTurn);
+  collectCardMoves(isEndOfTurn = false, logLine?: string): CardMove[] {
+    const recorder = this.moveRecorder;
+    if (recorder === null) return [];
+    const moves = recorder.collectMoves(this, this.playerInLog, isEndOfTurn);
+    if (recorder.unrecordedChanges.length) {
+      const foundAt = logLine ?? this.log[this.log.length - 1]?.text ?? '';
+      for (const change of recorder.unrecordedChanges)
+        this.unrecordedCardMoves.push(
+          `T${this.turn} "${foundAt.trim()}": ${change}`,
+        );
+      recorder.unrecordedChanges = [];
+    }
+    return moves;
   }
 
   /** Puts what changed since the last log line on that line. Called between the actions of a turn, so that the
@@ -662,8 +684,66 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ zones / drawing
+  // Every zone change goes through the functions below, so that the game log can record it at that moment.
+  // A card that was taken and not put anywhere yet is on its way (a spell that is resolving).
+
+  /** Takes a card out of a zone (it must be there). Put it somewhere with putCard. */
+  takeCard(card: CardDef, fromZone: CardListZone): void {
+    removeOrThrow(this[fromZone], card);
+    this.moveRecorder?.noteCardLeft(card.name, LOG_ZONE[fromZone]);
+  }
+
+  /** Puts a card into a zone, at the end of its list (in the library: on the bottom). */
+  putCard(card: CardDef, toZone: CardListZone): void {
+    this[toZone].push(card);
+    this.moveRecorder?.noteCardArrived(card.name, LOG_ZONE[toZone]);
+  }
+
+  /** Takes a card out of one zone and puts it at the end of another. */
+  moveCard(card: CardDef, fromZone: CardListZone, toZone: CardListZone): void {
+    this.takeCard(card, fromZone);
+    this.putCard(card, toZone);
+  }
+
+  /** Takes the top cards of the library (fewer if it runs out), top card first. */
+  takeTopCardsOfLibrary(count: number): CardDef[] {
+    const cards = this.library.splice(0, count);
+    if (this.moveRecorder)
+      for (const card of cards)
+        this.moveRecorder.noteCardLeft(card.name, 'library');
+    return cards;
+  }
+
+  /** Puts cards on top of the library; the first one ends up on top. */
+  putCardsOnTopOfLibrary(cards: CardDef[]): void {
+    this.library.unshift(...cards);
+    if (this.moveRecorder)
+      for (const card of cards)
+        this.moveRecorder.noteCardArrived(card.name, 'library');
+  }
+
+  /** Puts a permanent onto the battlefield (a token comes from nowhere, a card from where it was taken). */
+  putOntoBattlefield(permanent: Permanent): void {
+    this.battlefield.push(permanent);
+    this.moveRecorder?.noteCardArrived(
+      permanent.card.name,
+      'battlefield',
+      permanent.token,
+    );
+  }
+
+  /** Takes a permanent off the battlefield (it must be there). A token is gone; put a card somewhere with putCard. */
+  takeFromBattlefield(permanent: Permanent): void {
+    removeOrThrow(this.battlefield, permanent);
+    this.moveRecorder?.noteCardLeft(
+      permanent.card.name,
+      'battlefield',
+      permanent.token,
+    );
+  }
+
   toGraveyard(card: CardDef, _fromLibrary = false): void {
-    this.graveyard.push(card);
+    this.putCard(card, 'graveyard');
     this.onToGraveyard(card);
   }
 
@@ -672,7 +752,7 @@ export abstract class GameCore<S = unknown> {
       if (!this.library.length) return;
       this.beforeDraw();
       this.firstDrawDone = true;
-      this.hand.push(this.library.shift()!);
+      this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
     }
   }
 
@@ -682,14 +762,14 @@ export abstract class GameCore<S = unknown> {
       const card = firstMin(this.hand, (otherCard) =>
         this.discardValue(otherCard),
       );
-      removeOrThrow(this.hand, card);
+      this.takeCard(card, 'hand');
       this.toGraveyard(card);
       this.say('discard', card);
     }
   }
 
   scry(count: number, surveil = false): void {
-    const top = this.library.splice(0, count);
+    const top = this.takeTopCardsOfLibrary(count);
     const keep: CardDef[] = [],
       away: CardDef[] = [];
     for (const card of top)
@@ -698,9 +778,11 @@ export abstract class GameCore<S = unknown> {
         : away
       ).push(card);
     sortDesc(keep, (card) => this.cardValue(card));
-    this.library.unshift(...keep);
-    if (surveil) for (const otherCard of away) this.toGraveyard(otherCard);
-    else this.library.push(...away);
+    this.putCardsOnTopOfLibrary(keep);
+    for (const otherCard of away) {
+      if (surveil) this.toGraveyard(otherCard);
+      else this.putCard(otherCard, 'library');
+    }
   }
 
   shuffle(): void {
@@ -714,10 +796,10 @@ export abstract class GameCore<S = unknown> {
   ): void {
     const otherCard = this.tutorTarget(allowed, toTop, spentCard, true);
     if (otherCard === null) return;
-    removeOrThrow(this.library, otherCard);
+    this.takeCard(otherCard, 'library');
     this.shuffle();
-    if (toTop) this.library.unshift(otherCard);
-    else this.hand.push(otherCard);
+    if (toTop) this.putCardsOnTopOfLibrary([otherCard]);
+    else this.putCard(otherCard, 'hand');
     this.say('tutor ->', otherCard, toTop ? '(top)' : '');
   }
 
@@ -745,8 +827,8 @@ export abstract class GameCore<S = unknown> {
           const card = firstMin(this.hand, (anotherCard) =>
             this.cardValue(anotherCard),
           );
-          removeOrThrow(this.hand, card);
-          this.library.unshift(card);
+          this.takeCard(card, 'hand');
+          this.putCardsOnTopOfLibrary([card]);
         }
         return true;
       }
@@ -817,29 +899,30 @@ export abstract class GameCore<S = unknown> {
     if (top.length && Math.max(...top.map((card) => this.cardValue(card))) < 40)
       this.shuffle();
     else {
-      this.library.splice(0, 3);
+      this.takeTopCardsOfLibrary(3);
       sortDesc(top, (card) => this.cardValue(card));
-      this.library.unshift(...top);
+      this.putCardsOnTopOfLibrary(top);
     }
     this.draw(1);
   }
 
   /** Take the two best of the top five; the rest go to the bottom. */
   private stockUp(): void {
-    const top = this.library.splice(0, 5);
+    const top = this.takeTopCardsOfLibrary(5);
     sortDesc(top, (card) => this.cardValue(card));
-    this.hand.push(...top.slice(0, 2));
-    this.library.push(...top.slice(2));
+    for (const card of top.slice(0, 2)) this.putCard(card, 'hand');
+    for (const card of top.slice(2)) this.putCard(card, 'library');
   }
 
   /** Look at the top three: from the graveyard all go to hand, otherwise the best one does and the rest go to the bottom. */
   private seeTheTruth(fromGraveyard: boolean): void {
-    const top = this.library.splice(0, 3);
-    if (fromGraveyard || !top.length) this.hand.push(...top);
+    const top = this.takeTopCardsOfLibrary(3);
+    if (fromGraveyard || !top.length)
+      for (const card of top) this.putCard(card, 'hand');
     else {
       sortDesc(top, (card) => this.cardValue(card));
-      this.hand.push(top[0]);
-      this.library.push(...top.slice(1));
+      this.putCard(top[0], 'hand');
+      for (const card of top.slice(1)) this.putCard(card, 'library');
     }
   }
 
@@ -847,7 +930,7 @@ export abstract class GameCore<S = unknown> {
   private resolveTopFiveSplit(
     spell: 'Pieces of the Puzzle' | 'Fact or Fiction',
   ): void {
-    const top = this.library.splice(0, 5);
+    const top = this.takeTopCardsOfLibrary(5);
     let keep: CardDef[];
     if (spell === 'Pieces of the Puzzle') {
       // up to two instants/sorceries to hand, the rest to the graveyard
@@ -867,7 +950,7 @@ export abstract class GameCore<S = unknown> {
           : rest;
     }
     for (const card of top) {
-      if (keep.includes(card)) this.hand.push(card);
+      if (keep.includes(card)) this.putCard(card, 'hand');
       else this.toGraveyard(card, true);
     }
   }
@@ -945,7 +1028,7 @@ export abstract class GameCore<S = unknown> {
     const permanent = new Permanent(card);
     if (options.token || card.isToken) permanent.token = true;
     if (options.tapped) permanent.tapped = true;
-    this.battlefield.push(permanent);
+    this.putOntoBattlefield(permanent);
     if (card.name === 'Baleful Strix') this.draw(1);
     const untap = Facts.UNTAP_ON_ETB[card.name];
     if (untap) this.untapLands(untap);
@@ -992,9 +1075,8 @@ export abstract class GameCore<S = unknown> {
 
   /** A creature dies (destroyed or sacrificed): tokens are gone, cards go to the graveyard. */
   dies(permanent: Permanent): void {
-    const i = this.battlefield.indexOf(permanent);
-    if (i < 0) return;
-    this.battlefield.splice(i, 1);
+    if (!this.battlefield.includes(permanent)) return;
+    this.takeFromBattlefield(permanent);
     if (!permanent.token) this.toGraveyard(permanent.card);
     this.onDies(permanent);
   }
@@ -1084,7 +1166,7 @@ export abstract class GameCore<S = unknown> {
   ): boolean {
     const cost = this.effectiveCost(card, base, fromGraveyard);
     if (!this.pay(cost, true)) return false;
-    removeOrThrow(fromGraveyard ? this.graveyard : this.hand, card);
+    this.takeCard(card, fromGraveyard ? 'graveyard' : 'hand');
     this.sayEvent(
       'cast',
       'cast',
@@ -1096,11 +1178,11 @@ export abstract class GameCore<S = unknown> {
     this.onCastInstantOrSorcery(fromGraveyard);
     this.castTriggers(card, fromGraveyard, triggerOptions);
     if (this.podCounters(card)) {
-      (fromGraveyard ? this.exile : this.graveyard).push(card);
+      this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
       return true;
     }
     this.resolve(card, fromGraveyard, mode);
-    (fromGraveyard ? this.exile : this.graveyard).push(card);
+    this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
     return true;
   }
 
@@ -1126,14 +1208,14 @@ export abstract class GameCore<S = unknown> {
     if (fromCommand) cost = this.commanderCost(card, cost);
     if (!this.pay(cost, false)) return false;
     if (fromCommand) {
-      removeOrThrow(this.command, card);
+      this.takeCard(card, 'command');
       this.onCommanderCast(card);
-    } else removeOrThrow(this.hand, card);
+    } else this.takeCard(card, 'hand');
     this.spellsCast += 1;
     this.sayEvent('cast', 'cast', card);
     if (this.podCounters(card)) {
       // countered: a commander goes back to the command zone (its tax still counts this cast)
-      (fromCommand ? this.command : this.graveyard).push(card);
+      this.putCard(card, fromCommand ? 'command' : 'graveyard');
       return true;
     }
     this.enter(card);
@@ -1200,7 +1282,7 @@ export abstract class GameCore<S = unknown> {
     const land = firstMax(lands, (candidate) =>
       this.scoreLandToPlay(candidate, landsOnBattlefield, needManaNow),
     );
-    removeOrThrow(this.hand, land);
+    this.takeCard(land, 'hand');
     this.landPlayed = true;
     const landInfo = { ...landInfoOf(land) };
     if (landInfo.special === 'wilds') {
@@ -1220,7 +1302,7 @@ export abstract class GameCore<S = unknown> {
       permanent.tapped ? '(tapped)' : '',
     );
     if (landInfo.special === 'bounce') this.returnLandToHand();
-    this.battlefield.push(permanent);
+    this.putOntoBattlefield(permanent);
     this.onLandEnter(permanent, false);
   }
 
@@ -1379,12 +1461,12 @@ export abstract class GameCore<S = unknown> {
       this.library.find((card) => card.name === BASIC_OF[colour]) ??
       this.library.find((card) => card.land && card.land.basic) ??
       null;
-    this.graveyard.push(wilds);
+    this.putCard(wilds, 'graveyard');
     if (basic) {
-      removeOrThrow(this.library, basic);
+      this.takeCard(basic, 'library');
       this.shuffle();
       const basicPermanent = new Permanent(basic, basic.land, true);
-      this.battlefield.push(basicPermanent);
+      this.putOntoBattlefield(basicPermanent);
       this.onLandEnter(new Permanent(wilds, wildsInfo), true);
       this.onLandEnter(basicPermanent, false);
     }
@@ -1406,8 +1488,8 @@ export abstract class GameCore<S = unknown> {
     const returned = others[0];
     if (!returned.tapped && this.manaSourceKind(returned))
       this.tap(returned, 'N');
-    removeOrThrow(this.battlefield, returned);
-    this.hand.push(returned.card);
+    this.takeFromBattlefield(returned);
+    this.putCard(returned.card, 'hand');
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */
@@ -1417,20 +1499,20 @@ export abstract class GameCore<S = unknown> {
   flashback(card: CardDef): boolean {
     if (!this.pay(this.effectiveCost(card, new Cost(1, 1), true), true))
       return false;
-    removeOrThrow(this.graveyard, card);
+    this.takeCard(card, 'graveyard');
     this.myLife -= 3;
     this.sayEvent('cast', 'flashback', card);
     this.spellsCast += 1;
     this.onCastInstantOrSorcery(true);
     this.resolve(card, true);
-    this.exile.push(card);
+    this.putCard(card, 'exile');
     return true;
   }
 
   wishclaw(card: CardDef): boolean {
     if (!this.pay(this.effectiveCost(card).plus(new Cost(1)), false))
       return false;
-    removeOrThrow(this.hand, card);
+    this.takeCard(card, 'hand'); // it goes to an opponent
     this.say('Wishclaw Talisman (cast + activate)');
     this.doTutor(() => true, false);
     return true;
@@ -1438,8 +1520,7 @@ export abstract class GameCore<S = unknown> {
 
   transmute(card: CardDef): boolean {
     if (!this.pay(new Cost(1, 2), false)) return false;
-    removeOrThrow(this.hand, card);
-    this.graveyard.push(card);
+    this.moveCard(card, 'hand', 'graveyard');
     this.say('transmute', card.name);
     this.doTutor(
       (otherCard) =>
@@ -1451,8 +1532,7 @@ export abstract class GameCore<S = unknown> {
 
   cycle(card: CardDef): boolean {
     if (!this.pay(new Cost(2))) return false;
-    removeOrThrow(this.hand, card);
-    this.graveyard.push(card);
+    this.moveCard(card, 'hand', 'graveyard');
     this.say('cycle', card);
     this.draw(1);
     return true;
@@ -1735,10 +1815,11 @@ export abstract class GameCore<S = unknown> {
     const sizes = [7, 7, 6, 5];
     for (let attempt = 0; attempt < sizes.length; attempt++) {
       const size = sizes[attempt];
-      this.library.push(...this.hand);
-      this.hand = [];
+      for (const card of this.hand.slice())
+        this.moveCard(card, 'hand', 'library');
       this.shuffle();
-      this.hand = this.library.splice(0, 7);
+      for (const card of this.takeTopCardsOfLibrary(7))
+        this.putCard(card, 'hand');
       if (
         size <= (rule.alwaysKeep ?? 5) ||
         keepsHand(rule, attempt, this.hand)
@@ -1747,8 +1828,7 @@ export abstract class GameCore<S = unknown> {
           const card = firstMin(this.hand, (otherCard) =>
             this.cardValue(otherCard),
           );
-          removeOrThrow(this.hand, card);
-          this.library.push(card);
+          this.moveCard(card, 'hand', 'library');
         }
         return;
       }

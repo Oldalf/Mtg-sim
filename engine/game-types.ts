@@ -64,6 +64,10 @@ export const BASE_CONFIG: Config = {
   planner_budget: 0, // kill-search effort when scoring a position
 };
 
+/** A zone that is a list of cards (the battlefield holds permanents and has its own functions). */
+export type CardListZone =
+  'library' | 'hand' | 'graveyard' | 'exile' | 'command';
+
 /** Where a permanent came from when it entered the battlefield. */
 export type Zone =
   'hand' | 'graveyard' | 'library' | 'command' | 'exile' | 'token' | 'stack';

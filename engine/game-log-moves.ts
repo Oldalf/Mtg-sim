@@ -2,11 +2,16 @@
  * Card moves for the game log, in Archidekt's simple format ("moved hand => battlefield", "tapped", "untapped",
  * "counter:+1 / +1=3").
  *
- * The recorder remembers what a player's table looked like at the last log event. At the next event it compares
- * and writes down the differences. It only reads the game.
+ * Zone changes are recorded at the moment they happen: the game tells the recorder when a card leaves a zone and
+ * when it arrives in one (GameCore.takeCard / putCard / moveCard and the battlefield functions).
  *
- * Limits of comparing: a card that moves twice between two events shows as one move, and the order of the moves
- * inside one event is not known. Cards are told apart by name only.
+ * The recorder also remembers what a player's table looked like at the last log event, and compares at the next
+ * one. That gives the tapped / untapped and counter changes (a payment that is only tested taps lands and undoes
+ * it, so only the end result counts), and it finds every zone change that went around the functions above: those
+ * are still written as moves (in no known order, and a card that moved twice shows as one move), and they are
+ * listed in `unrecordedChanges` so that a test can point at the code that made them.
+ *
+ * Cards are told apart by name only. The recorder only reads the game.
  */
 import { CardDef } from './cards';
 import { CardMove } from './game-log';
@@ -31,7 +36,7 @@ const CARD_ZONES = [
   'exile',
   'commandZone',
 ] as const;
-type CardZone = (typeof CARD_ZONES)[number];
+export type CardZone = (typeof CARD_ZONES)[number];
 const TOKEN_ZONE = 'miscCards';
 /** Where a card is written to when it left every zone the engine keeps (a deck dropped it), and where it is
  *  written from when it shows up out of nowhere. */
@@ -55,7 +60,23 @@ interface TableState {
 interface CardOnItsWay {
   card: string;
   fromZone: CardZone;
+  /** Did the game tell the recorder that it left (false = found by comparing)? */
+  wasRecorded: boolean;
 }
+
+/** A zone change the game told the recorder about. fromZone is null while it is not known where the card came
+ *  from (the game put it somewhere without saying where it took it from). */
+interface RecordedMove {
+  card: string;
+  fromZone: string | null;
+  toZone: string;
+}
+
+function addToCount(counts: CountByName, name: string, change: number): void {
+  counts.set(name, (counts.get(name) ?? 0) + change);
+}
+
+const copyOfCounts = (counts: CountByName): CountByName => new Map(counts);
 
 function addOne(counts: CountByName, name: string): void {
   counts.set(name, (counts.get(name) ?? 0) + 1);
@@ -129,8 +150,13 @@ function valuesAdded(before: number[], after: number[]): number[] {
 }
 
 export class MoveRecorder {
+  /** The table at the last log event, kept up to date with the zone changes the game reports. */
   private lastState: TableState;
   private cardsOnTheirWay: CardOnItsWay[] = [];
+  private recordedMoves: RecordedMove[] = [];
+  /** Zone changes that were found by comparing, not reported by the game ("Swamp; moved hand => battlefield").
+   *  Whoever reads them empties the list. */
+  unrecordedChanges: string[] = [];
 
   /** zones: the table to start from (null = an empty table). */
   constructor(zones: TableZones | null) {
@@ -140,9 +166,46 @@ export class MoveRecorder {
   /** A recorder that goes on from the same point (for a copy of the game that may replace the game). */
   copy(): MoveRecorder {
     const copy = new MoveRecorder(null);
-    copy.lastState = this.lastState; // a state is never changed, only replaced
+    const state = this.lastState;
+    copy.lastState = {
+      ...state, // tapped, untapped and counters are never changed, only replaced
+      tokens: copyOfCounts(state.tokens),
+      cardsInZone: {
+        library: copyOfCounts(state.cardsInZone.library),
+        hand: copyOfCounts(state.cardsInZone.hand),
+        battlefield: copyOfCounts(state.cardsInZone.battlefield),
+        graveyard: copyOfCounts(state.cardsInZone.graveyard),
+        exile: copyOfCounts(state.cardsInZone.exile),
+        commandZone: copyOfCounts(state.cardsInZone.commandZone),
+      },
+    };
     copy.cardsOnTheirWay = this.cardsOnTheirWay.slice();
+    copy.recordedMoves = this.recordedMoves.slice();
     return copy;
+  }
+
+  /** The game took a card out of a zone. A token that leaves the battlefield is gone. */
+  noteCardLeft(card: string, fromZone: CardZone, isToken = false): void {
+    if (isToken) {
+      addToCount(this.lastState.tokens, card, -1);
+      this.recordedMoves.push({ card, fromZone, toZone: TOKEN_ZONE });
+      return;
+    }
+    addToCount(this.lastState.cardsInZone[fromZone], card, -1);
+    this.cardsOnTheirWay.push({ card, fromZone, wasRecorded: true });
+  }
+
+  /** The game put a card into a zone. A token comes from nowhere. */
+  noteCardArrived(card: string, toZone: CardZone, isToken = false): void {
+    if (isToken) {
+      addToCount(this.lastState.tokens, card, 1);
+      this.recordedMoves.push({ card, fromZone: TOKEN_ZONE, toZone });
+      return;
+    }
+    addToCount(this.lastState.cardsInZone[toZone], card, 1);
+    const fromZone = this.takeCardOnItsWay(card);
+    if (fromZone !== toZone)
+      this.recordedMoves.push({ card, fromZone, toZone });
   }
 
   /**
@@ -157,14 +220,37 @@ export class MoveRecorder {
     const before = this.lastState;
     const after = readTableState(zones);
     this.lastState = after;
-    const actions = [
+    // what the game did not report shows as a difference between the table we kept up to date and the real one
+    const foundByComparing = [
       ...this.zoneChanges(before, after),
-      ...(settleCardsOnTheirWay ? this.settleCardsOnTheirWay() : []),
       ...tokenChanges(before, after),
+    ];
+    this.unrecordedChanges.push(...foundByComparing.map(describeAction));
+    const actions = [
+      ...this.takeRecordedMoves(),
+      ...foundByComparing,
+      ...(settleCardsOnTheirWay ? this.settleCardsOnTheirWay() : []),
       ...tapChanges(before, after),
       ...counterChanges(before, after),
     ];
     return actions.map(([card, action]) => ({ player, card, action }));
+  }
+
+  /** The reported zone changes since the last call, in the order they happened. */
+  private takeRecordedMoves(): CardAction[] {
+    const actions = this.recordedMoves.map((move): CardAction => [
+      move.card,
+      `moved ${move.fromZone ?? UNKNOWN_ZONE} => ${move.toZone}`,
+    ]);
+    this.recordedMoves = [];
+    return actions;
+  }
+
+  /** A reported arrival of this card that does not know yet where the card came from. */
+  private arrivalWithoutOrigin(card: string): RecordedMove | undefined {
+    return this.recordedMoves.find(
+      (move) => move.card === card && move.fromZone === null,
+    );
   }
 
   /** Cards that left one zone and showed up in another. */
@@ -190,8 +276,15 @@ export class MoveRecorder {
         if (fromZone !== toZone)
           actions.push([card, `moved ${fromZone} => ${toZone}`]);
       }
-      for (const fromZone of zonesLeft)
-        this.cardsOnTheirWay.push({ card, fromZone });
+      for (const fromZone of zonesLeft) {
+        // the game reported where the card went but not where it came from: now we know
+        const arrival = this.arrivalWithoutOrigin(card);
+        if (arrival) {
+          arrival.fromZone = fromZone;
+          this.unrecordedChanges.push(`${card}; left ${fromZone}`);
+        } else
+          this.cardsOnTheirWay.push({ card, fromZone, wasRecorded: false });
+      }
     }
     return actions;
   }
@@ -205,19 +298,27 @@ export class MoveRecorder {
   }
 
   private settleCardsOnTheirWay(): CardAction[] {
-    const actions = this.cardsOnTheirWay
-      .filter((onItsWay) => onItsWay.fromZone !== UNKNOWN_ZONE)
-      .map((onItsWay): CardAction => [
-        onItsWay.card,
-        `moved ${onItsWay.fromZone} => ${UNKNOWN_ZONE}`,
-      ]);
+    const settled = this.cardsOnTheirWay.filter(
+      (onItsWay) => onItsWay.fromZone !== UNKNOWN_ZONE,
+    );
+    const actionOf = (onItsWay: CardOnItsWay): CardAction => [
+      onItsWay.card,
+      `moved ${onItsWay.fromZone} => ${UNKNOWN_ZONE}`,
+    ];
+    this.unrecordedChanges.push(
+      ...settled
+        .filter((onItsWay) => !onItsWay.wasRecorded)
+        .map((onItsWay) => describeAction(actionOf(onItsWay))),
+    );
     this.cardsOnTheirWay = [];
-    return actions;
+    return settled.map(actionOf);
   }
 }
 
 /** A card name and what happened to it. */
 type CardAction = [string, string];
+
+const describeAction = ([card, action]: CardAction) => `${card}; ${action}`;
 
 function tokenChanges(before: TableState, after: TableState): CardAction[] {
   const actions: CardAction[] = [];

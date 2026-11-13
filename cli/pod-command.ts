@@ -6,7 +6,7 @@ import { Config } from '../engine/game-types';
 import * as Pod from '../engine/pod';
 import { printPod } from '../engine/pod-report';
 import { runPodTests } from '../engine/pod.test';
-import { runPodLogTests } from '../engine/game-log.test';
+import { runPodExactMoveTests, runPodLogTests } from '../engine/game-log.test';
 import { describePodResult } from '../engine/pod-report';
 import { formatGameLog } from '../engine/game-log-text';
 import { PodSpec } from '../engine/pod-types';
@@ -47,7 +47,8 @@ export async function runPodCommand(
   if (args.test) {
     const podTestsPassed = runPodTests();
     const isLogHarmless = runPodLogTests(decks);
-    process.exit(podTestsPassed && isLogHarmless ? 0 : 1);
+    const areMovesRecorded = runPodExactMoveTests(decks);
+    process.exit(podTestsPassed && isLogHarmless && areMovesRecorded ? 0 : 1);
   }
   const spec = Pod.podSpec(
     decks,
