@@ -73,7 +73,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 |---|---|---|---|---|
 | 0 | The shapes and the skeleton | - | big model, first and alone | done (2026-11-13) |
 | 1 | Reports as data | 0 | small model | done (2026-11-13) |
-| 2 | Runs that report progress and can be stopped | 0 | big model | open |
+| 2 | Runs that report progress and can be stopped | 0 | big model | done (2026-11-13) |
 | 3 | Decks and decklists on the server | 0 | small model | open |
 | 4 | Starting, following and stopping a run on the server | 1, 2 | big model | open |
 | 5 | Game logs on the server | 0 | small model | open |
@@ -119,6 +119,7 @@ The page needs the numbers, not printed text.
 - Seeds and results must not depend on any of this: `--regress check` IDENTICAL, and the fixed-seed pod run unchanged.
 - A stopped logged run still gets its `index.json` for the games that were played.
 - Done when: a test starts a 2,000-game run, sees progress grow, stops it and gets a partial result; the regress checks pass.
+- Notes (task 2, 2026-11-13): the loop is `runJobsInWorkers` in `engine/worker-pool.ts` (with `splitSeedsIntoJobs`). `simulate` and `simulatePod` take a last optional `control: RunControl` (`onProgress(gamesPlayed, gamesTotal)`, `stopSignal`: an `AbortSignal`) and set `wasStopped` on their result. A stop ends the workers at once; the jobs they were in the middle of are dropped, so a stopped run holds whole jobs only (its seeds are not 1..n without gaps). `finishLoggedRun` on the returned `logRows` writes the index of the games played, but `run.json` keeps the asked `gameCount`: task 4 may want to correct it. The tests are `engine/worker-pool.test.ts`, run by `npm run app -- --test` (new, also part of `npm run verify`); task 14 adds the API tests there.
 
 ### 3. Decks and decklists on the server
 
