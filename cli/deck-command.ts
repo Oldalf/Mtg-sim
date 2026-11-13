@@ -6,6 +6,8 @@ import * as path from 'path';
 import { Config } from '../engine/game-types';
 import * as Runner from '../engine/runner';
 import {
+  buildDiagReport,
+  buildKillTurnReport,
   printCompare,
   printDiag,
   printHands,
@@ -119,10 +121,12 @@ export async function runDeckCommand(
         (await simulateLogged(listFile, configWithSettings, 'diag')).diag!,
       );
     printDiag(
-      deck,
-      listFiles.map((listFile) => path.basename(listFile)),
-      rowsPerList,
-      games,
+      buildDiagReport(
+        deck,
+        listFiles.map((listFile) => path.basename(listFile)),
+        rowsPerList,
+        games,
+      ),
     );
   } else if (args.rank) {
     await rank(deck, firstList, games, configWithSettings, workers);
@@ -145,12 +149,14 @@ export async function runDeckCommand(
       '-changed',
     );
     printCompare(
-      ['default', args.settings.join(' ')],
-      [defaultTable, settingsTable],
-      defaultConfig,
-      games,
-      deck.metrics,
-      deck.compareTurns,
+      buildKillTurnReport(
+        ['default', args.settings.join(' ')],
+        [defaultTable, settingsTable],
+        defaultConfig,
+        games,
+        deck.metrics,
+        deck.compareTurns,
+      ),
     );
   } else if (listFiles.length === 1) {
     const table = await killTable(firstList, configWithSettings);
@@ -170,12 +176,14 @@ export async function runDeckCommand(
       );
     }
     printCompare(
-      listFiles,
-      tables,
-      defaultConfig,
-      games,
-      deck.metrics,
-      deck.compareTurns,
+      buildKillTurnReport(
+        listFiles,
+        tables,
+        defaultConfig,
+        games,
+        deck.metrics,
+        deck.compareTurns,
+      ),
     );
   }
   logSession.printGamesWorthALook();

@@ -4,6 +4,7 @@ import * as C from './cards';
 import { Config } from './game-types';
 import { Deck, DiagRow, KillTurns } from './runner';
 import type { KillKind, Table } from './run-types';
+import type { DiagReport, KillTurnReport } from '../app/api-types';
 
 export type { Table };
 
@@ -91,43 +92,58 @@ export function printSingle(
   );
 }
 
-/** First list is the base; every other list is shown as a difference to it. */
-export function printCompare(
-  listFiles: string[],
+/** The data of a comparison (or of one list): what `printCompare` prints and the page shows. The first list is the base. */
+export function buildKillTurnReport(
+  listLabels: string[],
   tables: Table[],
   config: Config,
   gameCount: number,
   metrics = DEFAULT_METRICS,
   compareTurns?: number[],
-): void {
+): KillTurnReport {
   const maxTurn = config.max_turn as number;
-  const anyPrefix = metrics[0][1] ? metrics[0][1] + ' ' : '';
-  const protectedPrefix = metrics[1][1] + ' ';
-  const turns = compareTurns ?? [6, 7, maxTurn];
-  const secondLastTurn = turns[turns.length - 2];
+  return {
+    kind: 'kill-turns',
+    gameCount,
+    maxTurn,
+    opponents: config.opponents as number,
+    opponentLife: config.opp_life as number,
+    resultNames: metrics,
+    compareTurns: compareTurns ?? [6, 7, maxTurn],
+    noisePoints: noisePoints(gameCount),
+    rows: listLabels.map((label, index) => ({
+      label: path.basename(label),
+      table: tables[index],
+    })),
+  };
+}
+
+/** First list is the base; every other list is shown as a difference to it. */
+export function printCompare(report: KillTurnReport): void {
+  const { maxTurn, compareTurns, resultNames, rows } = report;
+  const anyPrefix = resultNames[0][1] ? resultNames[0][1] + ' ' : '';
+  const protectedPrefix = resultNames[1][1] + ' ';
+  const secondLastTurn = compareTurns[compareTurns.length - 2];
   const columns = (
     [
-      ...turns.map((turn) => [`${anyPrefix}by T${turn}`, 'any', turn]),
+      ...compareTurns.map((turn) => [`${anyPrefix}by T${turn}`, 'any', turn]),
       [`${protectedPrefix}T${secondLastTurn}`, 'protected', secondLastTurn],
       [`${protectedPrefix}T${maxTurn}`, 'protected', maxTurn],
     ] as [string, KillKind, number][]
   ).filter(([, , turn]) => turn <= maxTurn);
-  const baseTable = tables[0];
-  const nameWidth = Math.max(
-    24,
-    ...listFiles.map((file) => path.basename(file).length + 1),
-  );
+  const baseTable = rows[0].table;
+  const nameWidth = Math.max(24, ...rows.map((row) => row.label.length + 1));
   console.log(
-    `\n${gameCount} games each, same seeds. Difference to ${path.basename(listFiles[0])} in brackets ` +
-      `(about +/-${oneDecimal(noisePoints(gameCount))} is noise).`,
+    `
+${report.gameCount} games each, same seeds. Difference to ${rows[0].label} in brackets ` +
+      `(about +/-${oneDecimal(report.noisePoints)} is noise).`,
   );
   console.log(
     `${'list'.padEnd(nameWidth)} ` +
       columns.map(([title]) => padLeft(title, 13)).join(' ') +
       ` ${padLeft('avg turn', 9)}`,
   );
-  listFiles.forEach((file, index) => {
-    const listTable = tables[index];
+  for (const { label, table: listTable } of rows) {
     const cells = columns.map(([, kind, turn]) => {
       const percent = percentByTurn(listTable, kind, turn);
       const difference = percent - percentByTurn(baseTable, kind, turn);
@@ -141,42 +157,56 @@ export function printCompare(
       );
     });
     console.log(
-      `${path.basename(file).padEnd(nameWidth)} ` +
+      `${label.padEnd(nameWidth)} ` +
         cells.map((cell) => padLeft(cell, 13)).join(' ') +
         ` ${padLeft(listTable.averageTurn.any.toFixed(2), 9)}`,
     );
-  });
+  }
 }
 
-/** --diag: the deck's own measures for each list, on the same seeds (differences to the first list in brackets). */
-export function printDiag(
+/** --diag as data: the deck's own measures for each list, on the same seeds. The first list is the base. */
+export function buildDiagReport(
   deck: Deck,
   listNames: string[],
   rowsPerList: DiagRow[][],
   gameCount: number,
-): void {
+): DiagReport {
   const metrics = deck.diagMetrics ?? [];
+  return {
+    kind: 'diag',
+    gameCount,
+    measures: metrics.map(({ label, unit }) => ({ label, unit })),
+    rows: listNames.map((label, listIndex) => ({
+      label,
+      values: metrics.map((metric) => metric.measure(rowsPerList[listIndex])),
+    })),
+  };
+}
+
+/** --diag: the deck's own measures for each list (differences to the first list in brackets). */
+export function printDiag(report: DiagReport): void {
   const labelWidth =
-    Math.max(...metrics.map((metric) => metric.label.length)) + 2;
-  console.log(`${gameCount} games each, same seeds. Noise: about +/-2 points for a %, +/-0.1 for a turn.
+    Math.max(...report.measures.map((measure) => measure.label.length)) + 2;
+  console.log(`${report.gameCount} games each, same seeds. Noise: about +/-2 points for a %, +/-0.1 for a turn.
 `);
   console.log(
     ''.padEnd(labelWidth) +
-      listNames.map((name) => name.slice(0, 18).padStart(18)).join(''),
+      report.rows.map((row) => row.label.slice(0, 18).padStart(18)).join(''),
   );
-  for (const metric of metrics) {
-    const values = rowsPerList.map((rows) => metric.measure(rows));
-    const decimals = metric.unit === '%' ? 1 : 2;
-    const cells = values.map((value, index) => {
-      const difference = value - values[0];
+  report.measures.forEach((measure, measureIndex) => {
+    const baseValue = report.rows[0].values[measureIndex];
+    const decimals = measure.unit === '%' ? 1 : 2;
+    const cells = report.rows.map((row, rowIndex) => {
+      const value = row.values[measureIndex];
+      const difference = value - baseValue;
       const differenceText =
-        index === 0
+        rowIndex === 0
           ? ''
           : ` (${difference >= 0 ? '+' : ''}${difference.toFixed(decimals)})`;
       return (value.toFixed(decimals) + differenceText).padStart(18);
     });
-    console.log(metric.label.padEnd(labelWidth) + cells.join(''));
-  }
+    console.log(measure.label.padEnd(labelWidth) + cells.join(''));
+  });
 }
 
 // ================================================================ --hands

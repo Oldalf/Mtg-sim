@@ -168,7 +168,8 @@ export interface KillTurnRow {
   /** The list file name, or "default" / the changed settings when one list is run with changed settings. */
   label: string;
   table: Table;
-  runFolder: string;
+  /** Set by the server, which knows the run folders; the engine's report leaves it out. */
+  runFolder?: string;
 }
 
 /** A goldfish run with --diag: the deck's own measures for each list (what `printDiag` prints). */
@@ -177,7 +178,7 @@ export interface DiagReport {
   gameCount: number;
   measures: { label: string; unit: '%' | 'turn' | 'n' }[];
   /** The first row is the base. values[i] belongs to measures[i]. */
-  rows: { label: string; values: number[]; runFolder: string }[];
+  rows: { label: string; values: number[]; runFolder?: string }[];
 }
 
 /** A pod run (what `printPod` prints). */
@@ -199,7 +200,8 @@ export interface PodReport {
   averageGameLength: number | null;
   /** Did any game have a win attempt, removal or counterspell? If not, the page leaves the interaction table out. */
   hadInteraction: boolean;
-  runFolder: string;
+  /** Set by the server, like the run folder of the other reports. */
+  runFolder?: string;
 }
 
 export interface PodDeckReport {
@@ -212,9 +214,9 @@ export interface PodDeckReport {
   averageWinTurn: number | null;
   winTurn10Percent: number | null;
   winTurn90Percent: number | null;
-  /** Of its wins: its own win with others alive, and last one standing. */
-  declaredPercent: number;
-  standingPercent: number;
+  /** Of its wins: its own win with others alive, and last one standing (null when it never won). */
+  declaredPercent: number | null;
+  standingPercent: number | null;
   /** Share of all games in which it was the first one out. */
   outFirstPercent: number;
   /** Its win rate in each seat (0 = first to play); null for a seat it never had. */
