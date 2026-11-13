@@ -3,12 +3,7 @@
  * last command); a command that plays several lists keeps a run folder for each.
  */
 import * as C from '../engine/cards';
-import {
-  GameIndexRow,
-  RunInfo,
-  clearSessionLogs,
-  createRunFolder,
-} from '../engine/game-log-files';
+import { GameIndexRow, clearSessionLogs } from '../engine/game-log-files';
 import {
   LoggedRun,
   describeTaggedGames,
@@ -21,16 +16,12 @@ export class LogSession {
 
   constructor(private readonly isLogged: boolean) {}
 
-  /** Makes the folder of a new run. Returns undefined when the log is off. */
-  startRun(
-    label: string,
-    run: Omit<RunInfo, 'name' | 'date' | 'lists' | 'listHashes'>,
-    listFiles: string[],
-  ): string | undefined {
+  /** Makes the folder of a new run with createRunFolder (engine/logged-runs.ts). Returns undefined when the log is off. */
+  startRun(createRunFolder: () => string): string | undefined {
     if (!this.isLogged) return undefined;
     if (!this.hasStarted) clearSessionLogs();
     this.hasStarted = true;
-    return createRunFolder(label, run, listFiles);
+    return createRunFolder();
   }
 
   /** The games of a run are played: tag them and write the index. */
