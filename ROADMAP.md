@@ -6,7 +6,7 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 
 - Prettier is set up and the code is formatted (`npm run format`).
 - Done: the existing code was brought in line with CLAUDE.md (rule 0 names, readability, KISS, rule of three). Every change left `--regress check` IDENTICAL for all decks and pod output unchanged.
-- Known leftovers: card-nickname constants in aesi (e.g. `BSZ`, `OMNI`), a few 3+ letter abbreviations, and `engine/game/game-core.ts` is still about 1850 lines.
+- Known leftovers: card-nickname constants in aesi (e.g. `BSZ`, `OMNI`), a few 3+ letter abbreviations, and `engine/game/game-core.ts` is still about 2,280 lines.
 
 ## 2. Scryfall bulk data replaces per-card fetching (done)
 
@@ -30,3 +30,26 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 - Card images come from Scryfall by `scryfall_id` and are kept in `data/scryfall/images/`; without them a card shows as text.
 - Tests: `npm run app -- --test` (the API) and `ng test` in `app/web/` (the board of the viewer, the report tables, the two forms); `npm run verify` runs both.
 - Left for later: pick the print of a card in a decklist (for its image): the image call and the card component already take a Scryfall id (`?print=`); still to do are the list of prints of a card (from Scryfall's search, not in the bulk data) and a place for the choice in the decklist file. Not in the app yet (still on the command line): `--rank`, `--cut`, `--hands`, `--analyze`, `--regress`, the card data commands, editing lists.
+
+## 5. Tidy up and a game you can watch (done 2026-11-14)
+
+The plan and its notes per task are in git (`PLAN.md` at commit `85acdc5`).
+
+- Fewer decklists: each deck keeps `decklist.txt` (the original), its adopted list as `lists/proposed.txt` and the alternatives named after what they change. The app's archive switch is gone.
+- The engine is in folders by topic (`cards`, `game`, `game-log`, `pod`, `run`, `tools`, `util`); `ENGINE.md` has the table.
+- `/add-deck` (`.claude/skills/add-deck/SKILL.md`) walks a model through adding a deck; it was tried on the Edgar deck.
+- The game viewer has autoplay (Space, three speeds, kept in `localStorage`), the line in the URL (`?line=`), and is a grid table of seats that keep their place (see step 4), checked at 1 to 6 seats, real logs and phone width.
+
+## Ideas not decided (Pontus picks)
+
+Left from the planning of step 5. Each names the model it would need.
+
+1. **Split `engine/game/game-core.ts`** (Opus 5.5). 2,276 lines, the size guide says about 800: one file per topic (zones, mana and payment, casting, creatures and combat, turn loop, planner). Must be IDENTICAL. `decks/aesi/game.ts` (1,129) and `decks/mike/game.ts` (962) are over the guide too.
+2. **Shorter file names inside the engine folders** (Haiku 5.5). `game-log/game-log-files.ts` to `game-log/files.ts`, `pod/pod-table.ts` to `pod/table.ts`. A second round of import changes.
+3. **One place to register a deck** (Sonnet 5.5). Today a deck is named in `DECKS`, `TESTS`, `REGRESS` in `decks/index.ts` and two arrays in `scripts/verify.mjs`. If each deck's `index.ts` exported its tests and regress lists and `verify` asked the simulator for the names, it would be one line (and `/add-deck` shorter).
+4. **A rule for test lists** (Pontus, then Haiku 5.5). Test lists go to a folder git ignores (say `lists/scratch/`); only a list Pontus picks is copied into `lists/`. The rule goes into `CLAUDE.md` and each deck's `PLAN.md`.
+5. **The app knows the adopted list** (Sonnet 5.5). Mark `lists/proposed.txt` where it exists and preselect it in Simulate and Pod. Also the open point in `decks/aesi/PLAN.md`: make the proposed list the default or not.
+6. **A skill for testing a swap** (Opus 5.5). Build the list, run 16,000 games against the base with the same seeds, read `--diag`, write the result into the deck's `PLAN.md` and `SWAPS.txt`.
+7. **One board, not two** (Sonnet 5.5). `engine/tools/log-board.ts` (the analyzer) and `shared/game-log-board.ts` (the log, which the viewer uses) each apply card moves with their own code.
+8. **Leftovers of step 1** (Haiku 5.5). The card-nickname constants in aesi (`BSZ`, `OMNI`) and a few abbreviations. Must be IDENTICAL.
+9. **Watch a game straight from a result** (Haiku 5.5). A "watch" button next to each game in "games worth a look" and the pod report that opens the viewer already playing (`?play=1`).

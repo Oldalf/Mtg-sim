@@ -1,6 +1,6 @@
 # CLAUDE.md (the page)
 
-The page of the app (roadmap step 4): an Angular 22 project with Angular Material, built into `../../dist/web/` and served by the Node server in `../server/`. Read the project's `CLAUDE.md` (coding standards, rule 0 names) and `PLAN.md` (the tasks and their rules) first; they hold here too.
+The page of the app (roadmap step 4): an Angular 22 project with Angular Material, built into `../../dist/web/` and served by the Node server in `../server/`. Read the project's `CLAUDE.md` (coding standards, rule 0 names) and `PLAN.md` (the roadmap step in progress, if it touches the page) first; they hold here too.
 
 ## Where things are
 
