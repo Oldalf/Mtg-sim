@@ -81,7 +81,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 7 | Card images | 0 | small model | done (2026-11-13) |
 | 8 | Page: decks and decklists | 3, 6 | small model | done (2026-11-13) |
 | 9 | Page: simulate | 4, 6 | big model | done (2026-11-14) |
-| 10 | Charts for the results | 9 | small model | open |
+| 10 | Charts for the results | 9 | small model | done (2026-11-14) |
 | 11 | Page: pod | 4, 6 (after 9: same pattern) | small model | open |
 | 12 | Page: the games of a run | 5, 6 | small model | open |
 | 13 | Page: the game viewer | 5, 6, 7 | big model | open |
