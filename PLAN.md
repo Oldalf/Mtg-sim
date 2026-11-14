@@ -124,6 +124,8 @@ Seven commits, one per folder, in this order: `util`, `cards`, `game`, `game-log
   - The page (`app/web/`) imports only `shared/` and `app/api-types.ts`, never `engine/`. Check that `app/api-types.ts` still builds there (`npx ng build` in `app/web/`).
 - After the last folder: `npm run verify -- --full` must be OK with every deck IDENTICAL, and the pod output must equal the saved one byte for byte.
 
+Done 2026-11-14: all seven folders moved, committed as one commit (not seven). `ROOT` in `engine/cards/cards.ts` and the worker start in `engine/run/worker-pool.ts` are untouched. `npm run verify -- --full --eco` gave VERIFY OK: every deck IDENTICAL, the fixed-seed pod run equals `regress_baseline/pod.txt`. B3 still has to update the `engine/<file>.ts` paths in the docs and add the Folders table to `ENGINE.md`.
+
 ### B3. Docs follow the move (Haiku 5.5, after B2)
 
 Update every `engine/<file>.ts` path in `ENGINE.md`, `README.md`, `CLAUDE.md`, `app/web/CLAUDE.md`, `POD_PLAN.md`, `ROADMAP.md`, the deck `PLAN.md` files and the header comments in the code. Add a short "Folders" table to `ENGINE.md` (the table of B1). Done when a search for `engine/[a-z-]+\.ts` finds only paths that exist.

@@ -1,7 +1,7 @@
 import { FOOD, FRODO, GOLLUM, SAM, isHalfling } from './cards';
 import type { SamFrodoGame } from './game';
-import { Cost } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
+import { Cost } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
 
 // ================================================================ combat
 /** Goldfish combat: only Frodo (for the Ring) and Gollum (for its end-step drain) attack, unless everything kills the table. */

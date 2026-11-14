@@ -1,8 +1,8 @@
 import { MELOKU, MINDSWEEPER, RETURNERS, TOK, UYO } from './cards';
 import type { AesiGame } from './game';
-import { CardDef, Cost, makeToken } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
-import { firstMax, firstMin, removeIfPresent } from '../../engine/lists';
+import { CardDef, Cost, makeToken } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
+import { firstMax, firstMin, removeIfPresent } from '../../engine/util/lists';
 
 // ---------------------------------------------------------------- actions
 export function bounceAndReplayLand(

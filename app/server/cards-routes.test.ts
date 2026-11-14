@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import type { AddressInfo } from 'net';
 import type { CardFactsAnswer } from '../api-types';
-import { imageFileOf, scryfallIdOf } from '../../engine/card-images';
+import { imageFileOf, scryfallIdOf } from '../../engine/cards/card-images';
 import { startServer } from './server';
 
 const KNOWN_CARD = 'Sol Ring';

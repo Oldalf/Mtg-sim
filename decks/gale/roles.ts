@@ -1,5 +1,5 @@
 /** What each card is *for* in the Gale deck (the engine's card facts are in engine/cards.ts). */
-import * as C from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
 
 export const GALE = 'Gale, Waterdeep Prodigy';
 export const SCION = 'Scion of Halaster';

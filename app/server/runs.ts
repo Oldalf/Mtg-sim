@@ -4,29 +4,29 @@
  */
 import * as path from 'path';
 import { DECKS } from '../../decks/index';
-import { correctGameCount } from '../../engine/game-log-files';
-import { finishLoggedRun } from '../../engine/game-log-run';
-import { Config } from '../../engine/game-types';
+import { correctGameCount } from '../../engine/game-log/game-log-files';
+import { finishLoggedRun } from '../../engine/game-log/game-log-run';
+import { Config } from '../../engine/game/game-types';
 import {
   createGoldfishRunFolder,
   createPodRunFolder,
   GoldfishMeasure,
-} from '../../engine/logged-runs';
-import * as Pod from '../../engine/pod';
-import { buildPodReport } from '../../engine/pod-report';
+} from '../../engine/game-log/logged-runs';
+import * as Pod from '../../engine/pod/pod';
+import { buildPodReport } from '../../engine/pod/pod-report';
 import { PodSpec } from '../../shared/pod-types';
 import {
   POWER_SAVE_BUSY_PERCENT,
   powerSaveWorkers,
   setLowPriority,
-} from '../../engine/power-save';
+} from '../../engine/run/power-save';
 import {
   buildDiagReport,
   buildKillTurnReport,
   table,
-} from '../../engine/report';
-import * as Runner from '../../engine/runner';
-import { RunControl } from '../../engine/worker-pool';
+} from '../../engine/tools/report';
+import * as Runner from '../../engine/run/runner';
+import { RunControl } from '../../engine/run/worker-pool';
 import type {
   CurrentRunAnswer,
   GameIndexRow,

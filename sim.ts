@@ -27,15 +27,15 @@
  * Lists and logs are looked up as given, then inside the deck's folder.
  */
 import { isMainThread, parentPort, workerData } from 'worker_threads';
-import * as Runner from './engine/runner';
-import { regress } from './engine/regress';
+import * as Runner from './engine/run/runner';
+import { regress } from './engine/tools/regress';
 import {
   runBoardTests,
   runExactMoveTests,
   runGoldfishLogTests,
   runReplayTests,
-} from './engine/game-log.test';
-import * as Pod from './engine/pod';
+} from './engine/game-log/game-log.test';
+import * as Pod from './engine/pod/pod';
 import { PodJob } from './shared/pod-types';
 import { Args, parseArgs, wantsEcoMode } from './cli/args';
 import { runDeckCommand } from './cli/deck-command';
@@ -44,7 +44,7 @@ import { runCardsCommand } from './cli/cards-command';
 import { runPodCommand } from './cli/pod-command';
 import { runLogsCommand } from './cli/logs-command';
 import { runAppCommand } from './app/server/app-command';
-import { addMissingCards } from './engine/scryfall';
+import { addMissingCards } from './engine/cards/scryfall';
 import { DECKS, REGRESS, TESTS } from './decks/index';
 
 async function main(): Promise<void> {
@@ -102,7 +102,7 @@ async function runSpecialCommand(
     process.exit(identical ? 0 : 1);
   }
   if (args.analyzeLog) {
-    const { run: analyzeLog } = await import('./engine/analyze');
+    const { run: analyzeLog } = await import('./engine/tools/analyze');
     const logFile = Runner.resolveList(deck, args.analyzeLog);
     const listFile = args.analyzeList
       ? Runner.resolveList(deck, args.analyzeList)

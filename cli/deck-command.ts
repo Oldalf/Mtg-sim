@@ -3,8 +3,8 @@
  * ask for (kill-turn table, list comparison, settings comparison, --diag, --hands, --rank, --cut, --trace).
  */
 import * as path from 'path';
-import { Config } from '../engine/game-types';
-import * as Runner from '../engine/runner';
+import { Config } from '../engine/game/game-types';
+import * as Runner from '../engine/run/runner';
 import {
   buildDiagReport,
   buildKillTurnReport,
@@ -14,9 +14,9 @@ import {
   printSingle,
   Table,
   table,
-} from '../engine/report';
-import { cuts, rank } from '../engine/ranking';
-import { createGoldfishRunFolder } from '../engine/logged-runs';
+} from '../engine/tools/report';
+import { cuts, rank } from '../engine/tools/ranking';
+import { createGoldfishRunFolder } from '../engine/game-log/logged-runs';
 import { Args } from './args';
 import { LogSession } from './log-session';
 

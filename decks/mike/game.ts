@@ -20,7 +20,7 @@
  * Combat: flyers and unblockable creatures connect, half the ground attackers are blocked (engine rules).
  * The game itself (mana, zones, casting, turns) is the shared engine in engine/game-core.ts.
  */
-import * as C from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
 import {
   AMONKHET_RACEWAY,
   AQUEOUS_FORM,
@@ -65,17 +65,17 @@ import {
   WIZARD_CLASS,
 } from './cards';
 import { buildCandidates } from './candidates';
-import { CardDef, Cost } from '../../engine/cards';
+import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
   Evasion,
   Permanent,
   WinAttempt,
   Zone,
-} from '../../engine/game-types';
-import { GameWithoutKillSearch } from '../../engine/game';
-import { firstMax, firstMin } from '../../engine/lists';
-import { MulliganRule } from '../../engine/mulligan';
+} from '../../engine/game/game-types';
+import { GameWithoutKillSearch } from '../../engine/game/game';
+import { firstMax, firstMin } from '../../engine/util/lists';
+import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
 export class MikeGame extends GameWithoutKillSearch {

@@ -10,8 +10,8 @@ import {
   readBulkInfo,
   refreshCards,
   reportOutdatedCards,
-} from '../engine/scryfall';
-import { cardsWithoutImage, updateImages } from '../engine/card-images';
+} from '../engine/cards/scryfall';
+import { cardsWithoutImage, updateImages } from '../engine/cards/card-images';
 import { Args } from './args';
 
 function printBulkInfo(info: BulkInfo): void {

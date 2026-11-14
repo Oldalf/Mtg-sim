@@ -1,5 +1,5 @@
-import * as C from '../../engine/cards';
-import * as Facts from '../../engine/card-facts';
+import * as C from '../../engine/cards/cards';
+import * as Facts from '../../engine/cards/card-facts';
 import { GALE } from './roles';
 import { FODDER_EXCLUDE, KillSearchState } from './kill-state';
 import type { GaleGame } from './game';

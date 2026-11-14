@@ -1,6 +1,6 @@
 /** The cards of the Sam & Frodo deck that have rules of their own, and the facts about them. */
-import * as C from '../../engine/cards';
-import { CardDef, makeToken } from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
+import { CardDef, makeToken } from '../../engine/cards/cards';
 
 export const FRODO = 'Frodo, Adventurous Hobbit';
 export const SAM = 'Sam, Loyal Attendant';

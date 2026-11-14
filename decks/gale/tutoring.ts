@@ -1,4 +1,4 @@
-import * as Facts from '../../engine/card-facts';
+import * as Facts from '../../engine/cards/card-facts';
 import {
   COMBO_PERMS,
   COMBO_SORC,
@@ -10,8 +10,8 @@ import {
 import { search } from './kills';
 import { buildKillSearchState } from './snapshot';
 import type { GaleGame } from './game';
-import { CardDef } from '../../engine/cards';
-import { firstMax, firstMin } from '../../engine/lists';
+import { CardDef } from '../../engine/cards/cards';
+import { firstMax, firstMin } from '../../engine/util/lists';
 
 function* combinations<T>(
   items: T[],

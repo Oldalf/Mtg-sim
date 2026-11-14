@@ -63,7 +63,7 @@ import type { Loops } from './loops';
 import { buildCandidates, chooseLandTutorTarget } from './candidates';
 import { castFromTopOfLibrary } from './actions';
 import { resolveAesiSpell } from './spells';
-import { CardDef, Cost, makeToken } from '../../engine/cards';
+import { CardDef, Cost, makeToken } from '../../engine/cards/cards';
 import {
   Candidate,
   KillSearcher,
@@ -71,10 +71,10 @@ import {
   Permanent,
   WinAttempt,
   Zone,
-} from '../../engine/game-types';
-import { Game } from '../../engine/game';
-import { firstMax, removeIfPresent } from '../../engine/lists';
-import { MulliganRule } from '../../engine/mulligan';
+} from '../../engine/game/game-types';
+import { Game } from '../../engine/game/game';
+import { firstMax, removeIfPresent } from '../../engine/util/lists';
+import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
 export type Way =

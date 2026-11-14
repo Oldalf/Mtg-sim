@@ -1,4 +1,4 @@
-import * as C from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
 import {
   AESI,
   AFFINITY,
@@ -50,9 +50,9 @@ import {
   useLootDig,
 } from './actions';
 import type { AesiGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
-import { Candidate, Permanent } from '../../engine/game-types';
-import { firstMax } from '../../engine/lists';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import { Candidate, Permanent } from '../../engine/game/game-types';
+import { firstMax } from '../../engine/util/lists';
 
 // ================================================================ what to do
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */

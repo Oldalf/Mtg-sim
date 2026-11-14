@@ -25,16 +25,16 @@ import {
 } from './cards';
 import { buildCandidates } from './candidates';
 import { onPermanentDied, onPermanentEntered } from './triggers';
-import { CardDef, Cost } from '../../engine/cards';
+import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
   LogBoardView,
   Permanent,
   Zone,
-} from '../../engine/game-types';
-import { GameWithoutKillSearch } from '../../engine/game';
-import { firstMax, sortDesc } from '../../engine/lists';
-import { MulliganRule } from '../../engine/mulligan';
+} from '../../engine/game/game-types';
+import { GameWithoutKillSearch } from '../../engine/game/game';
+import { firstMax, sortDesc } from '../../engine/util/lists';
+import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
 export class MerenGame extends GameWithoutKillSearch {

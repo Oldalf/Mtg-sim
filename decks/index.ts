@@ -1,6 +1,6 @@
 /** Every deck the command line knows. To add a deck: make its folder, then register it here. */
-import { Deck } from '../engine/runner';
-import { RegressSpec } from '../engine/regress';
+import { Deck } from '../engine/run/runner';
+import { RegressSpec } from '../engine/tools/regress';
 import { deck as gale } from './gale/index';
 import { deck as meren } from './meren/index';
 import { deck as samfrodo } from './samfrodo/index';

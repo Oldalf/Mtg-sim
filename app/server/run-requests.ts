@@ -3,9 +3,9 @@
  * count and the settings. A wrong request is refused with a 400 answer that says what is wrong.
  */
 import { DECKS } from '../../decks/index';
-import * as C from '../../engine/cards';
-import type { Deck } from '../../engine/runner';
-import { GOLDFISH_ONLY_SETTINGS } from '../../engine/setting-descriptions';
+import * as C from '../../engine/cards/cards';
+import type { Deck } from '../../engine/run/runner';
+import { GOLDFISH_ONLY_SETTINGS } from '../../engine/run/setting-descriptions';
 import type {
   GoldfishRunRequest,
   PodRunRequest,

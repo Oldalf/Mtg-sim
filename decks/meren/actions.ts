@@ -1,8 +1,8 @@
 import { TOKENS } from './cards';
 import type { MerenGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
-import { firstMin, sortDesc } from '../../engine/lists';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
+import { firstMin, sortDesc } from '../../engine/util/lists';
 
 // ---------------------------------------------------------------- actions
 export function evokeCreature(game: MerenGame, card: CardDef): boolean {

@@ -37,9 +37,9 @@ import {
 } from './solver-actions';
 import { findFinisherCast } from './finishers';
 import type { CodieGame } from './game';
-import { CardDef } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
-import { removeIfPresent } from '../../engine/lists';
+import { CardDef } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
+import { removeIfPresent } from '../../engine/util/lists';
 
 export interface Line {
   steps: string[];

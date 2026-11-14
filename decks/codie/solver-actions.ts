@@ -16,7 +16,7 @@ import {
 import { manamorphoseCost } from './candidates';
 import { lookAtTopAndKeep, putCardsBackOnLibrary } from './spells';
 import type { CodieGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
+import { CardDef, Cost } from '../../engine/cards/cards';
 
 export function exileFromHand(game: CodieGame, name: string): void {
   const card = game.cardInHand(name)!;

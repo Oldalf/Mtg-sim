@@ -1,8 +1,8 @@
-import * as C from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
 import { MARK_UNBLOCKABLE_THIS_TURN } from './cards';
 import type { MikeGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
 
 export function castTreasureCruise(
   game: MikeGame,

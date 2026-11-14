@@ -13,10 +13,13 @@
  *   npm run logs -- decks/meren/logs/game1_t9_gray_merchant.txt --board   a real Archidekt log, shown the same way
  */
 import * as fs from 'fs';
-import { archidektLines, readArchidektLog } from '../engine/game-log-archidekt';
-import { GameLog } from '../engine/game-log';
-import { replayGame } from '../engine/game-log-replay';
-import { Deck } from '../engine/runner';
+import {
+  archidektLines,
+  readArchidektLog,
+} from '../engine/game-log/game-log-archidekt';
+import { GameLog } from '../engine/game-log/game-log';
+import { replayGame } from '../engine/game-log/game-log-replay';
+import { Deck } from '../engine/run/runner';
 import {
   GameIndexRow,
   listRuns,
@@ -24,13 +27,16 @@ import {
   readIndex,
   readRunInfo,
   runFolderOf,
-} from '../engine/game-log-files';
-import { describeGameResult, formatGameOfRun } from '../engine/game-log-run';
+} from '../engine/game-log/game-log-files';
+import {
+  describeGameResult,
+  formatGameOfRun,
+} from '../engine/game-log/game-log-run';
 import {
   GameLogTextOptions,
   formatGameLog,
   highlightsOf,
-} from '../engine/game-log-text';
+} from '../engine/game-log/game-log-text';
 import { Args } from './args';
 
 /** The run asked for: its full name, its number ("1", "01"), or nothing for the latest. */

@@ -1,9 +1,9 @@
 /** A player that does nothing (draws a card each turn, never plays one). Used in a pod to check that a real deck
  *  against do-nothing players gives its goldfish numbers:  npm run pod -- gale goldfish goldfish goldfish --set pod_race=true */
 import * as path from 'path';
-import { ROOT } from '../../engine/cards';
-import { Candidate, Config, KillSearcher } from '../../engine/game-types';
-import { Game } from '../../engine/game';
+import { ROOT } from '../../engine/cards/cards';
+import { Candidate, Config, KillSearcher } from '../../engine/game/game-types';
+import { Game } from '../../engine/game/game';
 
 class GoldfishGame extends Game<null> {
   buildKillSearchState(): null {

@@ -1,10 +1,10 @@
 /** Rules checks on hand-built boards. Run: npm run sim -- aesi --test */
-import * as C from '../../../engine/cards';
-import { Cost } from '../../../engine/cards';
-import { Permanent } from '../../../engine/game-types';
-import { Rng } from '../../../engine/rng';
+import * as C from '../../../engine/cards/cards';
+import { Cost } from '../../../engine/cards/cards';
+import { Permanent } from '../../../engine/game/game-types';
+import { Rng } from '../../../engine/util/rng';
 import { CFG } from '../config';
-import { keepsHand, DEFAULT_MULLIGAN } from '../../../engine/mulligan';
+import { keepsHand, DEFAULT_MULLIGAN } from '../../../engine/game/mulligan';
 import { MULLIGAN } from '../mulligan';
 import { AesiGame } from '../game';
 import {

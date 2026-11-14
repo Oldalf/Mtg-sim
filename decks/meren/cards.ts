@@ -1,6 +1,6 @@
 /** The cards of the Meren deck that have rules of their own, and the facts about them. */
-import * as C from '../../engine/cards';
-import { makeToken } from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
+import { makeToken } from '../../engine/cards/cards';
 
 export const MEREN = 'Meren of Clan Nel Toth';
 export const GRAY_MERCHANT = 'Gray Merchant of Asphodel';

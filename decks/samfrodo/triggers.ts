@@ -1,7 +1,7 @@
 import { FOOD, SAGA, TOK, TREASURE } from './cards';
 import type { SamFrodoGame } from './game';
-import { Cost } from '../../engine/cards';
-import { Permanent, Zone } from '../../engine/game-types';
+import { Cost } from '../../engine/cards/cards';
+import { Permanent, Zone } from '../../engine/game/game-types';
 
 // ================================================================ entering
 export function onPermanentEntered(

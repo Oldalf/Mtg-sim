@@ -8,7 +8,7 @@ import type {
   CardFactsRequest,
   ImageUpdateState,
 } from '../api-types';
-import * as C from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
 import {
   downloadImage,
   hasImage,
@@ -16,7 +16,7 @@ import {
   isScryfallId,
   scryfallIdOf,
   updateImages,
-} from '../../engine/card-images';
+} from '../../engine/cards/card-images';
 import { RequestError } from './decks-routes';
 
 /** An image that failed to fetch is not asked for again for a while (a page asks once per card it shows). */

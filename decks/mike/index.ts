@@ -1,16 +1,16 @@
 /** Mike: Vnwxt, Verbose Host (mono-blue card draw, bracket 2-3). Wins by milling itself out with Laboratory Maniac / Jace,
  *  Twenty-Toed Toad with twenty cards in hand, or draining all three opponents. */
 import * as path from 'path';
-import { ROOT } from '../../engine/cards';
+import { ROOT } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { MikeGame } from './game';
 import { LOG_TRACKERS } from './cards';
-import { DiagRow } from '../../engine/runner';
+import { DiagRow } from '../../engine/run/runner';
 import {
   percentOf,
   winByTurnMetrics,
   averageOf,
-} from '../../engine/diag-metrics';
+} from '../../engine/tools/diag-metrics';
 
 /** A game with no win by turn 14 counts as turn 15. */
 const win = (row: DiagRow) => (row.win ?? 15) as number;

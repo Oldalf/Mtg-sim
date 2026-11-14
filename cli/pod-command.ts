@@ -2,17 +2,20 @@
  * `npm run pod -- gale meren samfrodo aesi mike -n 1000 [--turns 17] [--trace 1 --seed 5] [--eco] [--set key=value]`
  * Decks play each other (see engine/pod.ts).
  */
-import { Config } from '../engine/game-types';
-import * as Pod from '../engine/pod';
-import { buildPodReport, printPod } from '../engine/pod-report';
-import { runPodTests } from '../engine/pod.test';
-import { runPodExactMoveTests, runPodLogTests } from '../engine/game-log.test';
-import { describePodResult } from '../engine/pod-report';
-import { formatGameLog } from '../engine/game-log-text';
+import { Config } from '../engine/game/game-types';
+import * as Pod from '../engine/pod/pod';
+import { buildPodReport, printPod } from '../engine/pod/pod-report';
+import { runPodTests } from '../engine/pod/pod.test';
+import {
+  runPodExactMoveTests,
+  runPodLogTests,
+} from '../engine/game-log/game-log.test';
+import { describePodResult } from '../engine/pod/pod-report';
+import { formatGameLog } from '../engine/game-log/game-log-text';
 import { PodSpec } from '../shared/pod-types';
-import { addMissingCards } from '../engine/scryfall';
-import { createPodRunFolder } from '../engine/logged-runs';
-import { Deck } from '../engine/runner';
+import { addMissingCards } from '../engine/cards/scryfall';
+import { createPodRunFolder } from '../engine/game-log/logged-runs';
+import { Deck } from '../engine/run/runner';
 import { Args, wantsEcoMode } from './args';
 import { enableEcoMode } from './eco';
 import { LogSession } from './log-session';

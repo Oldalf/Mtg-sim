@@ -3,7 +3,7 @@
  * milled, so a line that relies on it is replayed on random deals of the opponents' libraries.
  */
 import { KillSearchState, OlogNode } from './kill-state';
-import { Rng } from '../../engine/rng';
+import { Rng } from '../../engine/util/rng';
 
 /** Python's round(): halves go to the even neighbour. */
 function pyRound(value: number): number {

@@ -9,7 +9,7 @@ import {
   TORMENT_OF_HAILFIRE,
 } from './cards';
 import type { CodieGame } from './game';
-import { Cost } from '../../engine/cards';
+import { Cost } from '../../engine/cards/cards';
 
 // ---------------------------------------------------------------- the finishers
 /** Does a counterspell / protection spell stay castable after this state? */

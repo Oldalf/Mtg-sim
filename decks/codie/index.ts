@@ -1,11 +1,11 @@
 /** Codie, Vociferous Codex (five-colour spells combo, bracket 4). Wins with an X spell (Exsanguinate, Crackle with Power,
  *  Torment of Hailfire), copied by Reiterate; Reiterate loops on Jeska's Will / Mana Geyser / Brass's Bounty are bottomless. */
 import * as path from 'path';
-import { ROOT } from '../../engine/cards';
+import { ROOT } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { CodieGame } from './game';
-import { DiagRow } from '../../engine/runner';
-import { percentOf, winByTurnMetrics } from '../../engine/diag-metrics';
+import { DiagRow } from '../../engine/run/runner';
+import { percentOf, winByTurnMetrics } from '../../engine/tools/diag-metrics';
 
 const win = (row: DiagRow) => (row.win ?? 13) as number;
 

@@ -1,4 +1,4 @@
-import * as Facts from '../../engine/card-facts';
+import * as Facts from '../../engine/cards/card-facts';
 import {
   COMBO_PERMS,
   COMBO_SORC,
@@ -12,9 +12,9 @@ import {
 } from './roles';
 import { OPPONENT_EVENT } from './kill-state';
 import type { GaleGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
-import { Candidate } from '../../engine/game-types';
-import { firstMin } from '../../engine/lists';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import { Candidate } from '../../engine/game/game-types';
+import { firstMin } from '../../engine/util/lists';
 
 /** Best graveyard card of the other type for Gale, given we just paid for cd. */
 export function bestGaleRecastTarget(

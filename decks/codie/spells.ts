@@ -1,5 +1,5 @@
 /** What a spell does when it resolves, for the cards Codie's deck knows. Returns false for other cards (the engine handles them). */
-import * as C from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
 import {
   AD_NAUSEAM,
   BRASS_BOUNTY,
@@ -23,9 +23,9 @@ import {
 import { findKillLine } from './solver';
 import { stackLibraryWithVault } from './solver-actions';
 import type { CodieGame } from './game';
-import { CardDef } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
-import { firstMax } from '../../engine/lists';
+import { CardDef } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
+import { firstMax } from '../../engine/util/lists';
 
 export function resolveCodieSpell(game: CodieGame, spell: CardDef): boolean {
   return (

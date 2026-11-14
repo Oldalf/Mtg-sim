@@ -1,6 +1,6 @@
 /** The moves of the kill search: what can be cast or activated from a state, and what each move does. */
-import * as C from '../../engine/cards';
-import * as Facts from '../../engine/card-facts';
+import * as C from '../../engine/cards/cards';
+import * as Facts from '../../engine/cards/card-facts';
 import {
   KillSearchState,
   Path,
@@ -9,7 +9,7 @@ import {
   remove1,
   uniqSorted,
 } from './kill-state';
-import { CardDef, Cost } from '../../engine/cards';
+import { CardDef, Cost } from '../../engine/cards/cards';
 
 /** Gives a new state its description for the printed kill line. */
 function labelled(

@@ -4,12 +4,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { DECKS } from '../../decks/index';
-import * as C from '../../engine/cards';
-import type { Deck } from '../../engine/runner';
+import * as C from '../../engine/cards/cards';
+import type { Deck } from '../../engine/run/runner';
 import {
   GOLDFISH_ONLY_SETTINGS,
   SHARED_SETTING_DESCRIPTIONS,
-} from '../../engine/setting-descriptions';
+} from '../../engine/run/setting-descriptions';
 import type {
   DecklistAnswer,
   DecklistCard,

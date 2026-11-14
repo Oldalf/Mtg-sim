@@ -8,9 +8,9 @@ import {
   TOKENS,
 } from './cards';
 import type { MerenGame } from './game';
-import { Permanent, Zone } from '../../engine/game-types';
-import { firstMax } from '../../engine/lists';
-import { SHRIEKMAW } from '../../engine/answers';
+import { Permanent, Zone } from '../../engine/game/game-types';
+import { firstMax } from '../../engine/util/lists';
+import { SHRIEKMAW } from '../../engine/game/answers';
 
 // ================================================================ entering the battlefield
 export function onPermanentEntered(

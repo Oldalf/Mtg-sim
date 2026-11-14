@@ -14,8 +14,8 @@
  *   kill-moves.ts        the moves of the search (what can be cast or activated from a state)
  *   chain-probability.ts checks lines that rely on Konrad's creature count against real shuffles
  */
-import * as C from '../../engine/cards';
-import * as Facts from '../../engine/card-facts';
+import * as C from '../../engine/cards/cards';
+import * as Facts from '../../engine/cards/card-facts';
 import {
   COMBO_PERMS,
   COMBO_SORC,
@@ -32,16 +32,16 @@ import { chooseTutorTarget } from './tutoring';
 import { buildCandidates, castWithGaleRecast } from './candidates';
 import { buildKillSearchState } from './snapshot';
 import { resolveGaleSpell } from './spells';
-import { CardDef, Cost } from '../../engine/cards';
+import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
   KillSearcher,
   LogBoardView,
   Permanent,
   WinAttempt,
-} from '../../engine/game-types';
-import { Game } from '../../engine/game';
-import { MulliganRule } from '../../engine/mulligan';
+} from '../../engine/game/game-types';
+import { Game } from '../../engine/game/game';
+import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
 export class GaleGame extends Game<KillSearchState> {

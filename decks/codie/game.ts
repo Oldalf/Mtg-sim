@@ -45,10 +45,14 @@ import {
 } from './spells';
 import { findKillLine } from './solver';
 import { beginReiterateLoop, manaPerLoopCopy } from './solver-actions';
-import { CardDef, Cost } from '../../engine/cards';
-import { Candidate, KillSearcher, Permanent } from '../../engine/game-types';
-import { Game } from '../../engine/game';
-import { MulliganRule } from '../../engine/mulligan';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import {
+  Candidate,
+  KillSearcher,
+  Permanent,
+} from '../../engine/game/game-types';
+import { Game } from '../../engine/game/game';
+import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
 export class CodieGame extends Game<CodieGame> {

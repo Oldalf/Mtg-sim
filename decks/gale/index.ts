@@ -1,6 +1,6 @@
 /** Gale, Waterdeep Prodigy + Scion of Halaster: Dimir spellslinger combo. */
 import * as path from 'path';
-import { ROOT, landMakes, CardDef } from '../../engine/cards';
+import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { GaleGame } from './game';
 

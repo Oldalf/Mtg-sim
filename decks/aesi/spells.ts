@@ -12,9 +12,9 @@ import {
 } from './cards';
 import { tutorLand } from './candidates';
 import type { AesiGame } from './game';
-import { CardDef } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
-import { firstMax, removeIfPresent } from '../../engine/lists';
+import { CardDef } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
+import { firstMax, removeIfPresent } from '../../engine/util/lists';
 
 /** What Aesi's ramp and utility spells do when they resolve (the engine handles the draw spells and the rest). */
 export function resolveAesiSpell(

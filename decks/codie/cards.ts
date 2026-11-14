@@ -1,6 +1,6 @@
 /** The cards of the Codie deck that have rules of their own, and the facts about them. */
-import * as C from '../../engine/cards';
-import { CardDef } from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
+import { CardDef } from '../../engine/cards/cards';
 
 export const CODIE = 'Codie, Vociferous Codex';
 export const REITERATE = 'Reiterate';

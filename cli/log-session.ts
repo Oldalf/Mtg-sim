@@ -2,13 +2,16 @@
  * The game logs of one `sim` or `pod` command. Starting the first logged run clears session-logs/ (the logs of the
  * last command); a command that plays several lists keeps a run folder for each.
  */
-import * as C from '../engine/cards';
-import { GameIndexRow, clearSessionLogs } from '../engine/game-log-files';
+import * as C from '../engine/cards/cards';
+import {
+  GameIndexRow,
+  clearSessionLogs,
+} from '../engine/game-log/game-log-files';
 import {
   LoggedRun,
   describeTaggedGames,
   finishLoggedRun,
-} from '../engine/game-log-run';
+} from '../engine/game-log/game-log-run';
 
 export class LogSession {
   private readonly finishedRuns: LoggedRun[] = [];

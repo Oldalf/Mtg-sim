@@ -10,7 +10,7 @@ import {
   readIndex,
   readRunInfo,
   runFolderOf,
-} from '../../engine/game-log-files';
+} from '../../engine/game-log/game-log-files';
 import type {
   CurrentRunAnswer,
   RunRequest,

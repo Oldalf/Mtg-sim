@@ -10,8 +10,8 @@
  */
 import { spawn } from 'child_process';
 import { DECKS } from '../../decks/index';
-import { runRunControlTests } from '../../engine/worker-pool.test';
-import { clearSessionLogs } from '../../engine/game-log-files';
+import { runRunControlTests } from '../../engine/run/worker-pool.test';
+import { clearSessionLogs } from '../../engine/game-log/game-log-files';
 import { runCardsRoutesTests } from './cards-routes.test';
 import { runDecksRoutesTests } from './decks-routes.test';
 import { runLogsRoutesTests } from './logs-routes.test';

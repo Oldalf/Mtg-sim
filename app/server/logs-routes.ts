@@ -6,14 +6,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as zlib from 'zlib';
 import { DECKS } from '../../decks/index';
-import { readArchidektLog } from '../../engine/game-log-archidekt';
+import { readArchidektLog } from '../../engine/game-log/game-log-archidekt';
 import {
   listRuns,
   readIndex,
   readRunInfo,
   runFolderOf,
-} from '../../engine/game-log-files';
-import { describeGameResult } from '../../engine/game-log-run';
+} from '../../engine/game-log/game-log-files';
+import { describeGameResult } from '../../engine/game-log/game-log-run';
 import type { GameIndexRow } from '../../shared/run-types';
 import type {
   GameAnswer,

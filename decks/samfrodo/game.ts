@@ -43,11 +43,16 @@ import {
   onPermanentDied,
   onPermanentEntered,
 } from './triggers';
-import { CardDef, Cost } from '../../engine/cards';
-import { Candidate, Evasion, Permanent, Zone } from '../../engine/game-types';
-import { GameWithoutKillSearch } from '../../engine/game';
-import { firstMax } from '../../engine/lists';
-import { MulliganRule } from '../../engine/mulligan';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import {
+  Candidate,
+  Evasion,
+  Permanent,
+  Zone,
+} from '../../engine/game/game-types';
+import { GameWithoutKillSearch } from '../../engine/game/game';
+import { firstMax } from '../../engine/util/lists';
+import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
 type Phase = 'main1' | 'combat' | 'main2' | 'end';

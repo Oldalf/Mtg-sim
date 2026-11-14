@@ -1,14 +1,14 @@
 /** Aesi, Tyrant of Gyre Strait (Simic "reverse landfall", bracket 3). Wins with loops: mill, endless flyers, epic copies. */
 import * as path from 'path';
-import { ROOT, landMakes, CardDef } from '../../engine/cards';
+import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { AesiGame } from './game';
-import { DiagRow } from '../../engine/runner';
+import { DiagRow } from '../../engine/run/runner';
 import {
   percentOf,
   winByTurnMetrics,
   averageOf,
-} from '../../engine/diag-metrics';
+} from '../../engine/tools/diag-metrics';
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);

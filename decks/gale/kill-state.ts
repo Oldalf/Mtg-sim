@@ -10,9 +10,9 @@
  * chains) are checked against real shuffles (chainProb). A win = every opponent has life <= 0,
  * an empty library or 10+ poison counters.
  */
-import * as C from '../../engine/cards';
+import * as C from '../../engine/cards/cards';
 import { COMBO_SPELLS } from './roles';
-import { CardDef, Cost } from '../../engine/cards';
+import { CardDef, Cost } from '../../engine/cards/cards';
 
 export const FODDER_EXCLUDE = new Set([
   'Syr Konrad, the Grim',

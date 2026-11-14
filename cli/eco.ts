@@ -3,8 +3,8 @@ import {
   POWER_SAVE_BUSY_PERCENT,
   powerSaveWorkers,
   setLowPriority,
-} from '../engine/power-save';
-import { cpuCores } from '../engine/runner';
+} from '../engine/run/power-save';
+import { cpuCores } from '../engine/run/runner';
 import { Args } from './args';
 
 /** A quarter of the cores (at least 1) unless -w is given, below-normal priority, and the workers rest between chunks. */

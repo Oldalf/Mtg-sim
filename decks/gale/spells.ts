@@ -3,8 +3,8 @@ import { GALE, permScore } from './roles';
 import { OPPONENT_EVENT } from './kill-state';
 import { chooseGiftsPile, chooseTutorTarget } from './tutoring';
 import type { GaleGame } from './game';
-import { CardDef } from '../../engine/cards';
-import { firstMax, sortDesc } from '../../engine/lists';
+import { CardDef } from '../../engine/cards/cards';
+import { firstMax, sortDesc } from '../../engine/util/lists';
 
 export function resolveGaleSpell(
   game: GaleGame,

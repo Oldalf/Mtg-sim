@@ -1,8 +1,8 @@
 /** What gaining n more life this turn is worth (0 = nothing on the battlefield cares). */
 import { FOOD, GOLLUM } from './cards';
 import type { SamFrodoGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
 
 export function valueOfGainingLife(game: SamFrodoGame, amount: number): number {
   let value = 0;

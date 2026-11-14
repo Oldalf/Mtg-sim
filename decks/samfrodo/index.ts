@@ -1,14 +1,14 @@
 /** Sam & Frodo (Abzan tokens / aristocrats, bracket 2-3). Wins by draining all three opponents from 40. */
 import * as path from 'path';
-import { ROOT, landMakes, CardDef } from '../../engine/cards';
+import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { SamFrodoGame } from './game';
-import { DiagRow } from '../../engine/runner';
+import { DiagRow } from '../../engine/run/runner';
 import {
   percentOf,
   winByTurnMetrics,
   averageOf,
-} from '../../engine/diag-metrics';
+} from '../../engine/tools/diag-metrics';
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);

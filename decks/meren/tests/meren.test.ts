@@ -1,7 +1,7 @@
 /** Rules checks on hand-built boards. Run: npm run sim -- meren --test */
-import * as C from '../../../engine/cards';
-import { Permanent } from '../../../engine/game-types';
-import { Rng } from '../../../engine/rng';
+import * as C from '../../../engine/cards/cards';
+import { Permanent } from '../../../engine/game/game-types';
+import { Rng } from '../../../engine/util/rng';
 import { CFG } from '../config';
 import { castSawInHalf } from '../actions';
 import { MerenGame } from '../game';

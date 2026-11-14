@@ -23,9 +23,9 @@ import {
   UYO,
 } from './cards';
 import type { AesiGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
-import { Permanent } from '../../engine/game-types';
-import { firstMax } from '../../engine/lists';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import { Permanent } from '../../engine/game/game-types';
+import { firstMax } from '../../engine/util/lists';
 
 /** What the loops on the battlefield give right now (see loops()). */
 export interface Loops {

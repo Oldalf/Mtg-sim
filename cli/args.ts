@@ -1,5 +1,5 @@
 /** The command line: every option `npm run sim` understands (see the top of sim.ts and README.md for what they do). */
-import { defaultWorkers } from '../engine/runner';
+import { defaultWorkers } from '../engine/run/runner';
 
 export interface Args {
   deck: string; // a deck name, "pod", "cards" or "logs"

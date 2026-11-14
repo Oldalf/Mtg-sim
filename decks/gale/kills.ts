@@ -13,7 +13,7 @@
 import { KillSearchState } from './kill-state';
 import { CHAIN_MIN, chainProb } from './chain-probability';
 import { children, isProtected, renderPath } from './kill-moves';
-import { KillSearch } from '../../engine/search';
+import { KillSearch } from '../../engine/game/search';
 
 export const search = new KillSearch<KillSearchState>({
   children,

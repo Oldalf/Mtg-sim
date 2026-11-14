@@ -23,8 +23,8 @@ import {
 } from './actions';
 import { eatFood } from './combat';
 import type { SamFrodoGame } from './game';
-import { CardDef, Cost } from '../../engine/cards';
-import { Candidate, Permanent } from '../../engine/game-types';
+import { CardDef, Cost } from '../../engine/cards/cards';
+import { Candidate, Permanent } from '../../engine/game/game-types';
 
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
 type AddCandidate = (
