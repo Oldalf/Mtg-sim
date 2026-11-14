@@ -2,6 +2,7 @@ import type { Table } from '../../../../../../engine/run-types';
 import type { KillTurnReport } from '../../../../../api-types';
 import {
   comparisonTable,
+  killTurnChartLines,
   percentByTurn,
   turnByTurnTable,
 } from './report-tables';
@@ -80,5 +81,28 @@ describe('report tables', () => {
     ]);
     expect(rows[0].values).toEqual([35, 60, 70, 30, 40, 6.5]);
     expect(rows[1].values).toEqual([40, 65, 75, 35, 45, 6.5]);
+  });
+});
+
+describe('kill-turn chart lines', () => {
+  it('draws one list as its two results, with the numbers of the "by turn" columns', () => {
+    const report = makeReport([BASE_TABLE]);
+    const lines = killTurnChartLines(report, 'any');
+    const { rows } = turnByTurnTable(report);
+    expect(lines.map((line) => line.label)).toEqual([
+      'Win possible (any)',
+      'Win with counter backup',
+    ]);
+    expect(lines[0].values.length).toBe(8);
+    // table rows start at turn 3; the "by turn" columns are values 1 and 3
+    expect(lines[0].values.slice(2)).toEqual(rows.map((row) => row.values[1]));
+    expect(lines[1].values.slice(2)).toEqual(rows.map((row) => row.values[3]));
+  });
+
+  it('draws several lists as a line each for the chosen result', () => {
+    const report = makeReport([BASE_TABLE, OTHER_TABLE]);
+    const lines = killTurnChartLines(report, 'protected');
+    expect(lines.map((line) => line.label)).toEqual(['list0.txt', 'list1.txt']);
+    expect(lines[1].values[7]).toBe(45);
   });
 });
