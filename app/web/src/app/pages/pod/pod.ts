@@ -16,6 +16,7 @@ import {
   min,
   required,
   schema,
+  validate,
 } from '@angular/forms/signals';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -58,8 +59,21 @@ interface PodFormModel {
   threat: string;
   /** One policy for every deck that plays. */
   policy: string;
+  /** The settings of the decks that play, split by type so a number field and a checkbox each get a plain value. */
+  numberSettings: { name: string; value: number }[];
+  switchSettings: { name: string; isOn: boolean }[];
   powerSave: boolean;
 }
+
+/** A setting of the decks in the pod: one value applies to every deck that has a setting of this name. */
+interface PodSetting {
+  name: string;
+  /** The first deck's default; a value equal to it is not sent. */
+  defaultValue: number | boolean;
+}
+
+/** The deck setting that --turns changes in a goldfish run; a pod has its round cap instead. */
+const TURNS_SETTING = 'max_turn';
 
 /** What the server accepts (app/server/run-requests.ts checks the same). */
 const POD_FORM_RULES = schema<PodFormModel>((path) => {
@@ -75,6 +89,13 @@ const POD_FORM_RULES = schema<PodFormModel>((path) => {
   required(path.rounds, { message: 'How many rounds?' });
   min(path.rounds, 1, { message: 'At least 1 round' });
   max(path.rounds, MOST_ROUNDS, { message: `At most ${MOST_ROUNDS} rounds` });
+  applyEach(path.numberSettings, (settingPath) =>
+    validate(settingPath.value, ({ value }) =>
+      Number.isFinite(value())
+        ? undefined
+        : { kind: 'not-a-number', message: 'A number' },
+    ),
+  );
 });
 
 /** Pod: 3 to 6 seats, a deck and a list in each, play each other; follow the run and read its result. */
@@ -114,6 +135,8 @@ export class Pod {
     rounds: DEFAULT_ROUNDS_CAP,
     threat: DEFAULT_THREAT,
     policy: DEFAULT_POLICY,
+    numberSettings: [],
+    switchSettings: [],
     powerSave: false,
   });
 
@@ -128,12 +151,22 @@ export class Pod {
     return run?.request.mode === 'pod' ? run : undefined;
   });
 
+  /** The decks that play, once each, as one text: it changes only when a deck is added to or leaves the pod. */
+  private readonly decksPlaying = computed(() =>
+    [...new Set(this.formModel().seats.map((seat) => seat.deck))].join(','),
+  );
+
   constructor() {
     this.currentRun.refresh();
     effect(() => {
       const decks = this.decks.value();
       if (decks && untracked(() => this.formModel().seats).length === 0)
         untracked(() => this.fillDefaultSeats(decks));
+    });
+    effect(() => {
+      const decksPlaying = this.decksPlaying();
+      if (this.decks.value())
+        untracked(() => this.fitSettingsToDecks(decksPlaying.split(',')));
     });
   }
 
@@ -190,6 +223,43 @@ export class Pod {
     );
   }
 
+  /** The settings of the decks that play (by name), at their defaults, keeping the values already chosen. */
+  private fitSettingsToDecks(deckNames: string[]): void {
+    const settings = this.settingsOf(deckNames);
+    this.formModel.update((model) => {
+      const keptValue = (name: string) =>
+        model.numberSettings.find((setting) => setting.name === name)?.value;
+      const keptSwitch = (name: string) =>
+        model.switchSettings.find((setting) => setting.name === name)?.isOn;
+      return {
+        ...model,
+        numberSettings: settings.flatMap(({ name, defaultValue }) =>
+          typeof defaultValue === 'number'
+            ? [{ name, value: keptValue(name) ?? defaultValue }]
+            : [],
+        ),
+        switchSettings: settings.flatMap(({ name, defaultValue }) =>
+          typeof defaultValue === 'boolean'
+            ? [{ name, isOn: keptSwitch(name) ?? defaultValue }]
+            : [],
+        ),
+      };
+    });
+  }
+
+  private settingsOf(deckNames: string[]): PodSetting[] {
+    const settings: PodSetting[] = [];
+    for (const deckName of deckNames)
+      for (const { name, defaultValue } of this.deckNamed(deckName)?.settings ??
+        [])
+        if (
+          name !== TURNS_SETTING &&
+          !settings.some((setting) => setting.name === name)
+        )
+          settings.push({ name, defaultValue });
+    return settings;
+  }
+
   private async startRun(): Promise<void> {
     await this.currentRun.start(this.buildRequest());
   }
@@ -198,12 +268,20 @@ export class Pod {
   private buildRequest(): PodRunRequest {
     const model = this.formModel();
     const decksThatPlay = [...new Set(model.seats.map((seat) => seat.deck))];
+    const defaults = this.settingsOf(decksThatPlay);
+    const defaultOf = (name: string) =>
+      defaults.find((setting) => setting.name === name)?.defaultValue;
+    const settings: Record<string, number | boolean> = {};
+    for (const { name, value } of model.numberSettings)
+      if (value !== defaultOf(name)) settings[name] = value;
+    for (const { name, isOn } of model.switchSettings)
+      if (isOn !== defaultOf(name)) settings[name] = isOn;
     return {
       mode: 'pod',
       decks: model.seats,
       games: model.games,
       rounds: model.rounds,
-      settings: {},
+      settings,
       threat: model.threat === DEFAULT_THREAT ? undefined : model.threat,
       // the engine takes the policy per deck: "deck:policy,deck:policy"
       policy:

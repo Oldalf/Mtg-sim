@@ -195,7 +195,7 @@ ode-versions26.13.1\installation`); the shell's default Node 22.12 is too old.
 - The form (Signal Forms, with a list of seats): 3 to 6 seats, a deck and a list for each (the same deck twice is allowed), games (default 1,000), round cap, the pod settings (`threat`, `policy`), power-save.
 - The result: win rates against an even pod, win rounds, how the wins came, who went out first, by seat, and the interaction table.
 - "Games worth a look" with the pod's tags, linking into the game viewer.
-- Notes (task 11, 2026-11-14): `pages/pod/` holds the form (`pod.ts`), the result (`pod-result.ts`) and the report-to-table functions (`pod-tables.ts`, with a spec). Defaults: 4 seats (the first decks with their default lists), 1,000 games, round cap 17 (the command line's default). Threat and policy are sent only when changed; the one policy chosen is sent for every deck that plays (`deck:policy,...`, as the engine takes it). No deck settings in the form (the plan lists only `threat` and `policy`). Not seen in a browser yet.
+- Notes (task 11, 2026-11-14): `pages/pod/` holds the form (`pod.ts`), the result (`pod-result.ts`) and the report-to-table functions (`pod-tables.ts`, with a spec). Defaults: 4 seats (the first decks with their default lists), 1,000 games, round cap 17 (the command line's default). Threat and policy are sent only when changed; the one policy chosen is sent for every deck that plays (`deck:policy,...`, as the engine takes it). The form also has the settings of the decks that play (one field per setting name, the first deck's default; a changed value applies to every deck that has that setting, as `--set` does; `max_turn` is left out because the round cap replaces it). Not seen in a browser yet.
 
 ### 12. Page: the games of a run
 

@@ -110,6 +110,38 @@
     </mat-form-field>
   </div>
 
+  @if (podForm.numberSettings.length + podForm.switchSettings.length > 0) {
+    <fieldset>
+      <legend>
+        Settings of the decks (a changed one counts as <code>--set</code> and
+        applies to every deck that has it)
+      </legend>
+      <div class="settings">
+        @for (settingField of podForm.numberSettings; track $index) {
+          <mat-form-field appearance="outline" class="setting-field">
+            <mat-label>{{ settingField.name().value() }}</mat-label>
+            <input
+              matInput
+              type="number"
+              step="any"
+              [formField]="settingField.value"
+            />
+            @if (settingField.value().errors()[0]; as error) {
+              <mat-error>{{ error.message }}</mat-error>
+            }
+          </mat-form-field>
+        }
+      </div>
+      <div class="settings">
+        @for (settingField of podForm.switchSettings; track $index) {
+          <mat-checkbox [formField]="settingField.isOn">
+            {{ settingField.name().value() }}
+          </mat-checkbox>
+        }
+      </div>
+    </fieldset>
+  }
+
   <div class="row">
     <mat-checkbox [formField]="podForm.powerSave">
       Power save (slower, keeps the machine usable)
