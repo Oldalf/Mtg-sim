@@ -38,7 +38,7 @@
         </button>
         <mat-button-toggle-group
           [value]="speed()"
-          (change)="speed.set($event.value)"
+          (change)="setSpeed($event.value)"
           aria-label="Autoplay speed"
           hideSingleSelectionIndicator
         >

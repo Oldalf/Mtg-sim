@@ -181,6 +181,8 @@ Done 2026-11-14: play / pause button and a slow / normal / fast toggle in the st
 
 The chosen speed is kept in `localStorage`. The chosen line goes in the URL (`?line=120`) so a refresh or a shared link opens the same spot. Small, and useful for the table view too.
 
+Done 2026-11-14: the speed is kept under `magic.autoplaySpeed` in `localStorage` (read with `speedFromStored`, a missing or unknown value is normal). The line is in `?line=` counted from 1, as the page shows it, and is left out on the first line; it is written with replace, so Back does not step through every line. A game opened without `?line=` starts at its first line. `npm run verify -- --eco` gave VERIFY OK.
+
 ---
 
 ## E. The viewer as a table you can watch

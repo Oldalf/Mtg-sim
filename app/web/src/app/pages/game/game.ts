@@ -6,15 +6,16 @@ import {
   input,
   linkedSignal,
   signal,
+  untracked,
 } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { MatTooltip } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { boardAt } from '../../../../../../shared/game-log-board';
 import type { GameLog } from '../../../../../../shared/game-log-types';
 import { ApiService } from '../../core/api';
@@ -27,6 +28,8 @@ import {
   autoplayDelay,
   cardNamesOfGame,
   cardsOfEvent,
+  eventIndexFromLine,
+  speedFromStored,
   nextEvent,
   nextHighlight,
   nextTurn,
@@ -48,6 +51,26 @@ const STEP_KEYS = {
   previousHighlight: 'H',
   playOrPause: ' ',
 };
+
+/** The key the autoplay speed is kept under in the browser (per viewer, not shared). */
+const SPEED_STORAGE_KEY = 'magic.autoplaySpeed';
+
+// The browser's storage can be blocked (private window): then the speed is just not remembered.
+function readStoredSpeed(): string | null {
+  try {
+    return localStorage.getItem(SPEED_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSpeed(speed: AutoplaySpeed): void {
+  try {
+    localStorage.setItem(SPEED_STORAGE_KEY, speed);
+  } catch {
+    // not remembered, nothing else to do
+  }
+}
 
 /**
  * The game viewer: the log on the left, the board after the chosen line on the right, stepped by line, turn or
@@ -84,6 +107,12 @@ export class Game {
   protected readonly STEP_KEYS = STEP_KEYS;
   protected readonly AUTOPLAY_SPEEDS = AUTOPLAY_SPEEDS;
   private readonly api = inject(ApiService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    requireSync: true,
+  });
+  private readonly lineInUrl = computed(() => this.queryParams().get('line'));
 
   protected readonly game = rxResource({
     params: () => ({
@@ -117,9 +146,16 @@ export class Game {
   );
 
   /** The chosen event (index into the log's events); a new game starts at its first. */
+  /** Starts at the line in the URL (if the game has it), so a refresh or a shared link opens the same spot. */
   protected readonly chosenEvent = linkedSignal({
     source: this.gameLog,
-    computation: () => 0,
+    computation: (gameLog) =>
+      // untracked: changing the URL later must not jump the game back to that line
+      untracked(() =>
+        gameLog
+          ? eventIndexFromLine(this.lineInUrl(), gameLog.events.length)
+          : 0,
+      ),
   });
   protected readonly showMoves = signal(false);
 
@@ -128,7 +164,9 @@ export class Game {
     source: this.gameLog,
     computation: () => false,
   });
-  protected readonly speed = signal<AutoplaySpeed>('normal');
+  protected readonly speed = signal<AutoplaySpeed>(
+    speedFromStored(readStoredSpeed()),
+  );
 
   protected readonly turns = computed(() => {
     const gameLog = this.gameLog();
@@ -158,6 +196,17 @@ export class Game {
   });
 
   constructor() {
+    // Keeps the line in the URL, replacing the history entry; the first line leaves it out
+    effect(() => {
+      if (!this.gameLog()) return;
+      const lineNumber = this.chosenEvent() + 1;
+      this.router.navigate([], {
+        queryParams: { line: lineNumber === 1 ? null : lineNumber },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    });
+
     // One timer at a time: each step re-runs the effect, which schedules the next
     effect((onCleanup) => {
       const gameLog = this.gameLog();
@@ -186,6 +235,11 @@ export class Game {
     if (!this.isPlaying() && this.chosenEvent() >= gameLog.events.length - 1)
       this.chosenEvent.set(0);
     this.isPlaying.update((isPlaying) => !isPlaying);
+  }
+
+  protected setSpeed(speed: AutoplaySpeed): void {
+    this.speed.set(speed);
+    writeStoredSpeed(speed);
   }
 
   protected choose(eventIndex: number): void {

@@ -157,6 +157,31 @@ export function autoplayDelay(
   return normalDelay * SPEED_FACTOR[speed];
 }
 
+/** The speed kept from the last visit; anything unknown (or nothing kept) is normal. */
+export function speedFromStored(stored: string | null): AutoplaySpeed {
+  return AUTOPLAY_SPEEDS.find((speed) => speed === stored) ?? 'normal';
+}
+
+// ================================================================ the chosen line in the URL
+
+/**
+ * The line in the URL (`?line=`, counted from 1 as the page shows it) as an event index. A missing or out of range
+ * line is the first line.
+ */
+export function eventIndexFromLine(
+  line: string | null,
+  eventCount: number,
+): number {
+  const lineNumber = Number(line);
+  if (
+    !Number.isInteger(lineNumber) ||
+    lineNumber < 1 ||
+    lineNumber > eventCount
+  )
+    return 0;
+  return lineNumber - 1;
+}
+
 // ================================================================ what is shown
 
 const MOVE_BETWEEN_ZONES = /^moved (\w+) => (\w+)$/;

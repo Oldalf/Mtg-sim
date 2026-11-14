@@ -9,6 +9,8 @@ import {
   autoplayDelay,
   cardNamesOfGame,
   cardsOfEvent,
+  eventIndexFromLine,
+  speedFromStored,
   nextEvent,
   nextHighlight,
   nextTurn,
@@ -222,5 +224,31 @@ describe('autoplayDelay', () => {
     const fast = autoplayDelay(plainLine, false, 'fast');
     expect(slow).toBeGreaterThan(1200);
     expect(fast).toBeLessThan(1200);
+  });
+});
+
+describe('speedFromStored', () => {
+  it('keeps a known speed', () => {
+    expect(speedFromStored('fast')).toBe('fast');
+  });
+
+  it('falls back to normal when nothing or something unknown is kept', () => {
+    expect(speedFromStored(null)).toBe('normal');
+    expect(speedFromStored('warp')).toBe('normal');
+  });
+});
+
+describe('eventIndexFromLine', () => {
+  it('counts the line from 1 and gives the event index', () => {
+    expect(eventIndexFromLine('120', 500)).toBe(119);
+    expect(eventIndexFromLine('1', 500)).toBe(0);
+  });
+
+  it('is the first line when the line is missing or not a line of the game', () => {
+    expect(eventIndexFromLine(null, 500)).toBe(0);
+    expect(eventIndexFromLine('0', 500)).toBe(0);
+    expect(eventIndexFromLine('501', 500)).toBe(0);
+    expect(eventIndexFromLine('abc', 500)).toBe(0);
+    expect(eventIndexFromLine('2.5', 500)).toBe(0);
   });
 });
