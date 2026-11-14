@@ -227,6 +227,8 @@ In `game-steps.ts` (or a new `table-layout.ts` if it passes about 300 lines), ea
 
 No new server calls: all of it comes from `GameLog` and `boardAt`.
 
+Done 2026-11-14: `app/web/src/app/pages/game/table-layout.ts` with a spec: `seatRows` (clockwise, top row left to right, bottom right to left), `changedCardsByPlayer`, `lifeChanges`, `goldfishOpponentLives`, `scrubMarks` (turn ticks, taller at a round's start, highlight marks), `permanentGrid` (rows and cards per row for a seat's permanents) and `countLands`. `playersTopDown` stays until E3 removes the stacked view. `ng test` passes (48).
+
 ### E3. Build the table (Sonnet 5.5, or Opus 5.5 if the design of E1 is far from today's components)
 
 New components next to the old ones: a compact seat (from `player-board.ts`), the caption bar, the control bar with the scrub bar, the log drawer. `game.html` puts them together. Keep the components small, state in signals, per `app/web/CLAUDE.md`. Keyboard steps and autoplay from D keep working. The old stacked view is removed once the new one covers it, not kept as an option.
