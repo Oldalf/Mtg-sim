@@ -54,7 +54,7 @@ export function runMerenTests(): boolean {
 
   // Meren's end step: experience 5 returns Gray Merchant to the battlefield (drain again)
   game = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
-  game.experience = 5;
+  game.experienceCounters = 5;
   game.endStep();
   check(
     'Meren with 5 experience returns Gray Merchant to the battlefield',
@@ -65,7 +65,7 @@ export function runMerenTests(): boolean {
 
   // ... with 4 experience it goes to hand instead
   game = board(['Meren of Clan Nel Toth'], [], ['Gray Merchant of Asphodel']);
-  game.experience = 4;
+  game.experienceCounters = 4;
   game.endStep();
   check(
     'Meren with 4 experience puts Gray Merchant in hand',
@@ -80,7 +80,7 @@ export function runMerenTests(): boolean {
     [],
     ['Gray Merchant of Asphodel'],
   );
-  game.experience = 5;
+  game.experienceCounters = 5;
   game.endStep();
   check(
     'Diviner + Meren returning Gray Merchant: two drains of 6',
@@ -108,7 +108,7 @@ export function runMerenTests(): boolean {
   game.sacrifice(game.findPermanent('Llanowar Elves')!);
   check(
     'Sacrificing a creature with Meren out: 1 experience',
-    game.experience,
+    game.experienceCounters,
     1,
   );
 

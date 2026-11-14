@@ -42,7 +42,6 @@ export class MerenGame extends GameWithoutKillSearch {
     return this.config.smart_mulligan ? MULLIGAN : null;
   }
   override colors = ['B', 'G'];
-  experience = 0; // Meren's experience counters
   merenCasts = 0;
   // ---- measures for --diag (they change nothing in the game)
   merenOut: number | null = null; // the turn Meren first entered the battlefield
@@ -132,7 +131,7 @@ export class MerenGame extends GameWithoutKillSearch {
 
   // ---------------------------------------------------------------- log analyzer hooks
   override syncFromLog(board: LogBoardView): void {
-    this.experience = board.trackers['Start Your Engines!'] ?? 0;
+    this.experienceCounters = board.trackers['Start Your Engines!'] ?? 0;
   }
 
   override logToken(name: string): CardDef | null {
@@ -183,8 +182,8 @@ export class MerenGame extends GameWithoutKillSearch {
     }
     value += 10 * Math.min(12, this.devotion('B'));
     if (this.isOnBattlefield(MEREN))
-      value += 90 + 12 * Math.min(8, this.experience);
-    else value += 6 * Math.min(8, this.experience);
+      value += 90 + 12 * Math.min(8, this.experienceCounters);
+    else value += 6 * Math.min(8, this.experienceCounters);
     for (const battlefieldPermanent of this.battlefield)
       if (
         battlefieldPermanent.land === null &&
@@ -371,7 +370,7 @@ export class MerenGame extends GameWithoutKillSearch {
         (permanent) => permanent.land === null,
       ).length;
       this.reanimatedAtTurnEnd[this.turn] = this.reanimated;
-      this.experienceAtTurnEnd[this.turn] = this.experience;
+      this.experienceAtTurnEnd[this.turn] = this.experienceCounters;
     }
     super.startTurn();
     this.morbidUsed =
@@ -444,23 +443,30 @@ export class MerenGame extends GameWithoutKillSearch {
       }
       // the Gray Merchant loop: sacrifice it and let Meren bring it back (drain again)
       const grayMerchant = this.findPermanent(GRAY_MERCHANT);
-      if (grayMerchant && !grayMerchant.token && this.experience + 1 >= 5)
+      if (
+        grayMerchant &&
+        !grayMerchant.token &&
+        this.experienceCounters + 1 >= 5
+      )
         this.sacrifice(grayMerchant);
     }
     const candidates = this.graveyard.filter((card) => card.isCreature);
     if (!candidates.length) return;
     const score = (card: CardDef) =>
-      card.manaValue <= this.experience
+      card.manaValue <= this.experienceCounters
         ? this.battlefieldValue(card)
         : this.battlefieldValue(card) * 0.4;
     const best = firstMax(candidates, score);
-    if (best.manaValue <= this.experience) {
-      this.say(`Meren (${this.experience} experience) returns`, best);
+    if (best.manaValue <= this.experienceCounters) {
+      this.say(`Meren (${this.experienceCounters} experience) returns`, best);
       this.reanimate(best);
     } else {
       this.takeCardIfThere(best, 'graveyard');
       this.putCard(best, 'hand');
-      this.say(`Meren (${this.experience} experience) returns to hand`, best);
+      this.say(
+        `Meren (${this.experienceCounters} experience) returns to hand`,
+        best,
+      );
     }
   }
 

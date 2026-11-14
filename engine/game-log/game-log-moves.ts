@@ -452,6 +452,7 @@ function emptyPlayerBoard(): PlayerBoard {
     commandZone: [],
     librarySize: 0,
     life: null,
+    playerCounters: {},
   };
 }
 

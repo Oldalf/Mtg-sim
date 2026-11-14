@@ -20,6 +20,10 @@
       }
     </span>
   }
+  @for (counter of playerCounters(); track counter.kind) {
+    <!-- a non-breaking space: the chip never wraps (the style budget has no room for a nowrap rule) -->
+    <span class="badge">{{ counter.count }}&nbsp;{{ counter.kind }}</span>
+  }
 </header>
 
 <div class="body">

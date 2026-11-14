@@ -426,7 +426,7 @@ function addDrawAbilityCandidate(
       if (isReady && game.energyCounters >= 3 && game.mayDraw(1))
         add(44 + winPieceBonus, new Cost(), () => {
           permanent.tapped = true;
-          game.energyCounters -= 3;
+          game.payEnergy(3);
           game.draw(1);
           return true;
         });
@@ -435,7 +435,7 @@ function addDrawAbilityCandidate(
       if (isReady && game.energyCounters >= 6 && game.mayDraw(3))
         add(60 + winPieceBonus, new Cost(), () => {
           permanent.tapped = true;
-          game.energyCounters -= 6;
+          game.payEnergy(6);
           game.draw(3);
           return true;
         });

@@ -5,7 +5,13 @@
  *   boardAt(gameLog, eventIndex)   every player's board after that event
  *   TableBoards                    the same, stepping through the events one by one
  */
-import type { CardMove, GameEvent, GameLog } from './game-log-types';
+import {
+  PLAYER_COUNTER_KINDS,
+  type CardMove,
+  type GameEvent,
+  type GameLog,
+  type PlayerCounters,
+} from './game-log-types';
 
 export interface BoardPermanent {
   name: string;
@@ -25,6 +31,8 @@ export interface PlayerBoard {
   librarySize: number;
   /** Null when the log has no life totals (a real Archidekt log). */
   life: number | null;
+  /** Energy, experience and poison: only the kinds above 0 (a real Archidekt log has none). */
+  playerCounters: PlayerCounters;
 }
 
 /** The zones that are lists of card names. */
@@ -119,6 +127,7 @@ export class TableBoards {
       commandZone: player.commanders.slice(),
       librarySize: player.librarySize,
       life: null,
+      playerCounters: {},
     }));
   }
 
@@ -127,6 +136,11 @@ export class TableBoards {
     event.life
       .slice(0, this.boards.length)
       .forEach((life, player) => (this.boards[player].life = life));
+    // every event carries all the counters, and none when they are all 0
+    this.boards.forEach(
+      (board, player) =>
+        (board.playerCounters = { ...event.playerCounters?.[player] }),
+    );
   }
 }
 
@@ -168,12 +182,20 @@ function describePermanents(permanents: BoardPermanent[]): string {
     .join(', ');
 }
 
+/** "energy 4, poison 2": the kinds above 0, empty when there are none. */
+export function describePlayerCounters(counters: PlayerCounters): string {
+  return PLAYER_COUNTER_KINDS.filter((kind) => counters[kind])
+    .map((kind) => `${kind} ${counters[kind]}`)
+    .join(', ');
+}
+
 /** A player's board as lines of text. */
 export function describeBoard(board: PlayerBoard): string[] {
   const names = (cards: string[]) => (cards.length ? cards.join(', ') : '-');
   const life = board.life === null ? '' : `life ${board.life}, `;
+  const counters = describePlayerCounters(board.playerCounters);
   return [
-    `${life}library ${board.librarySize}, hand ${board.hand.length}`,
+    `${life}${counters ? counters + ', ' : ''}library ${board.librarySize}, hand ${board.hand.length}`,
     `battlefield: ${describePermanents(board.battlefield) || '-'}`,
     `hand: ${names(board.hand)}`,
     `graveyard: ${names(board.graveyard)}`,

@@ -1,7 +1,10 @@
 import { Component, computed, input, linkedSignal } from '@angular/core';
 import type { CardFactsAnswer } from '../../../../../api-types';
 import type { PlayerBoard } from '../../../../../../shared/game-log-board';
-import type { LogPlayer } from '../../../../../../shared/game-log-types';
+import {
+  PLAYER_COUNTER_KINDS,
+  type LogPlayer,
+} from '../../../../../../shared/game-log-types';
 import { CardImage } from '../../shared/card-image/card-image';
 import { splitBattlefield } from './game-steps';
 import { countLands, permanentGrid } from './table-layout';
@@ -14,7 +17,8 @@ interface CountedZone {
 }
 
 /**
- * One seat of the table: name, commanders and life (big, with the change of the chosen line), the permanents as cards
+ * One seat of the table: name, commanders, energy / experience / poison chips when there are any, and life (big,
+ * with the change of the chosen line), the permanents as cards
  * sized to fit the seat (alike ones stacked, tapped ones turned, counters and tokens marked), the lands fanned in a
  * thin row, and the hidden zones as counts that open on click. On a phone a seat that is not the active one folds to
  * its header.
@@ -53,7 +57,17 @@ export class PlayerSeat {
 
   protected readonly isOut = computed(() => {
     const life = this.board().life;
-    return life !== null && life <= 0;
+    return (
+      (life !== null && life <= 0) ||
+      (this.board().playerCounters.poison ?? 0) >= 10
+    );
+  });
+  /** Energy, experience and poison, the ones above 0, shown as chips beside the life. */
+  protected readonly playerCounters = computed(() => {
+    const counters = this.board().playerCounters;
+    return PLAYER_COUNTER_KINDS.filter((kind) => counters[kind]).map(
+      (kind) => ({ kind, count: counters[kind] }),
+    );
   });
   protected readonly battlefield = computed(() =>
     splitBattlefield(this.board(), (cardName) =>

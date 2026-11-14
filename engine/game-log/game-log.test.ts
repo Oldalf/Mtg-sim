@@ -9,7 +9,12 @@ import { Game } from '../game/game';
 import { goldfishGameLog } from './game-log';
 import { GameIndexRow } from './game-log-files';
 import { tagGoldfishGames } from './game-log-tags';
-import { PlayerBoard, TableBoards } from '../../shared/game-log-board';
+import {
+  PlayerBoard,
+  TableBoards,
+  boardAt,
+  describeBoard,
+} from '../../shared/game-log-board';
 import { playPod, playRounds, podSpec, seatPlayers } from '../pod/pod';
 import { Rng } from '../util/rng';
 import { Deck, resolveList } from '../run/runner';
@@ -152,6 +157,98 @@ function newLoggedGame(deck: Deck, seed: number): Game<unknown> {
     { ...deck.config },
     true,
     'protected',
+  );
+}
+
+/** Energy, experience and poison set on the players are on the next log line and on the board rebuilt from the
+ *  log, in a goldfish game and in a pod; a line where every count is 0 has no counters at all. */
+export function runPlayerCounterTests(allDecks: Record<string, Deck>): boolean {
+  const goldfishGame = newLoggedGame(allDecks.gale, 1);
+  goldfishGame.say('nothing yet');
+  goldfishGame.gainEnergy(5);
+  goldfishGame.payEnergy(1);
+  goldfishGame.gainExperience(2);
+  goldfishGame.poison[1] = 3;
+  goldfishGame.say('counters set');
+  const [lineWithoutCounters, goldfishLine] = goldfishGame.log.slice(-2);
+  const goldfishLog = goldfishGameLog(
+    1,
+    'gale',
+    goldfishGame.commanderNames,
+    0,
+    goldfishGame.log,
+  );
+  const goldfishBoard = boardAt(goldfishLog, goldfishLog.events.length - 1)[0];
+
+  const spec = podSpec(allDecks, POD_DECKS, POD_ROUNDS_CAP, {});
+  const table = seatPlayers(allDecks, spec, 1, true);
+  table.games[0].gainEnergy(4);
+  table.poison[1] = 3;
+  table.sayAs(0, 'counters set');
+  const podLine = table.gameLog().events.at(-1)!;
+  // a line of a player's own game: its own experience, the others' counters as the table has them
+  table.startTurnLog(2);
+  table.refreshView(2);
+  table.games[2].gainExperience(2);
+  table.games[2].say('experience gained');
+  table.flushCurrentPlayerLog();
+  const podLog = table.gameLog();
+  const ownGameLine = podLog.events.at(-1)!;
+  const podBoards = boardAt(podLog, podLog.events.length - 1);
+
+  const checks: [string, unknown, unknown][] = [
+    [
+      'goldfish line without counters',
+      lineWithoutCounters.playerCounters,
+      undefined,
+    ],
+    [
+      'goldfish line',
+      goldfishLine.playerCounters,
+      [{ energy: 4, experience: 2 }, {}, { poison: 3 }, {}],
+    ],
+    [
+      'goldfish board',
+      goldfishBoard.playerCounters,
+      { energy: 4, experience: 2 },
+    ],
+    [
+      'goldfish board as text',
+      describeBoard(goldfishBoard)[0].startsWith(
+        'life 40, energy 4, experience 2,',
+      ),
+      true,
+    ],
+    [
+      'pod line',
+      podLine.playerCounters,
+      [{ energy: 4 }, { poison: 3 }, {}, {}],
+    ],
+    [
+      "pod line of a player's own game",
+      ownGameLine.playerCounters,
+      [{ energy: 4 }, { poison: 3 }, { experience: 2 }, {}],
+    ],
+    [
+      'pod boards',
+      podBoards.map((board) => board.playerCounters),
+      [{ energy: 4 }, { poison: 3 }, { experience: 2 }, {}],
+    ],
+  ].map(([label, actual, expected]) => [
+    label as string,
+    JSON.stringify(actual),
+    JSON.stringify(expected),
+  ]);
+  const wrong = checks
+    .filter(([, actual, expected]) => actual !== expected)
+    .map(
+      ([label, actual, expected]) =>
+        `${label}: ${actual}, expected ${expected}`,
+    );
+  return reportDifferences(
+    'player counters in the log and on the board',
+    'counters wrong',
+    wrong,
   );
 }
 

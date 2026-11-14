@@ -40,7 +40,7 @@ import {
 import { PlayerSeat } from './player-seat';
 import {
   changedCardsByPlayer,
-  goldfishOpponentLives,
+  goldfishOpponents,
   lifeChanges,
   scrubMarks,
   seatRows,
@@ -220,10 +220,10 @@ export class Game {
     const gameLog = this.gameLog();
     return gameLog ? lifeChanges(gameLog, this.chosenEvent()) : [];
   });
-  protected readonly opponentLives = computed(() => {
+  protected readonly goldfishOpponents = computed(() => {
     const gameLog = this.gameLog();
     const event = this.event();
-    return gameLog && event ? goldfishOpponentLives(gameLog, event) : [];
+    return gameLog && event ? goldfishOpponents(gameLog, event) : [];
   });
   protected readonly captionPlayerName = computed(() => {
     const gameLog = this.gameLog();

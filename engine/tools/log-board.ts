@@ -66,7 +66,7 @@ export class Board {
   attacked = false;
   highTides = 0;
   mucks = 0;
-  energy = false;
+  isEnergybendingActive = false;
   spellsCast = 0;
   /** Commander -> times cast (commander tax). */
   commanderCasts = new Map<string, number>();
@@ -175,8 +175,9 @@ export class Board {
     } else if (manaKind === 'C2') pool.C += 2;
     else if (manaKind in pool) pool[manaKind as keyof FloatingMana] += 1;
     if (landInfo !== null) {
-      if (landInfo.island || this.energy) pool.U += this.highTides;
-      if (landInfo.swamp || this.energy) pool.B += this.mucks;
+      if (landInfo.island || this.isEnergybendingActive)
+        pool.U += this.highTides;
+      if (landInfo.swamp || this.isEnergybendingActive) pool.B += this.mucks;
     }
     if (this.owed !== null) {
       const owedCost = this.owed;
@@ -206,7 +207,7 @@ export class Board {
       // an instant/sorcery leaving the "stack" has resolved (or was countered: rare for these)
       if (card === 'High Tide') this.highTides += 1;
       else if (card === 'Bubbling Muck') this.mucks += 1;
-      else if (card === 'Energybending') this.energy = true;
+      else if (card === 'Energybending') this.isEnergybendingActive = true;
       else if (card === 'Dark Ritual') this.pool.B += 3;
     }
     // remove from the source
@@ -283,7 +284,7 @@ export class Board {
     this.landsFromHand = 0;
     this.attacked = false;
     this.highTides = this.mucks = 0;
-    this.energy = false;
+    this.isEnergybendingActive = false;
     this.spellsCast = 0;
     this.ritualCounter = null;
     this.resetPool();
@@ -377,7 +378,7 @@ export class Board {
     game.landPlayed = this.landPlayed;
     game.highTidesThisTurn = this.highTides;
     game.muck = this.mucks;
-    game.energy = this.energy;
+    game.isEnergybendingActive = this.isEnergybendingActive;
     game.attacked = this.attacked;
     const floating = this.floating();
     game.pool = {

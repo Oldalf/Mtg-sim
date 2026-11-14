@@ -42,7 +42,7 @@ function addManaAndLands(
   }
   const highTides = nextTurn ? 0 : game.highTidesThisTurn;
   const mucks = nextTurn ? 0 : game.muck;
-  const energy = game.energy && !nextTurn;
+  const isEnergybendingActive = game.isEnergybendingActive && !nextTurn;
   let islandsForHighTide = 0;
   let swampsForMuck = 0;
   let lands = 0;
@@ -51,8 +51,8 @@ function addManaAndLands(
   const landMix = [0, 0, 0, 0]; // dual, island-only, swamp-only, other: all lands, tapped or not
   for (const permanent of game.battlefield) {
     if (permanent.land !== null) {
-      const isIsland = !!permanent.land.island || energy;
-      const isSwamp = !!permanent.land.swamp || energy;
+      const isIsland = !!permanent.land.island || isEnergybendingActive;
+      const isSwamp = !!permanent.land.swamp || isEnergybendingActive;
       landMix[isIsland && isSwamp ? 0 : isIsland ? 1 : isSwamp ? 2 : 3] += 1;
     }
     const kind = game.manaSourceKind(permanent, nextTurn);
@@ -70,11 +70,11 @@ function addManaAndLands(
       freeColourless += kind === 'C2' ? 2 : 1;
     if (permanent.land !== null) {
       lands += 1;
-      if (permanent.land.island || energy) {
+      if (permanent.land.island || isEnergybendingActive) {
         islandsForHighTide += 1;
         pool.U += highTides;
       }
-      if (permanent.land.swamp || energy) {
+      if (permanent.land.swamp || isEnergybendingActive) {
         swampsForMuck += 1;
         pool.B += mucks;
       }

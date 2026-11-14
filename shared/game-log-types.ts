@@ -41,7 +41,19 @@ export interface GameEvent {
   moves: CardMove[];
   /** Every player's life after the event (goldfish: ours, then the opponents'). */
   life: number[];
+  /** The counters on the players after the event, in the same order as `life`. Left out when every count is 0, so
+   *  a game without them (and a log from before them) has none. */
+  playerCounters?: PlayerCounters[];
 }
+
+/** Counters a player has (not a permanent). Only the kinds above 0 are written. */
+export interface PlayerCounters {
+  energy?: number;
+  experience?: number;
+  poison?: number;
+}
+
+export const PLAYER_COUNTER_KINDS = ['energy', 'experience', 'poison'] as const;
 
 export interface LogPlayer {
   /** The deck name, "gale#2" when a deck is in the pod twice. */

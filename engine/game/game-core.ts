@@ -36,6 +36,7 @@ import {
   buildEvent,
   cardNamesAmong,
   CardMove,
+  PlayerCounters,
 } from '../game-log/game-log';
 import { CardZone, MoveRecorder } from '../game-log/game-log-moves';
 import { firstMax, firstMin, removeOrThrow, sortDesc } from '../util/lists';
@@ -155,7 +156,12 @@ export abstract class GameCore<S = unknown> {
   lastKey: string | null = null;
   highTidesThisTurn = 0; // High Tides resolved this turn
   muck = 0; // Bubbling Mucks resolved this turn
-  energy = false;
+  /** Energybending resolved this turn: every land is every basic land type. */
+  isEnergybendingActive = false;
+  /** Our energy ({E}) and experience counters. Changed through gainEnergy / payEnergy / gainExperience; every
+   *  log line carries them, as it carries life. */
+  energyCounters = 0;
+  experienceCounters = 0;
   spellsCast = 0;
   isCast = 0;
   attacked = false;
@@ -235,9 +241,19 @@ export abstract class GameCore<S = unknown> {
       parts.map(formatLogPart).join(' '),
       cardNamesAmong(parts),
       [this.myLife, ...this.life],
+      this.playerCountersForLog(),
     );
     event.moves = this.collectCardMoves(kind === 'turn-end', event.text);
     this.log.push(event);
+  }
+
+  /** The counters on the players for a log line, in the order of its life totals: ours, then the opponents'
+   *  (poison). */
+  playerCountersForLog(): PlayerCounters[] {
+    return [
+      { energy: this.energyCounters, experience: this.experienceCounters },
+      ...this.poison.map((poison) => ({ poison })),
+    ];
   }
 
   /** The card moves since the last log line (see game-log-moves.ts). isEndOfTurn: cards that left a zone and
@@ -383,11 +399,17 @@ export abstract class GameCore<S = unknown> {
   }
 
   islandTyped(permanent: Permanent): boolean {
-    return permanent.land !== null && (!!permanent.land.island || this.energy);
+    return (
+      permanent.land !== null &&
+      (!!permanent.land.island || this.isEnergybendingActive)
+    );
   }
 
   swampTyped(permanent: Permanent): boolean {
-    return permanent.land !== null && (!!permanent.land.swamp || this.energy);
+    return (
+      permanent.land !== null &&
+      (!!permanent.land.swamp || this.isEnergybendingActive)
+    );
   }
 
   /** What the pool is still short of to pay cost (null = enough). With mutate, pays it. */
@@ -909,7 +931,7 @@ export abstract class GameCore<S = unknown> {
         this.seeTheTruth(fromGraveyard);
         return true;
       case 'Energybending':
-        this.energy = true;
+        this.isEnergybendingActive = true;
         this.draw(1);
         return true;
       case 'Focus the Mind':
@@ -1187,6 +1209,23 @@ export abstract class GameCore<S = unknown> {
 
   gainLife(amount: number): void {
     this.myLife += amount;
+  }
+
+  gainEnergy(amount: number): void {
+    this.energyCounters += amount;
+  }
+
+  /** Pays {E} (the caller checked that we have enough). */
+  payEnergy(amount: number): void {
+    if (amount > this.energyCounters)
+      throw new Error(
+        `paying ${amount} energy with only ${this.energyCounters}`,
+      );
+    this.energyCounters -= amount;
+  }
+
+  gainExperience(amount = 1): void {
+    this.experienceCounters += amount;
   }
 
   // ================================================================ casting
@@ -1881,7 +1920,7 @@ export abstract class GameCore<S = unknown> {
     }
     this.pool = emptyPool();
     this.highTidesThisTurn = this.muck = 0;
-    this.energy = false;
+    this.isEnergybendingActive = false;
     this.spellsCast = this.isCast = 0;
     this.firstDrawDone = false;
     this.attacked = false;
@@ -1914,7 +1953,7 @@ export abstract class GameCore<S = unknown> {
 
   /** Before the first turn: the opening hand and mulligans. */
   setup(): void {
-    this.energy = false;
+    this.isEnergybendingActive = false;
     this.highTidesThisTurn = this.muck = 0;
     this.spellsCast = 0;
     this.mulligan();

@@ -10,7 +10,11 @@
  * with ">>". A goldfish game looks the same with "== Turn 3 ==" headers.
  */
 import { GameEvent, GameLog } from './game-log';
-import { TableBoards, describeBoard } from '../../shared/game-log-board';
+import {
+  TableBoards,
+  describeBoard,
+  describePlayerCounters,
+} from '../../shared/game-log-board';
 import {
   isPodGame,
   namesItsPlayer,
@@ -45,6 +49,21 @@ function describeLife(gameLog: GameLog, life: number[]): string {
   return `${ourLife}, opponents ${opponentLife.join(' ')}`;
 }
 
+/** "mike energy 4; gale poison 3" for a pod; "energy 4; opponent 2 poison 3" for a goldfish game. Empty when no
+ *  player has any. */
+function describeCounters(gameLog: GameLog, event: GameEvent): string {
+  return (event.playerCounters ?? [])
+    .map((counters, player) => {
+      const described = describePlayerCounters(counters);
+      if (!described) return '';
+      if (isPodGame(gameLog))
+        return `${gameLog.players[player].name} ${described}`;
+      return player === 0 ? described : `opponent ${player} ${described}`;
+    })
+    .filter((described) => described !== '')
+    .join('; ');
+}
+
 function turnHeader(gameLog: GameLog, event: GameEvent): string {
   const turnName = isPodGame(gameLog)
     ? `Round ${event.turn}, ${gameLog.players[event.activePlayer].name}`
@@ -53,7 +72,8 @@ function turnHeader(gameLog: GameLog, event: GameEvent): string {
   const life = event.life.length
     ? `   life: ${describeLife(gameLog, event.life)}`
     : '';
-  return `== ${turnName} ==${life}`;
+  const counters = describeCounters(gameLog, event);
+  return `== ${turnName} ==${life}${counters ? `   counters: ${counters}` : ''}`;
 }
 
 function eventLine(gameLog: GameLog, event: GameEvent): string {

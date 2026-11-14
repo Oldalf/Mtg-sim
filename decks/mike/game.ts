@@ -89,7 +89,6 @@ export class MikeGame extends GameWithoutKillSearch {
   opponentLostLifeThisTurn = false; // an opponent lost life this turn
   drawsThisTurn = 0; // cards drawn this turn
   drawStepOpen = false; // the first draw of the draw step hasn't happened yet
-  energyCounters = 0; // energy counters
   inCombat = false;
   vecnaX = 0; // Hand of Vecna's X, set at the beginning of combat
   nerdRageAttackedThisTurn = false; // an attack with Nerd Rage's creature this turn
@@ -574,7 +573,7 @@ export class MikeGame extends GameWithoutKillSearch {
     )
       this.startEngines();
     if (this.isOnBattlefield(ROIL_CARTOGRAPHER) && !gone)
-      this.energyCounters += this.countOnBattlefield(ROIL_CARTOGRAPHER);
+      this.gainEnergy(this.countOnBattlefield(ROIL_CARTOGRAPHER));
     if (name === MYSTIC_SANCTUARY && !permanent.tapped) {
       const order = [
         'Pull from Tomorrow',
@@ -749,7 +748,7 @@ export class MikeGame extends GameWithoutKillSearch {
     const target = firstMin(pickable, (candidate) =>
       want.indexOf(candidate.card.name),
     );
-    this.energyCounters -= 2;
+    this.payEnergy(2);
     this.shifterCopy = target.card;
     this.say('Aurora Shifter becomes a copy of', target.card);
   }
@@ -784,7 +783,7 @@ export class MikeGame extends GameWithoutKillSearch {
         this.draw(1);
         this.discard(1);
       } else if (name === AURORA_SHIFTER)
-        this.energyCounters += this.power(permanent);
+        this.gainEnergy(this.power(permanent));
     }
     const fblthp = this.findPermanent(FBLTHP);
     if (fblthp && connected.length) {
@@ -829,7 +828,7 @@ export class MikeGame extends GameWithoutKillSearch {
     const name = card.name;
     if (name === 'Tune the Narrative') {
       this.draw(1);
-      this.energyCounters += 2;
+      this.gainEnergy(2);
     } else if (name === 'Flux') {
       const all =
         this.isSafeToEmptyLibrary() &&

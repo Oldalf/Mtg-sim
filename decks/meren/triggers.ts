@@ -234,7 +234,7 @@ function triggerCreatureDeathPayoffs(
       game.isOnBattlefield('Butcher of Malakir'))
   )
     game.arena!.edict(game, false);
-  if (name !== MEREN && game.isOnBattlefield(MEREN)) game.experience++;
+  if (name !== MEREN && game.isOnBattlefield(MEREN)) game.gainExperience();
   if (game.isOnBattlefield('Morbid Opportunist') && !game.morbidUsed) {
     game.morbidUsed = true;
     game.draw(1);

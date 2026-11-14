@@ -16,7 +16,9 @@ import {
   EventKind,
   GameEvent,
   GameLog,
+  PlayerCounters,
   buildEvent,
+  setPlayerCounters,
 } from '../game-log/game-log';
 import { Rng } from '../util/rng';
 import { Deck } from '../run/runner';
@@ -268,7 +270,14 @@ export class PodTable {
   ): void {
     if (!this.verbose) return;
     this.flushCurrentPlayerLog();
-    const event = buildEvent(kind, this.round, text, cards, this.lifeTotals());
+    const event = buildEvent(
+      kind,
+      this.round,
+      text,
+      cards,
+      this.lifeTotals(),
+      this.playerCounters(),
+    );
     event.player = player;
     event.activePlayer =
       this.turnPlayerInLog >= 0 ? this.turnPlayerInLog : player;
@@ -285,6 +294,15 @@ export class PodTable {
 
   private lifeTotals(): number[] {
     return this.games.map((game) => game.myLife);
+  }
+
+  /** Every player's energy and experience (kept by its own game) and poison (kept by the table). */
+  private playerCounters(): PlayerCounters[] {
+    return this.games.map((game, player) => ({
+      energy: game.energyCounters,
+      experience: game.experienceCounters,
+      poison: this.poison[player],
+    }));
   }
 
   /** What changed on every player's table since their last log lines. */
@@ -324,16 +342,23 @@ export class PodTable {
     this.loggedLineCount = this.games[player].log.length;
   }
 
-  /** Puts a line of a player's own game into the pod log: the round, who it is, and every player's life as that
-   *  player's game saw it when the line was written. */
+  /** Puts a line of a player's own game into the pod log: the round, who it is, and every player's life and
+   *  counters as that player's game saw them when the line was written. */
   private logGameLine(player: number, event: GameEvent): void {
     const [ownLife, ...opponentLife] = event.life;
+    const [ownCounters, ...opponentCounters] = event.playerCounters ?? [];
     const life = this.lifeTotals();
+    const counters = this.playerCounters();
     life[player] = ownLife;
+    counters[player].energy = ownCounters?.energy ?? 0;
+    counters[player].experience = ownCounters?.experience ?? 0;
     this.opponentsOf[player].forEach((opponent, slot) => {
-      if (this.isAlive[opponent]) life[opponent] = opponentLife[slot];
+      if (!this.isAlive[opponent]) return;
+      life[opponent] = opponentLife[slot];
+      counters[opponent].poison = opponentCounters[slot]?.poison ?? 0;
     });
     event.life = life;
+    setPlayerCounters(event, counters);
     event.turn = this.round;
     event.player = player;
     event.activePlayer =

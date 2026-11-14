@@ -8,7 +8,7 @@ import { turnsOfGame, type PermanentStack } from './game-steps';
 import {
   changedCardsByPlayer,
   countLands,
-  goldfishOpponentLives,
+  goldfishOpponents,
   lifeChanges,
   permanentGrid,
   scrubMarks,
@@ -100,10 +100,20 @@ describe('table layout', () => {
     expect(lifeChanges(game, 2)).toEqual([2, 0]);
   });
 
-  it("shows the goldfish opponents' life, not in a pod", () => {
+  it("shows the goldfish opponents' life and poison, not in a pod", () => {
     const event = makeEvent(3, 0, [40, 31, 31, 31]);
-    expect(goldfishOpponentLives(makeGame([0]), event)).toEqual([31, 31, 31]);
-    expect(goldfishOpponentLives(makeGame([0, 1, 2, 3]), event)).toEqual([]);
+    expect(goldfishOpponents(makeGame([0]), event)).toEqual([
+      { life: 31, poison: 0 },
+      { life: 31, poison: 0 },
+      { life: 31, poison: 0 },
+    ]);
+    expect(goldfishOpponents(makeGame([0, 1, 2, 3]), event)).toEqual([]);
+    event.playerCounters = [{ energy: 2 }, {}, { poison: 4 }, {}];
+    expect(
+      goldfishOpponents(makeGame([0]), event).map(
+        (opponent) => opponent.poison,
+      ),
+    ).toEqual([0, 4, 0]);
   });
 
   it('marks each turn and highlight on the scrub bar, taller at a new round', () => {

@@ -12,9 +12,18 @@ import type {
   GameEvent,
   GameLog,
   LogPlayer,
+  PlayerCounters,
 } from '../../shared/game-log-types';
+import { PLAYER_COUNTER_KINDS } from '../../shared/game-log-types';
 
-export type { CardMove, EventKind, GameEvent, GameLog, LogPlayer };
+export type {
+  CardMove,
+  EventKind,
+  GameEvent,
+  GameLog,
+  LogPlayer,
+  PlayerCounters,
+};
 
 const HIGHLIGHT_KINDS: ReadonlySet<EventKind> = new Set([
   'answer',
@@ -39,8 +48,9 @@ export function buildEvent(
   text: string,
   cards: string[],
   life: number[],
+  playerCounters: PlayerCounters[] = [],
 ): GameEvent {
-  return {
+  const event: GameEvent = {
     turn,
     player: 0,
     activePlayer: 0,
@@ -51,6 +61,25 @@ export function buildEvent(
     moves: [],
     life,
   };
+  setPlayerCounters(event, playerCounters);
+  return event;
+}
+
+/** Puts the players' counters on the event, only the ones above 0; none at all when every count is 0 (so a log
+ *  without counters stays as it was). */
+export function setPlayerCounters(
+  event: GameEvent,
+  playerCounters: PlayerCounters[],
+): void {
+  const countersAboveZero = playerCounters.map((counters) => {
+    const kept: PlayerCounters = {};
+    for (const kind of PLAYER_COUNTER_KINDS)
+      if (counters[kind]) kept[kind] = counters[kind];
+    return kept;
+  });
+  if (countersAboveZero.some((counters) => Object.keys(counters).length))
+    event.playerCounters = countersAboveZero;
+  else delete event.playerCounters;
 }
 
 /** The log of a goldfish game: one player. */

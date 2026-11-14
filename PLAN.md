@@ -29,7 +29,7 @@ Rules for every task:
 | 1 | A1 | Whole game rows are links (done) | Haiku 5.5 |
 | 2 | A2 | The caption bar keeps one height (done) | Haiku 5.5 |
 | 3 | B1 | Fastest and slowest tags that mean something (done) | Sonnet 5.5 |
-| 4 | C1 | Energy as a player counter, shown in the viewer | Opus 5.5 |
+| 4 | C1 | Energy as a player counter, shown in the viewer (done) | Opus 5.5 |
 | 5 | C2 | Volatile Stormdrake takes a creature in a pod | Opus 5.5 |
 | 6 | D1 | Tokens: the design (who defines a token, its name in the log, its image) | Opus 5.5, then Pontus |
 | 7 | D2 | Tokens: the engine and the card data | Sonnet 5.5 |
@@ -105,6 +105,8 @@ The card: "Flying, hexproof from activated and triggered abilities. When this cr
 - The seat in the viewer shows energy next to life when it is above 0 (a small chip with the count; check `player-seat.scss` against its 4 kB budget, which is nearly full).
 - Name it so it cannot be mixed up with the existing `energy` flag of Energybending: rename that flag (`energybendingActive` or similar) in the same commit.
 - Done when every deck's `--regress check` is IDENTICAL (nothing gives energy yet), the pod output is unchanged, and a test sets energy and finds it in the log and on the rebuilt board.
+
+Done, wider than planned: Mike already counted energy itself (Roil Cartographer, Aurora Shifter, Tune the Narrative, Shielded Aether Thief), Meren counted experience, and Gale gives opponents poison, so all three became player counters. `Game.energyCounters` / `experienceCounters` with `gainEnergy`, `payEnergy` (throws if short), `gainExperience`; Mike and Meren use them. `GameEvent.playerCounters` (per player as `life`, only counts above 0, left out when all are 0; pod: own energy/experience from the player's game, poison from the table and the game's view of its opponents), `PlayerBoard.playerCounters`, the text log's turn header ("counters: energy 2") and `describeBoard`. The seat shows a chip per counter after the life ("4 energy"; a player at 10 poison is greyed out); a goldfish caption shows an opponent's poison under its life. The Energybending flag is `isEnergybendingActive`. Test: `runPlayerCounterTests` (in `npm run pod -- --test`). `player-seat.scss` is at its 4 kB budget: the chip reuses `.badge` with no new CSS. For C2: `payEnergy` is ready for the Stormdrake's sacrifice-unless-you-pay.
 
 ### C2. The exchange in a pod (Opus 5.5, after C1)
 

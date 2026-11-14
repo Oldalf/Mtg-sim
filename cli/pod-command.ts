@@ -9,6 +9,7 @@ import { runPodTests } from '../engine/pod/pod.test';
 import {
   runPodExactMoveTests,
   runPodLogTests,
+  runPlayerCounterTests,
 } from '../engine/game-log/game-log.test';
 import { describePodResult } from '../engine/pod/pod-report';
 import { formatGameLog } from '../engine/game-log/game-log-text';
@@ -52,7 +53,12 @@ export async function runPodCommand(
     const podTestsPassed = runPodTests();
     const isLogHarmless = runPodLogTests(decks);
     const areMovesRecorded = runPodExactMoveTests(decks);
-    process.exit(podTestsPassed && isLogHarmless && areMovesRecorded ? 0 : 1);
+    const areCountersLogged = runPlayerCounterTests(decks);
+    process.exit(
+      podTestsPassed && isLogHarmless && areMovesRecorded && areCountersLogged
+        ? 0
+        : 1,
+    );
   }
   const spec = Pod.podSpec(
     decks,

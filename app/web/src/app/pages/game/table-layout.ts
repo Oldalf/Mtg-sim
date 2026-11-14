@@ -56,15 +56,24 @@ export function lifeChanges(gameLog: GameLog, eventIndex: number): number[] {
   );
 }
 
+export interface GoldfishOpponent {
+  life: number;
+  poison: number;
+}
+
 /**
- * A goldfish game logs the made-up opponents' life after the player's own: shown so the race to 0 can be watched.
- * Empty in a pod (each player's life is on their seat).
+ * A goldfish game logs the made-up opponents' life and poison after the player's own: shown so the race to 0 (or
+ * to 10 poison) can be watched. Empty in a pod (each player's life and counters are on their seat).
  */
-export function goldfishOpponentLives(
+export function goldfishOpponents(
   gameLog: GameLog,
   event: GameEvent,
-): number[] {
-  return gameLog.players.length === 1 ? event.life.slice(1) : [];
+): GoldfishOpponent[] {
+  if (gameLog.players.length !== 1) return [];
+  return event.life.slice(1).map((life, slot) => ({
+    life,
+    poison: event.playerCounters?.[slot + 1]?.poison ?? 0,
+  }));
 }
 
 // ================================================================ the scrub bar

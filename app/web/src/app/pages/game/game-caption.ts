@@ -1,10 +1,11 @@
 import { Component, input } from '@angular/core';
 import type { CardFactsAnswer } from '../../../../../api-types';
 import { CardImage } from '../../shared/card-image/card-image';
+import type { GoldfishOpponent } from './table-layout';
 
 /**
  * What just happened, like subtitles under the table: the turn, the chosen line (with its player when the log names
- * one) and the line's cards. A highlight is tinted; a goldfish game adds the opponents' life.
+ * one) and the line's cards. A highlight is tinted; a goldfish game adds the opponents' life and poison.
  */
 @Component({
   selector: 'app-game-caption',
@@ -18,11 +19,17 @@ import { CardImage } from '../../shared/card-image/card-image';
         }
         {{ text() || 'start of the turn' }}
       </span>
-      @if (opponentLives().length) {
+      @if (goldfishOpponents().length) {
         <span class="opponent-lives">
           opponents
-          @for (life of opponentLives(); track $index) {
-            <strong [class.is-dead]="life <= 0">{{ life }}</strong>
+          @for (opponent of goldfishOpponents(); track $index) {
+            <strong
+              [class.is-dead]="opponent.life <= 0 || opponent.poison >= 10"
+              >{{ opponent.life }}
+              @if (opponent.poison) {
+                <small>{{ opponent.poison }} poison</small>
+              }
+            </strong>
           }
         </span>
       }
@@ -87,6 +94,10 @@ import { CardImage } from '../../shared/card-image/card-image';
         color: var(--mat-sys-on-surface);
         font-size: 18px;
       }
+      small {
+        color: var(--mat-sys-tertiary);
+        font: var(--mat-sys-label-small);
+      }
       .is-dead {
         color: #ff8a80;
         text-decoration: line-through;
@@ -132,5 +143,5 @@ export class GameCaption {
   readonly cards = input<string[]>([]);
   readonly cardFacts = input<CardFactsAnswer>({});
   /** A goldfish game's made-up opponents; empty in a pod. */
-  readonly opponentLives = input<number[]>([]);
+  readonly goldfishOpponents = input<GoldfishOpponent[]>([]);
 }

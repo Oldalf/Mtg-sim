@@ -210,7 +210,7 @@ function addRampAndDrawCandidate(
           card,
           false,
           null,
-          merenOut && game.experience >= 5 ? 'gy' : 'hand',
+          merenOut && game.experienceCounters >= 5 ? 'gy' : 'hand',
         ),
       );
       return true;
