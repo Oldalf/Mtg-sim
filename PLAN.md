@@ -239,6 +239,16 @@ Done 2026-11-14: the grid of E1 is the only view. New components in `pages/game/
 
 In the browser, with real runs: a goldfish game, a pod of 3, 4, 5 and 6, and a real Archidekt log, at desktop and at phone width (no page may scroll sideways). A big board (samfrodo tokens, aesi lands) must stay readable. AXE checks pass. Fix what breaks; write what was learned into `app/web/CLAUDE.md`.
 
+Exact steps (written for Haiku 5.5 after E3):
+
+1. **Get games.** The app may already run on port 4173 (Pontus's); if not, start it (`npm run app`). Runs are cleared when it starts. Ask Pontus eco or full power, then start small runs with POST `/api/runs` (shapes in `app/api-types.ts`): a goldfish run of samfrodo (10 games), then pods of 3, 4, 5 and 6 seats from gale, meren, samfrodo, aesi, edgar, mike (6 games each, 12 rounds), one after the other (a second run while one is going gets 409). Real logs: `/games/real/codie/game1_t5_ad_nauseam_teferi.txt`, `/games/real/aesi/game1_t10_bsz_mill.txt`. The run folders are named like `05-pod-gale-meren-samfrodo-aesi-edgar-mike`; a game opens at `/games/<folder>/<seed>?line=<n>`.
+2. **Desktop.** For each game, look at the start, the middle and the last line. Check: the page does not scroll (`document.documentElement.scrollHeight <= innerHeight`), no seat's `.permanents` scrolls, the active seat has the accent border, the caption shows the line. Find the biggest board (a late samfrodo turn with many tokens, an aesi game with many lands) and check it stays readable.
+3. **Phone.** The browser window may not shrink: put the page in a 390 px wide iframe (`position: fixed`, 390 x 700) and check `scrollWidth === clientWidth` inside it, the caption on top, the active seat first and open, the others folded, the controls at the bottom not covering the last seat.
+4. **Autoplay, keys, drawer.** Space plays and pauses, the arrows step, `h` / `H` jump highlights, Home / End go to the ends, `l` opens the log; a click on a log line pauses. A zone count (hand, graveyard) opens its cards; Escape closes them.
+5. **Accessibility.** No AXE tool is set up in the repo; do not add one without asking Pontus. Check by hand: every button has a name (`read_page` with `filter: interactive` shows unnamed ones), Tab reaches every control with a visible focus ring, the scrub bar has its label. The colours to check for WCAG AA contrast (4.5:1 for text): `#ff8a80` (low life) on the seat's background, white on `#c62828` and `#2e7d32` (life change chips), the muted `--mat-sys-on-surface-variant` text.
+6. **Fix** only what breaks, in the files of `pages/game/`. `player-seat.scss` is at the 4 kB budget: a fix there must remove as much as it adds (or stop and ask). Anything that needs a design change stops and goes to Pontus.
+7. **Done when:** every check above holds, `npm run format`, `npm run verify` gives VERIFY OK, one commit, and a done line here plus what was learned in `app/web/CLAUDE.md`. Then step 5 is finished: ask Pontus about the plays he saw that looked off (he said he would bring them up), and update `ROADMAP.md` (suggestion 9).
+
 ---
 
 ## Suggestions (not decided: Pontus picks)
