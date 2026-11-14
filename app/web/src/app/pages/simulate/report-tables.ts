@@ -4,6 +4,7 @@
  */
 import type { KillKind, Table } from '../../../../../../engine/run-types';
 import type { DiagReport, KillTurnReport } from '../../../../../api-types';
+import type { ChartLine } from '../../shared/line-chart/line-chart';
 import type {
   ResultColumn,
   ResultRow,
@@ -93,4 +94,41 @@ export function diagTable(report: DiagReport): ShownTable {
     columns: report.measures,
     rows: report.rows.map(({ label, values }) => ({ label, values })),
   };
+}
+
+/** The share of games won by each turn (turn 1 to the last): the numbers of the "by turn" columns. */
+export function winShareByTurn(
+  table: Table,
+  kind: KillKind,
+  maxTurn: number,
+): number[] {
+  const shares: number[] = [];
+  for (let turn = 1; turn <= maxTurn; turn++)
+    shares.push(percentByTurn(table, kind, turn));
+  return shares;
+}
+
+/**
+ * The lines of the kill-turn chart. One list: a line for each of the two results. Several lists: a line per list
+ * for the chosen result.
+ */
+export function killTurnChartLines(
+  report: KillTurnReport,
+  chosenKind: KillKind,
+): ChartLine[] {
+  if (report.rows.length === 1) {
+    const { table } = report.rows[0];
+    const [[anyName], [protectedName]] = report.resultNames;
+    return [
+      { label: anyName, values: winShareByTurn(table, 'any', report.maxTurn) },
+      {
+        label: protectedName,
+        values: winShareByTurn(table, 'protected', report.maxTurn),
+      },
+    ];
+  }
+  return report.rows.map(({ label, table }) => ({
+    label,
+    values: winShareByTurn(table, chosenKind, report.maxTurn),
+  }));
 }

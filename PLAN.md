@@ -81,7 +81,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 7 | Card images | 0 | small model | done (2026-11-13) |
 | 8 | Page: decks and decklists | 3, 6 | small model | done (2026-11-13) |
 | 9 | Page: simulate | 4, 6 | big model | done (2026-11-14) |
-| 10 | Charts for the results | 9 | small model | open |
+| 10 | Charts for the results | 9 | small model | done (2026-11-14) |
 | 11 | Page: pod | 4, 6 (after 9: same pattern) | small model | open |
 | 12 | Page: the games of a run | 5, 6 | small model | open |
 | 13 | Page: the game viewer | 5, 6, 7 | big model | open |
@@ -187,6 +187,8 @@ The page needs the numbers, not printed text.
 
 - The kill-turn table as a chart (share of games won by each turn, one line per list), drawn with SVG in a small component of our own. No chart library.
 - Done when: the chart and the table show the same numbers.
+- Notes (task 10, 2026-11-14): `shared/line-chart/` is a generic SVG line chart (`ChartLine`: a label and a value per turn, percentages 0 to 100; lines differ by colour and dash; each point has a tooltip). `killTurnChartLines` and `winShareByTurn` in `pages/simulate/report-tables.ts` build its lines from the same `percentByTurn` as the tables, and a spec checks that they match. One list draws its two results; several lists draw one line per list, with a toggle for the result. `goldfish-result.ts` shows it under the table. Not seen in a browser yet (the browser extension was not connected). The page's `ng` commands need Node 26 on the PATH (fnm: `%APPDATA%nm
+ode-versions26.13.1\installation`); the shell's default Node 22.12 is too old.
 
 ### 11. Page: pod
 

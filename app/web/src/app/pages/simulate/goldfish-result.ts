@@ -1,11 +1,15 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import type { KillKind } from '../../../../../../engine/run-types';
 import type { GoldfishRunRequest, RunState } from '../../../../../api-types';
+import { LineChart } from '../../shared/line-chart/line-chart';
 import { ResultsTable } from '../../shared/results-table/results-table';
 import { GamesWorthALook } from './games-worth-a-look';
 import {
   comparisonTable,
   diagTable,
+  killTurnChartLines,
   turnByTurnTable,
   type ShownTable,
 } from './report-tables';
@@ -22,7 +26,13 @@ interface LabelledRunFolder {
  */
 @Component({
   selector: 'app-goldfish-result',
-  imports: [DecimalPipe, GamesWorthALook, ResultsTable],
+  imports: [
+    DecimalPipe,
+    GamesWorthALook,
+    LineChart,
+    MatButtonToggleModule,
+    ResultsTable,
+  ],
   template: `
     @if (shownTable(); as shown) {
       <p class="summary">{{ summary() }}</p>
@@ -43,6 +53,31 @@ interface LabelledRunFolder {
           {{ totals.noProtectedPercent | number: '1.1-1' }}%.
         </p>
       }
+    }
+
+    @if (chartLines(); as lines) {
+      <h2>Share of games won by each turn</h2>
+      @if (isComparison()) {
+        <mat-button-toggle-group
+          aria-label="Result shown in the chart"
+          [value]="chartKind()"
+          (change)="chartKind.set($event.value)"
+        >
+          <mat-button-toggle value="any">{{
+            resultName('any')
+          }}</mat-button-toggle>
+          <mat-button-toggle value="protected">{{
+            resultName('protected')
+          }}</mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+      <app-line-chart
+        [lines]="lines"
+        [description]="
+          'Share of games won by each turn, per ' +
+          (isComparison() ? 'list' : 'result')
+        "
+      />
     }
 
     @if (runFolders().length > 0) {
@@ -87,6 +122,22 @@ export class GoldfishResult {
       ? comparisonTable(report)
       : turnByTurnTable(report);
   });
+
+  /** Which result the chart shows when several lists are compared. */
+  protected readonly chartKind = signal<KillKind>('any');
+
+  protected readonly chartLines = computed(() => {
+    const report = this.report();
+    return report?.kind === 'kill-turns'
+      ? killTurnChartLines(report, this.chartKind())
+      : undefined;
+  });
+
+  protected resultName(kind: KillKind): string {
+    const report = this.report();
+    if (report?.kind !== 'kill-turns') return '';
+    return report.resultNames[kind === 'any' ? 0 : 1][0];
+  }
 
   protected readonly labelHeading = computed(() =>
     this.isComparison() ? 'List' : '',
