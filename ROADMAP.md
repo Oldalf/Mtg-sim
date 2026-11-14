@@ -25,7 +25,7 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 
 ## 4. App with a simple UI (first step done 2026-11-14)
 
-- `npm run app` starts a local server (Node's own `http`, 127.0.0.1:4173, inside the simulator's bundle so the worker threads work as before) and opens an Angular page (Angular Material, dark). The plan and its notes per task are in git (`PLAN.md` at the commit that finished step 4); `README.md` has the commands and folders, `ENGINE.md` what the server calls, `app/web/CLAUDE.md` the page's rules.
+- `npm run app` starts a local server (Node's own `http`, 127.0.0.1:4173, inside the simulator's bundle so the worker threads work as before) and opens an Angular page (Angular Material, dark). The plan and its notes per task are in git (`PLAN.md` at commit `4588599`); `README.md` has the commands and folders, `ENGINE.md` what the server calls, `app/web/CLAUDE.md` the page's rules.
 - Pages: Decks (decklists by section, card images), Simulate (one deck, one or more lists, settings, `--diag`, progress and stop, kill-turn tables and chart, games worth a look), Pod (3 to 6 seats, threat, policy, settings, the pod report), Games (the runs of the session, filters, each deck's real Archidekt logs) and the game viewer (log by turn, the board after any line, stepping by line, turn and highlight).
 - Card images come from Scryfall by `scryfall_id` and are kept in `data/scryfall/images/`; without them a card shows as text.
 - Tests: `npm run app -- --test` (the API) and `ng test` in `app/web/` (the board of the viewer, the report tables, the two forms); `npm run verify` runs both.
