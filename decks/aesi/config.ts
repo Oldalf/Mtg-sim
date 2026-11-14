@@ -4,8 +4,20 @@ import { BASE_CONFIG, Config } from '../../engine/game-types';
 export const CFG: Config = {
   ...BASE_CONFIG,
   max_turn: 14,
-  aesi_first: true, // AI policy: when Aesi can be cast, the turn planner doesn't get to pick something else (Pontus: "we always want Aesi out")
-  keep_library: 5, // Aesi's draws (and loops) stop with this many cards left in our library
-  land_lock_win: true, // every opponent's land bounced over and over (lands are creatures) counts as a win (Pontus)
-  dominion_win: 10, // this many Eternal Dominion copies at an upkeep win the game (Pontus: 10-20 stolen cards)
+  aesi_first: true, // Pontus: "we always want Aesi out"
+  keep_library: 5,
+  land_lock_win: true, // Pontus
+  dominion_win: 10, // Pontus: 10-20 stolen cards
+};
+
+/** What Aesi's settings mean (the app's tooltips); the shared ones are in engine/setting-descriptions.ts. */
+export const SETTING_DESCRIPTIONS: Record<string, string> = {
+  aesi_first:
+    'AI choice. On: whenever Aesi can be cast, it is cast; the planner does not get to pick something else.',
+  keep_library:
+    "Aesi's draws (and the draw loops) stop with this many cards left in our library, so we never draw from an empty library.",
+  land_lock_win:
+    "On: bouncing every opponent's lands over and over (when lands are creatures) counts as a win.",
+  dominion_win:
+    'This many Eternal Dominion copies at an upkeep count as a win (each steals a card every turn).',
 };

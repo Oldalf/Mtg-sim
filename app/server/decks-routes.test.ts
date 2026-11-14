@@ -50,6 +50,29 @@ export async function runDecksRoutesTests(): Promise<boolean> {
       decks.body.every((deck) => deck.lists.includes(deck.defaultList)),
     );
 
+    const settingsWithoutDescription = decks.body.flatMap((deck) =>
+      deck.settings
+        .filter((setting) => setting.description === '')
+        .map((setting) => `${deck.name}: ${setting.name}`),
+    );
+    allGood &&= check(
+      'every setting of every deck has a description' +
+        (settingsWithoutDescription.length
+          ? ` (missing: ${settingsWithoutDescription.join(', ')}; add it to the deck's config.ts or engine/setting-descriptions.ts)`
+          : ''),
+      settingsWithoutDescription.length === 0,
+    );
+    const merenSettings = decks.body.find(
+      (deck) => deck.name === 'meren',
+    )?.settings;
+    allGood &&= check(
+      'the goldfish-only settings do not apply in a pod',
+      merenSettings?.find((setting) => setting.name === 'opponents')
+        ?.appliesInPod === false &&
+        merenSettings?.find((setting) => setting.name === 'combat_safety')
+          ?.appliesInPod === true,
+    );
+
     let listsRead = 0;
     // the archive holds old reports as well, so only the normal lists are read
     for (const deck of decks.body) {

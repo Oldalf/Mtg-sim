@@ -25,6 +25,12 @@ export interface HealthAnswer {
 export interface DeckSetting {
   name: string;
   defaultValue: number | boolean;
+  /** What it means in this deck, in plain words (the form's tooltip). */
+  description: string;
+  /** True for the deck's own setting; false for an engine setting that means the same in every deck that has it. */
+  isDeckOwn: boolean;
+  /** False for a setting a pod replaces with its real players and own win rule (the pod form leaves it out). */
+  appliesInPod: boolean;
 }
 
 /** One deck, as GET /api/decks lists it. */

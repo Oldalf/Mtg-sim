@@ -21,14 +21,22 @@ import {
 } from '@angular/forms/signals';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import {
+  MatError,
+  MatFormField,
+  MatHint,
+  MatLabel,
+  MatSuffix,
+} from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import type { DeckSummary, GoldfishRunRequest } from '../../../../../api-types';
 import { ApiService } from '../../core/api';
 import { CurrentRunService } from '../../core/current-run';
+import { HelpIcon } from '../../shared/help-icon/help-icon';
 import { RunProgress } from '../../shared/run-progress/run-progress';
+import { goldfishSettingHelp } from '../../shared/setting-help/setting-help';
 import { GoldfishResult } from './goldfish-result';
 
 /** The most games the server plays in one run (app/server/run-requests.ts). */
@@ -91,10 +99,13 @@ const SIMULATE_FORM_RULES = schema<SimulateFormModel>((path) => {
     FormField,
     FormRoot,
     GoldfishResult,
+    HelpIcon,
     MatButton,
     MatCheckbox,
     MatError,
     MatFormField,
+    MatHint,
+    MatSuffix,
     MatIcon,
     MatIconButton,
     MatInput,
@@ -143,6 +154,19 @@ export class Simulate {
       (listFile) => !chosen.includes(listFile),
     );
   });
+
+  /** What each setting of the chosen deck means and which decks have it (tooltip and hint), by setting name. */
+  protected readonly settingHelp = computed(() => {
+    const deck = this.chosenDeck();
+    if (!deck) return new Map();
+    return new Map(
+      deck.settings.map((setting) => [
+        setting.name,
+        goldfishSettingHelp(deck, setting.name),
+      ]),
+    );
+  });
+  protected readonly turnsSetting = TURNS_SETTING;
 
   /** The page shows the last goldfish run; a pod run shows on the Pod page (but its progress shows here too). */
   protected readonly goldfishRun = computed(() => {

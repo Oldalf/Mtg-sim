@@ -1,7 +1,7 @@
 /** Meren of Clan Nel Toth: Golgari reanimator (bracket 2-3). Wins with Gray Merchant / Lotleth Giant drains and combat. */
 import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards';
-import { CFG } from './config';
+import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { MerenGame } from './game';
 import { DiagRow } from '../../engine/runner';
 import {
@@ -35,6 +35,7 @@ export const deck = {
   dir: path.join(ROOT, 'decks', 'meren'),
   defaultList: 'decklist.txt',
   config: CFG,
+  settingDescriptions: SETTING_DESCRIPTIONS,
   // a pod: every other player must be dead (the goldfish rule was two dead or 100 damage)
   podCfg: (players: number) => ({ win_dead: players - 1, win_damage: 1e9 }),
   Game: MerenGame,

@@ -1,7 +1,7 @@
 /** Sam & Frodo (Abzan tokens / aristocrats, bracket 2-3). Wins by draining all three opponents from 40. */
 import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards';
-import { CFG } from './config';
+import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { SamFrodoGame } from './game';
 import { DiagRow } from '../../engine/runner';
 import {
@@ -27,6 +27,7 @@ export const deck = {
   dir: path.join(ROOT, 'decks', 'samfrodo'),
   defaultList: 'decklist.txt',
   config: CFG,
+  settingDescriptions: SETTING_DESCRIPTIONS,
   podCfg: (players: number) => ({ win_dead: players - 1 }),
   Game: SamFrodoGame,
   metrics: [

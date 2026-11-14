@@ -20,14 +20,22 @@ import {
 } from '@angular/forms/signals';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import {
+  MatError,
+  MatFormField,
+  MatHint,
+  MatLabel,
+  MatSuffix,
+} from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import type { DeckSummary, PodRunRequest } from '../../../../../api-types';
 import { ApiService } from '../../core/api';
 import { CurrentRunService } from '../../core/current-run';
+import { HelpIcon } from '../../shared/help-icon/help-icon';
 import { RunProgress } from '../../shared/run-progress/run-progress';
+import { podSettingHelp } from '../../shared/setting-help/setting-help';
 import { PodResult } from './pod-result';
 
 const MIN_SEATS = 3;
@@ -40,9 +48,23 @@ const MOST_GAMES = 50_000;
 const DEFAULT_ROUNDS_CAP = 17;
 const MOST_ROUNDS = 50;
 
-/** Who attacks aim at, and when a deck with a kill line goes for it (engine/pod.ts). */
+/** Who attacks aim at, and when a deck with a kill line goes for it (engine/pod.ts, engine/pod-table.ts). */
 const THREAT_CHOICES = ['leader', 'spread', 'weakest', 'damage'];
 const POLICY_CHOICES = ['any', 'protected', 'mixed', 'window'];
+const THREAT_HELP = [
+  'Who the attacks aim at (every deck). Removal and counterspells always aim at the biggest threat.',
+  'leader: the biggest threat (board, mana, hand, damage dealt, close to winning).',
+  "spread: the player we've hurt least.",
+  'weakest: the one with the lowest life.',
+  'damage: where the attack does the most damage.',
+].join('\n');
+const POLICY_HELP = [
+  'When a deck that found a kill without counter backup goes for it (every deck).',
+  'any: at once.',
+  'protected: only with a counterspell and the mana to back it up.',
+  'mixed: protected until round 9, then at once.',
+  'window: when no opponent can answer (at most 1 untapped mana, or no cards in hand); otherwise it waits for backup.',
+].join('\n');
 const DEFAULT_THREAT = 'leader';
 const DEFAULT_POLICY = 'any';
 
@@ -104,10 +126,13 @@ const POD_FORM_RULES = schema<PodFormModel>((path) => {
   imports: [
     FormField,
     FormRoot,
+    HelpIcon,
     MatButton,
     MatCheckbox,
     MatError,
     MatFormField,
+    MatHint,
+    MatSuffix,
     MatIcon,
     MatIconButton,
     MatInput,
@@ -126,6 +151,8 @@ export class Pod {
 
   protected readonly threatChoices = THREAT_CHOICES;
   protected readonly policyChoices = POLICY_CHOICES;
+  protected readonly threatHelp = THREAT_HELP;
+  protected readonly policyHelp = POLICY_HELP;
   protected readonly minSeats = MIN_SEATS;
   protected readonly maxSeats = MAX_SEATS;
 
@@ -155,6 +182,21 @@ export class Pod {
   private readonly decksPlaying = computed(() =>
     [...new Set(this.formModel().seats.map((seat) => seat.deck))].join(','),
   );
+
+  /** What each setting means in the decks that play, and which of them have it (tooltip and hint), by name. */
+  protected readonly settingHelp = computed(() => {
+    const decksPlaying = this.decksPlaying()
+      .split(',')
+      .flatMap((deckName) => this.deckNamed(deckName) ?? []);
+    const model = this.formModel();
+    const names = [
+      ...model.numberSettings.map((setting) => setting.name),
+      ...model.switchSettings.map((setting) => setting.name),
+    ];
+    return new Map(
+      names.map((name) => [name, podSettingHelp(decksPlaying, name)]),
+    );
+  });
 
   constructor() {
     this.currentRun.refresh();
@@ -250,9 +292,11 @@ export class Pod {
   private settingsOf(deckNames: string[]): PodSetting[] {
     const settings: PodSetting[] = [];
     for (const deckName of deckNames)
-      for (const { name, defaultValue } of this.deckNamed(deckName)?.settings ??
-        [])
+      for (const { name, defaultValue, appliesInPod } of this.deckNamed(
+        deckName,
+      )?.settings ?? [])
         if (
+          appliesInPod &&
           name !== TURNS_SETTING &&
           !settings.some((setting) => setting.name === name)
         )

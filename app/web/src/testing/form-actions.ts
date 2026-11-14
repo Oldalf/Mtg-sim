@@ -34,6 +34,38 @@ export async function submitForm(
   await fixture.whenStable();
 }
 
+/** The field whose label is exactly this text (the settings are labelled by their names). */
+export function fieldLabelled<FieldElement extends HTMLElement>(
+  fixture: ComponentFixture<unknown>,
+  labelText: string,
+): FieldElement {
+  const page = fixture.nativeElement as HTMLElement;
+  const formField = [...page.querySelectorAll('mat-form-field')].find(
+    (candidate) =>
+      candidate.querySelector('mat-label')?.textContent?.trim() === labelText,
+  );
+  const field = formField?.querySelector<FieldElement>('input, select');
+  if (!field) throw new Error(`no field labelled ${labelText}`);
+  return field;
+}
+
+/** The hint and help text of the field labelled this, as one text. */
+export function helpOfField(
+  fixture: ComponentFixture<unknown>,
+  labelText: string,
+): { hint: string; tooltip: string } {
+  const formField = fieldLabelled(fixture, labelText).closest(
+    'mat-form-field',
+  )!;
+  return {
+    hint: formField.querySelector('mat-hint')?.textContent?.trim() ?? '',
+    tooltip:
+      formField
+        .querySelector('app-help-icon mat-icon')
+        ?.getAttribute('aria-label') ?? '',
+  };
+}
+
 export function numberFields(
   fixture: ComponentFixture<unknown>,
 ): HTMLInputElement[] {
