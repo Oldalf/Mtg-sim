@@ -208,6 +208,20 @@ async function checkWrongRequests(port: number): Promise<boolean> {
         powerSave: false,
       },
     ],
+    [
+      'a goldfish-only setting in a pod',
+      {
+        mode: 'pod',
+        decks: ['gale', 'meren', 'aesi'].map((deck) => ({
+          deck,
+          list: DECKS[deck].defaultList,
+        })),
+        games: 10,
+        rounds: 17,
+        settings: { opponents: 5 },
+        powerSave: false,
+      },
+    ],
   ];
   const runBefore = await callApi<CurrentRunAnswer>(port, '/api/runs/current');
   let allRefused = true;

@@ -4,8 +4,8 @@ import type { GoldfishRunRequest } from '../../../../../api-types';
 import { FakeApi } from '../../../testing/fake-api';
 import {
   chooseOption,
-  numberFields,
-  selects,
+  fieldLabelled,
+  helpOfField,
   submitForm,
   typeInto,
 } from '../../../testing/form-actions';
@@ -29,6 +29,10 @@ describe('Simulate form', () => {
 
   function lastRequest(): GoldfishRunRequest {
     return fakeApi.startedRuns.at(-1) as GoldfishRunRequest;
+  }
+
+  function numberField(labelText: string): HTMLInputElement {
+    return fieldLabelled<HTMLInputElement>(fixture, labelText);
   }
 
   it('sends the first deck with its default list and no changed settings', async () => {
@@ -59,23 +63,35 @@ describe('Simulate form', () => {
 
   it('sends only the turns and settings that differ from the defaults', async () => {
     await fixture.whenStable();
-    // the number fields: games, turns, then the deck's number settings (planner_width)
-    const [gamesField, turnsField, plannerWidthField] = numberFields(fixture);
-    await typeInto(fixture, gamesField, '300');
-    await typeInto(fixture, turnsField, '10');
-    await typeInto(fixture, plannerWidthField, '3');
+    await typeInto(fixture, numberField('Games'), '300');
+    await typeInto(fixture, numberField('Turns'), '10');
+    await typeInto(fixture, numberField('planner_width'), '3');
     await submitForm(fixture);
     expect(lastRequest().games).toBe(300);
     expect(lastRequest().turns).toBe(10);
     expect(lastRequest().settings).toEqual({ planner_width: 3 });
   });
 
+  it("explains each setting and says whether it is the engine's or the deck's own", async () => {
+    await fixture.whenStable();
+    expect(helpOfField(fixture, 'opponents').hint).toBe('same in every deck');
+    expect(helpOfField(fixture, 'planner_width')).toEqual({
+      hint: 'alpha only',
+      tooltip: 'How many plays the planner compares.',
+    });
+    expect(helpOfField(fixture, 'Turns').tooltip).toBe(
+      'The last turn played. (setting max_turn)',
+    );
+  });
+
   it('gives the new deck its default list and turns when another deck is chosen', async () => {
     await fixture.whenStable();
-    const [deckSelect] = selects(fixture);
-    await chooseOption(fixture, deckSelect, 'beta');
-    const [, turnsField] = numberFields(fixture);
-    expect(turnsField.value).toBe('9');
+    await chooseOption(
+      fixture,
+      fieldLabelled<HTMLSelectElement>(fixture, 'Deck'),
+      'beta',
+    );
+    expect(numberField('Turns').value).toBe('9');
     await submitForm(fixture);
     expect(lastRequest().deck).toBe('beta');
     expect(lastRequest().lists).toEqual(['decklist.txt']);
@@ -85,8 +101,7 @@ describe('Simulate form', () => {
 
   it('sends nothing while the number of games is out of range', async () => {
     await fixture.whenStable();
-    const [gamesField] = numberFields(fixture);
-    await typeInto(fixture, gamesField, '0');
+    await typeInto(fixture, numberField('Games'), '0');
     await submitForm(fixture);
     expect(fakeApi.startedRuns).toEqual([]);
     const page = fixture.nativeElement as HTMLElement;

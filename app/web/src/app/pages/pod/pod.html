@@ -95,6 +95,7 @@
           <option [value]="choice">{{ choice }}</option>
         }
       </select>
+      <app-help-icon matSuffix [text]="threatHelp" />
     </mat-form-field>
     <mat-form-field
       appearance="outline"
@@ -107,6 +108,7 @@
           <option [value]="choice">{{ choice }}</option>
         }
       </select>
+      <app-help-icon matSuffix [text]="policyHelp" />
     </mat-form-field>
   </div>
 
@@ -118,7 +120,12 @@
       </legend>
       <div class="settings">
         @for (settingField of podForm.numberSettings; track $index) {
-          <mat-form-field appearance="outline" class="setting-field">
+          @let help = settingHelp().get(settingField.name().value());
+          <mat-form-field
+            appearance="outline"
+            subscriptSizing="dynamic"
+            class="setting-field"
+          >
             <mat-label>{{ settingField.name().value() }}</mat-label>
             <input
               matInput
@@ -126,6 +133,12 @@
               step="any"
               [formField]="settingField.value"
             />
+            @if (help) {
+              <app-help-icon matSuffix [text]="help.description" />
+            }
+            @if (help) {
+              <mat-hint>{{ help.appliesTo }}</mat-hint>
+            }
             @if (settingField.value().errors()[0]; as error) {
               <mat-error>{{ error.message }}</mat-error>
             }
@@ -134,9 +147,16 @@
       </div>
       <div class="settings">
         @for (settingField of podForm.switchSettings; track $index) {
-          <mat-checkbox [formField]="settingField.isOn">
-            {{ settingField.name().value() }}
-          </mat-checkbox>
+          @let help = settingHelp().get(settingField.name().value());
+          <div class="setting-switch">
+            <mat-checkbox [formField]="settingField.isOn">
+              {{ settingField.name().value() }}
+            </mat-checkbox>
+            @if (help) {
+              <app-help-icon [text]="help.description" />
+              <span class="applies-to">{{ help.appliesTo }}</span>
+            }
+          </div>
         }
       </div>
     </fieldset>

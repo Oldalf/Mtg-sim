@@ -1,10 +1,21 @@
 import { of, type Observable } from 'rxjs';
 import type {
   CurrentRunAnswer,
+  DeckSetting,
   DeckSummary,
   RunRequest,
   StartRunAnswer,
 } from '../../../api-types';
+
+/** An engine setting unless `isDeckOwn`; one a pod uses unless `appliesInPod` is false. */
+function setting(
+  name: string,
+  defaultValue: number | boolean,
+  description: string,
+  { isDeckOwn = false, appliesInPod = true } = {},
+): DeckSetting {
+  return { name, defaultValue, description, isDeckOwn, appliesInPod };
+}
 
 /** Two made-up decks for the page tests: alpha without --diag, beta with it. */
 export const FAKE_DECKS: DeckSummary[] = [
@@ -14,9 +25,14 @@ export const FAKE_DECKS: DeckSummary[] = [
     defaultList: 'decklist.txt',
     lists: ['decklist.txt', 'lists/alpha-two.txt'],
     settings: [
-      { name: 'max_turn', defaultValue: 8 },
-      { name: 'planner_width', defaultValue: 2 },
-      { name: 'smart_mulligan', defaultValue: true },
+      setting('opponents', 3, 'How many goldfish opponents.', {
+        appliesInPod: false,
+      }),
+      setting('max_turn', 8, 'The last turn played.'),
+      setting('planner_width', 2, 'How many plays the planner compares.', {
+        isDeckOwn: true,
+      }),
+      setting('smart_mulligan', true, "The deck's mulligan rule."),
     ],
     resultNames: ['Win possible (any)', 'Win with counter backup'],
     hasDiag: false,
@@ -27,8 +43,8 @@ export const FAKE_DECKS: DeckSummary[] = [
     defaultList: 'decklist.txt',
     lists: ['decklist.txt', 'lists/beta-two.txt'],
     settings: [
-      { name: 'max_turn', defaultValue: 9 },
-      { name: 'combat_safety', defaultValue: 10 },
+      setting('max_turn', 9, 'The last turn played.'),
+      setting('combat_safety', 10, 'Attack only above this life.'),
     ],
     resultNames: ['Win', 'Win by turn'],
     hasDiag: true,

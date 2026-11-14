@@ -2,7 +2,7 @@
  *  Twenty-Toed Toad with twenty cards in hand, or draining all three opponents. */
 import * as path from 'path';
 import { ROOT } from '../../engine/cards';
-import { CFG } from './config';
+import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { MikeGame } from './game';
 import { LOG_TRACKERS } from './cards';
 import { DiagRow } from '../../engine/runner';
@@ -20,6 +20,7 @@ export const deck = {
   dir: path.join(ROOT, 'decks', 'mike'),
   defaultList: 'decklist.txt',
   config: CFG,
+  settingDescriptions: SETTING_DESCRIPTIONS,
   ownsDecking: true,
   Game: MikeGame,
   metrics: [

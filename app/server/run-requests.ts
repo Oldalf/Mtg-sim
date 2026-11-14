@@ -5,6 +5,7 @@
 import { DECKS } from '../../decks/index';
 import * as C from '../../engine/cards';
 import type { Deck } from '../../engine/runner';
+import { GOLDFISH_ONLY_SETTINGS } from '../../engine/setting-descriptions';
 import type {
   GoldfishRunRequest,
   PodRunRequest,
@@ -93,6 +94,15 @@ function checkSettings(settings: unknown, decks: Deck[]): Settings {
   return settings as Settings;
 }
 
+/** As checkSettings, and none that a pod replaces with its real players and own win rule. */
+function checkPodSettings(settings: unknown, decks: Deck[]): Settings {
+  const checkedSettings = checkSettings(settings, decks);
+  for (const name of Object.keys(checkedSettings))
+    if (GOLDFISH_ONLY_SETTINGS.includes(name))
+      refuse(`setting ${name} is for goldfish runs only; a pod sets it itself`);
+  return checkedSettings;
+}
+
 function checkGoldfishRequest(
   body: Record<string, unknown>,
 ): GoldfishRunRequest {
@@ -134,7 +144,7 @@ function checkPodRequest(body: Record<string, unknown>): PodRunRequest {
     decks: seats.map((seat) => ({ deck: seat.deck.name, list: seat.list })),
     games: checkWholeNumber(body.games, 'games', 1, MAX_GAMES),
     rounds: checkWholeNumber(body.rounds, 'rounds', 1, MAX_TURNS),
-    settings: checkSettings(
+    settings: checkPodSettings(
       body.settings,
       seats.map((seat) => seat.deck),
     ),

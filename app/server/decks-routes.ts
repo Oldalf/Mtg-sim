@@ -6,10 +6,15 @@ import * as path from 'path';
 import { DECKS } from '../../decks/index';
 import * as C from '../../engine/cards';
 import type { Deck } from '../../engine/runner';
+import {
+  GOLDFISH_ONLY_SETTINGS,
+  SHARED_SETTING_DESCRIPTIONS,
+} from '../../engine/setting-descriptions';
 import type {
   DecklistAnswer,
   DecklistCard,
   DecklistSection,
+  DeckSetting,
   DeckSummary,
   DecksAnswer,
 } from '../api-types';
@@ -84,6 +89,22 @@ function countCards(names: string[]): DecklistCard[] {
   return [...countOfName].map(([name, count]) => describeCard(name, count));
 }
 
+/** A deck's settings with their defaults and what they mean (the deck's own description first, then the shared one). */
+function settingsOfDeck(deck: Deck): DeckSetting[] {
+  return Object.entries(deck.config).map(([name, defaultValue]) => {
+    const ownDescription = deck.settingDescriptions?.[name];
+    const sharedDescription = SHARED_SETTING_DESCRIPTIONS[name];
+    return {
+      name,
+      defaultValue,
+      description: ownDescription ?? sharedDescription ?? '',
+      isDeckOwn:
+        ownDescription !== undefined || sharedDescription === undefined,
+      appliesInPod: !GOLDFISH_ONLY_SETTINGS.includes(name),
+    };
+  });
+}
+
 export function summarizeDeck(
   deck: Deck,
   includeArchive: boolean,
@@ -94,10 +115,7 @@ export function summarizeDeck(
     commanders: [...new Set(defaultList.commanders)],
     defaultList: deck.defaultList,
     lists: listFilesOfDeck(deck, includeArchive),
-    settings: Object.entries(deck.config).map(([name, defaultValue]) => ({
-      name,
-      defaultValue,
-    })),
+    settings: settingsOfDeck(deck),
     resultNames: deck.metrics
       ? [deck.metrics[0][0], deck.metrics[1][0]]
       : ['Win possible (any)', 'Win possible (with counter backup)'],

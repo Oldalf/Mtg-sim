@@ -2,7 +2,7 @@
  *  Torment of Hailfire), copied by Reiterate; Reiterate loops on Jeska's Will / Mana Geyser / Brass's Bounty are bottomless. */
 import * as path from 'path';
 import { ROOT } from '../../engine/cards';
-import { CFG } from './config';
+import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { CodieGame } from './game';
 import { DiagRow } from '../../engine/runner';
 import { percentOf, winByTurnMetrics } from '../../engine/diag-metrics';
@@ -14,6 +14,7 @@ export const deck = {
   dir: path.join(ROOT, 'decks', 'codie'),
   defaultList: 'decklist.txt',
   config: CFG,
+  settingDescriptions: SETTING_DESCRIPTIONS,
   Game: CodieGame,
   rankProtect: { sections: ['protection', 'removal'], except: [] as string[] },
   rankTurn: 7,

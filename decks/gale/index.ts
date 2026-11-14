@@ -1,7 +1,7 @@
 /** Gale, Waterdeep Prodigy + Scion of Halaster: Dimir spellslinger combo. */
 import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards';
-import { CFG } from './config';
+import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { GaleGame } from './game';
 
 const anyOf = (names: string[]) => {
@@ -21,6 +21,7 @@ export const deck = {
     cards: ['Spell Pierce', 'Muddle the Mixture', 'Rewind', 'Extended Absence'],
   },
   config: CFG,
+  settingDescriptions: SETTING_DESCRIPTIONS,
   Game: GaleGame,
   // --hands: what to look for in an opening hand
   handFeatures: [
