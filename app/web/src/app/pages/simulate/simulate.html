@@ -1,0 +1,159 @@
+<h1>Simulate</h1>
+
+@if (decks.isLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<form class="run-form" [formRoot]="simulateForm">
+  <div class="row">
+    <mat-form-field appearance="outline" floatLabel="always" class="deck-field">
+      <mat-label>Deck</mat-label>
+      <select matNativeControl [formField]="simulateForm.deck">
+        @for (deck of decks.value(); track deck.name) {
+          <option [value]="deck.name">{{ deck.name }}</option>
+        }
+      </select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="number-field">
+      <mat-label>Games</mat-label>
+      <input matInput type="number" [formField]="simulateForm.games" />
+      @if (simulateForm.games().errors()[0]; as error) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="number-field">
+      <mat-label>Turns</mat-label>
+      <input matInput type="number" [formField]="simulateForm.turns" />
+      @if (simulateForm.turns().errors()[0]; as error) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  <fieldset>
+    <legend>Lists (the first is the base)</legend>
+    @for (
+      listField of simulateForm.lists;
+      track $index;
+      let listIndex = $index
+    ) {
+      <div class="row list-row">
+        <mat-form-field
+          appearance="outline"
+          floatLabel="always"
+          class="list-field"
+        >
+          <mat-label>
+            {{ listIndex === 0 ? 'Base list' : 'Compare with' }}
+          </mat-label>
+          <select matNativeControl [formField]="listField">
+            @for (listFile of chosenDeck()?.lists; track listFile) {
+              <option [value]="listFile">{{ listLabel(listFile) }}</option>
+            }
+          </select>
+        </mat-form-field>
+        @if (simulateForm.lists.length > 1) {
+          <button
+            mat-icon-button
+            type="button"
+            [attr.aria-label]="'Remove list ' + (listIndex + 1)"
+            (click)="removeList(listIndex)"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    }
+    @if (simulateForm.lists().errors()[0]; as error) {
+      <p class="error">{{ error.message }}</p>
+    }
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="unchosenLists().length === 0"
+      (click)="addList()"
+    >
+      <mat-icon>add</mat-icon>
+      Add a list to compare
+    </button>
+  </fieldset>
+
+  @if (
+    simulateForm.numberSettings.length + simulateForm.switchSettings.length > 0
+  ) {
+    <fieldset>
+      <legend>
+        Settings of the deck (a changed one counts as <code>--set</code>)
+      </legend>
+      <div class="settings">
+        @for (settingField of simulateForm.numberSettings; track $index) {
+          <mat-form-field appearance="outline" class="setting-field">
+            <mat-label>{{ settingField.name().value() }}</mat-label>
+            <input
+              matInput
+              type="number"
+              step="any"
+              [formField]="settingField.value"
+            />
+            @if (settingField.value().errors()[0]; as error) {
+              <mat-error>{{ error.message }}</mat-error>
+            }
+          </mat-form-field>
+        }
+      </div>
+      <div class="settings">
+        @for (settingField of simulateForm.switchSettings; track $index) {
+          <mat-checkbox [formField]="settingField.isOn">
+            {{ settingField.name().value() }}
+          </mat-checkbox>
+        }
+      </div>
+    </fieldset>
+  }
+
+  <div class="row">
+    @if (chosenDeck()?.hasDiag) {
+      <mat-checkbox [formField]="simulateForm.diag">
+        The deck's own measures (<code>--diag</code>)
+      </mat-checkbox>
+    }
+    <mat-checkbox [formField]="simulateForm.powerSave">
+      Power save (slower, keeps the machine usable)
+    </mat-checkbox>
+  </div>
+
+  <div class="row">
+    <button
+      mat-flat-button
+      type="submit"
+      [disabled]="simulateForm().invalid() || currentRun.isRunning()"
+    >
+      <mat-icon>play_arrow</mat-icon>
+      Run
+    </button>
+    @if (currentRun.isRunning()) {
+      <span class="note"
+        >A run is going; a new one can start when it ends.</span
+      >
+    }
+  </div>
+</form>
+
+@if (currentRun.run(); as run) {
+  <section class="run" aria-label="The run">
+    <h2>
+      @if (run.request.mode === 'goldfish') {
+        {{ run.request.deck }}:
+        {{ run.request.lists.map(listLabel).join(', ') }}
+      } @else {
+        A pod run
+      }
+    </h2>
+    <app-run-progress [run]="run" (stop)="currentRun.stop()" />
+    @if (goldfishRun(); as finishedRun) {
+      @if (finishedRun.status !== 'running') {
+        <app-goldfish-result [run]="finishedRun" />
+      }
+    }
+  </section>
+}

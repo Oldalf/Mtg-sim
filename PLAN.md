@@ -80,7 +80,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 6 | The app shell, the theme and the shared components | 0 | big model | done (2026-11-13) |
 | 7 | Card images | 0 | small model | done (2026-11-13) |
 | 8 | Page: decks and decklists | 3, 6 | small model | done (2026-11-13) |
-| 9 | Page: simulate | 4, 6 | big model | open |
+| 9 | Page: simulate | 4, 6 | big model | done (2026-11-14) |
 | 10 | Charts for the results | 9 | small model | open |
 | 11 | Page: pod | 4, 6 (after 9: same pattern) | small model | open |
 | 12 | Page: the games of a run | 5, 6 | small model | open |
@@ -177,6 +177,11 @@ The page needs the numbers, not printed text.
 - While it runs: a progress bar, games played, seconds, a stop button.
 - The result: for one list the kill-turn table (both results, per turn and by turn); for several lists the comparison table with the differences to the base and the noise note; for `--diag` the deck's measures per list.
 - Under it, "Games worth a look" per list: the tagged games with their result, each a link into the game viewer, and a link to all games of the run.
+- Notes (task 9, 2026-11-14): `pages/simulate/` holds the form (`simulate.ts`), the result (`goldfish-result.ts`), the tagged games of a run folder (`games-worth-a-look.ts`, reusable by task 11) and the report-to-table functions (`report-tables.ts`, with a spec; task 10's chart can use `percentByTurn`). `core/current-run.ts` (`CurrentRunService`) starts, polls once a second and stops the one run; task 11 uses it as it is. Things for the next forms (task 11):
+  - Signal Forms in Angular 22: put `[formRoot]="theForm"` on the `<form>` and give the action as `form(model, rules, { submission: { action } })`. `formRoot` adds `novalidate`; without it the browser's own check of a number field silently blocks the submit (a decimal setting like 0.25 fails the default `step` of 1). Number fields of settings get `step="any"`.
+  - At the theme's density (-2) a `fill` form field hides its label: use `appearance="outline"` on each field. Setting it app-wide with `MAT_FORM_FIELD_DEFAULT_OPTIONS` in `app.config.ts` pulls the form field into the initial bundle (+136 kB), so don't. A native `<select matNativeControl>` needs `floatLabel="always"` or its label overlaps the value when the options arrive after it.
+  - The deck setting `max_turn` is shown as "Turns" (sent as `turns` when changed), not among the settings. Only changed settings are sent.
+  - The initial bundle went just over 500 kB (Angular core code that the lazy pages share with the shell, not page code): the warning budget in `angular.json` is now 600 kB.
 
 ### 10. Charts for the results
 

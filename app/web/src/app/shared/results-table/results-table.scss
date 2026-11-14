@@ -21,3 +21,10 @@ table {
 .difference.is-noise {
   color: var(--mat-sys-on-surface-variant);
 }
+
+// long headings (the measures of --diag) wrap instead of widening the table
+th.number {
+  white-space: normal;
+  min-width: 72px;
+  max-width: 160px;
+}
