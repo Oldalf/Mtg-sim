@@ -31,7 +31,7 @@ The tasks run one at a time, in this order. Each row is one session and one comm
 | 2 | A3 (done) | Remove the app's archive switch (skip if suggestion 4 keeps an archive folder) | Haiku 5.5 |
 | 3 | B2 (done) | Move the engine into folders, one folder per commit | Sonnet 5.5 |
 | 4 | B3 (done) | Docs follow the move | Haiku 5.5 |
-| 5 | C1 | Write the add-a-deck skill | Opus 5.5 |
+| 5 | C1 (done) | Write the add-a-deck skill | Opus 5.5 |
 | 6 | C2 | Try the skill on a real deck | Sonnet 5.5 |
 | 7 | D1 | Autoplay | Sonnet 5.5 |
 | 8 | D2 | Remember speed and position | Haiku 5.5 |
@@ -150,6 +150,8 @@ Read how the six decks are built and write the skill. It needs Opus 5.5 because 
 6. **The rules:** card facts that hold in any deck go in the engine and must leave the other decks IDENTICAL; zone changes only through `takeCard` / `putCard` and the like; `say` / `sayEvent` / `sayHighlight` for the log.
 7. **The pod layer** as a second, optional part: interaction cards, the "close to winning" flag, `POD_PLAN.md`.
 8. **Done when:** `--test` prints ALL OK, the baseline is recorded, `npm run verify` is OK, the deck shows in the app.
+
+Done 2026-11-14: `.claude/skills/add-deck/SKILL.md` covers the eight points in that order, plus a `PLAN.md` outline for a new deck; `README.md`'s "Adding a deck" points to it. Written with skill-creator's format; its test-run loop was skipped because C2 is that test. Registration is four places (`DECKS`, `TESTS`, `REGRESS`, `DECKS_WITH_BASELINE`), so suggestion 3 would shorten section 4. `npm run verify` not run (docs only, no code changed).
 
 ### C2. Try the skill on a real deck (Sonnet 5.5, after C1)
 
