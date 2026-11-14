@@ -33,7 +33,7 @@ The tasks run one at a time, in this order. Each row is one session and one comm
 | 4 | B3 (done) | Docs follow the move | Haiku 5.5 |
 | 5 | C1 (done) | Write the add-a-deck skill | Opus 5.5 |
 | 6 | C2 (done) | Try the skill on a real deck | Sonnet 5.5 |
-| 7 | D1 | Autoplay | Sonnet 5.5 |
+| 7 | D1 (done) | Autoplay | Sonnet 5.5 |
 | 8 | D2 | Remember speed and position | Haiku 5.5 |
 | 9 | E1 | Table view: design as a prototype, Pontus picks | Opus 5.5, then Pontus |
 | 10 | E2 | Table view: the logic as plain functions | Sonnet 5.5 |
@@ -174,6 +174,8 @@ Goal: a play button in the viewer (`app/web/src/app/pages/game/`) that steps thr
 - The timer is a signal `isPlaying` plus one `effect` that schedules the next step and cleans up after itself (also when the page is left).
 - The log already follows the chosen line (`scrollIntoView` in `game-log-view.ts`). Check it stays smooth while playing.
 - Done when: `ng test` passes with the new spec, and a goldfish game and a 4-seat pod game play to the end by themselves in the browser.
+
+Done 2026-11-14: play / pause button and a slow / normal / fast toggle in the step toolbar, Space as the key; `autoplayDelay` in `game-steps.ts` with a spec (slow is 1.75 times normal, fast 0.5). Any manual step or click on a log line pauses, a new game pauses, play at the end starts over. It steps with `nextEvent` (one event; events without text are turn starts). Pontus watched it play in the browser and confirmed it.
 
 ### D2. Remember speed and position (Haiku 5.5, after D1)
 

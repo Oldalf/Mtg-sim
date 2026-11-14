@@ -127,6 +127,36 @@ export function previousTurn(turns: LogTurn[], eventIndex: number): number {
   return turns[turnIndex - 1].firstEvent;
 }
 
+// ================================================================ autoplay
+
+export type AutoplaySpeed = 'slow' | 'normal' | 'fast';
+
+export const AUTOPLAY_SPEEDS: AutoplaySpeed[] = ['slow', 'normal', 'fast'];
+
+const SPEED_FACTOR: Record<AutoplaySpeed, number> = {
+  slow: 1.75,
+  normal: 1,
+  fast: 0.5,
+};
+
+const BASE_MILLISECONDS = 1200;
+const HIGHLIGHT_MILLISECONDS = 2500;
+const TURN_START_MILLISECONDS = 2000;
+
+/** How long autoplay stays on a line: longer for a highlight and for the first line of a turn. */
+export function autoplayDelay(
+  event: GameEvent,
+  startsTurn: boolean,
+  speed: AutoplaySpeed,
+): number {
+  const normalDelay = event.isHighlight
+    ? HIGHLIGHT_MILLISECONDS
+    : startsTurn
+      ? TURN_START_MILLISECONDS
+      : BASE_MILLISECONDS;
+  return normalDelay * SPEED_FACTOR[speed];
+}
+
 // ================================================================ what is shown
 
 const MOVE_BETWEEN_ZONES = /^moved (\w+) => (\w+)$/;

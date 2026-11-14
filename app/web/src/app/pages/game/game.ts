@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -8,6 +9,7 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -20,6 +22,9 @@ import { CardImage } from '../../shared/card-image/card-image';
 import { ErrorBox } from '../../shared/error-box/error-box';
 import { GameLogView } from './game-log-view';
 import {
+  AUTOPLAY_SPEEDS,
+  type AutoplaySpeed,
+  autoplayDelay,
   cardNamesOfGame,
   cardsOfEvent,
   nextEvent,
@@ -41,6 +46,7 @@ const STEP_KEYS = {
   previousTurn: 'ArrowLeft',
   nextHighlight: 'h',
   previousHighlight: 'H',
+  playOrPause: ' ',
 };
 
 /**
@@ -52,6 +58,7 @@ const STEP_KEYS = {
   selector: 'app-game',
   imports: [
     MatButtonModule,
+    MatButtonToggleModule,
     MatIcon,
     MatProgressBar,
     MatSlideToggle,
@@ -75,6 +82,7 @@ export class Game {
   readonly file = input<string>();
 
   protected readonly STEP_KEYS = STEP_KEYS;
+  protected readonly AUTOPLAY_SPEEDS = AUTOPLAY_SPEEDS;
   private readonly api = inject(ApiService);
 
   protected readonly game = rxResource({
@@ -115,6 +123,13 @@ export class Game {
   });
   protected readonly showMoves = signal(false);
 
+  /** Autoplay; loading another game pauses it. */
+  protected readonly isPlaying = linkedSignal({
+    source: this.gameLog,
+    computation: () => false,
+  });
+  protected readonly speed = signal<AutoplaySpeed>('normal');
+
   protected readonly turns = computed(() => {
     const gameLog = this.gameLog();
     return gameLog ? turnsOfGame(gameLog) : [];
@@ -142,14 +157,48 @@ export class Game {
     return event ? cardsOfEvent(event) : [];
   });
 
+  constructor() {
+    // One timer at a time: each step re-runs the effect, which schedules the next
+    effect((onCleanup) => {
+      const gameLog = this.gameLog();
+      const event = this.event();
+      if (!this.isPlaying() || !gameLog || !event) return;
+      const eventIndex = this.chosenEvent();
+      if (eventIndex >= gameLog.events.length - 1) {
+        this.isPlaying.set(false);
+        return;
+      }
+      const startsTurn = this.turns().some(
+        (turn) => turn.firstEvent === eventIndex,
+      );
+      const timer = setTimeout(
+        () => this.chosenEvent.set(nextEvent(gameLog, eventIndex)),
+        autoplayDelay(event, startsTurn, this.speed()),
+      );
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
+
+  /** Pressing play at the end of the game starts it over. */
+  protected togglePlaying(): void {
+    const gameLog = this.gameLog();
+    if (!gameLog) return;
+    if (!this.isPlaying() && this.chosenEvent() >= gameLog.events.length - 1)
+      this.chosenEvent.set(0);
+    this.isPlaying.update((isPlaying) => !isPlaying);
+  }
+
   protected choose(eventIndex: number): void {
+    this.isPlaying.set(false);
     this.chosenEvent.set(eventIndex);
   }
 
   /** Moves the chosen line by one of the steps; does nothing before the game has loaded. */
   protected step(stepTo: (gameLog: GameLog, eventIndex: number) => number) {
     const gameLog = this.gameLog();
-    if (gameLog) this.chosenEvent.set(stepTo(gameLog, this.chosenEvent()));
+    if (!gameLog) return;
+    this.isPlaying.set(false);
+    this.chosenEvent.set(stepTo(gameLog, this.chosenEvent()));
   }
 
   protected readonly steps = {
@@ -175,6 +224,13 @@ export class Game {
       Object.keys(STEP_KEYS) as (keyof typeof STEP_KEYS)[]
     ).find((name) => STEP_KEYS[name] === keyEvent.key);
     if (!stepName) return;
+    if (stepName === 'playOrPause') {
+      // on a focused button Space already clicks it
+      if (target?.closest('button, a')) return;
+      keyEvent.preventDefault();
+      this.togglePlaying();
+      return;
+    }
     keyEvent.preventDefault();
     this.step(this.steps[stepName]);
   }

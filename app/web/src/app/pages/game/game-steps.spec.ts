@@ -6,6 +6,7 @@ import type {
   GameLog,
 } from '../../../../../../shared/game-log-types';
 import {
+  autoplayDelay,
   cardNamesOfGame,
   cardsOfEvent,
   nextEvent,
@@ -196,5 +197,30 @@ describe('game steps', () => {
     const galeField = splitBattlefield(galeBoard, isLand);
     expect(galeField.lands[0].permanent.tapped).toBe(true);
     expect(galeBoard.librarySize).toBe(98);
+  });
+});
+
+describe('autoplayDelay', () => {
+  const plainLine = makeEvent(1, 0, 'land', 'play a land');
+  const highlightLine = makeEvent(1, 0, 'win', 'wins the game');
+
+  it('stays 1.2 seconds on a plain line at normal speed', () => {
+    expect(autoplayDelay(plainLine, false, 'normal')).toBe(1200);
+  });
+
+  it('stays longer on the first line of a turn', () => {
+    expect(autoplayDelay(plainLine, true, 'normal')).toBe(2000);
+  });
+
+  it('stays longest on a highlight, even at the start of a turn', () => {
+    expect(autoplayDelay(highlightLine, false, 'normal')).toBe(2500);
+    expect(autoplayDelay(highlightLine, true, 'normal')).toBe(2500);
+  });
+
+  it('is longer when slow and shorter when fast', () => {
+    const slow = autoplayDelay(plainLine, false, 'slow');
+    const fast = autoplayDelay(plainLine, false, 'fast');
+    expect(slow).toBeGreaterThan(1200);
+    expect(fast).toBeLessThan(1200);
   });
 });
