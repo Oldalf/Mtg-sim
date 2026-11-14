@@ -15,7 +15,7 @@ import { Game } from './game';
 import { EventKind, GameEvent, GameLog, buildEvent } from './game-log';
 import { Rng } from './rng';
 import { Deck } from './runner';
-import { PodGame, PodSpec, PodStats } from './pod-types';
+import { PodGame, PodSpec, PodStats } from '../shared/pod-types';
 
 const decklists = new Map<string, C.Decklist>();
 function loadDecklistOnce(file: string): C.Decklist {

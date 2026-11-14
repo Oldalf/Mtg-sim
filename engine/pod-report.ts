@@ -1,6 +1,6 @@
 /** The report of a batch of pod games: built as data (`buildPodReport`), printed by `printPod`. */
 import type { PodDeckReport, PodReport } from '../app/api-types';
-import { PodGame, PodSpec } from './pod-types';
+import { PodGame, PodSpec } from '../shared/pod-types';
 
 const sum = (numbers: number[]) =>
   numbers.reduce((total, value) => total + value, 0);

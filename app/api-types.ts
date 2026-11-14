@@ -4,8 +4,8 @@
  *
  * A task that needs a shape that is not here adds it here first, in its own small change.
  */
-import type { GameLog } from '../engine/game-log-types';
-import type { GameIndexRow, RunInfo, Table } from '../engine/run-types';
+import type { GameLog } from '../shared/game-log-types';
+import type { GameIndexRow, RunInfo, Table } from '../shared/run-types';
 
 export type { GameIndexRow, GameLog, RunInfo, Table };
 

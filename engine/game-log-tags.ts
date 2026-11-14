@@ -4,7 +4,7 @@
  * Each tag is given to at most GAMES_PER_TAG games, lowest seeds first, so the list stays short.
  */
 import { GameIndexRow } from './game-log-files';
-import { PodGame } from './pod-types';
+import { PodGame } from '../shared/pod-types';
 
 const GAMES_PER_TAG = 5;
 

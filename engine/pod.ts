@@ -29,7 +29,7 @@ import { gamesFileName, writeGamesFile } from './game-log-files';
 import { buildArena } from './pod-arena';
 import { useRemovalAfterTurn } from './pod-interaction';
 import { PodTable } from './pod-table';
-import { PodGame, PodJob, PodJobResult, PodSpec } from './pod-types';
+import { PodGame, PodJob, PodJobResult, PodSpec } from '../shared/pod-types';
 import { Deck, resolveList } from './runner';
 import {
   RunControl,

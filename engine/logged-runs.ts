@@ -5,7 +5,7 @@
 import * as path from 'path';
 import { Config } from './game-types';
 import { createRunFolder } from './game-log-files';
-import { PodSpec } from './pod-types';
+import { PodSpec } from '../shared/pod-types';
 import { Deck, killTurnNamesOf } from './runner';
 
 /** What a goldfish run measures: the kill-turn table, or the deck's own --diag measures. */

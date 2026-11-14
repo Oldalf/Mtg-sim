@@ -14,7 +14,7 @@ import {
   runFolderOf,
 } from '../../engine/game-log-files';
 import { describeGameResult } from '../../engine/game-log-run';
-import type { GameIndexRow } from '../../engine/run-types';
+import type { GameIndexRow } from '../../shared/run-types';
 import type {
   GameAnswer,
   GameListRow,

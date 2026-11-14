@@ -9,7 +9,7 @@ import { runPodTests } from '../engine/pod.test';
 import { runPodExactMoveTests, runPodLogTests } from '../engine/game-log.test';
 import { describePodResult } from '../engine/pod-report';
 import { formatGameLog } from '../engine/game-log-text';
-import { PodSpec } from '../engine/pod-types';
+import { PodSpec } from '../shared/pod-types';
 import { addMissingCards } from '../engine/scryfall';
 import { createPodRunFolder } from '../engine/logged-runs';
 import { Deck } from '../engine/runner';

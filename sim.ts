@@ -36,7 +36,7 @@ import {
   runReplayTests,
 } from './engine/game-log.test';
 import * as Pod from './engine/pod';
-import { PodJob } from './engine/pod-types';
+import { PodJob } from './shared/pod-types';
 import { Args, parseArgs, wantsEcoMode } from './cli/args';
 import { runDeckCommand } from './cli/deck-command';
 import { enableEcoMode, reportCpuUseAtExit } from './cli/eco';

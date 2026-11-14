@@ -10,7 +10,13 @@
  * with ">>". A goldfish game looks the same with "== Turn 3 ==" headers.
  */
 import { GameEvent, GameLog } from './game-log';
-import { TableBoards, describeBoard } from './game-log-board';
+import { TableBoards, describeBoard } from '../shared/game-log-board';
+import {
+  isPodGame,
+  namesItsPlayer,
+  playersBySeat,
+  startsNewTurn,
+} from '../shared/game-log-lines';
 
 export interface GameLogTextOptions {
   /** The first line: what the game was and how it ended. */
@@ -29,28 +35,14 @@ const BOARD_FIRST_LINE_START = '   [board] ';
 const BOARD_LINE_START = '           ';
 const LINES_AROUND_A_HIGHLIGHT = 2;
 
-function isPodGame(gameLog: GameLog): boolean {
-  return gameLog.players.length > 1;
-}
-
 /** "aesi 39, samfrodo 38" for a pod; "40, opponents 37 40 40" for a goldfish game. */
 function describeLife(gameLog: GameLog, life: number[]): string {
   if (isPodGame(gameLog))
-    return bySeat(gameLog)
+    return playersBySeat(gameLog)
       .map((player) => `${gameLog.players[player].name} ${life[player]}`)
       .join(', ');
   const [ourLife, ...opponentLife] = life;
   return `${ourLife}, opponents ${opponentLife.join(' ')}`;
-}
-
-/** The players in the order they play. */
-function bySeat(gameLog: GameLog): number[] {
-  return gameLog.players
-    .map((_, player) => player)
-    .sort(
-      (first, second) =>
-        gameLog.players[first].seat - gameLog.players[second].seat,
-    );
 }
 
 function turnHeader(gameLog: GameLog, event: GameEvent): string {
@@ -66,13 +58,9 @@ function turnHeader(gameLog: GameLog, event: GameEvent): string {
 
 function eventLine(gameLog: GameLog, event: GameEvent): string {
   const lineStart = event.isHighlight ? HIGHLIGHT_LINE_START : PLAIN_LINE_START;
-  // a pod line names its player when it is not that player's turn, and always when a player goes out or wins
-  const isNamed =
-    isPodGame(gameLog) &&
-    (event.player !== event.activePlayer ||
-      event.kind === 'out' ||
-      event.kind === 'win');
-  const actingPlayer = isNamed ? `${gameLog.players[event.player].name}: ` : '';
+  const actingPlayer = namesItsPlayer(gameLog, event)
+    ? `${gameLog.players[event.player].name}: `
+    : '';
   return lineStart + actingPlayer + event.text.trimEnd();
 }
 
@@ -95,7 +83,7 @@ export function formatGameLog(
   if (isPodGame(gameLog))
     lines.push(
       'Seats: ' +
-        bySeat(gameLog)
+        playersBySeat(gameLog)
           .map((player, seat) => `${seat + 1} ${gameLog.players[player].name}`)
           .join(', '),
     );
@@ -107,22 +95,20 @@ export function formatGameLog(
       (line, index) =>
         (index === 0 ? BOARD_FIRST_LINE_START : BOARD_LINE_START) + line,
     );
-  let shownTurn = -1;
-  let shownActivePlayer = -1;
+  let eventBefore: GameEvent | undefined;
   for (const event of gameLog.events) {
-    if (event.turn !== shownTurn || event.activePlayer !== shownActivePlayer) {
-      if (options.showBoard && shownActivePlayer >= 0)
-        lines.push(...boardLines(shownActivePlayer));
+    if (startsNewTurn(event, eventBefore)) {
+      if (options.showBoard && eventBefore)
+        lines.push(...boardLines(eventBefore.activePlayer));
       lines.push('', turnHeader(gameLog, event));
-      shownTurn = event.turn;
-      shownActivePlayer = event.activePlayer;
     }
+    eventBefore = event;
     if (event.text !== '') lines.push(eventLine(gameLog, event));
     if (options.showMoves) lines.push(...moveLines(gameLog, event));
     table.apply(event);
   }
-  if (options.showBoard && shownActivePlayer >= 0)
-    lines.push(...boardLines(shownActivePlayer));
+  if (options.showBoard && eventBefore)
+    lines.push(...boardLines(eventBefore.activePlayer));
   return lines.join('\n');
 }
 

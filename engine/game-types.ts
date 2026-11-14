@@ -3,7 +3,7 @@ import { Cost, CardDef } from './cards';
 import { LandInfo } from './card-facts';
 import { Answer } from './answers';
 import type { Game } from './game';
-import type { Config } from './run-types';
+import type { Config } from '../shared/run-types';
 
 export type { Config };
 
