@@ -32,14 +32,21 @@ export const routes: Routes = [
   {
     path: 'games',
     title: 'Games',
+    loadComponent: () =>
+      import('./pages/games/games').then((module) => module.Games),
+  },
+  {
+    // a real Archidekt log in the game viewer (task 13)
+    path: 'games/real/:deck/:file',
+    title: 'Real game',
     loadComponent: loadPageToCome,
-    data: { title: 'Games', task: 12 },
+    data: { title: 'Real game', task: 13 },
   },
   {
     path: 'games/:run',
     title: 'Games of a run',
-    loadComponent: loadPageToCome,
-    data: { title: 'Games of a run', task: 12 },
+    loadComponent: () =>
+      import('./pages/games/run-games').then((module) => module.RunGames),
   },
   {
     path: 'games/:run/:seed',

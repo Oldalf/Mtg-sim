@@ -83,7 +83,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 9 | Page: simulate | 4, 6 | big model | done (2026-11-14) |
 | 10 | Charts for the results | 9 | small model | done (2026-11-14) |
 | 11 | Page: pod | 4, 6 (after 9: same pattern) | small model | done (2026-11-14) |
-| 12 | Page: the games of a run | 5, 6 | small model | open |
+| 12 | Page: the games of a run | 5, 6 | small model | done (2026-11-14) |
 | 13 | Page: the game viewer | 5, 6, 7 | big model | open |
 | 14 | Finish | all | small model | open |
 
@@ -201,6 +201,8 @@ ode-versions26.13.1\installation`); the shell's default Node 22.12 is too old.
 
 - The runs of the session. A run: its games as a table (seed, result, tags) with filters for tag and, in a pod, winner; a page at a time; type a seed to jump to it.
 - Per deck, its real games (the Archidekt logs), each a link into the game viewer.
+
+- Notes (task 12, 2026-11-14): `pages/games/games.ts` (`/games`: the runs of the session, newest first, and each deck's real logs) and `pages/games/run-games.ts` (`/games/:run`: table with tag and winner filters, 50 a page, seed jump; the winner filter shows for pods only). A real log links to `/games/real/<deck>/<file>`, a route that still shows PageToCome: task 13 points it (and `/games/:run/:seed`) to the viewer. Seen in a browser with a 100-game goldfish and a 40-game pod run: the filters, paging data and links work. No page test yet (task 14).
 
 ### 13. Page: the game viewer
 
