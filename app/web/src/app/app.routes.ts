@@ -1,8 +1,8 @@
 import type { Routes } from '@angular/router';
 
-/** The page's routes. Each page is loaded when it is first opened. A later task replaces its PageToCome. */
-const loadPageToCome = () =>
-  import('./pages/page-to-come').then((module) => module.PageToCome);
+/** The page's routes. Each page is loaded when it is first opened. */
+const loadGameViewer = () =>
+  import('./pages/game/game').then((module) => module.Game);
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'decks' },
@@ -39,8 +39,7 @@ export const routes: Routes = [
     // a real Archidekt log in the game viewer (task 13)
     path: 'games/real/:deck/:file',
     title: 'Real game',
-    loadComponent: loadPageToCome,
-    data: { title: 'Real game', task: 13 },
+    loadComponent: loadGameViewer,
   },
   {
     path: 'games/:run',
@@ -51,8 +50,7 @@ export const routes: Routes = [
   {
     path: 'games/:run/:seed',
     title: 'Game',
-    loadComponent: loadPageToCome,
-    data: { title: 'Game', task: 13 },
+    loadComponent: loadGameViewer,
   },
   {
     // every shared piece on one page, to see the look (task 6)

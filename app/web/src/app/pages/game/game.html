@@ -1,0 +1,140 @@
+@if (isRealLog()) {
+  <a routerLink="/games">&larr; Games</a>
+} @else {
+  <a [routerLink]="['/games', run()]">&larr; Games of {{ run() }}</a>
+}
+<h1>{{ title() }}</h1>
+
+@if (game.isLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+@if (game.error()) {
+  <app-error-box
+    title="The game did not load"
+    message="The runs are cleared when the app starts; a seed must be one of the run's games."
+  />
+}
+
+@if (gameLog(); as gameLog) {
+  <div class="viewer">
+    <div class="log-column">
+      <app-game-log-view
+        [turns]="turns()"
+        [chosenEvent]="chosenEvent()"
+        [showMoves]="showMoves()"
+        (choose)="choose($event)"
+      />
+    </div>
+
+    <div class="board-column">
+      <div class="steps" role="toolbar" aria-label="Step through the game">
+        <button
+          matIconButton
+          (click)="step(steps.first)"
+          matTooltip="Opening hand"
+          aria-label="Opening hand"
+        >
+          <mat-icon>first_page</mat-icon>
+        </button>
+        <button
+          matIconButton
+          (click)="step(steps.previousTurn)"
+          matTooltip="Previous turn (left arrow)"
+          aria-label="Previous turn"
+        >
+          <mat-icon>keyboard_double_arrow_left</mat-icon>
+        </button>
+        <button
+          matIconButton
+          (click)="step(steps.previousLine)"
+          matTooltip="Previous line (up arrow)"
+          aria-label="Previous line"
+        >
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button
+          matIconButton
+          (click)="step(steps.nextLine)"
+          matTooltip="Next line (down arrow)"
+          aria-label="Next line"
+        >
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button
+          matIconButton
+          (click)="step(steps.nextTurn)"
+          matTooltip="Next turn (right arrow)"
+          aria-label="Next turn"
+        >
+          <mat-icon>keyboard_double_arrow_right</mat-icon>
+        </button>
+        <button
+          matIconButton
+          (click)="step(steps.last)"
+          matTooltip="End of the game"
+          aria-label="End of the game"
+        >
+          <mat-icon>last_page</mat-icon>
+        </button>
+        <span class="divider"></span>
+        <button
+          matButton
+          (click)="step(steps.previousHighlight)"
+          matTooltip="Previous highlight (shift + h)"
+        >
+          <mat-icon>arrow_back</mat-icon>
+          Highlight
+        </button>
+        <button
+          matButton
+          (click)="step(steps.nextHighlight)"
+          matTooltip="Next highlight (h)"
+        >
+          Highlight
+          <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+        </button>
+        <span class="divider"></span>
+        <mat-slide-toggle
+          [checked]="showMoves()"
+          (change)="showMoves.set($event.checked)"
+        >
+          Card moves
+        </mat-slide-toggle>
+        <span class="position">
+          line {{ chosenEvent() + 1 }} of {{ gameLog.events.length }}
+        </span>
+      </div>
+
+      @if (event(); as event) {
+        <div class="chosen-line">
+          <div class="chosen-text">
+            @if (turns().length) {
+              <span class="note">{{ turnTitleOfChosen() }}</span>
+            }
+            <span>{{ event.text || 'start of the turn' }}</span>
+          </div>
+          <div class="chosen-cards">
+            @for (card of cardsOfChosenLine(); track card) {
+              <app-card-image
+                [name]="card"
+                [typeLine]="facts()[card]?.typeLine"
+                [manaCost]="facts()[card]?.manaCost"
+              />
+            }
+          </div>
+        </div>
+
+        <div class="boards">
+          @for (player of playerOrder(); track player) {
+            <app-player-board
+              [player]="gameLog.players[player]"
+              [board]="boards()[player]"
+              [isActive]="player === event.activePlayer"
+              [cardFacts]="facts()"
+            />
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

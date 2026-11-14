@@ -2,6 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type {
+  CardFactsAnswer,
+  CardFactsRequest,
   CurrentRunAnswer,
   DecklistAnswer,
   DecksAnswer,
@@ -107,6 +109,12 @@ export class ApiService {
   cardImageUrl(cardName: string, print?: string): string {
     const url = `/api/cards/${encodeURIComponent(cardName)}/image`;
     return print ? `${url}?print=${encodeURIComponent(print)}` : url;
+  }
+
+  /** The type line and mana cost of each named card that has card data (tokens and unknown names are left out). */
+  cardFacts(names: string[]): Observable<CardFactsAnswer> {
+    const request: CardFactsRequest = { names };
+    return this.http.post<CardFactsAnswer>('/api/cards/facts', request);
   }
 
   /** How the download of all missing card images is going. */
