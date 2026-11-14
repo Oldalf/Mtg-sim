@@ -16,14 +16,14 @@ Each task names a model. Give it to that model or a stronger one.
 Rules for every task:
 
 - Read `CLAUDE.md` first (rule 0 names, KISS). For the engine also `ENGINE.md`, for the page also `app/web/CLAUDE.md`.
-- One task is one branch and one commit. `npm run format`, then `npm run verify` must end with VERIFY OK.
+- One task is one commit. `npm run format`, then `npm run verify` must end with VERIFY OK.
 - Ask Pontus eco or full power before any task that runs simulations (`verify` with regress checks counts).
 - A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change. This matters most for Haiku 5.5.
 - When a task is done, add one line under it here: what was built and anything the next task must know.
 
 ## Order
 
-The tasks run one at a time, in this order. Each row is one session: one branch, one commit (B2 is seven commits).
+The tasks run one at a time, in this order. Each row is one session and one commit (B2 is seven commits).
 
 | # | Task | What | Model |
 |---|---|---|---|
@@ -149,7 +149,7 @@ Read how the six decks are built and write the skill. It needs Opus 5.5 because 
 
 ### C2. Try the skill on a real deck (Sonnet 5.5, after C1)
 
-The next deck Pontus wants is added by Sonnet 5.5 using only the skill. Every place where it had to guess or ask is fixed in the skill. If no new deck is waiting, re-add `goldfish` under another name on a throwaway branch as a smoke test.
+The next deck Pontus wants is added by Sonnet 5.5 using only the skill. Every place where it had to guess or ask is fixed in the skill. If no new deck is waiting, re-add `goldfish` under another name as a throwaway change that is not kept, as a smoke test.
 
 ---
 
