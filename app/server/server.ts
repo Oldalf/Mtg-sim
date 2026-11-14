@@ -51,8 +51,7 @@ const ROUTES: Route[] = [
   {
     method: 'GET',
     path: /^\/api\/decks$/,
-    answer: (_pathParts, url) =>
-      ok(answerDecks(url.searchParams.get('all') === '1')),
+    answer: (_pathParts, url) => ok(answerDecks()),
   },
   {
     // the list name may hold slashes (lists/proposed.txt)

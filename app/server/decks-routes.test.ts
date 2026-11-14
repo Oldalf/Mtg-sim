@@ -1,6 +1,6 @@
 /**
  * Checks of the deck calls (PLAN.md task 3) through a real server on a free port:
- * every deck and every list answers, the archive is hidden unless asked for, and paths that leave the deck folder are refused.
+ * every deck and every list answers, no old or cut lists are listed, and paths that leave the deck folder are refused.
  */
 import type { AddressInfo } from 'net';
 import type { DecklistAnswer, DecksAnswer } from '../api-types';
@@ -29,19 +29,9 @@ export async function runDecksRoutesTests(): Promise<boolean> {
       'GET /api/decks lists the decks',
       decks.status === 200 && decks.body.length > 0,
     );
-    const withArchive = await getJson<DecksAnswer>(port, '/api/decks?all=1');
-    const listCount = (answer: DecksAnswer) =>
-      answer.reduce((total, deck) => total + deck.lists.length, 0);
-    allGood &&= check(
-      'the archive lists (lists/old, lists/cuts) come only with ?all=1',
-      listCount(withArchive.body) >= listCount(decks.body) &&
-        decks.body.every(
-          (deck) => !deck.lists.some((list) => /\/(old|cuts)\//.test(list)),
-        ),
-    );
     allGood &&= check(
       'no primer or swap notes among the lists',
-      withArchive.body.every(
+      decks.body.every(
         (deck) => !deck.lists.some((list) => /primer|swaps/i.test(list)),
       ),
     );

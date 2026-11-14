@@ -89,6 +89,8 @@ Done 2026-11-14: gale keeps `decklist.txt` and `proposed.txt`; aesi `proposed.tx
 
 With `lists/cuts/` and `lists/old/` gone, `?all=1` in `app/server/decks-routes.ts` (`ARCHIVE_FOLDERS`, `includeArchive`) lists nothing. Remove it: the route, its test in `decks-routes.test.ts`, the type in `app/api-types.ts`, the call in `app/web/src/app/core/api.ts` and whatever the Deck page shows for it. Done when `npm run app -- --test` and `ng test` pass. Skip this task if Pontus wants to keep archive folders for future cut tests (see suggestion 4).
 
+Done 2026-11-14: the `?all=1` switch is gone from the server (`decks-routes.ts`, `server.ts`), its test, and the page's `ApiService.decks()`. `npm run verify -- --eco` gave VERIFY OK, page build and tests included.
+
 ---
 
 ## B. Engine in folders

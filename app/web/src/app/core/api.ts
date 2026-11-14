@@ -38,10 +38,9 @@ export class ApiService {
     return this.http.get<HealthAnswer>('/api/health');
   }
 
-  /** Every deck. `withOldLists` adds lists/old and lists/cuts to their list files. */
-  decks(withOldLists = false): Observable<DecksAnswer> {
-    const params: Record<string, string> = withOldLists ? { all: '1' } : {};
-    return this.http.get<DecksAnswer>('/api/decks', { params });
+  /** Every deck. */
+  decks(): Observable<DecksAnswer> {
+    return this.http.get<DecksAnswer>('/api/decks');
   }
 
   /** A decklist; `list` is relative to the deck folder (e.g. "lists/proposed.txt"). */

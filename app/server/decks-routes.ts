@@ -21,8 +21,6 @@ import type {
 
 /** Text files in a deck's folder that are not decklists. */
 const NOT_DECKLISTS = new Set(['primer.txt', 'swaps.txt']);
-/** Folders under lists/ that hold old lists and cut tests: shown only when asked for (`?all=1`). */
-const ARCHIVE_FOLDERS = new Set(['old', 'cuts']);
 
 /** A request the caller got wrong (the route turns it into a 4xx answer). */
 export class RequestError extends Error {
@@ -41,7 +39,7 @@ function findDeck(deckName: string): Deck {
 }
 
 /** The decklist files of a deck, relative to its folder with forward slashes, sorted. */
-export function listFilesOfDeck(deck: Deck, includeArchive: boolean): string[] {
+export function listFilesOfDeck(deck: Deck): string[] {
   const isDecklist = (fileName: string) =>
     fileName.endsWith('.txt') && !NOT_DECKLISTS.has(fileName.toLowerCase());
   const listFiles: string[] = [];
@@ -49,20 +47,9 @@ export function listFilesOfDeck(deck: Deck, includeArchive: boolean): string[] {
     if (entry.isFile() && isDecklist(entry.name)) listFiles.push(entry.name);
   const listsFolder = path.join(deck.dir, 'lists');
   if (fs.existsSync(listsFolder)) {
-    for (const entry of fs.readdirSync(listsFolder, { withFileTypes: true })) {
+    for (const entry of fs.readdirSync(listsFolder, { withFileTypes: true }))
       if (entry.isFile() && isDecklist(entry.name))
         listFiles.push(`lists/${entry.name}`);
-      else if (
-        entry.isDirectory() &&
-        includeArchive &&
-        ARCHIVE_FOLDERS.has(entry.name)
-      )
-        for (const archived of fs.readdirSync(
-          path.join(listsFolder, entry.name),
-        ))
-          if (isDecklist(archived))
-            listFiles.push(`lists/${entry.name}/${archived}`);
-    }
   }
   return listFiles.sort();
 }
@@ -105,16 +92,13 @@ function settingsOfDeck(deck: Deck): DeckSetting[] {
   });
 }
 
-export function summarizeDeck(
-  deck: Deck,
-  includeArchive: boolean,
-): DeckSummary {
+export function summarizeDeck(deck: Deck): DeckSummary {
   const defaultList = C.loadDecklist(path.join(deck.dir, deck.defaultList));
   return {
     name: deck.name,
     commanders: [...new Set(defaultList.commanders)],
     defaultList: deck.defaultList,
-    lists: listFilesOfDeck(deck, includeArchive),
+    lists: listFilesOfDeck(deck),
     settings: settingsOfDeck(deck),
     resultNames: deck.metrics
       ? [deck.metrics[0][0], deck.metrics[1][0]]
@@ -123,10 +107,8 @@ export function summarizeDeck(
   };
 }
 
-export function answerDecks(includeArchive: boolean): DecksAnswer {
-  return Object.values(DECKS).map((deck) =>
-    summarizeDeck(deck, includeArchive),
-  );
+export function answerDecks(): DecksAnswer {
+  return Object.values(DECKS).map(summarizeDeck);
 }
 
 /** The file of a list of a deck; a name that leaves the deck's folder is refused (400). */
