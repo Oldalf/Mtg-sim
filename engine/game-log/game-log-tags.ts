@@ -1,7 +1,8 @@
 /**
  * Tags mark the games of a run that are worth reading: the fastest and slowest wins, a few average ones, games
  * where a win was stopped... They are worked out after the run from the index rows (game-log-files.ts).
- * Each tag is given to at most GAMES_PER_TAG games, lowest seeds first, so the list stays short.
+ * Each tag is given to at most GAMES_PER_TAG games, lowest seeds first, so the list stays short. Fastest, slowest
+ * and most-interaction only go to games that share the extreme value, never to runners-up.
  */
 import { GameIndexRow } from './game-log-files';
 import { PodGame } from '../../shared/pod-types';
@@ -24,19 +25,16 @@ function tagFirstGames(
   for (const row of matching.slice(0, GAMES_PER_TAG)) row.tags.push(tag);
 }
 
-/** Gives the tag to the few games with the lowest score (ties: lowest seeds first). */
-function tagLowestGames(
+/** Gives the tag to the games with the lowest score, and only those: a game just above it is not tagged.
+ *  If more than GAMES_PER_TAG tie, the lowest seeds get it. */
+function tagLowestScoringGames(
   rows: GameIndexRow[],
   tag: string,
   scoreOf: (row: GameIndexRow) => number,
 ): void {
-  const sorted = rows
-    .slice()
-    .sort(
-      (first, second) =>
-        scoreOf(first) - scoreOf(second) || bySeed(first, second),
-    );
-  for (const row of sorted.slice(0, GAMES_PER_TAG)) row.tags.push(tag);
+  if (!rows.length) return;
+  const lowestScore = Math.min(...rows.map(scoreOf));
+  tagFirstGames(rows, tag, (row) => scoreOf(row) === lowestScore);
 }
 
 function median(numbers: number[]): number | null {
@@ -45,17 +43,34 @@ function median(numbers: number[]): number | null {
   return sorted[Math.floor((sorted.length - 1) / 2)];
 }
 
-/** fastest, slowest and average, by the turn (or round) a game was won in. */
+/**
+ * fastest, slowest and average, by the turn (or round) a game was won in. Fastest and slowest are the games won on
+ * the earliest and the latest turn; if those are the same turn no game stands out and neither is given. Average is
+ * the median turn, for games that are neither.
+ */
 function tagByWinTurn(
   rows: GameIndexRow[],
   winTurnOf: (row: GameIndexRow) => number | null,
 ): void {
   const wonGames = rows.filter((row) => winTurnOf(row) !== null);
+  if (!wonGames.length) return;
   const winTurn = (row: GameIndexRow) => winTurnOf(row)!;
-  tagLowestGames(wonGames, 'fastest', winTurn);
-  tagLowestGames(wonGames, 'slowest', (row) => -winTurn(row));
-  const medianTurn = median(wonGames.map(winTurn));
-  tagFirstGames(wonGames, 'average', (row) => winTurn(row) === medianTurn);
+  const turns = wonGames.map(winTurn);
+  const earliestTurn = Math.min(...turns);
+  const latestTurn = Math.max(...turns);
+  const hasSpread = earliestTurn < latestTurn;
+  const isExtreme = (row: GameIndexRow) =>
+    hasSpread && [earliestTurn, latestTurn].includes(winTurn(row));
+  if (hasSpread) {
+    tagFirstGames(wonGames, 'fastest', (row) => winTurn(row) === earliestTurn);
+    tagFirstGames(wonGames, 'slowest', (row) => winTurn(row) === latestTurn);
+  }
+  const medianTurn = median(turns);
+  tagFirstGames(
+    wonGames,
+    'average',
+    (row) => winTurn(row) === medianTurn && !isExtreme(row),
+  );
 }
 
 const hasNoError = (row: GameIndexRow) => row.error === undefined;
@@ -105,7 +120,7 @@ export function tagPodGames(rows: GameIndexRow[]): void {
   );
   tagFirstGames(finished, 'no-winner', (row) => podOf(row).winner === null);
   tagFirstGames(finished, 'win-stopped', (row) => sum(podOf(row).stopped) > 0);
-  tagLowestGames(
+  tagLowestScoringGames(
     finished.filter((row) => interactionCount(podOf(row)) > 0),
     'most-interaction',
     (row) => -interactionCount(podOf(row)),

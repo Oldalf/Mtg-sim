@@ -7,6 +7,8 @@
 import * as C from '../cards/cards';
 import { Game } from '../game/game';
 import { goldfishGameLog } from './game-log';
+import { GameIndexRow } from './game-log-files';
+import { tagGoldfishGames } from './game-log-tags';
 import { PlayerBoard, TableBoards } from '../../shared/game-log-board';
 import { playPod, playRounds, podSpec, seatPlayers } from '../pod/pod';
 import { Rng } from '../util/rng';
@@ -301,6 +303,60 @@ export function runBoardTests(deck: Deck): boolean {
     'turn ends differ',
     differences,
   );
+}
+
+/** Goldfish index rows that were won on the given turns (null: not won), seeds 1, 2, 3... */
+function rowsWonOnTurns(winTurns: (number | null)[]): GameIndexRow[] {
+  return winTurns.map((winTurn, index) => ({
+    seed: index + 1,
+    file: 'games.jsonl',
+    line: index,
+    tags: [],
+    killTurns: [winTurn, null],
+  }));
+}
+
+/** The seeds that carry a tag, as text. */
+const seedsWithTag = (rows: GameIndexRow[], tag: string) =>
+  rows
+    .filter((row) => row.tags.includes(tag))
+    .map((row) => row.seed)
+    .join(',');
+
+/** Fastest and slowest are the earliest and the latest win turn, never both on a game, never given when all
+ *  games won on the same turn. */
+export function runTagTests(): boolean {
+  const spread = rowsWonOnTurns([4, 5, 5, 5, 6, 6, 7, 9]);
+  tagGoldfishGames(spread);
+  const sameTurn = rowsWonOnTurns([5, 5, 5, 5]);
+  tagGoldfishGames(sameTurn);
+  const ties = rowsWonOnTurns([4, 4, 4, 4, 4, 4, 4, 9, 9, 9, 9, 9, 9, 9]);
+  tagGoldfishGames(ties);
+  const withoutWin = rowsWonOnTurns([4, null, 8]);
+  tagGoldfishGames(withoutWin);
+  const bothTags = spread.filter(
+    (row) => row.tags.includes('fastest') && row.tags.includes('slowest'),
+  );
+  const checks: [string, string, string][] = [
+    ['fastest', seedsWithTag(spread, 'fastest'), '1'],
+    ['slowest', seedsWithTag(spread, 'slowest'), '8'],
+    ['average (median turn 5)', seedsWithTag(spread, 'average'), '2,3,4'],
+    ['no fastest on one turn', seedsWithTag(sameTurn, 'fastest'), ''],
+    ['no slowest on one turn', seedsWithTag(sameTurn, 'slowest'), ''],
+    ['average on one turn', seedsWithTag(sameTurn, 'average'), '1,2,3,4'],
+    ['fastest tied, capped', seedsWithTag(ties, 'fastest'), '1,2,3,4,5'],
+    ['slowest tied, capped', seedsWithTag(ties, 'slowest'), '8,9,10,11,12'],
+    ['no-win', seedsWithTag(withoutWin, 'no-win'), '2'],
+    ['fastest with a no-win', seedsWithTag(withoutWin, 'fastest'), '1'],
+    ['both tags on one game', String(bothTags.length), '0'],
+  ];
+  const wrong = checks
+    .filter(([, actual, expected]) => actual !== expected)
+    .map(
+      ([label, actual, expected]) =>
+        `${label}: seeds [${actual}], expected [${expected}]`,
+    );
+  return reportDifferences('game tags mean something', 'tags wrong', wrong);
 }
 
 /** A deck's goldfish games end the same with the log on and off. */

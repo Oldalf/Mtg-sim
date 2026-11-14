@@ -34,6 +34,7 @@ import {
   runExactMoveTests,
   runGoldfishLogTests,
   runReplayTests,
+  runTagTests,
 } from './engine/game-log/game-log.test';
 import * as Pod from './engine/pod/pod';
 import { PodJob } from './shared/pod-types';
@@ -85,11 +86,16 @@ async function runSpecialCommand(
     const areMovesRecorded = runExactMoveTests(deck);
     const isReplaySame = runReplayTests(deck);
     const isBoardRight = runBoardTests(deck);
+    const areTagsRight = runTagTests();
     // a deck without tests of its own (the goldfish) only gets the log checks above
     const deckTests = TESTS[deck.name];
     const deckTestsPassed = deckTests ? deckTests() : true;
     const logTestsPassed =
-      isLogHarmless && areMovesRecorded && isReplaySame && isBoardRight;
+      isLogHarmless &&
+      areMovesRecorded &&
+      isReplaySame &&
+      isBoardRight &&
+      areTagsRight;
     process.exit(logTestsPassed && deckTestsPassed ? 0 : 1);
   }
   if (args.regress) {

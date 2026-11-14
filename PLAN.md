@@ -28,7 +28,7 @@ Rules for every task:
 |---|---|---|---|
 | 1 | A1 | Whole game rows are links (done) | Haiku 5.5 |
 | 2 | A2 | The caption bar keeps one height (done) | Haiku 5.5 |
-| 3 | B1 | Fastest and slowest tags that mean something | Sonnet 5.5 |
+| 3 | B1 | Fastest and slowest tags that mean something (done) | Sonnet 5.5 |
 | 4 | C1 | Energy as a player counter, shown in the viewer | Opus 5.5 |
 | 5 | C2 | Volatile Stormdrake takes a creature in a pod | Opus 5.5 |
 | 6 | D1 | Tokens: the design (who defines a token, its name in the log, its image) | Opus 5.5, then Pontus |
@@ -87,6 +87,8 @@ New rules for `tagByWinTurn` (goldfish and pod share it):
 - Leave the other tags (`no-win`, `win-stopped`, `most-interaction`...) as they are, but check `most-interaction` the same way: give it only to games with the highest count, not to the top 5 whatever their count.
 
 Steps: write the rules as tests first in `engine/game-log/game-log.test.ts` (8 games with win turns 4, 5, 5, 5, 6, 6, 7, 9: fastest is the one on 4, slowest the one on 9, average the ones on 5 or 6 by the median; all on the same turn: no fastest, no slowest), then change `tagByWinTurn`. Update the comment at the top of the file and the tag explanations in the page if they say "the 5 fastest". Check whether `--regress` stores tags: if it does, only the tags may differ, then `--regress record` for every deck (ask eco or full power). Done when `npm run verify -- --full` is OK.
+
+Done: `tagByWinTurn` and `most-interaction` (`tagLowestScoringGames`) now tag only games sharing the extreme value (cap 5, lowest seeds); no spread gives no fastest/slowest; average skips fastest/slowest games. `runTagTests` in `game-log.test.ts` (called from `sim.ts --test`) covers it. `--regress` does not store tags, so nothing to re-record. `npm run verify -- --full` skipped by Pontus; instead he ran a 1000-game pod through the page in power save mode and the tags looked right. Page text saying "5 fastest" not checked (`pieces.html` shows a sample chip only).
 
 ---
 
