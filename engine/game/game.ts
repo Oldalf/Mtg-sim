@@ -1,7 +1,7 @@
 /**
  * A game as the decks and the pod use it: GameCore (game-core.ts, the rules of one goldfish game) plus the pod parts:
  * combat against real opponents (blocks, attackers, fog), and interaction (removal, counterspells, answering a win,
- * the threat score). In a goldfish game none of this is used. See engine/pod.ts for how the pod drives it.
+ * the threat score). In a goldfish game none of this is used. See engine/pod/pod.ts for how the pod drives it.
  *
  * A deck subclasses Game. It may override the pod hooks too: evasion(), blockValue(), fogPrevent(), podClose(),
  * podShield(), winAttempt(), podWinStopped(), combatHit().
@@ -48,7 +48,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return this.inArena() && this.arena!.answerWin(this);
   }
 
-  // ================================================================ pod combat (real opponents; see engine/pod.ts)
+  // ================================================================ pod combat (real opponents; see engine/pod/pod.ts)
   /** Are we the real game of a player in a pod (not a planner copy, not a goldfish game)? */
   override inArena(): boolean {
     return this.arena !== null && !this.inRollout && this.arena.real(this);
@@ -386,7 +386,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     }
   }
 
-  // ================================================================ pod interaction (answers; see engine/answers.ts and engine/pod.ts)
+  // ================================================================ pod interaction (answers; see engine/game/answers.ts and engine/pod/pod.ts)
   /** Opponents' life / library / poison just before our combo was applied (a deck sets it): put back if the win is stopped. */
   podPre: [number[], number[], number[]] | null = null;
 

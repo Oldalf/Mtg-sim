@@ -1,6 +1,6 @@
 /**
  * The Gale deck's AI: what it wants to do each turn, and the rules of the cards only it uses.
- * The game itself (mana, zones, casting, turns, planner) is the shared engine in engine/game-core.ts.
+ * The game itself (mana, zones, casting, turns, planner) is the shared engine in engine/game/game-core.ts.
  *
  * Files:
  *   roles.ts             what each card is for (combo pieces, engines, packages, scores)

@@ -56,7 +56,7 @@ export interface Deck {
   /** The deck handles drawing from its own empty library itself (Mike: Laboratory Maniac / Living Conundrum). */
   ownsDecking?: boolean;
   config: Config;
-  /** What the deck's own settings mean, for the app (shared settings: engine/setting-descriptions.ts). */
+  /** What the deck's own settings mean, for the app (shared settings: engine/run/setting-descriptions.ts). */
   settingDescriptions?: Record<string, string>;
   Game: new (
     commanders: string[],

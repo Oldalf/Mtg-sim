@@ -1,6 +1,6 @@
 /**
  * Mike mulligan rule. Plain data: change a list below and re-run `npm run sim -- mike --hands` or
- * the deck with `--set smart_mulligan=0` (the old "keep 2 to 5 lands") to compare. How rules work: engine/mulligan.ts.
+ * the deck with `--set smart_mulligan=0` (the old "keep 2 to 5 lands") to compare. How rules work: engine/game/mulligan.ts.
  * The pod's first mulligan is free, so attempt 0 is the pickiest and attempt 2 (6 cards) the loosest.
  */
 import { MulliganRule } from '../../engine/game/mulligan';

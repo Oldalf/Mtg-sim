@@ -19,7 +19,7 @@ export class LogSession {
 
   constructor(private readonly isLogged: boolean) {}
 
-  /** Makes the folder of a new run with createRunFolder (engine/logged-runs.ts). Returns undefined when the log is off. */
+  /** Makes the folder of a new run with createRunFolder (engine/game-log/logged-runs.ts). Returns undefined when the log is off. */
   startRun(createRunFolder: () => string): string | undefined {
     if (!this.isLogged) return undefined;
     if (!this.hasStarted) clearSessionLogs();

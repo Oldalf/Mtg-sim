@@ -1,5 +1,5 @@
 /**
- * Interaction between the decks of a pod (the cards are listed in engine/answers.ts):
+ * Interaction between the decks of a pod (the cards are listed in engine/game/answers.ts):
  *  - removal and board wipes cast after a player's own turn, aimed at the biggest threat;
  *  - answering a win declared in the middle of a turn, and countering a big spell;
  *  - the pod's rules for which opponent an attack goes at.

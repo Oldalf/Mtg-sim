@@ -48,7 +48,7 @@ const MOST_GAMES = 50_000;
 const DEFAULT_ROUNDS_CAP = 17;
 const MOST_ROUNDS = 50;
 
-/** Who attacks aim at, and when a deck with a kill line goes for it (engine/pod.ts, engine/pod-table.ts). */
+/** Who attacks aim at, and when a deck with a kill line goes for it (engine/pod/pod.ts, engine/pod/pod-table.ts). */
 const THREAT_CHOICES = ['leader', 'spread', 'weakest', 'damage'];
 const POLICY_CHOICES = ['any', 'protected', 'mixed', 'window'];
 const THREAT_HELP = [

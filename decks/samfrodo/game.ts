@@ -15,7 +15,7 @@
  * three go down together and "each opponent" drains never hit a dead player.
  * Attacks: only Frodo (for the Ring and its card draw) and Gollum (for its end-step drain), unless
  * attacking with everything kills the table. No crackback (those attacks are tiny).
- * The game itself (mana, zones, casting, turns) is the shared engine in engine/game-core.ts.
+ * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
 import {
   ART_TOKENS,

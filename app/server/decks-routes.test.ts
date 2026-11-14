@@ -48,7 +48,7 @@ export async function runDecksRoutesTests(): Promise<boolean> {
     allGood &&= check(
       'every setting of every deck has a description' +
         (settingsWithoutDescription.length
-          ? ` (missing: ${settingsWithoutDescription.join(', ')}; add it to the deck's config.ts or engine/setting-descriptions.ts)`
+          ? ` (missing: ${settingsWithoutDescription.join(', ')}; add it to the deck's config.ts or engine/run/setting-descriptions.ts)`
           : ''),
       settingsWithoutDescription.length === 0,
     );

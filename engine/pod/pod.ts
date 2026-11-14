@@ -11,7 +11,7 @@
  *  - Real combat: an attack goes at one chosen opponent, who blocks with its real untapped creatures by the shared
  *    rule (pod-blocking.ts); creatures die; 21 combat damage from one commander kills (pod-combat.ts). With
  *    `--set pod_race=true` this is switched off and each deck's goldfish combat rule decides what connects.
- *  - Interaction (pod-interaction.ts; engine/answers.ts lists the cards). When a deck declares a win in the middle of
+ *  - Interaction (pod-interaction.ts; engine/game/answers.ts lists the cards). When a deck declares a win in the middle of
  *    its turn, the others may answer at instant speed with the mana they left untapped. A big spell may be countered
  *    when it is cast. After its own turn a deck uses removal on the biggest threat and a board wipe when far behind.
  *    `--set pod_answers=false` switches all of this off.

@@ -170,7 +170,7 @@ export interface FightResult {
   /** The defender is dead from this attack (life or 21 commander damage). */
   kills: boolean;
 }
-/** The pod, as a game sees it (engine/pod.ts supplies it; null in a goldfish game). */
+/** The pod, as a game sees it (engine/pod/pod.ts supplies it; null in a goldfish game). */
 export interface Arena {
   /** Is this the real game of a player (not a planner copy)? */
   real(game: Game<unknown>): boolean;

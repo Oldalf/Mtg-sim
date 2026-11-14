@@ -27,10 +27,10 @@ The tasks run one at a time, in this order. Each row is one session and one comm
 
 | # | Task | What | Model |
 |---|---|---|---|
-| 1 | A2 | Remove and rename the decklists | Haiku 5.5 |
-| 2 | A3 | Remove the app's archive switch (skip if suggestion 4 keeps an archive folder) | Haiku 5.5 |
-| 3 | B2 | Move the engine into folders, one folder per commit | Sonnet 5.5 |
-| 4 | B3 | Docs follow the move | Haiku 5.5 |
+| 1 | A2 (done) | Remove and rename the decklists | Haiku 5.5 |
+| 2 | A3 (done) | Remove the app's archive switch (skip if suggestion 4 keeps an archive folder) | Haiku 5.5 |
+| 3 | B2 (done) | Move the engine into folders, one folder per commit | Sonnet 5.5 |
+| 4 | B3 (done) | Docs follow the move | Haiku 5.5 |
 | 5 | C1 | Write the add-a-deck skill | Opus 5.5 |
 | 6 | C2 | Try the skill on a real deck | Sonnet 5.5 |
 | 7 | D1 | Autoplay | Sonnet 5.5 |
@@ -129,6 +129,8 @@ Done 2026-11-14: all seven folders moved, committed as one commit (not seven). `
 ### B3. Docs follow the move (Haiku 5.5, after B2)
 
 Update every `engine/<file>.ts` path in `ENGINE.md`, `README.md`, `CLAUDE.md`, `app/web/CLAUDE.md`, `POD_PLAN.md`, `ROADMAP.md`, the deck `PLAN.md` files and the header comments in the code. Add a short "Folders" table to `ENGINE.md` (the table of B1). Done when a search for `engine/[a-z-]+\.ts` finds only paths that exist.
+
+Done 2026-11-14: every `engine/<file>.ts` path in the docs and code comments now has its folder (ENGINE.md, README.md, CLAUDE.md, POD_PLAN.md, ROADMAP.md, the app's comments, the decks' comments); the Folders table is in `ENGINE.md`. Left as they are: this file's own B2 and B3 notes, which describe the move. No deck `PLAN.md` or `app/web/CLAUDE.md` had a path to change. `npm run verify` was not run: Node is not installed on this machine, so the check, format and regress steps still need a run.
 
 ---
 

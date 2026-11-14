@@ -11,7 +11,7 @@ export const CFG: Config = {
   cotton_min_x: 2,
 };
 
-/** What Sam & Frodo's settings mean (the app's tooltips); the shared ones are in engine/setting-descriptions.ts. */
+/** What Sam & Frodo's settings mean (the app's tooltips); the shared ones are in engine/run/setting-descriptions.ts. */
 export const SETTING_DESCRIPTIONS: Record<string, string> = {
   win_dead:
     'Win when this many opponents are at 0 life (3 = all of them). A pod always needs every other player dead.',

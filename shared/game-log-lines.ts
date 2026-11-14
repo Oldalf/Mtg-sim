@@ -1,6 +1,6 @@
 /**
  * How the lines of a game log are read: who is in it, in what order, and which lines name their player. The text log
- * (engine/game-log-text.ts) and the app's game viewer both follow these rules, so they read the same.
+ * (engine/game-log/game-log-text.ts) and the app's game viewer both follow these rules, so they read the same.
  */
 import type { GameEvent, GameLog } from './game-log-types';
 

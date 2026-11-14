@@ -1,6 +1,6 @@
 /**
  * `npm run pod -- gale meren samfrodo aesi mike -n 1000 [--turns 17] [--trace 1 --seed 5] [--eco] [--set key=value]`
- * Decks play each other (see engine/pod.ts).
+ * Decks play each other (see engine/pod/pod.ts).
  */
 import { Config } from '../engine/game/game-types';
 import * as Pod from '../engine/pod/pod';

@@ -6,7 +6,7 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 
 - Prettier is set up and the code is formatted (`npm run format`).
 - Done: the existing code was brought in line with CLAUDE.md (rule 0 names, readability, KISS, rule of three). Every change left `--regress check` IDENTICAL for all decks and pod output unchanged.
-- Known leftovers: card-nickname constants in aesi (e.g. `BSZ`, `OMNI`), a few 3+ letter abbreviations, and `engine/game-core.ts` is still about 1850 lines.
+- Known leftovers: card-nickname constants in aesi (e.g. `BSZ`, `OMNI`), a few 3+ letter abbreviations, and `engine/game/game-core.ts` is still about 1850 lines.
 
 ## 2. Scryfall bulk data replaces per-card fetching (done)
 

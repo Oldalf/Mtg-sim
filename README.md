@@ -55,7 +55,7 @@ npm run verify                                       # every check a change must
 
 **Power-save mode (`--eco`, or `npm run eco -- <deck> ...`):** for long runs while you do something else. It lowers the process priority, uses a quarter of the cores and makes each worker rest between chunks, so it is busy about 70% of the time (`--duty N` changes that, `-w N` the worker count). Results are identical, only slower: on a 16-core machine a run takes about 3 times as long and keeps about 3 of 16 cores busy on average (instead of nearly all), and it prints the average at the end. Lists and logs are looked up as given, then inside the deck's folder.
 
-**Testing a change:** copy `decks/gale/decklist.txt` to `decks/gale/lists/test.txt`, edit it, then run `npm run sim -- gale decklist.txt lists/test.txt -n 3000`. A card that is not in `data/cards.json` yet is added from the downloaded Scryfall data automatically (no network; if the card is from a newer set, run `npm run cards -- update` first). New cards are played generically (by type and mana cost) until rules are added: card facts that hold in any deck go in `engine/cards.ts` / `engine/game-core.ts`, deck-specific behaviour in the deck's folder.
+**Testing a change:** copy `decks/gale/decklist.txt` to `decks/gale/lists/test.txt`, edit it, then run `npm run sim -- gale decklist.txt lists/test.txt -n 3000`. A card that is not in `data/cards.json` yet is added from the downloaded Scryfall data automatically (no network; if the card is from a newer set, run `npm run cards -- update` first). New cards are played generically (by type and mana cost) until rules are added: card facts that hold in any deck go in `engine/cards/cards.ts` / `engine/game/game-core.ts`, deck-specific behaviour in the deck's folder.
 
 ## Layout
 
@@ -69,7 +69,7 @@ npm run verify                                       # every check a change must
 | `app/` | The app (roadmap step 4): `server/` (Node's own `http` server on 127.0.0.1, the `app` command and its routes), `web/` (the page: an Angular project with its own `package.json` and `CLAUDE.md`, built into `dist/web/`), `api-types.ts` (the shapes both sides share). The app's pages: Decks, Simulate, Pod, Games (the runs of the session and each deck's real logs) and the game viewer. |
 | `shared/` | Plain code both the engine and the page import (the log's types, its board, the rules for reading its lines). No Node code, nothing from `engine/`. A change here counts as an engine change. |
 | `regress_baseline/` | Saved results for `--regress check`. |
-| `session-logs/` | The log of every game of the last `sim` or `pod` command, one folder per run (`engine/game-log-files.ts` describes it). Cleared when the next command starts a run; the app clears it once when it starts and keeps every run of its session. Not in git. Read it with `npm run logs`. |
+| `session-logs/` | The log of every game of the last `sim` or `pod` command, one folder per run (`engine/game-log/game-log-files.ts` describes it). Cleared when the next command starts a run; the app clears it once when it starts and keeps every run of its session. Not in git. Read it with `npm run logs`. |
 | `ENGINE.md` | Engine notes: rules for changing it, what it provides, history, ideas. |
 | `PLAN.md` | The plan for the roadmap step in progress. Each deck has its own `PLAN.md`; phases and next steps are in `ROADMAP.md`. |
 
@@ -88,7 +88,7 @@ The phases (Meren, Sam & Frodo, Simic landfall, Mike, then Codie) and what each 
 
 ## Adding a deck
 
-Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, config, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) in `decks/index.ts`. The subclass fills in the hooks listed in the header of `engine/game-core.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`buildKillSearchState`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGraveyard`). Gale is the worked example.
+Make `decks/<name>/` with an `index.ts` that exports `deck = { name, dir, defaultList, config, Game }`, where `Game` extends the engine's `Game` class. Register it in `DECKS` (and its tests in `TESTS` / `REGRESS`) in `decks/index.ts`. The subclass fills in the hooks listed in the header of `engine/game/game-core.ts`: what the AI wants to do (`candidates`, `cardValue`, `positionValue`, `tutorTarget`), how it wins (`buildKillSearchState`, `killSearch`, `killReachable`, or `combat`), and the effects of cards only it uses (`resolveOther`, `castTriggers`, `beforeDraw`, `onToGraveyard`). Gale is the worked example.
 
 The engine handles all five colours, creatures (power / toughness, counters, tokens), enter and death triggers, sacrifice, devotion, life totals and a goldfish combat model (`creatureCombat`: flyers connect, half the ground attackers are blocked, crackback unless blockers stay home or a fog creature is used).
 

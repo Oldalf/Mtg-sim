@@ -11,7 +11,7 @@ export const CFG: Config = {
   combat_safety: 10,
 };
 
-/** What Mike's settings mean (the app's tooltips); the shared ones are in engine/setting-descriptions.ts. */
+/** What Mike's settings mean (the app's tooltips); the shared ones are in engine/run/setting-descriptions.ts. */
 export const SETTING_DESCRIPTIONS: Record<string, string> = {
   keep_library:
     'AI choice. Without a win piece (or Living Conundrum / Ormos) it stops drawing with this many cards left in the library.',

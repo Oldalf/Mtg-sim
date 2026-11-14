@@ -630,7 +630,7 @@ export function runAesiTests(): boolean {
     [0, 1, 1],
   );
 
-  // ---- mulligan rule (decks/aesi/mulligan.ts, engine/mulligan.ts)
+  // ---- mulligan rule (decks/aesi/mulligan.ts, engine/game/mulligan.ts)
   const hand = (names: string[]) => names.map((cardName) => C.get(cardName));
   const keep = (names: string[], attempt = 0) =>
     keepsHand(MULLIGAN, attempt, hand(names));

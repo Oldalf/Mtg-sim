@@ -259,7 +259,7 @@ export async function addMissingCards(listFiles: string[]): Promise<void> {
   writeCardDatabase(database);
   console.log(
     `Added ${entries.size} card(s). They are played generically (by type) until rules for them are added ` +
-      "(engine/card-facts.ts for card facts, the deck's folder for its own cards).",
+      "(engine/cards/card-facts.ts for card facts, the deck's folder for its own cards).",
   );
 }
 

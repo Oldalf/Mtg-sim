@@ -9,7 +9,7 @@ export const CFG: Config = {
   combat_safety: 10,
 };
 
-/** What Meren's settings mean (the app's tooltips); the shared ones are in engine/setting-descriptions.ts. */
+/** What Meren's settings mean (the app's tooltips); the shared ones are in engine/run/setting-descriptions.ts. */
 export const SETTING_DESCRIPTIONS: Record<string, string> = {
   win_dead:
     'Win when this many opponents are dead (2 of 3: the third is assumed to fall soon). A pod always needs every other player dead.',

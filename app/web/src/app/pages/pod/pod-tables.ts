@@ -1,5 +1,5 @@
 /**
- * The pod report as the columns and rows of results tables: what the command line prints (engine/pod-report.ts:
+ * The pod report as the columns and rows of results tables: what the command line prints (engine/pod/pod-report.ts:
  * printPod), as data for the page.
  */
 import type { PodReport } from '../../../../../api-types';

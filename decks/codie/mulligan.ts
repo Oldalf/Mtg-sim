@@ -1,6 +1,6 @@
 /**
  * Codie mulligan rule. Plain data: change a list below and re-run `npm run sim -- codie --hands`, or the deck with
- * `--set smart_mulligan=0` (the old "keep 2 to 5 lands"). How rules work: engine/mulligan.ts.
+ * `--set smart_mulligan=0` (the old "keep 2 to 5 lands"). How rules work: engine/game/mulligan.ts.
  */
 import { MulliganRule } from '../../engine/game/mulligan';
 

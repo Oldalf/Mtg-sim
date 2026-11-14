@@ -22,7 +22,7 @@ export const CFG: Config = {
   rollout_solver: false, // faster
 };
 
-/** What Codie's settings mean (the app's tooltips); the shared ones are in engine/setting-descriptions.ts. */
+/** What Codie's settings mean (the app's tooltips); the shared ones are in engine/run/setting-descriptions.ts. */
 export const SETTING_DESCRIPTIONS: Record<string, string> = {
   opp_hand:
     "Cards in each opponent's hand (Jeska's Will makes {R} for each card in one opponent's hand). Goldfish opponents hold 7.",

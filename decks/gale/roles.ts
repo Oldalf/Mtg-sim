@@ -1,4 +1,4 @@
-/** What each card is *for* in the Gale deck (the engine's card facts are in engine/cards.ts). */
+/** What each card is *for* in the Gale deck (the engine's card facts are in engine/cards/cards.ts). */
 import * as C from '../../engine/cards/cards';
 
 export const GALE = 'Gale, Waterdeep Prodigy';

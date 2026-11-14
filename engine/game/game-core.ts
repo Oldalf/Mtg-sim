@@ -1842,7 +1842,7 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ turn
-  /** The deck's mulligan rule (engine/mulligan.ts), or null for the default: keep 2 to 5 lands. */
+  /** The deck's mulligan rule (engine/game/mulligan.ts), or null for the default: keep 2 to 5 lands. */
   mulliganRule(): MulliganRule | null {
     return null;
   }

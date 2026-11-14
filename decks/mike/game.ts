@@ -18,7 +18,7 @@
  * follows the replacement effects: win (Maniac / Jace), Ormos counters, Living Conundrum skips, else we lose.
  * The AI only draws its last cards when it is safe (a win piece or Conundrum / Ormos on the battlefield).
  * Combat: flyers and unblockable creatures connect, half the ground attackers are blocked (engine rules).
- * The game itself (mana, zones, casting, turns) is the shared engine in engine/game-core.ts.
+ * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
 import * as C from '../../engine/cards/cards';
 import {

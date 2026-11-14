@@ -10,7 +10,7 @@ export const CFG: Config = {
   dominion_win: 10, // Pontus: 10-20 stolen cards
 };
 
-/** What Aesi's settings mean (the app's tooltips); the shared ones are in engine/setting-descriptions.ts. */
+/** What Aesi's settings mean (the app's tooltips); the shared ones are in engine/run/setting-descriptions.ts. */
 export const SETTING_DESCRIPTIONS: Record<string, string> = {
   aesi_first:
     'AI choice. On: whenever Aesi can be cast, it is cast; the planner does not get to pick something else.',

@@ -7,7 +7,7 @@ import type { GameListRow } from '../../../../../api-types';
 import { ApiService } from '../../core/api';
 import { TagChip } from '../../shared/tag-chip/tag-chip';
 
-/** The games of one tag (a tag has a few games only: GAMES_PER_TAG in engine/game-log-tags.ts). */
+/** The games of one tag (a tag has a few games only: GAMES_PER_TAG in engine/game-log/game-log-tags.ts). */
 interface TaggedGames {
   tag: string;
   games: GameListRow[];

@@ -10,7 +10,7 @@
  *   actions.ts     what the abilities and spells do when the AI picks them
  *
  * Win: 2 opponents dead, or config.win_damage damage dealt in total. Second measure: first opponent dead.
- * The game itself (mana, zones, casting, turns, combat) is the shared engine in engine/game-core.ts.
+ * The game itself (mana, zones, casting, turns, combat) is the shared engine in engine/game/game-core.ts.
  */
 import {
   DEATH_VALUE,

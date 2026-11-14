@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { MatChip } from '@angular/material/chips';
 
 /**
- * A tag of a game (engine/game-log-tags.ts: fastest, slowest, win-stopped, error...), with how many games carry it
+ * A tag of a game (engine/game-log/game-log-tags.ts: fastest, slowest, win-stopped, error...), with how many games carry it
  * when that is given. For choosing tags as a filter, put Material's own `mat-chip-listbox` around plain options.
  */
 @Component({

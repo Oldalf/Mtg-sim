@@ -17,7 +17,7 @@ A goldfish simulator for Commander decks, written in TypeScript and run on Node.
 - `npm run format`: format all code with Prettier. Run it before finishing a change.
 - `npm run format:check`: check formatting without changing files.
 - `npm run sim -- <deck> --test`: a deck's tests (must print ALL OK).
-- `npm run sim -- <deck> --regress check`: after a refactor, results must be IDENTICAL. It does not cover pod mode: before changing `engine/pod.ts` or pod code, save the output of a fixed-seed pod run and compare it afterwards, and run `npm run pod -- --test`.
+- `npm run sim -- <deck> --regress check`: after a refactor, results must be IDENTICAL. It does not cover pod mode: before changing `engine/pod/pod.ts` or pod code, save the output of a fixed-seed pod run and compare it afterwards, and run `npm run pod -- --test`.
 
 ## Coding standards
 
