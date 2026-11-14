@@ -1,0 +1,100 @@
+<header>
+  <button
+    class="name-line"
+    (click)="isUnfolded.set(!isUnfolded())"
+    [attr.aria-expanded]="isUnfolded()"
+  >
+    @if (isActive()) {
+      <span class="turn-marker" aria-label="their turn">▶</span>
+    }
+    <span class="name">{{ player().name }}</span>
+    <span class="commanders">{{ player().commanders.join(' & ') }}</span>
+  </button>
+  @if (board().life !== null) {
+    <span class="life" [class.is-low]="(board().life ?? 0) <= 10">
+      {{ board().life }}
+      @if (lifeChange() !== 0) {
+        <span class="life-change" [class.is-gain]="lifeChange() > 0"
+          >{{ lifeChange() > 0 ? '+' : '' }}{{ lifeChange() }}</span
+        >
+      }
+    </span>
+  }
+</header>
+
+<div class="body">
+  <div class="permanents">
+    @for (stack of battlefield().others; track $index) {
+      <div
+        class="card-box"
+        [class.is-tapped]="stack.permanent.tapped"
+        [class.is-changed]="changedCards().includes(stack.permanent.name)"
+      >
+        <app-card-image
+          [name]="stack.permanent.name"
+          [typeLine]="cardFacts()[stack.permanent.name]?.typeLine"
+          [manaCost]="cardFacts()[stack.permanent.name]?.manaCost"
+          [isTapped]="stack.permanent.tapped"
+        />
+        <span class="badges">
+          @if (stack.count > 1) {
+            <span class="badge">x{{ stack.count }}</span>
+          }
+          @if (stack.permanent.counters !== 0) {
+            <span class="badge is-counters">
+              {{ describeCounters(stack.permanent.counters) }}
+            </span>
+          }
+          @if (stack.permanent.isToken) {
+            <span class="badge is-token">token</span>
+          }
+        </span>
+      </div>
+    } @empty {
+      <span class="empty">no permanents</span>
+    }
+  </div>
+
+  <div class="lands">
+    @for (land of landCards(); track $index) {
+      <div
+        class="land-box"
+        [class.is-tapped]="land.tapped"
+        [class.is-changed]="changedCards().includes(land.name)"
+      >
+        <app-card-image
+          [name]="land.name"
+          [typeLine]="cardFacts()[land.name]?.typeLine"
+        />
+      </div>
+    }
+    <span class="land-count"
+      >{{ lands().total }} lands, {{ lands().untapped }} untapped</span
+    >
+  </div>
+
+  <div class="zones">
+    <span class="zone-count">library {{ board().librarySize }}</span>
+    @for (zone of countedZones(); track zone.key) {
+      <button
+        class="zone-count is-button"
+        [attr.popovertarget]="popoverId(zone.key)"
+        [disabled]="zone.cards.length === 0"
+      >
+        {{ zone.label }} {{ zone.cards.length }}
+      </button>
+      <div class="zone-popover" popover [id]="popoverId(zone.key)">
+        <div class="popover-title">{{ player().name }}: {{ zone.label }}</div>
+        <div class="popover-cards">
+          @for (card of zone.cards; track $index) {
+            <app-card-image
+              [name]="card"
+              [typeLine]="cardFacts()[card]?.typeLine"
+              [manaCost]="cardFacts()[card]?.manaCost"
+            />
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

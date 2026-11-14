@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatToolbar } from '@angular/material/toolbar';
 import { ImageRefresh } from './shared/image-refresh/image-refresh';
@@ -25,7 +25,16 @@ const PLACES = [
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
+  host: { '[class.page-fills-window]': 'pageFillsWindow()' },
 })
 export class App {
   protected readonly places = PLACES;
+  /** The game viewer takes the whole window under the toolbar: its page says so with `fillsWindow = true`. */
+  protected readonly pageFillsWindow = signal(false);
+
+  protected pageOpened(page: object): void {
+    this.pageFillsWindow.set(
+      (page as { fillsWindow?: boolean }).fillsWindow === true,
+    );
+  }
 }

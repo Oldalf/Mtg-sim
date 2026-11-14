@@ -10,7 +10,6 @@ import type {
 import {
   isPodGame,
   namesItsPlayer,
-  playersBySeat,
   startsNewTurn,
 } from '../../../../../../shared/game-log-lines';
 import type {
@@ -223,16 +222,6 @@ function cardsMovedForGood(event: GameEvent): string[] {
           (change) => change !== 0,
         ),
     );
-}
-
-/** The players top to bottom: the one whose turn it is first, then the others in the order they play after it. */
-export function playersTopDown(
-  gameLog: GameLog,
-  activePlayer: number,
-): number[] {
-  const bySeat = playersBySeat(gameLog);
-  const activeAt = Math.max(bySeat.indexOf(activePlayer), 0);
-  return [...bySeat.slice(activeAt), ...bySeat.slice(0, activeAt)];
 }
 
 /** Every card name in a game: what the viewer asks the card facts for. */

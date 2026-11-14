@@ -1,0 +1,80 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container);
+}
+
+.position {
+  margin: 0 4px;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  white-space: nowrap;
+}
+
+// the native range input does the dragging and the keys; the marks are drawn behind it
+.scrub {
+  position: relative;
+  flex: 1;
+  min-width: 80px;
+  height: 28px;
+  input {
+    position: relative;
+    width: 100%;
+    height: 28px;
+    margin: 0;
+    background: transparent;
+    accent-color: var(--mat-sys-primary);
+    cursor: pointer;
+  }
+}
+
+// inset by about half the thumb, so a mark lines up with the thumb at that line
+.marks {
+  position: absolute;
+  inset: 0 8px;
+  pointer-events: none;
+}
+
+.turn-tick {
+  position: absolute;
+  top: 9px;
+  width: 1px;
+  height: 10px;
+  background: var(--mat-sys-outline);
+  &.starts-round {
+    top: 5px;
+    height: 18px;
+    background: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.highlight-mark {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+}
+
+// a phone: the bar wraps; the speed, the position and the highlight labels go
+@media (max-width: 700px) {
+  :host {
+    flex-wrap: wrap;
+    border-radius: 16px;
+  }
+  .speed,
+  .position,
+  .highlight-step .label {
+    display: none;
+  }
+  .scrub {
+    order: 1;
+    flex-basis: 100%;
+  }
+}

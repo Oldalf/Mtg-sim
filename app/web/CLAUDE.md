@@ -28,6 +28,13 @@ The page of the app (roadmap step 4): an Angular 22 project with Angular Materia
 - The first bundle is a little over 500 kB (Angular code the lazy pages share); the warning budget in `angular.json` is 600 kB.
 - Phone width: no page may scroll sideways; a wide table scrolls inside its own box. Below 480 px the toolbar drops the app name so the four places fit.
 
+## Learned while building the table view (step 5)
+
+- A page that must fill the window (the game viewer) sets `readonly fillsWindow = true`; the shell (`app.ts`) then drops the 1400 px cap and makes the page exactly the window's height. Do not reach into the shell with `::ng-deep`.
+- A seat sizes its cards with container query units (`cqw`, `cqh`) from CSS variables the component sets (`--permanent-rows`, `--permanents-per-row`, from `permanentGrid`). Pure CSS can't count the cards, so the count comes from TypeScript and the sizing stays in CSS.
+- The arrow keys step through the game, so other shortcuts there use letters (`l` for the log, `h` / `H` for highlights).
+- A component's style has a 4 kB budget (`angular.json`); `player-seat.scss` is close to it.
+
 ## Angular skills
 
 The official Angular agent skills are in `.claude/skills/` (`angular-developer`, `angular-new-app`; reinstall or update with `npx skills update` here). Follow `angular-developer` for anything Angular: it points to a reference file per topic (signals, httpResource, Signal Forms, routing, testing). Angular's CLI MCP server is set up in `.mcp.json`.

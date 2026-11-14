@@ -1,0 +1,283 @@
+// The seat is a size container: its cards grow and shrink with the room the table gives it. The permanents' rows and
+// the land row (cards 0.62 as wide, so 0.87 of a card's width high) share what is left after the header and the zone
+// counts (about 84px); a tapped card is turned, so a row keeps some slack.
+:host {
+  --card-fit-width: calc(86cqw / var(--permanents-per-row, 1) - 6px);
+  --card-fit-height: calc(
+    (100cqh - 84px) / (1.45 * var(--permanent-rows, 1) + 0.9)
+  );
+  --card-width: clamp(
+    26px,
+    min(var(--card-fit-width), var(--card-fit-height)),
+    130px
+  );
+  --card-height: calc(var(--card-width) * 88 / 63);
+  --land-width: calc(var(--card-width) * 0.62);
+  container-type: size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 6px 10px 8px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-low);
+  overflow: hidden;
+}
+
+:host(.is-active) {
+  border-color: var(--mat-sys-primary);
+  box-shadow:
+    0 0 0 1px var(--mat-sys-primary),
+    0 0 24px -6px var(--mat-sys-primary);
+}
+
+// a player who is out: greyed, still readable
+:host(.is-out) {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-line {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.turn-marker {
+  color: var(--mat-sys-primary);
+}
+
+.name {
+  font: var(--mat-sys-title-medium);
+  white-space: nowrap;
+}
+
+.commanders {
+  overflow: hidden;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.life {
+  position: relative;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  &.is-low {
+    color: #ff8a80;
+  }
+}
+
+.life-change {
+  position: absolute;
+  top: -6px;
+  right: calc(100% + 4px);
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: #c62828;
+  color: #fff;
+  font-size: 13px;
+  animation: life-flash 1.6s ease-out;
+  &.is-gain {
+    background: #2e7d32;
+  }
+}
+
+@keyframes life-flash {
+  from {
+    transform: scale(1.6);
+  }
+  30% {
+    transform: scale(1);
+  }
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  margin-top: 6px;
+}
+
+.permanents {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.card-box {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--card-width);
+  height: var(--card-height);
+  &.is-tapped {
+    width: var(--card-height);
+  }
+  app-card-image {
+    width: var(--card-width);
+    flex: none;
+  }
+}
+
+// the cards the chosen line moved glow for a moment
+.is-changed {
+  animation: changed-glow 1.4s ease-out;
+}
+
+@keyframes changed-glow {
+  from {
+    box-shadow:
+      0 0 0 3px var(--mat-sys-primary),
+      0 0 18px 4px var(--mat-sys-primary);
+  }
+  to {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.badges {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.badge {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--mat-sys-surface-container-highest);
+  font: var(--mat-sys-label-small);
+  &.is-counters {
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+  }
+  &.is-token {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+}
+
+// lands fanned: each overlaps the one before, so ten take the room of four cards; a tapped land is darkened, not
+// turned (it would cover its neighbours)
+.lands {
+  display: flex;
+  align-items: center;
+  min-height: 18px;
+  padding-left: calc(var(--land-width) * 0.55);
+}
+
+.land-box {
+  flex: none;
+  width: var(--land-width);
+  margin-left: calc(var(--land-width) * -0.55);
+  &.is-tapped {
+    filter: brightness(0.55);
+  }
+  app-card-image {
+    display: block;
+    width: var(--land-width);
+  }
+}
+
+.land-count {
+  margin-left: 10px;
+}
+
+.land-count,
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.zone-count {
+  padding: 1px 8px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 999px;
+  background: none;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-medium);
+  &.is-button:enabled {
+    color: var(--mat-sys-on-surface);
+    cursor: pointer;
+    &:hover {
+      background: var(--mat-sys-surface-container-high);
+    }
+  }
+}
+
+.zone-popover {
+  max-width: min(90vw, 900px);
+  padding: 12px;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  &::backdrop {
+    background: rgb(0 0 0 / 50%);
+  }
+}
+
+.popover-title {
+  margin-bottom: 8px;
+  font: var(--mat-sys-title-small);
+}
+
+.popover-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  app-card-image {
+    width: 130px;
+  }
+}
+
+// a phone: the seats are a column, so a seat is no longer a size container; a folded seat shows its header only
+@media (max-width: 700px) {
+  :host {
+    --card-width: 52px;
+    container-type: normal;
+  }
+  .name-line {
+    cursor: pointer;
+  }
+  :host(.is-folded) .body {
+    display: none;
+  }
+}

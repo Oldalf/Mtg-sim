@@ -14,7 +14,6 @@ import {
   nextEvent,
   nextHighlight,
   nextTurn,
-  playersTopDown,
   previousEvent,
   previousHighlight,
   previousTurn,
@@ -138,11 +137,6 @@ describe('game steps', () => {
     expect(previousTurn(turns, 3)).toBe(1);
     expect(previousTurn(turns, 1)).toBe(0);
     expect(previousTurn(turns, 0)).toBe(0);
-  });
-
-  it('puts the player whose turn it is on top, then the seats after it', () => {
-    expect(playersTopDown(POD_GAME, 1)).toEqual([1, 0]);
-    expect(playersTopDown(POD_GAME, 0)).toEqual([0, 1]);
   });
 
   it('lists the cards of a line and of the game once each', () => {

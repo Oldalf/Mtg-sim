@@ -35,9 +35,9 @@ The tasks run one at a time, in this order. Each row is one session and one comm
 | 6 | C2 (done) | Try the skill on a real deck | Sonnet 5.5 |
 | 7 | D1 (done) | Autoplay | Sonnet 5.5 |
 | 8 | D2 (done) | Remember speed and position | Haiku 5.5 |
-| 9 | E1 | Table view: design as a prototype, Pontus picks | Opus 5.5, then Pontus |
-| 10 | E2 | Table view: the logic as plain functions | Sonnet 5.5 |
-| 11 | E3 | Table view: build it | Sonnet 5.5 (Opus 5.5 if the design is far from today's components) |
+| 9 | E1 (done) | Table view: design as a prototype, Pontus picks | Opus 5.5, then Pontus |
+| 10 | E2 (done) | Table view: the logic as plain functions | Sonnet 5.5 |
+| 11 | E3 (done) | Table view: build it | Sonnet 5.5 (Opus 5.5 if the design is far from today's components) |
 | 12 | E4 | Table view: check every size | Haiku 5.5 or Sonnet 5.5 |
 
 Why this order: the decklists are the smallest and touch nothing else. The engine move comes before the skill because the skill names engine paths. Autoplay comes before the table view because the table view builds on it.
@@ -232,6 +232,8 @@ Done 2026-11-14: `app/web/src/app/pages/game/table-layout.ts` with a spec: `seat
 ### E3. Build the table (Sonnet 5.5, or Opus 5.5 if the design of E1 is far from today's components)
 
 New components next to the old ones: a compact seat (from `player-board.ts`), the caption bar, the control bar with the scrub bar, the log drawer. `game.html` puts them together. Keep the components small, state in signals, per `app/web/CLAUDE.md`. Keyboard steps and autoplay from D keep working. The old stacked view is removed once the new one covers it, not kept as an option.
+
+Done 2026-11-14: the grid of E1 is the only view. New components in `pages/game/`: `player-seat` (replaces `player-board`), `game-caption`, `game-controls` (emits a `ControlStep`; the scrub bar is a native range input with the marks drawn behind it); the log drawer is in `game.html`. `playersTopDown` is gone. Keys: as before, plus `l` for the log and Home / End for the first and last line (the first / last buttons went; the scrub bar does that). The app shell gives a page the whole window when the routed component has `fillsWindow = true` (`App.pageOpened` on the outlet's `activate`): no width cap, exactly the window's height, so the table never scrolls the page (on a phone it does, one column). Checked in the browser: a pod of 5 (no page or seat scrolls at 1920 x 945), goldfish, a real Archidekt log (codie) with autoplay and the drawer, phone width 390 px. `npm run verify` gave VERIFY OK (no regress needed: page only). For E4: the seat's style is right at the 4 kB budget; a pod of 6 and AXE are not checked yet.
 
 ### E4. Check every size (Haiku 5.5 or Sonnet 5.5, after E3)
 

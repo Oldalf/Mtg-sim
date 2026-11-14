@@ -10,20 +10,19 @@ import {
 } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { MatTooltip } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { boardAt } from '../../../../../../shared/game-log-board';
+import { namesItsPlayer } from '../../../../../../shared/game-log-lines';
 import type { GameLog } from '../../../../../../shared/game-log-types';
 import { ApiService } from '../../core/api';
-import { CardImage } from '../../shared/card-image/card-image';
 import { ErrorBox } from '../../shared/error-box/error-box';
+import { GameCaption } from './game-caption';
+import { GameControls } from './game-controls';
 import { GameLogView } from './game-log-view';
 import {
-  AUTOPLAY_SPEEDS,
   type AutoplaySpeed,
   autoplayDelay,
   cardNamesOfGame,
@@ -33,15 +32,21 @@ import {
   nextEvent,
   nextHighlight,
   nextTurn,
-  playersTopDown,
   previousEvent,
   previousHighlight,
   previousTurn,
   turnsOfGame,
 } from './game-steps';
-import { PlayerBoard } from './player-board';
+import { PlayerSeat } from './player-seat';
+import {
+  changedCardsByPlayer,
+  goldfishOpponentLives,
+  lifeChanges,
+  scrubMarks,
+  seatRows,
+} from './table-layout';
 
-/** Which key does what (shown as the buttons' tooltips too). */
+/** Which key does what (the control bar's tooltips name them too). */
 const STEP_KEYS = {
   nextLine: 'ArrowDown',
   previousLine: 'ArrowUp',
@@ -49,8 +54,11 @@ const STEP_KEYS = {
   previousTurn: 'ArrowLeft',
   nextHighlight: 'h',
   previousHighlight: 'H',
-  playOrPause: ' ',
+  first: 'Home',
+  last: 'End',
 };
+const PLAY_OR_PAUSE_KEY = ' ';
+const TOGGLE_LOG_KEY = 'l';
 
 /** The key the autoplay speed is kept under in the browser (per viewer, not shared). */
 const SPEED_STORAGE_KEY = 'magic.autoplaySpeed';
@@ -73,30 +81,33 @@ function writeStoredSpeed(speed: AutoplaySpeed): void {
 }
 
 /**
- * The game viewer: the log on the left, the board after the chosen line on the right, stepped by line, turn or
- * highlight with the buttons or the keys. Opens a game of a run (/games/<run>/<seed>) or a deck's real Archidekt
+ * The game viewer, laid out as a table you can watch: the seats in fixed places around the table, what just happened
+ * in a caption under it, video-style controls, the log in a drawer. Stepped by line, turn or highlight with the
+ * buttons or the keys, or played by itself. Opens a game of a run (/games/<run>/<seed>) or a deck's real Archidekt
  * log (/games/real/<deck>/<file>).
  */
 @Component({
   selector: 'app-game',
   imports: [
     MatButtonModule,
-    MatButtonToggleModule,
     MatIcon,
     MatProgressBar,
     MatSlideToggle,
-    MatTooltip,
     RouterLink,
-    CardImage,
     ErrorBox,
+    GameCaption,
+    GameControls,
     GameLogView,
-    PlayerBoard,
+    PlayerSeat,
   ],
   templateUrl: './game.html',
   styleUrl: './game.scss',
   host: { '(document:keydown)': 'stepByKey($event)' },
 })
 export class Game {
+  /** Read by the app shell: the table takes the whole window under the toolbar. */
+  readonly fillsWindow = true;
+
   /** A game of a run, from the route /games/:run/:seed. */
   readonly run = input<string>();
   readonly seed = input<string>();
@@ -104,8 +115,6 @@ export class Game {
   readonly deck = input<string>();
   readonly file = input<string>();
 
-  protected readonly STEP_KEYS = STEP_KEYS;
-  protected readonly AUTOPLAY_SPEEDS = AUTOPLAY_SPEEDS;
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -145,7 +154,7 @@ export class Game {
     this.cardFacts.hasValue() ? this.cardFacts.value() : {},
   );
 
-  /** The chosen event (index into the log's events); a new game starts at its first. */
+  /** The chosen event (index into the log's events). */
   /** Starts at the line in the URL (if the game has it), so a refresh or a shared link opens the same spot. */
   protected readonly chosenEvent = linkedSignal({
     source: this.gameLog,
@@ -158,6 +167,8 @@ export class Game {
       ),
   });
   protected readonly showMoves = signal(false);
+  /** The log is a drawer, closed by default so the table has the room. */
+  protected readonly isLogOpen = signal(false);
 
   /** Autoplay; loading another game pauses it. */
   protected readonly isPlaying = linkedSignal({
@@ -184,15 +195,42 @@ export class Game {
     const gameLog = this.gameLog();
     return gameLog ? boardAt(gameLog, this.chosenEvent()) : [];
   });
-  /** The players top to bottom, the one whose turn it is first. */
-  protected readonly playerOrder = computed(() => {
+  protected readonly seats = computed(() => {
     const gameLog = this.gameLog();
-    const event = this.event();
-    return gameLog && event ? playersTopDown(gameLog, event.activePlayer) : [];
+    return gameLog ? seatRows(gameLog) : { top: [], bottom: [] };
   });
+  protected readonly marks = computed(() => {
+    const gameLog = this.gameLog();
+    return gameLog
+      ? scrubMarks(gameLog, this.turns())
+      : { turns: [], highlights: [] };
+  });
+
+  // ---------------------------------------------------------------- what the chosen line did
   protected readonly cardsOfChosenLine = computed(() => {
     const event = this.event();
     return event ? cardsOfEvent(event) : [];
+  });
+  protected readonly changedCards = computed(() => {
+    const gameLog = this.gameLog();
+    const event = this.event();
+    return gameLog && event ? changedCardsByPlayer(gameLog, event) : [];
+  });
+  protected readonly lifeChanges = computed(() => {
+    const gameLog = this.gameLog();
+    return gameLog ? lifeChanges(gameLog, this.chosenEvent()) : [];
+  });
+  protected readonly opponentLives = computed(() => {
+    const gameLog = this.gameLog();
+    const event = this.event();
+    return gameLog && event ? goldfishOpponentLives(gameLog, event) : [];
+  });
+  protected readonly captionPlayerName = computed(() => {
+    const gameLog = this.gameLog();
+    const event = this.event();
+    return gameLog && event && namesItsPlayer(gameLog, event)
+      ? gameLog.players[event.player].name
+      : '';
   });
 
   constructor() {
@@ -242,17 +280,13 @@ export class Game {
     writeStoredSpeed(speed);
   }
 
+  protected toggleLog(): void {
+    this.isLogOpen.update((isOpen) => !isOpen);
+  }
+
   protected choose(eventIndex: number): void {
     this.isPlaying.set(false);
     this.chosenEvent.set(eventIndex);
-  }
-
-  /** Moves the chosen line by one of the steps; does nothing before the game has loaded. */
-  protected step(stepTo: (gameLog: GameLog, eventIndex: number) => number) {
-    const gameLog = this.gameLog();
-    if (!gameLog) return;
-    this.isPlaying.set(false);
-    this.chosenEvent.set(stepTo(gameLog, this.chosenEvent()));
   }
 
   protected readonly steps = {
@@ -270,22 +304,33 @@ export class Game {
     last: (gameLog: GameLog) => gameLog.events.length - 1,
   };
 
+  /** Moves the chosen line by one of the steps (a manual step pauses); does nothing before the game has loaded. */
+  protected step(stepName: keyof typeof this.steps): void {
+    const gameLog = this.gameLog();
+    if (!gameLog) return;
+    this.choose(this.steps[stepName](gameLog, this.chosenEvent()));
+  }
+
   protected stepByKey(keyEvent: KeyboardEvent): void {
     const target = keyEvent.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable]')) return;
     if (keyEvent.ctrlKey || keyEvent.altKey || keyEvent.metaKey) return;
-    const stepName = (
-      Object.keys(STEP_KEYS) as (keyof typeof STEP_KEYS)[]
-    ).find((name) => STEP_KEYS[name] === keyEvent.key);
-    if (!stepName) return;
-    if (stepName === 'playOrPause') {
+    if (keyEvent.key === TOGGLE_LOG_KEY) {
+      this.toggleLog();
+      return;
+    }
+    if (keyEvent.key === PLAY_OR_PAUSE_KEY) {
       // on a focused button Space already clicks it
       if (target?.closest('button, a')) return;
       keyEvent.preventDefault();
       this.togglePlaying();
       return;
     }
+    const stepName = (
+      Object.keys(STEP_KEYS) as (keyof typeof STEP_KEYS)[]
+    ).find((name) => STEP_KEYS[name] === keyEvent.key);
+    if (!stepName) return;
     keyEvent.preventDefault();
-    this.step(this.steps[stepName]);
+    this.step(stepName);
   }
 }

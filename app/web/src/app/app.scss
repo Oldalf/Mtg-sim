@@ -66,3 +66,24 @@ main {
   margin: 0 auto;
   padding: 16px;
 }
+
+// a page that fills the window (the game viewer): as wide as the window and exactly as tall, so it never scrolls
+:host(.page-fills-window) {
+  height: 100dvh;
+}
+
+main.fills-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: none;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+// on a phone the viewer is one column that scrolls
+@media (max-width: 700px) {
+  :host(.page-fills-window) {
+    height: auto;
+  }
+}

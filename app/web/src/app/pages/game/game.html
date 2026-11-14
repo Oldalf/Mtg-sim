@@ -1,9 +1,11 @@
-@if (isRealLog()) {
-  <a routerLink="/games">&larr; Games</a>
-} @else {
-  <a [routerLink]="['/games', run()]">&larr; Games of {{ run() }}</a>
-}
-<h1>{{ title() }}</h1>
+<div class="page-title">
+  @if (isRealLog()) {
+    <a routerLink="/games">&larr; Games</a>
+  } @else {
+    <a [routerLink]="['/games', run()]">&larr; Games of {{ run() }}</a>
+  }
+  <h1>{{ title() }}</h1>
+</div>
 
 @if (game.isLoading()) {
   <mat-progress-bar mode="indeterminate" />
@@ -16,148 +18,83 @@
 }
 
 @if (gameLog(); as gameLog) {
-  <div class="viewer">
-    <div class="log-column">
-      <app-game-log-view
-        [turns]="turns()"
-        [chosenEvent]="chosenEvent()"
-        [showMoves]="showMoves()"
-        (choose)="choose($event)"
-      />
-    </div>
-
-    <div class="board-column">
-      <div class="steps" role="toolbar" aria-label="Step through the game">
-        <button
-          matIconButton
-          (click)="togglePlaying()"
-          [matTooltip]="isPlaying() ? 'Pause (space)' : 'Play (space)'"
-          [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
-        >
-          <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon>
-        </button>
-        <mat-button-toggle-group
-          [value]="speed()"
-          (change)="setSpeed($event.value)"
-          aria-label="Autoplay speed"
-          hideSingleSelectionIndicator
-        >
-          @for (autoplaySpeed of AUTOPLAY_SPEEDS; track autoplaySpeed) {
-            <mat-button-toggle [value]="autoplaySpeed">
-              {{ autoplaySpeed }}
-            </mat-button-toggle>
+  @if (event(); as event) {
+    <div class="viewer">
+      <div class="table">
+        @for (row of [seats().top, seats().bottom]; track $index) {
+          @if (row.length) {
+            <div class="seat-row">
+              @for (player of row; track player) {
+                <app-player-seat
+                  [player]="gameLog.players[player]"
+                  [playerIndex]="player"
+                  [board]="boards()[player]"
+                  [isActive]="
+                    gameLog.players.length > 1 && player === event.activePlayer
+                  "
+                  [cardFacts]="facts()"
+                  [changedCards]="changedCards()[player] ?? []"
+                  [lifeChange]="lifeChanges()[player] ?? 0"
+                />
+              }
+            </div>
           }
-        </mat-button-toggle-group>
-        <span class="divider"></span>
-        <button
-          matIconButton
-          (click)="step(steps.first)"
-          matTooltip="Opening hand"
-          aria-label="Opening hand"
-        >
-          <mat-icon>first_page</mat-icon>
-        </button>
-        <button
-          matIconButton
-          (click)="step(steps.previousTurn)"
-          matTooltip="Previous turn (left arrow)"
-          aria-label="Previous turn"
-        >
-          <mat-icon>keyboard_double_arrow_left</mat-icon>
-        </button>
-        <button
-          matIconButton
-          (click)="step(steps.previousLine)"
-          matTooltip="Previous line (up arrow)"
-          aria-label="Previous line"
-        >
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-        <button
-          matIconButton
-          (click)="step(steps.nextLine)"
-          matTooltip="Next line (down arrow)"
-          aria-label="Next line"
-        >
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-        <button
-          matIconButton
-          (click)="step(steps.nextTurn)"
-          matTooltip="Next turn (right arrow)"
-          aria-label="Next turn"
-        >
-          <mat-icon>keyboard_double_arrow_right</mat-icon>
-        </button>
-        <button
-          matIconButton
-          (click)="step(steps.last)"
-          matTooltip="End of the game"
-          aria-label="End of the game"
-        >
-          <mat-icon>last_page</mat-icon>
-        </button>
-        <span class="divider"></span>
-        <button
-          matButton
-          (click)="step(steps.previousHighlight)"
-          matTooltip="Previous highlight (shift + h)"
-        >
-          <mat-icon>arrow_back</mat-icon>
-          Highlight
-        </button>
-        <button
-          matButton
-          (click)="step(steps.nextHighlight)"
-          matTooltip="Next highlight (h)"
-        >
-          Highlight
-          <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-        </button>
-        <span class="divider"></span>
-        <mat-slide-toggle
-          [checked]="showMoves()"
-          (change)="showMoves.set($event.checked)"
-        >
-          Card moves
-        </mat-slide-toggle>
-        <span class="position">
-          line {{ chosenEvent() + 1 }} of {{ gameLog.events.length }}
-        </span>
+        }
       </div>
 
-      @if (event(); as event) {
-        <div class="chosen-line">
-          <div class="chosen-text">
-            @if (turns().length) {
-              <span class="note">{{ turnTitleOfChosen() }}</span>
-            }
-            <span>{{ event.text || 'start of the turn' }}</span>
-          </div>
-          <div class="chosen-cards">
-            @for (card of cardsOfChosenLine(); track card) {
-              <app-card-image
-                [name]="card"
-                [typeLine]="facts()[card]?.typeLine"
-                [manaCost]="facts()[card]?.manaCost"
-              />
-            }
-          </div>
-        </div>
+      <app-game-caption
+        [turnTitle]="turnTitleOfChosen()"
+        [playerName]="captionPlayerName()"
+        [text]="event.text"
+        [isHighlight]="event.isHighlight"
+        [cards]="cardsOfChosenLine()"
+        [cardFacts]="facts()"
+        [opponentLives]="opponentLives()"
+      />
 
-        <div class="boards">
-          @for (player of playerOrder(); track player) {
-            <app-player-board
-              [player]="gameLog.players[player]"
-              [board]="boards()[player]"
-              [isActive]="
-                gameLog.players.length > 1 && player === event.activePlayer
-              "
-              [cardFacts]="facts()"
+      <app-game-controls
+        [isPlaying]="isPlaying()"
+        [speed]="speed()"
+        [chosenEvent]="chosenEvent()"
+        [eventCount]="gameLog.events.length"
+        [marks]="marks()"
+        [turnTitle]="turnTitleOfChosen()"
+        [isLogOpen]="isLogOpen()"
+        (togglePlay)="togglePlaying()"
+        (chooseSpeed)="setSpeed($event)"
+        (step)="step($event)"
+        (seek)="choose($event)"
+        (toggleLog)="toggleLog()"
+      />
+
+      @if (isLogOpen()) {
+        <aside class="log-drawer" aria-label="The game's log">
+          <div class="drawer-header">
+            <span class="drawer-title">Log</span>
+            <mat-slide-toggle
+              [checked]="showMoves()"
+              (change)="showMoves.set($event.checked)"
+            >
+              Card moves
+            </mat-slide-toggle>
+            <button
+              matIconButton
+              (click)="isLogOpen.set(false)"
+              aria-label="Close the log"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="drawer-body">
+            <app-game-log-view
+              [turns]="turns()"
+              [chosenEvent]="chosenEvent()"
+              [showMoves]="showMoves()"
+              (choose)="choose($event)"
             />
-          }
-        </div>
+          </div>
+        </aside>
       }
     </div>
-  </div>
+  }
 }
