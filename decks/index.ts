@@ -7,6 +7,7 @@ import { deck as samfrodo } from './samfrodo/index';
 import { deck as aesi } from './aesi/index';
 import { deck as mike } from './mike/index';
 import { deck as codie } from './codie/index';
+import { deck as edgar } from './edgar/index';
 import { deck as goldfish } from './goldfish/index';
 import { runKillTests } from './gale/tests/kills.test';
 import { runMerenTests } from './meren/tests/meren.test';
@@ -14,6 +15,7 @@ import { runSamFrodoTests } from './samfrodo/tests/samfrodo.test';
 import { runAesiTests } from './aesi/tests/aesi.test';
 import { runMikeTests } from './mike/tests/mike.test';
 import { runCodieTests } from './codie/tests/codie.test';
+import { runEdgarTests } from './edgar/tests/edgar.test';
 
 export const DECKS: Record<string, Deck> = {
   gale,
@@ -22,6 +24,7 @@ export const DECKS: Record<string, Deck> = {
   aesi,
   mike,
   codie,
+  edgar,
   goldfish,
 };
 
@@ -33,6 +36,7 @@ export const TESTS: Record<string, () => boolean> = {
   aesi: runAesiTests,
   mike: runMikeTests,
   codie: runCodieTests,
+  edgar: runEdgarTests,
 };
 
 /** What `--regress` records per deck (lists are relative to the deck folder). */
@@ -48,4 +52,5 @@ export const REGRESS: Record<string, RegressSpec> = {
   aesi: { lists: ['decklist.txt'], tests: runAesiTests },
   mike: { lists: ['decklist.txt'], tests: runMikeTests },
   codie: { lists: ['decklist.txt'], tests: runCodieTests },
+  edgar: { lists: ['decklist.txt'], tests: runEdgarTests },
 };

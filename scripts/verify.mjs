@@ -35,9 +35,10 @@ const DECKS_WITH_BASELINE = [
   'aesi',
   'mike',
   'codie',
+  'edgar',
 ];
 const DECKS_WITH_TESTS = [...DECKS_WITH_BASELINE, 'goldfish'];
-const POD_DECKS = ['gale', 'meren', 'samfrodo', 'aesi'];
+const POD_DECKS = ['gale', 'meren', 'samfrodo', 'aesi', 'edgar'];
 const POD_ARGUMENTS = ['pod', ...POD_DECKS, '-n', '200', '--no-log'];
 /** Files and folders outside the deck folders that can change the results of every deck. */
 const SHARED_SIMULATOR_PATHS = [

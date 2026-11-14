@@ -16,6 +16,11 @@
 import { CardDef } from '../cards/cards';
 import { CardMove } from './game-log';
 import { Permanent } from '../game/game-types';
+import {
+  BoardPermanent,
+  PlayerBoard,
+  applyMove,
+} from '../../shared/game-log-board';
 
 /** The zones of a game that the recorder reads. */
 export interface TableZones {
@@ -145,10 +150,22 @@ export class MoveRecorder {
   /** Zone changes that were found by comparing, not reported by the game ("Swamp; moved hand => battlefield").
    *  Whoever reads them empties the list. */
   unrecordedChanges: string[] = [];
+  /** The battlefield as whoever replays the log rebuilds it (see applyMove): permanents known by name only. When
+   *  identical tokens differ in tapped state or counters, the replay can mix them up: corrections fix that. */
+  private replayedBoard: PlayerBoard = emptyPlayerBoard();
 
   /** zones: the table to start from (null = an empty table). */
   constructor(zones: TableZones | null) {
     this.lastState = zones ? readTableState(zones) : emptyTableState();
+    if (zones)
+      this.replayedBoard.battlefield = zones.battlefield.map(
+        (permanent): BoardPermanent => ({
+          name: permanent.card.name,
+          tapped: permanent.tapped,
+          counters: permanent.counters,
+          isToken: permanent.token,
+        }),
+      );
   }
 
   /** A recorder that goes on from the same point, for a copy of the game that may replace the game. The copy has
@@ -176,6 +193,12 @@ export class MoveRecorder {
     };
     copy.cardsOnTheirWay = this.cardsOnTheirWay.slice();
     copy.recordedMoves = this.recordedMoves.slice();
+    copy.replayedBoard = {
+      ...emptyPlayerBoard(),
+      battlefield: this.replayedBoard.battlefield.map((permanent) => ({
+        ...permanent,
+      })),
+    };
     return copy;
   }
 
@@ -246,7 +269,49 @@ export class MoveRecorder {
       ...(settleCardsOnTheirWay ? this.settleCardsOnTheirWay() : []),
       ...permanentChanges(before, after),
     ];
-    return actions.map(([card, action]) => ({ player, card, action }));
+    const moves = actions.map(([card, action]) => ({ player, card, action }));
+    for (const move of moves) applyMove(this.replayedBoard, move);
+    for (const [card, action] of this.correctionsForReplay(after))
+      moves.push({ player, card, action });
+    return moves;
+  }
+
+  /** Lines that make a replay of the log end with the real permanents. A replay applies "tapped" and "counter"
+   *  lines to the first permanent of that name that they change, so identical tokens that differ in tapped state
+   *  and counters can end up with the right states on the wrong tokens. A log tells permanents apart by name only,
+   *  so what has to be right per name is how many are tapped and the counters in all (see the board test).
+   *  Nothing is added when the replay already has them right. */
+  private correctionsForReplay(after: TableState): CardAction[] {
+    const wanted = new Map<string, { tapped: number; counters: number }>();
+    for (const [permanent, state] of after.permanents) {
+      const name = permanent.card.name;
+      const total = wanted.get(name) ?? { tapped: 0, counters: 0 };
+      total.tapped += state.isTapped ? 1 : 0;
+      total.counters += state.counters;
+      wanted.set(name, total);
+    }
+    const corrections: CardAction[] = [];
+    for (const [name, target] of wanted) {
+      const replayed = this.replayedBoard.battlefield.filter(
+        (permanent) => permanent.name === name,
+      );
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const tappedNow = replayed.filter((permanent) => permanent.tapped);
+        const countersNow = replayed.reduce(
+          (total, permanent) => total + permanent.counters,
+          0,
+        );
+        let action: string | null = null;
+        if (tappedNow.length !== target.tapped)
+          action = tappedNow.length < target.tapped ? 'tapped' : 'untapped';
+        else if (countersNow !== target.counters)
+          action = counterActionFor(replayed, target.counters - countersNow);
+        if (action === null) break;
+        applyMove(this.replayedBoard, { player: 0, card: name, action });
+        corrections.push([name, action]);
+      }
+    }
+    return corrections;
   }
 
   /** The reported zone changes since the last call, in the order they happened. */
@@ -376,4 +441,30 @@ function permanentChanges(before: TableState, after: TableState): CardAction[] {
       actions.push([name, `counter:${PLUS_ONE_COUNTER}=${now.counters}`]);
   }
   return actions;
+}
+
+function emptyPlayerBoard(): PlayerBoard {
+  return {
+    hand: [],
+    battlefield: [],
+    graveyard: [],
+    exile: [],
+    commandZone: [],
+    librarySize: 0,
+    life: null,
+  };
+}
+
+/** A counter line that changes the counters of the permanents by `change` in all. A replay sets the first permanent
+ *  whose counters differ, so we look for the permanent that line will hit. */
+function counterActionFor(
+  permanents: BoardPermanent[],
+  change: number,
+): string | null {
+  for (const permanent of permanents) {
+    const counters = permanent.counters + change;
+    const hit = permanents.find((other) => other.counters !== counters);
+    if (hit === permanent) return `counter:${PLUS_ONE_COUNTER}=${counters}`;
+  }
+  return null;
 }

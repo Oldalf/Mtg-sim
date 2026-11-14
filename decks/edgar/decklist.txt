@@ -1,0 +1,98 @@
+Commander
+1x Edgar Markov
+
+Anthem
+1x Legion Lieutenant
+1x Markov Baron
+1x Stromkirk Captain
+
+Counters
+1x Cordial Vampire
+
+Drain
+1x Arnyn, Deathbloom Botanist
+1x Blood Artist
+1x Cruel Celebrant
+1x Marionette Apprentice
+1x Susurian Voidborn
+1x Vengeful Bloodwitch
+
+Draw
+1x Baron Bertram Graywater
+1x Black Market Connections
+1x Clavileño, First of the Blessed
+1x Corrupted Conviction
+1x Emeritus of Woe // Demonic Tutor
+1x Falkenrath Pit Fighter
+1x Gas Guzzler
+1x Keen Duelist
+1x Phyrexian Arena
+1x Preacher of the Schism
+1x Scheming Silvertongue // Sign in Blood
+1x Skullclamp
+1x Vampire Gourmand
+1x Vampiric Rites
+1x Vanquisher's Banner
+1x Welcoming Vampire
+
+Land
+1x Bloodstained Mire
+1x Cabal Coffers
+1x Command Tower
+1x Exotic Orchard
+7x Mountain
+1x Phyrexian Tower
+9x Plains
+14x Swamp
+1x Urborg, Tomb of Yawgmoth
+
+Lifegain
+1x Vampire Nighthawk
+1x Vampire of the Dire Moon
+
+Ramp
+1x Arcane Signet
+1x Ashnod's Altar
+1x Commander's Sphere
+1x Culling the Weak
+1x Dark Ritual
+1x Fellwar Stone
+1x Legion's Landing // Adanto, the First Fort
+1x Master of Dark Rites
+1x Pawn of Ulamog
+1x Phyrexian Altar
+1x Pitiless Plunderer
+1x Sceptre of Eternal Glory
+1x Sol Ring
+1x Songs of the Damned
+
+Recursion
+1x Carmen, Cruel Skymarcher
+1x Nine-Lives Familiar
+
+Removal
+1x Blasphemous Act
+1x Captivating Vampire
+1x Feed the Swarm
+1x Kindred Dominance
+1x Mayhem Devil
+1x New Blood
+1x Saw in Half
+1x Swords to Plowshares
+
+Sac Outlet
+1x Evereth, Viceroy of Plunder
+1x Indulgent Aristocrat
+1x Pitiless Pontiff
+1x Viscera Seer
+1x Yahenni, Undying Partisan
+
+Tokens
+1x Bloodline Keeper // Lord of Lineage
+1x Dreadhorde Invasion
+1x Elenda, the Dusk Rose
+
+Tutor
+1x Beseech the Mirror
+1x Diabolic Intent
+1x Forerunner of the Legion

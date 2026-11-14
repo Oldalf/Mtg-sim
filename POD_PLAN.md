@@ -150,6 +150,7 @@ The goldfish simulator stays exactly as it is. Every step below must leave `--re
   - The fixes moved little: Meren up a point (its off-turn drains now count), Mike and Sam & Frodo down a little. The defence rule is within noise.
   - How ready the table is matters most for Gale: holding answer mana on half the turns, or firing the last removal early half the time, takes Gale from 19% to 22% and its stopped rate from 45% to 29-30%; both together put Gale on top at 25% (stopped 17%). Sam & Frodo lose the most (11-13%): firing removal early hits their creatures (0.79 removals taken a game).
 - **Next:** the rest of step 3's list (unwired cards), then step 5 (report polish, friends' decks).
+- **Edgar joins (2026-11-14):** `npm run pod -- edgar goldfish goldfish goldfish --set pod_race=true` (1,000 games): 99.8% wins, average round 9.95 against 9.94 in `npm run sim -- edgar` (8,000 games). A pod with Meren, Sam & Frodo and Gale (300 games, eco, about ±5 points): Edgar 23.7%, Meren 25.0%, Sam & Frodo 31.3%, Gale 19.0%. Edgar has `podClose()` and a `winAttempt()` for Evereth's explosion (only her pumps use the stack, so only a line that pumped her can be answered, by exile or bounce; the sacrifice itself is a cost). In a five-deck pod with Aesi (600 games, eco): Edgar 10.0%, Meren 22.7%, Sam & Frodo 28.8%, Gale 15.3%, Aesi 23.2%. It is in the fixed-seed pod run (`POD_DECKS`), so the pod baseline was re-recorded for five decks.
 
 ## Order of work and size
 

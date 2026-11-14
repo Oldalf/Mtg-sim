@@ -6488,5 +6488,804 @@
   "layout": "normal",
   "oracle_id": "a8dba58b-2956-492e-ae30-49db2ae68e53",
   "scryfall_id": "dfbda387-3c7d-4c80-97c3-60c9d4757244"
+ },
+ "Dreadhorde Invasion": {
+  "name": "Dreadhorde Invasion",
+  "full_name": "Dreadhorde Invasion",
+  "mana_cost": "{1}{B}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your upkeep, you lose 1 life and amass Zombies 1. (Put a +1/+1 counter on an Army you control. It's also a Zombie. If you don't control an Army, create a 0/0 black Zombie Army creature token first.)\nWhenever a Zombie token you control with power 6 or greater attacks, it gains lifelink until end of turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Amass"
+  ],
+  "layout": "normal",
+  "oracle_id": "01deabbb-af6a-4998-99a7-35b7cfa9ef77",
+  "scryfall_id": "9bbfad2d-a3b5-4119-aea4-0793b7a9da88"
+ },
+ "New Blood": {
+  "name": "New Blood",
+  "full_name": "New Blood",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "As an additional cost to cast this spell, tap an untapped Vampire you control.\nGain control of target creature. Change the text of that creature by replacing all instances of one creature type with Vampire.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "021d654e-b731-40d0-a18e-eaff43f9fdb9",
+  "scryfall_id": "6ee669ab-0ae6-43e5-86fd-f0dcb621e478"
+ },
+ "Diabolic Intent": {
+  "name": "Diabolic Intent",
+  "full_name": "Diabolic Intent",
+  "mana_cost": "{1}{B}",
+  "type_line": "Sorcery",
+  "oracle": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a card, put that card into your hand, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "038519b9-bca8-4b27-b5ac-2409595469d0",
+  "scryfall_id": "d72ab698-de67-4ca8-8e42-b05346bf52fa"
+ },
+ "Phyrexian Tower": {
+  "name": "Phyrexian Tower",
+  "full_name": "Phyrexian Tower",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "{T}: Add {C}.\n{T}, Sacrifice a creature: Add {B}{B}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1861e642-21d5-4232-89f3-b5557f2946c1",
+  "scryfall_id": "0b47f6d2-9f65-47a4-bfc4-15619befe53d"
+ },
+ "Clavileño, First of the Blessed": {
+  "name": "Clavileño, First of the Blessed",
+  "full_name": "Clavileño, First of the Blessed",
+  "mana_cost": "{1}{W}{B}",
+  "type_line": "Legendary Creature — Vampire Cleric",
+  "oracle": "Whenever you attack, target attacking Vampire that isn't a Demon becomes a Demon in addition to its other types. It gains \"When this creature dies, draw a card and create a tapped 4/3 white and black Vampire Demon creature token with flying.\"",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "2b62a716-7831-4c76-8f2d-b99b04e33350",
+  "scryfall_id": "9f55b648-b1ec-407a-a0c7-7647755793d1"
+ },
+ "Blood Artist": {
+  "name": "Blood Artist",
+  "full_name": "Blood Artist",
+  "mana_cost": "{1}{B}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life.",
+  "power": "0",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "310f141c-7f37-4729-aed6-dd9c09db448d",
+  "scryfall_id": "b5275d76-2947-4219-be21-614c7421614a"
+ },
+ "Vampire Gourmand": {
+  "name": "Vampire Gourmand",
+  "full_name": "Vampire Gourmand",
+  "mana_cost": "{1}{B}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Whenever this creature attacks, you may sacrifice another creature. If you do, draw a card and this creature can't be blocked this turn.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "3386414c-32fa-40ae-9b30-dab976a158c1",
+  "scryfall_id": "917514c0-9cd5-4b97-85b9-c4f753560ad4"
+ },
+ "Arnyn, Deathbloom Botanist": {
+  "name": "Arnyn, Deathbloom Botanist",
+  "full_name": "Arnyn, Deathbloom Botanist",
+  "mana_cost": "{2}{B}",
+  "type_line": "Legendary Creature — Vampire Druid",
+  "oracle": "Deathtouch\nWhenever a creature you control with power or toughness 1 or less dies, target opponent loses 2 life and you gain 2 life.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Deathtouch"
+  ],
+  "layout": "normal",
+  "oracle_id": "3debd5c7-da3c-4130-8ed9-e156e10034b6",
+  "scryfall_id": "6168b472-0930-4db5-9920-407340b99050"
+ },
+ "Cruel Celebrant": {
+  "name": "Cruel Celebrant",
+  "full_name": "Cruel Celebrant",
+  "mana_cost": "{W}{B}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Whenever this creature or another creature or planeswalker you control dies, each opponent loses 1 life and you gain 1 life.",
+  "power": "1",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "3ee78cfc-0e9e-4737-a7e2-b42f94228040",
+  "scryfall_id": "b3f8be99-a398-4664-beb6-3e98d6e62a32"
+ },
+ "Edgar Markov": {
+  "name": "Edgar Markov",
+  "full_name": "Edgar Markov",
+  "mana_cost": "{3}{R}{W}{B}",
+  "type_line": "Legendary Creature — Vampire Knight",
+  "oracle": "Eminence — Whenever you cast another Vampire spell, if Edgar is in the command zone or on the battlefield, create a 1/1 black Vampire creature token.\nFirst strike, haste\nWhenever Edgar attacks, put a +1/+1 counter on each Vampire you control.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "First strike",
+   "Haste",
+   "Eminence"
+  ],
+  "layout": "normal",
+  "oracle_id": "41e2790d-49f5-4e98-b8d9-04179f47f13a",
+  "scryfall_id": "a577ba08-0aa8-45be-aa83-d5078770127c"
+ },
+ "Bloodline Keeper": {
+  "name": "Bloodline Keeper",
+  "full_name": "Bloodline Keeper // Lord of Lineage",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Flying\n{T}: Create a 2/2 black Vampire creature token with flying.\n{B}: Transform this creature. Activate only if you control five or more Vampires.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Flying",
+   "Transform"
+  ],
+  "layout": "transform",
+  "oracle_id": "434e82b5-abd4-41ac-a5b1-2dd01c667374",
+  "scryfall_id": "60658907-dd63-478d-a66a-123e4e9d2a00",
+  "back": {
+   "name": "Lord of Lineage",
+   "mana_cost": "",
+   "type_line": "Creature — Vampire",
+   "oracle": "Flying\nOther Vampire creatures you control get +2/+2.\n{T}: Create a 2/2 black Vampire creature token with flying."
+  }
+ },
+ "Forerunner of the Legion": {
+  "name": "Forerunner of the Legion",
+  "full_name": "Forerunner of the Legion",
+  "mana_cost": "{2}{W}",
+  "type_line": "Creature — Vampire Knight",
+  "oracle": "When this creature enters, you may search your library for a Vampire card, reveal it, then shuffle and put that card on top.\nWhenever another Vampire you control enters, target creature gets +1/+1 until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "439537ca-53c1-47cb-9174-5872c3c46288",
+  "scryfall_id": "10718d37-63d4-44b7-9450-5d49cffce944"
+ },
+ "Scheming Silvertongue": {
+  "name": "Scheming Silvertongue",
+  "full_name": "Scheming Silvertongue // Sign in Blood",
+  "mana_cost": "{1}{B}",
+  "type_line": "Creature — Vampire Warlock",
+  "oracle": "Flying, lifelink\nAt the beginning of your second main phase, if you gained 2 or more life this turn, this creature becomes prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+  "power": "1",
+  "toughness": "3",
+  "keywords": [
+   "Flying",
+   "Lifelink",
+   "Prepared"
+  ],
+  "layout": "prepare",
+  "oracle_id": "44443716-8356-40cd-a879-35264b29108c",
+  "scryfall_id": "fe85a124-0d8b-4a29-8df1-65888a39147f",
+  "back": {
+   "name": "Sign in Blood",
+   "mana_cost": "{B}{B}",
+   "type_line": "Sorcery",
+   "oracle": "Target player draws two cards and loses 2 life."
+  }
+ },
+ "Pitiless Pontiff": {
+  "name": "Pitiless Pontiff",
+  "full_name": "Pitiless Pontiff",
+  "mana_cost": "{W}{B}",
+  "type_line": "Creature — Vampire Cleric",
+  "oracle": "{1}, Sacrifice another creature: This creature gains deathtouch and indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "46a9f5af-b024-497d-9f55-98d17e2ffa76",
+  "scryfall_id": "98f66c03-cf79-4de0-be55-b921cbdc5038"
+ },
+ "Falkenrath Pit Fighter": {
+  "name": "Falkenrath Pit Fighter",
+  "full_name": "Falkenrath Pit Fighter",
+  "mana_cost": "{R}",
+  "type_line": "Creature — Vampire Warrior",
+  "oracle": "{1}{R}, Discard a card, Sacrifice a Vampire: Draw two cards. Activate only if an opponent lost life this turn.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "46d6bc30-9a21-4476-947b-87951cd9c882",
+  "scryfall_id": "a743a3b6-3278-4644-a2d5-acf495c273ed"
+ },
+ "Mayhem Devil": {
+  "name": "Mayhem Devil",
+  "full_name": "Mayhem Devil",
+  "mana_cost": "{1}{B}{R}",
+  "type_line": "Creature — Devil",
+  "oracle": "Whenever a player sacrifices a permanent, this creature deals 1 damage to any target.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4709f11c-aef8-45ac-b2bf-e640c568dfac",
+  "scryfall_id": "674f3a8a-4552-4289-b92a-06ce158f115c"
+ },
+ "Vengeful Bloodwitch": {
+  "name": "Vengeful Bloodwitch",
+  "full_name": "Vengeful Bloodwitch",
+  "mana_cost": "{1}{B}",
+  "type_line": "Creature — Vampire Warlock",
+  "oracle": "Whenever this creature or another creature you control dies, target opponent loses 1 life and you gain 1 life.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4cdbc466-42fc-471f-beab-397caec18101",
+  "scryfall_id": "bd0c12dd-f138-45c0-9614-d83a1d8e8399"
+ },
+ "Ashnod's Altar": {
+  "name": "Ashnod's Altar",
+  "full_name": "Ashnod's Altar",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "Sacrifice a creature: Add {C}{C}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4d18bcba-a346-445e-a182-6cc30b7e066d",
+  "scryfall_id": "3c0f7157-a375-499c-92c7-d47d2e95dbad"
+ },
+ "Nine-Lives Familiar": {
+  "name": "Nine-Lives Familiar",
+  "full_name": "Nine-Lives Familiar",
+  "mana_cost": "{1}{B}{B}",
+  "type_line": "Creature — Cat",
+  "oracle": "This creature enters with eight revival counters on it if you cast it.\nWhen this creature dies, if it had a revival counter on it, return it to the battlefield with one fewer revival counter on it at the beginning of the next end step.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5049da27-f38b-4fe6-a387-51510bd1f44e",
+  "scryfall_id": "988c23f6-59fe-49f9-a9ce-9881dccb7033"
+ },
+ "Evereth, Viceroy of Plunder": {
+  "name": "Evereth, Viceroy of Plunder",
+  "full_name": "Evereth, Viceroy of Plunder",
+  "mana_cost": "{2}{B}",
+  "type_line": "Legendary Creature — Vampire Soldier",
+  "oracle": "Flying\nSacrifice another creature or artifact: Put a +1/+1 counter on Evereth. If the sacrificed permanent was a Treasure, Evereth gains lifelink until end of turn. Activate only as a sorcery.\nWhen Evereth dies, you may pay {1}{B/R}. When you do, Evereth deals damage equal to its power to each opponent.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "55b8c81b-f26b-4ae1-94ba-30b19e6a944e",
+  "scryfall_id": "f9c9c0be-8c69-45e5-bdcb-e62ddb05e532"
+ },
+ "Feed the Swarm": {
+  "name": "Feed the Swarm",
+  "full_name": "Feed the Swarm",
+  "mana_cost": "{1}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Destroy target creature or enchantment an opponent controls. You lose life equal to that permanent's mana value.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5825997b-10d7-4a36-972c-a80ddd90b8ed",
+  "scryfall_id": "2246c098-1071-4cc3-a60a-802406e2827b"
+ },
+ "Stromkirk Captain": {
+  "name": "Stromkirk Captain",
+  "full_name": "Stromkirk Captain",
+  "mana_cost": "{1}{B}{R}",
+  "type_line": "Creature — Vampire Soldier",
+  "oracle": "First strike\nOther Vampire creatures you control get +1/+1 and have first strike.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "First strike"
+  ],
+  "layout": "normal",
+  "oracle_id": "599c3fd6-3309-4b5d-adec-9c4062848ad5",
+  "scryfall_id": "2f053406-d2e4-4443-81f1-025e3b27c65a"
+ },
+ "Vampire of the Dire Moon": {
+  "name": "Vampire of the Dire Moon",
+  "full_name": "Vampire of the Dire Moon",
+  "mana_cost": "{B}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nLifelink (Damage dealt by this creature also causes you to gain that much life.)",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Lifelink",
+   "Deathtouch"
+  ],
+  "layout": "normal",
+  "oracle_id": "5a938371-8428-48e3-85ed-6a84a39b29c6",
+  "scryfall_id": "adc8b892-d2d9-49aa-8e3a-4c60fad49496"
+ },
+ "Legion Lieutenant": {
+  "name": "Legion Lieutenant",
+  "full_name": "Legion Lieutenant",
+  "mana_cost": "{W}{B}",
+  "type_line": "Creature — Vampire Knight",
+  "oracle": "Other Vampires you control get +1/+1.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5fa1b2f0-3ba4-49db-9cb5-b6130e4c255e",
+  "scryfall_id": "85c6bd7d-537a-42fe-9c68-742bdf2e7025"
+ },
+ "Welcoming Vampire": {
+  "name": "Welcoming Vampire",
+  "full_name": "Welcoming Vampire",
+  "mana_cost": "{2}{W}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Flying\nWhenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "605c1ee0-5e8a-4e0a-a99b-42a38873f822",
+  "scryfall_id": "35a69bb5-b8e6-4558-9563-10c7a3662f93"
+ },
+ "Culling the Weak": {
+  "name": "Culling the Weak",
+  "full_name": "Culling the Weak",
+  "mana_cost": "{B}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, sacrifice a creature.\nAdd {B}{B}{B}{B}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "6385fd0d-256d-4400-9319-afa8170024db",
+  "scryfall_id": "50c33f18-0a5c-4e46-ab0d-6e450915594f"
+ },
+ "Skullclamp": {
+  "name": "Skullclamp",
+  "full_name": "Skullclamp",
+  "mana_cost": "{1}",
+  "type_line": "Artifact — Equipment",
+  "oracle": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Equip"
+  ],
+  "layout": "normal",
+  "oracle_id": "65986c1b-8e51-4604-b685-d82fa7d1263a",
+  "scryfall_id": "e1da8b79-249b-439a-a0ad-c8784bd716df"
+ },
+ "Cabal Coffers": {
+  "name": "Cabal Coffers",
+  "full_name": "Cabal Coffers",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{2}, {T}: Add {B} for each Swamp you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7358e164-5704-4e78-9b21-6a9bf2a968ce",
+  "scryfall_id": "e1efb0d3-2c72-46ff-bdc1-1069967365a0"
+ },
+ "Preacher of the Schism": {
+  "name": "Preacher of the Schism",
+  "full_name": "Preacher of the Schism",
+  "mana_cost": "{2}{B}",
+  "type_line": "Creature — Vampire Cleric",
+  "oracle": "Deathtouch\nWhenever this creature attacks the player with the most life or tied for most life, create a 1/1 white Vampire creature token with lifelink.\nWhenever this creature attacks while you have the most life or are tied for most life, you draw a card and you lose 1 life.",
+  "power": "2",
+  "toughness": "4",
+  "keywords": [
+   "Deathtouch"
+  ],
+  "layout": "normal",
+  "oracle_id": "74947e47-c4ff-4f47-9845-befa7403cbde",
+  "scryfall_id": "89345f55-2b32-4356-945a-d56dded39909"
+ },
+ "Blasphemous Act": {
+  "name": "Blasphemous Act",
+  "full_name": "Blasphemous Act",
+  "mana_cost": "{8}{R}",
+  "type_line": "Sorcery",
+  "oracle": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7a2484a9-04fd-41a0-8224-610c1c07ed10",
+  "scryfall_id": "7d4b1d44-126e-4987-9a9f-f0f9627a09cb"
+ },
+ "Gas Guzzler": {
+  "name": "Gas Guzzler",
+  "full_name": "Gas Guzzler",
+  "mana_cost": "{B}",
+  "type_line": "Creature — Vampire Rogue",
+  "oracle": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nThis creature enters tapped.\nMax speed — {B}, Sacrifice another creature or Vehicle: Draw a card.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [
+   "Max speed",
+   "Start your engines!"
+  ],
+  "layout": "normal",
+  "oracle_id": "7c98626b-ba97-4d1e-9be7-291480ae8d22",
+  "scryfall_id": "4db3a28c-e4b4-4b18-8d56-e3842184d105"
+ },
+ "Carmen, Cruel Skymarcher": {
+  "name": "Carmen, Cruel Skymarcher",
+  "full_name": "Carmen, Cruel Skymarcher",
+  "mana_cost": "{3}{W}{B}",
+  "type_line": "Legendary Creature — Vampire Soldier",
+  "oracle": "Flying\nWhenever a player sacrifices a permanent, put a +1/+1 counter on Carmen and you gain 1 life.\nWhenever Carmen attacks, return up to one target permanent card with mana value less than or equal to Carmen's power from your graveyard to the battlefield.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "84c24e62-26bd-4ca4-b6b9-d31e2065f13b",
+  "scryfall_id": "c0e07f8a-5290-47c4-a93d-0c3a14afebd3"
+ },
+ "Vanquisher's Banner": {
+  "name": "Vanquisher's Banner",
+  "full_name": "Vanquisher's Banner",
+  "mana_cost": "{5}",
+  "type_line": "Artifact",
+  "oracle": "As this artifact enters, choose a creature type.\nCreatures you control of the chosen type get +1/+1.\nWhenever you cast a creature spell of the chosen type, draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8cf38025-5821-45a0-9483-266353b7e82d",
+  "scryfall_id": "efa6944e-b5e2-4584-ae37-f5b59a8ec75e"
+ },
+ "Phyrexian Altar": {
+  "name": "Phyrexian Altar",
+  "full_name": "Phyrexian Altar",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "Sacrifice a creature: Add one mana of any color.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8d02b297-97c4-4379-9862-0a462400f66f",
+  "scryfall_id": "95d9f93c-50a8-41a9-be98-d1900bf1c12f"
+ },
+ "Emeritus of Woe": {
+  "name": "Emeritus of Woe",
+  "full_name": "Emeritus of Woe // Demonic Tutor",
+  "mana_cost": "{3}{B}",
+  "type_line": "Creature — Vampire Warlock",
+  "oracle": "This creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nAt the beginning of your end step, if two or more creatures died this turn, this creature becomes prepared.",
+  "power": "5",
+  "toughness": "4",
+  "keywords": [
+   "Prepared"
+  ],
+  "layout": "prepare",
+  "oracle_id": "93056597-b964-421f-be2f-e92abef1c2a4",
+  "scryfall_id": "7eb9e83d-515d-4911-a06b-9982200277b2",
+  "back": {
+   "name": "Demonic Tutor",
+   "mana_cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "oracle": "Search your library for a card, put that card into your hand, then shuffle."
+  }
+ },
+ "Pawn of Ulamog": {
+  "name": "Pawn of Ulamog",
+  "full_name": "Pawn of Ulamog",
+  "mana_cost": "{1}{B}{B}",
+  "type_line": "Creature — Vampire Shaman",
+  "oracle": "Whenever this creature or another nontoken creature you control dies, you may create a 0/1 colorless Eldrazi Spawn creature token. It has \"Sacrifice this token: Add {C}.\"",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "9bcaf141-1f1f-491f-aced-13dc093b9e2c",
+  "scryfall_id": "c1b0377c-efd6-4fab-89f0-b219ca2c4c22"
+ },
+ "Master of Dark Rites": {
+  "name": "Master of Dark Rites",
+  "full_name": "Master of Dark Rites",
+  "mana_cost": "{B}",
+  "type_line": "Creature — Vampire Cleric",
+  "oracle": "{T}, Sacrifice another creature: Add {B}{B}{B}. Spend this mana only to cast Vampire, Cleric, and/or Demon spells.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "a65250f6-55e2-47ed-a355-d690047db6f2",
+  "scryfall_id": "6394a522-37bb-4cf3-b434-5121c8000ac6"
+ },
+ "Pitiless Plunderer": {
+  "name": "Pitiless Plunderer",
+  "full_name": "Pitiless Plunderer",
+  "mana_cost": "{3}{B}",
+  "type_line": "Creature — Human Pirate",
+  "oracle": "Whenever another creature you control dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": "1",
+  "toughness": "4",
+  "keywords": [
+   "Treasure"
+  ],
+  "layout": "normal",
+  "oracle_id": "a784481f-eccb-4112-bb38-04a659319660",
+  "scryfall_id": "1ac61e84-94d6-4ff7-a00f-29de93f09a38"
+ },
+ "Captivating Vampire": {
+  "name": "Captivating Vampire",
+  "full_name": "Captivating Vampire",
+  "mana_cost": "{1}{B}{B}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Other Vampire creatures you control get +1/+1.\nTap five untapped Vampires you control: Gain control of target creature. It becomes a Vampire in addition to its other types.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "acd382ee-94fb-4a29-b14e-c2a3c6dde7e0",
+  "scryfall_id": "0f87aadf-7638-4691-b5a5-86f928e98462"
+ },
+ "Corrupted Conviction": {
+  "name": "Corrupted Conviction",
+  "full_name": "Corrupted Conviction",
+  "mana_cost": "{B}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b45e35df-9032-4482-89a6-c7c50c6d0a79",
+  "scryfall_id": "8046f892-3317-4ef7-9cf7-97b9060540c8"
+ },
+ "Keen Duelist": {
+  "name": "Keen Duelist",
+  "full_name": "Keen Duelist",
+  "mana_cost": "{1}{B}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "At the beginning of your upkeep, you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you revealed into your hand.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b8602f19-6fc2-43c4-b0c4-2cd11d5dbda2",
+  "scryfall_id": "0446a3df-6f77-4b86-b694-ce99feb3d9ab"
+ },
+ "Markov Baron": {
+  "name": "Markov Baron",
+  "full_name": "Markov Baron",
+  "mana_cost": "{2}{B}",
+  "type_line": "Creature — Vampire Noble",
+  "oracle": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nLifelink\nOther Vampires you control get +1/+1.\nMadness {2}{B} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Lifelink",
+   "Madness",
+   "Convoke"
+  ],
+  "layout": "normal",
+  "oracle_id": "bafc2e11-5f1c-46f1-a852-2330e099b8e2",
+  "scryfall_id": "a1dc6b0f-09bb-4489-8022-42c700eb1191"
+ },
+ "Indulgent Aristocrat": {
+  "name": "Indulgent Aristocrat",
+  "full_name": "Indulgent Aristocrat",
+  "mana_cost": "{B}",
+  "type_line": "Creature — Vampire Noble",
+  "oracle": "Lifelink\n{2}, Sacrifice a creature: Put a +1/+1 counter on each Vampire you control.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Lifelink"
+  ],
+  "layout": "normal",
+  "oracle_id": "c7054a2d-2e7b-4487-8fc3-f6a47a716fd3",
+  "scryfall_id": "07015524-874f-4856-a5c1-3148bd126886"
+ },
+ "Beseech the Mirror": {
+  "name": "Beseech the Mirror",
+  "full_name": "Beseech the Mirror",
+  "mana_cost": "{1}{B}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nSearch your library for a card, exile it face down, then shuffle. If this spell was bargained, you may cast the exiled card without paying its mana cost if that spell's mana value is 4 or less. Put the exiled card into your hand if it wasn't cast this way.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Bargain"
+  ],
+  "layout": "normal",
+  "oracle_id": "cbbe535b-12d6-4e6c-8b26-9220f06a1604",
+  "scryfall_id": "18c59776-e1f1-4197-a128-db1d603f56b7"
+ },
+ "Kindred Dominance": {
+  "name": "Kindred Dominance",
+  "full_name": "Kindred Dominance",
+  "mana_cost": "{5}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Choose a creature type. Destroy all creatures that aren't of the chosen type.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ccaa44f2-96be-44e2-884f-c31baa3908d5",
+  "scryfall_id": "f6cd7c08-f5d4-4bdc-a254-809d900b0fc3"
+ },
+ "Sceptre of Eternal Glory": {
+  "name": "Sceptre of Eternal Glory",
+  "full_name": "Sceptre of Eternal Glory",
+  "mana_cost": "{4}",
+  "type_line": "Legendary Artifact",
+  "oracle": "{T}: Add one mana of any color.\n{T}: Add three mana of any one color. Activate only if you control three or more lands with the same name.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ce08aff3-efe6-4186-9557-274e00a7ca38",
+  "scryfall_id": "bc7f3009-c852-41e7-8e62-d2ee637b3998"
+ },
+ "Elenda, the Dusk Rose": {
+  "name": "Elenda, the Dusk Rose",
+  "full_name": "Elenda, the Dusk Rose",
+  "mana_cost": "{2}{W}{B}",
+  "type_line": "Legendary Creature — Vampire Knight",
+  "oracle": "Lifelink\nWhenever another creature dies, put a +1/+1 counter on Elenda.\nWhen Elenda dies, create X 1/1 white Vampire creature tokens with lifelink, where X is Elenda's power.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Lifelink"
+  ],
+  "layout": "normal",
+  "oracle_id": "ce35f262-b93f-4409-8b33-26a7ed7abac8",
+  "scryfall_id": "e18feca3-1b1b-4456-8873-25a24849a917"
+ },
+ "Black Market Connections": {
+  "name": "Black Market Connections",
+  "full_name": "Black Market Connections",
+  "mana_cost": "{2}{B}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Create a Treasure token. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life. (It is every creature type.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Hire a Mercenary",
+   "Treasure",
+   "Sell Contraband",
+   "Buy Information"
+  ],
+  "layout": "normal",
+  "oracle_id": "d2664f28-49e1-46f8-a863-b217e961a57c",
+  "scryfall_id": "9d9ca869-e68a-4f53-9f52-85c714dac6f3"
+ },
+ "Cordial Vampire": {
+  "name": "Cordial Vampire",
+  "full_name": "Cordial Vampire",
+  "mana_cost": "{B}{B}",
+  "type_line": "Creature — Vampire",
+  "oracle": "Whenever this creature or another creature dies, put a +1/+1 counter on each Vampire you control.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d61fb9e8-d05a-481a-a90f-5def300c9abb",
+  "scryfall_id": "0d91e61d-e3bf-4ddc-9f01-18b1abe35a61"
+ },
+ "Urborg, Tomb of Yawgmoth": {
+  "name": "Urborg, Tomb of Yawgmoth",
+  "full_name": "Urborg, Tomb of Yawgmoth",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "Each land is a Swamp in addition to its other land types.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "db6174d7-211d-4817-b8e4-8384594c83f9",
+  "scryfall_id": "9e1a9e38-6ffc-490f-b0be-23ba4e8204c6"
+ },
+ "Baron Bertram Graywater": {
+  "name": "Baron Bertram Graywater",
+  "full_name": "Baron Bertram Graywater",
+  "mana_cost": "{2}{W}{B}",
+  "type_line": "Legendary Creature — Vampire Noble",
+  "oracle": "Whenever one or more tokens you control enter, create a 1/1 black Vampire Rogue creature token with lifelink. This ability triggers only once each turn.\n{1}{B}, Sacrifice another creature or artifact: Draw a card.",
+  "power": "3",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e25b516c-bf95-42bc-8b1e-04617a3d28df",
+  "scryfall_id": "e9da18b4-1efc-44b7-8001-a2cfd44c69bf"
+ },
+ "Legion's Landing": {
+  "name": "Legion's Landing",
+  "full_name": "Legion's Landing // Adanto, the First Fort",
+  "mana_cost": "{W}",
+  "type_line": "Legendary Enchantment",
+  "oracle": "When Legion's Landing enters, create a 1/1 white Vampire creature token with lifelink.\nWhen you attack with three or more creatures, transform Legion's Landing.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Transform"
+  ],
+  "layout": "transform",
+  "oracle_id": "f7d8b91b-6541-4d3e-af51-7e000eac69c1",
+  "scryfall_id": "05e2a5e6-3aaa-4096-bdd0-fcc1afe5a36c",
+  "back": {
+   "name": "Adanto, the First Fort",
+   "mana_cost": "",
+   "type_line": "Legendary Land",
+   "oracle": "(Transforms from Legion's Landing.)\n{T}: Add {W}.\n{2}{W}, {T}: Create a 1/1 white Vampire creature token with lifelink."
+  }
+ },
+ "Bloodstained Mire": {
+  "name": "Bloodstained Mire",
+  "full_name": "Bloodstained Mire",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "fc0707c7-d504-4ccf-a0d2-3eb6e26e7a57",
+  "scryfall_id": "579743fe-f71e-4cb2-8629-d6b02ed1591d"
+ },
+ "Yahenni, Undying Partisan": {
+  "name": "Yahenni, Undying Partisan",
+  "full_name": "Yahenni, Undying Partisan",
+  "mana_cost": "{2}{B}",
+  "type_line": "Legendary Creature — Aetherborn Vampire",
+  "oracle": "Haste\nWhenever a creature an opponent controls dies, put a +1/+1 counter on Yahenni.\nSacrifice another creature: Yahenni gains indestructible until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Haste"
+  ],
+  "layout": "normal",
+  "oracle_id": "fdba89eb-1cf5-46e6-9d09-1adb9bc40fcd",
+  "scryfall_id": "518b155a-cb84-48d3-9aba-07577f60f091"
+ },
+ "Vampire Nighthawk": {
+  "name": "Vampire Nighthawk",
+  "full_name": "Vampire Nighthawk",
+  "mana_cost": "{1}{B}{B}",
+  "type_line": "Creature — Vampire Shaman",
+  "oracle": "Flying\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nLifelink (Damage dealt by this creature also causes you to gain that much life.)",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [
+   "Deathtouch",
+   "Flying",
+   "Lifelink"
+  ],
+  "layout": "normal",
+  "oracle_id": "feb244f8-bcb1-44cf-9940-2719221a7309",
+  "scryfall_id": "7aff07f9-9528-4149-9af0-f4e3c66c9dc5"
  }
 }
