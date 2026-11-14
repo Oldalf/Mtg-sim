@@ -12,7 +12,7 @@ import { CardImage } from '../../shared/card-image/card-image';
   template: `
     <div class="text" aria-live="polite">
       <span class="turn">{{ turnTitle() }}</span>
-      <span class="line">
+      <span class="line" [title]="text()">
         @if (playerName()) {
           <span class="player">{{ playerName() }}:</span>
         }
@@ -68,8 +68,13 @@ import { CardImage } from '../../shared/card-image/card-image';
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+    // at most two lines, so a long text cannot make the bar taller than its cards
     .line {
+      display: -webkit-box;
+      overflow: hidden;
       font: var(--mat-sys-title-large);
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
     .player {
       color: var(--mat-sys-tertiary);
@@ -87,10 +92,12 @@ import { CardImage } from '../../shared/card-image/card-image';
         text-decoration: line-through;
       }
     }
+    // the bar keeps the height of one card row even with no cards, so it does not jump while autoplay runs
     .cards {
       display: flex;
       flex: none;
       gap: 8px;
+      min-height: calc(96px * 88 / 63);
       app-card-image {
         width: 96px;
       }
@@ -106,6 +113,7 @@ import { CardImage } from '../../shared/card-image/card-image';
       .cards {
         flex: 1 1 100%;
         min-width: 0;
+        min-height: calc(56px * 88 / 63);
         overflow-x: auto;
       }
       .cards app-card-image {

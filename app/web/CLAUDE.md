@@ -37,6 +37,7 @@ The page of the app (roadmap step 4): an Angular 22 project with Angular Materia
 - A one-player game has no active seat (`isActive` is false there, on purpose), so its seat opens on a phone through `isOnlySeat`. Without it the board of a goldfish game or a real log folds away.
 - A caption's card row can be wider than the phone: it stacks under the text and scrolls inside its own box (`overflow-x: auto`). Check phone width with a 390 px iframe and `scrollWidth === clientWidth`, not just the window, since a browser window cannot be shrunk from the page.
 - The arrow keys: Up and Down step lines, Left and Right step turns (not lines).
+- The caption keeps a fixed height (its card row has a min-height of one card, its text at most two lines) so the table does not jump while autoplay runs.
 
 ## Angular skills
 
