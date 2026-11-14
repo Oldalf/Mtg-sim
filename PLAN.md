@@ -32,7 +32,7 @@ The tasks run one at a time, in this order. Each row is one session and one comm
 | 3 | B2 (done) | Move the engine into folders, one folder per commit | Sonnet 5.5 |
 | 4 | B3 (done) | Docs follow the move | Haiku 5.5 |
 | 5 | C1 (done) | Write the add-a-deck skill | Opus 5.5 |
-| 6 | C2 | Try the skill on a real deck | Sonnet 5.5 |
+| 6 | C2 (done) | Try the skill on a real deck | Sonnet 5.5 |
 | 7 | D1 | Autoplay | Sonnet 5.5 |
 | 8 | D2 | Remember speed and position | Haiku 5.5 |
 | 9 | E1 | Table view: design as a prototype, Pontus picks | Opus 5.5, then Pontus |
@@ -156,6 +156,8 @@ Done 2026-11-14: `.claude/skills/add-deck/SKILL.md` covers the eight points in t
 ### C2. Try the skill on a real deck (Sonnet 5.5, after C1)
 
 The next deck Pontus wants is added by Sonnet 5.5 using only the skill. Every place where it had to guess or ask is fixed in the skill. If no new deck is waiting, re-add `goldfish` under another name as a throwaway change that is not kept, as a smoke test.
+
+Done 2026-11-14: the skill was used for William's Edgar Markov deck (`decks/edgar/`, Mardu Vampire aristocrats, bracket 2–3), committed as `694d364`. The seven questions and the eight steps worked as written; the deck is registered in all four places plus `POD_DECKS`, with a baseline, tests, a mulligan rule, `podClose` and a `winAttempt`. Fixed in the skill: `--test` has no ALL OK line (the exit code is the result), the ritual-probe payment trap, the log check for identical tokens, testing a `winAttempt` with a stub arena, and how to report win types. The first guess of the skill that Edgar corrected: the mulligan and `--hands` steps need the card lists exported from `mulligan.ts` for `index.ts`'s `handFeatures` (done that way in Edgar). The engine change it needed: `MoveRecorder` corrects the log of identical tokens with different counters (`engine/game-log/game-log-moves.ts`).
 
 ---
 

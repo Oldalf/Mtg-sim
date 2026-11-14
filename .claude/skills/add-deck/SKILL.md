@@ -81,7 +81,7 @@ One step at a time; each step ends with something that runs. Ask Pontus "eco or 
 1. **Card data.** Put the list in `decklist.txt` and run `npm run sim -- <name> -n 50` (after a first registration, step 2). Cards missing from `data/cards.json` are copied from the Scryfall bulk data automatically. A card that is not found is from a newer set: `npm run cards -- update`, then try again. The run prints the cards it plays generically (by type and cost, not by their text): that is the list of cards to give rules to, most important first. A card leaves the list when `cards.ts` passes it to `C.registerKnown`.
 2. **A game that plays.** `index.ts`, `config.ts`, `game.ts` with the must-have hooks only (`candidates` returning casts of what is in hand, no win yet), registered in `DECKS`. Check with `npm run sim -- <name> --trace 1`: lands are played, spells are cast, the mana is right.
 3. **The win.** `checkKill()` returns 2 when the game is won (`areOpponentsBeaten()`, or the deck's own win); `play()` returns the two numbers (`[win turn, second measure]`). Then the cards that matter most to the win get their rules, in `cards.ts` and `game.ts`.
-4. **Tests.** `tests/<name>.test.ts` with one check per rule written so far; add it to `TESTS`. `npm run sim -- <name> --test` must print ALL OK. From here, every new card rule gets a test in the same change.
+4. **Tests.** `tests/<name>.test.ts` with one check per rule written so far; add it to `TESTS`. `npm run sim -- <name> --test` must exit with code 0 (it prints one OK / BAD line per check, no ALL OK line). From here, every new card rule gets a test in the same change.
 5. **The other cards**, most important first, until `--trace` games look like a real game. Read three or four traced games each round; a log of Pontus's (`npm run sim -- <name> --analyze logs/<file>`) shows where the AI plays differently from him.
 6. **The first numbers**: `npm run sim -- <name> -n 3000`, then 16,000 games for anything Pontus decides on. Put them in `PLAN.md` with the game count. `--rank` may be shown, not cuts (section 1).
 7. **The mulligan rule** from `npm run sim -- <name> --hands -n 8000`: which land counts and cards win, written as `mulligan.ts`. Compare with `--set smart_mulligan=0` on 8,000+ games.
@@ -94,7 +94,11 @@ One step at a time; each step ends with something that runs. Ask Pontus "eco or 
 - **Zones change only through the engine's methods**: `takeCard`, `putCard`, `moveCard`, `takeTopCardsOfLibrary`, `putCardsOnTopOfLibrary`, `putOntoBattlefield`, `takeFromBattlefield` (and `draw`, `discard`, `toGraveyard`, `enter`, `dies`). `this.hand.push(card)` breaks the game log and `--test` fails on it.
 - **The log**: `say(...)` for a note, `sayEvent(kind, ...)` for a line of a known kind, `sayHighlight(...)` for a line worth jumping to (a win, a big turn). Name an opponent with `opponentName(slot)` and print life totals with `describeOpponentLife()`, so pod logs show deck names.
 - **Deck state goes in field initializers**, not in a hook the base constructor calls (they run after it). The planner plays on copies made by `clone()`, which copies arrays but shares a `Set`, `Map` or object: override `clone()` to copy those (see `decks/mike/game.ts`).
-- **`pay(..., commit = false)` is a test payment**: side effects of tapping (life, sacrifice) happen only when it commits.
+- **`pay(..., commit = false)` is a test payment**: side effects of tapping (life, sacrifice) happen only when it commits. The engine's `ritualCandidates` also pays for real inside a snapshot and then undoes it: a deck whose payments sacrifice permanents (Treasures, Spawn) must switch that off while it runs (see `isTestingRitual` in `decks/edgar/game.ts`), or the candidate list changes between calls and a game crashes in the planner ("reading 'action'").
+- **Identical tokens that differ in counters or tapped state** (Vampire tokens after an attack trigger) are told apart by name only in a log. The recorder corrects this itself (`MoveRecorder`); if `--test` still reports "the board rebuilt from the log" differences, look first for a zone change made by hand, or a card taken out of a zone before it really leaves (Nine-Lives Familiar waiting for the end step stays in the graveyard until then).
+- **A hand-built test board with `game.arena` set to a stub** (`{ real: () => true }`) is a pod game for `inArena()`: that is how to test a `winAttempt` without a whole pod (`decks/edgar/tests/edgar.test.ts`).
+- **How to answer "how does it win?"**: tag the damage by source (combat, drains, a combo piece) in `damageOpponent`, return the source of the killing blow from `diag()` and add `diagMetrics` for it (`decks/edgar/index.ts`: `winTypeMetrics`). Then `--diag` shows it.
+- **On this machine** Node comes from fnm and PowerShell swallows `--` after `npm run`: see the memory note "Running node here" (use `node dist/sim.js <deck> ...`).
 - **A card's X is 0 in the card data**: compute X in the deck.
 - **Same seeds, same results.** Use the game's `rng`, never `Math.random()`.
 
@@ -124,7 +128,7 @@ Use the sections the other decks use, in this order (see `decks/samfrodo/PLAN.md
 
 ## 9. Done when
 
-- `npm run sim -- <name> --test` prints ALL OK.
+- `npm run sim -- <name> --test` exits with code 0 and prints no BAD line.
 - The baseline is recorded and `npm run sim -- <name> --regress check` prints IDENTICAL.
 - `npm run format`, then `npm run verify` ends with VERIFY OK (it now checks the new deck too).
 - The deck shows in the app (`npm run app`, Decks page) and a game of it opens in the game viewer.
