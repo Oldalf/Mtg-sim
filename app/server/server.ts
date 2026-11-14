@@ -7,6 +7,7 @@ import * as http from 'http';
 import * as path from 'path';
 import type { ErrorAnswer, HealthAnswer } from '../api-types';
 import {
+  answerCardFacts,
   answerImageUpdate,
   findCardImageFile,
   startImageUpdate,
@@ -74,6 +75,12 @@ const ROUTES: Route[] = [
     method: 'POST',
     path: /^\/api\/cards\/images\/update$/,
     answer: () => ok(startImageUpdate()),
+  },
+  {
+    method: 'POST',
+    path: /^\/api\/cards\/facts$/,
+    answer: async (_pathParts, _url, request) =>
+      ok(answerCardFacts(await readJsonBody(request))),
   },
   {
     method: 'GET',

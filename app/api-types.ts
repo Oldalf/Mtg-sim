@@ -271,6 +271,20 @@ export type GameAnswer = GameLog;
 /** GET /api/decks/<deck>/logs: the file names in the deck's logs/ folder. */
 export type RealLogsAnswer = string[];
 
+/** What the card data says about a card: enough to sort a board (lands apart) and to show a card without its image. */
+export interface CardFacts {
+  typeLine: string;
+  manaCost: string;
+}
+
+/** POST /api/cards/facts: the cards to describe (the game viewer asks for every card of a game at once). */
+export interface CardFactsRequest {
+  names: string[];
+}
+
+/** POST /api/cards/facts: the facts of each name that has card data; tokens and unknown names are left out. */
+export type CardFactsAnswer = Record<string, CardFacts>;
+
 /** GET /api/cards/images/update (the state) and POST /api/cards/images/update (starts it, answers the state). */
 export interface ImageUpdateState {
   isRunning: boolean;

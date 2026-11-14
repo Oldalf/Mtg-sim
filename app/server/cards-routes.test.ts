@@ -6,6 +6,7 @@
  */
 import * as fs from 'fs';
 import type { AddressInfo } from 'net';
+import type { CardFactsAnswer } from '../api-types';
 import { imageFileOf, scryfallIdOf } from '../../engine/card-images';
 import { startServer } from './server';
 
@@ -28,6 +29,14 @@ async function getImage(port: number, cardName: string, query = '') {
     bytes: Buffer.from(await response.arrayBuffer()),
     response,
   };
+}
+
+function postCardFacts(port: number, body: unknown): Promise<Response> {
+  return realFetch(`http://127.0.0.1:${port}/api/cards/facts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 }
 
 export async function runCardsRoutesTests(): Promise<boolean> {
@@ -83,6 +92,23 @@ export async function runCardsRoutesTests(): Promise<boolean> {
     allPassed &&= check(
       'a print that is not an id is 404',
       notAnId.status === 404,
+    );
+
+    const facts = await postCardFacts(port, {
+      names: [KNOWN_CARD, 'Treasure', 'No Such Card Anywhere'],
+    });
+    const factsAnswer = (await facts.json()) as CardFactsAnswer;
+    allPassed &&= check(
+      'card facts: a known card has its type and cost, a token and an unknown card are left out',
+      facts.status === 200 &&
+        Object.keys(factsAnswer).join() === KNOWN_CARD &&
+        factsAnswer[KNOWN_CARD].typeLine === 'Artifact' &&
+        factsAnswer[KNOWN_CARD].manaCost === '{1}',
+    );
+    const badFacts = await postCardFacts(port, { names: 'Sol Ring' });
+    allPassed &&= check(
+      'card facts: a body without a list of names is 400',
+      badFacts.status === 400,
     );
   } finally {
     globalThis.fetch = realFetch;
