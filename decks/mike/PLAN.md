@@ -72,7 +72,7 @@ Pontus is considering it for more card draw. Swapped for each of seven draw card
 
 ## Not modelled / open
 
-- Thunderclap Drake's sacrifice (copy the next instant or sorcery once per time the commander was cast), Atomic Microsizer's trigger, Amonkhet Raceway's haste, Castle Vantress's scry, The Water Crystal's mill, Folio of Fancies's opponents drawing too, Pensive Professor's increment, Body of Knowledge's damage draw, Volatile Stormdrake's exchange (no creature to take in a goldfish game), Harmonized Trio's prepared state (modelled as: tap Trio and two creatures, cast a copy of Brainstorm for {U}).
+- Thunderclap Drake's sacrifice (copy the next instant or sorcery once per time the commander was cast), Atomic Microsizer's trigger, Amonkhet Raceway's haste, Castle Vantress's scry, The Water Crystal's mill, Folio of Fancies's opponents drawing too, Pensive Professor's increment, Body of Knowledge's damage draw, Volatile Stormdrake's exchange in a goldfish game (no creature to take: it is a plain 3/2 flyer; in a pod it takes a creature, see `POD_PLAN.md`), Harmonized Trio's prepared state (modelled as: tap Trio and two creatures, cast a copy of Brainstorm for {U}).
 - Interaction is held and never cast. Judge counterspells and bounce yourself.
 - Whether Laboratory Maniac / Jace should be held until the library is low (safer against removal, about 4 points slower here).
 - Mulligan rule is in `mulligan.ts`; cut ideas from Pontus: none yet (no cut tests before he names them).

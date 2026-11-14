@@ -373,7 +373,21 @@ export class PodTable {
     this.isAlive[player] = false;
     this.outOrder.push(player);
     this.outReason[player] = reason;
+    this.endControlOfPlayerWhoLeft(player);
     this.sayAs(player, `is out (${reason})`, 'out');
+  }
+
+  /** A player who leaves the game takes its cards with it, and what it took from others goes back to their owners
+   *  (Volatile Stormdrake's exchange ends). */
+  private endControlOfPlayerWhoLeft(player: number): void {
+    const leavingGame = this.games[player];
+    for (const permanent of leavingGame.battlefield.slice())
+      if (permanent.owner !== null)
+        leavingGame.giveControlTo(permanent, permanent.owner);
+    for (const otherGame of this.games)
+      for (const permanent of otherGame.battlefield.slice())
+        if (permanent.owner === leavingGame)
+          otherGame.giveControlTo(permanent, leavingGame);
   }
 
   /** Eliminates every player who has lost by life, commander damage or poison. */

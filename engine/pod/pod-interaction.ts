@@ -102,6 +102,104 @@ export function snipeBestTarget(
   return hit.target.name;
 }
 
+/** What Volatile Stormdrake's ability may target, as a removal spell would: one creature. */
+const TAKE_A_CREATURE: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['creature'],
+};
+
+/** Volatile Stormdrake's energy: what it gives when the exchange happens. */
+const STORMDRAKE_ENERGY = 4;
+
+/**
+ * Volatile Stormdrake entered: exchange control of it and the biggest threat's most valuable creature that the
+ * ability may target (no hexproof or shroud: "hexproof from abilities" counts too). The ability must target one if
+ * there is one, so a small token is taken when nothing else is there. A shield of the owner's (Kira, Stormtamer...)
+ * counters it. If the exchange happens: 4 energy, then the creature is sacrificed (to its owner's graveyard) unless
+ * we pay energy equal to its mana value. One log line, so that it carries both players' card moves.
+ */
+export function exchangeForStormdrake(
+  table: PodTable,
+  game: Game<unknown>,
+  stormdrake: Permanent,
+): void {
+  const taker = table.playerOf(game);
+  const choice = bestCreatureToTake(
+    table,
+    taker,
+    game.energyCounters + STORMDRAKE_ENERGY,
+  );
+  if (!choice) return;
+  const { owner, creature } = choice;
+  const ownerGame = table.games[owner];
+  const stormdrakeName = stormdrake.card.name;
+  const creatureName = creature.card.name;
+  const ownerName = table.playerName(owner);
+  const shield = ownerGame.podShield(creature);
+  if (shield) {
+    table.stats.shields[owner]++;
+    table.sayAs(
+      taker,
+      `${stormdrakeName}'s exchange with ${ownerName}'s ${creatureName} is countered by ${shield}`,
+      'answer',
+      [stormdrakeName, creatureName, shield],
+    );
+    return;
+  }
+  game.giveControlTo(stormdrake, ownerGame);
+  ownerGame.giveControlTo(creature, game);
+  game.gainEnergy(STORMDRAKE_ENERGY);
+  const energyToKeep = creature.card.manaValue;
+  const isKept = game.energyCounters >= energyToKeep;
+  if (isKept) game.payEnergy(energyToKeep);
+  else game.dies(creature);
+  table.sayAs(
+    taker,
+    `${stormdrakeName} takes ${ownerName}'s ${creatureName} and gives ${STORMDRAKE_ENERGY} energy: ` +
+      (isKept
+        ? `pays ${energyToKeep} energy to keep it`
+        : `can't pay ${energyToKeep} energy, sacrifices it`),
+    'answer',
+    [stormdrakeName, creatureName],
+  );
+}
+
+/** The creature to take: the biggest threat's most valuable one that an ability may target. One we can keep (its
+ *  mana value is at most the energy we will have) counts double: the owner loses it and we gain it, where one we
+ *  must sacrifice is only removal. */
+function bestCreatureToTake(
+  table: PodTable,
+  taker: number,
+  energyAfterExchange: number,
+): { owner: number; creature: Permanent } | null {
+  const worthToTaker = (target: Target) =>
+    target.permanent.card.manaValue <= energyAfterExchange
+      ? 2 * target.value
+      : target.value;
+  const biggestThreatFirst = table
+    .livingOpponents(taker)
+    .sort((first, second) => table.threats[second] - table.threats[first]);
+  for (const owner of biggestThreatFirst) {
+    const targets = table.games[owner]
+      .podTargets(TAKE_A_CREATURE)
+      .filter((target) => !hasHexproofOrShroud(target.permanent));
+    if (targets.length)
+      return {
+        owner,
+        creature: targets.reduce((best, target) =>
+          worthToTaker(target) > worthToTaker(best) ? target : best,
+        ).permanent,
+      };
+  }
+  return null;
+}
+
+function hasHexproofOrShroud(permanent: Permanent): boolean {
+  const keywords = permanent.card.keywords;
+  return keywords.has('hexproof') || keywords.has('shroud');
+}
+
 /** Each opponent sacrifices its least valuable creature (only nontoken ones if `nontokenOnly`). */
 export function makeOpponentsSacrifice(
   table: PodTable,

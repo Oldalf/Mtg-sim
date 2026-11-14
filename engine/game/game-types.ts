@@ -3,6 +3,7 @@ import { Cost, CardDef } from '../cards/cards';
 import { LandInfo } from '../cards/card-facts';
 import { Answer } from './answers';
 import type { Game } from './game';
+import type { GameCore } from './game-core';
 import type { Config } from '../../shared/run-types';
 
 export type { Config };
@@ -20,6 +21,9 @@ export class Permanent {
   powerMod = 0;
   /** Free bit flags a deck may use for attachments and the like (copied with the permanent). */
   marks = 0;
+  /** In a pod, the game of the player who owns it while another player controls it (Volatile Stormdrake's
+   *  exchange); null when its controller owns it. When it leaves the battlefield the card goes to its owner. */
+  owner: GameCore<unknown> | null = null;
 
   constructor(
     public card: CardDef,
@@ -47,6 +51,7 @@ export class Permanent {
     permanent.counters = this.counters;
     permanent.powerMod = this.powerMod;
     permanent.marks = this.marks;
+    permanent.owner = this.owner;
     return permanent;
   }
 }
@@ -199,4 +204,7 @@ export interface Arena {
   wheel(game: Game<unknown>, mine: number): number;
   /** Each player draws n (Folio of Fancies): the opponents' part. */
   eachDraws(game: Game<unknown>, count: number): void;
+  /** Volatile Stormdrake entered: exchange control of it and the best creature an opponent controls that the
+   *  ability may target, get 4 energy, and keep the creature only by paying its mana value in energy. */
+  stormdrakeExchange(game: Game<unknown>, stormdrake: Permanent): void;
 }

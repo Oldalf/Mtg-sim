@@ -140,6 +140,8 @@ export abstract class GameCore<S = unknown> {
   graveyard: CardDef[] = [];
   exile: CardDef[] = [];
   battlefield: Permanent[] = [];
+  /** Cards another player owns that left our battlefield and are on their way to a zone (see putCard). */
+  cardsGoingToTheirOwner: { card: CardDef; owner: GameCore<unknown> }[] = [];
   pool: ManaPool = emptyPool();
   /** The deck's colours: what an "either colour" source (Command Tower, a dual land) makes. */
   colors: string[] = ['U', 'B'];
@@ -740,10 +742,56 @@ export abstract class GameCore<S = unknown> {
     return cards;
   }
 
-  /** Puts a card into a zone, at the end of its list (in the library: on the bottom). */
+  /** Puts a card into a zone, at the end of its list (in the library: on the bottom). A card another player owns
+   *  goes to that player's zone instead. */
   putCard(card: CardDef, toZone: CardListZone): void {
+    if (this.sendToItsOwner(card, toZone)) return;
     this[toZone].push(card);
     this.moveRecorder?.noteCardArrived(card.name, LOG_ZONE[toZone]);
+  }
+
+  /** If this card left our battlefield and another player owns it, it goes to that player's zone. A copy of the
+   *  game (the planner's, a kill check's) keeps it, so that it never touches the owner's real game. */
+  private sendToItsOwner(card: CardDef, toZone: CardListZone): boolean {
+    const index = this.cardsGoingToTheirOwner.findIndex(
+      (goingHome) => goingHome.card === card,
+    );
+    if (index < 0) return false;
+    const [{ owner }] = this.cardsGoingToTheirOwner.splice(index, 1);
+    if (!this.inArena()) return false;
+    this.moveRecorder?.noteCardGivenAway(card.name);
+    owner.receiveOwnCard(card, toZone);
+    return true;
+  }
+
+  /** One of our cards that another player controlled comes back to a zone of ours. A commander goes to the
+   *  command zone (its owner's choice). */
+  receiveOwnCard(card: CardDef, toZone: CardListZone): void {
+    const zone = this.commanderNames.includes(card.name) ? 'command' : toZone;
+    this[zone].push(card);
+    this.moveRecorder?.noteCardFromOtherPlayer(card.name, LOG_ZONE[zone]);
+  }
+
+  /** Another player gains control of a permanent of ours (or one we control goes back to its owner). It keeps its
+   *  owner, it is summoning sick for its new controller, and it does not enter (no enter triggers). */
+  giveControlTo(permanent: Permanent, newController: GameCore<unknown>): void {
+    removeOrThrow(this.battlefield, permanent);
+    this.moveRecorder?.notePermanentGivenAway(permanent);
+    if (permanent.owner === null) permanent.owner = this;
+    else if (permanent.owner === newController) permanent.owner = null;
+    permanent.sick = permanent.card.isCreature;
+    newController.battlefield.push(permanent);
+    if (permanent.token)
+      newController.moveRecorder?.noteCardArrived(
+        permanent.card.name,
+        'battlefield',
+        true,
+      );
+    else
+      newController.moveRecorder?.noteCardFromOtherPlayer(
+        permanent.card.name,
+        'battlefield',
+      );
   }
 
   /** Puts cards into a zone, at the end of its list, in the order given. */
@@ -788,6 +836,11 @@ export abstract class GameCore<S = unknown> {
   takeFromBattlefield(permanent: Permanent): void {
     removeOrThrow(this.battlefield, permanent);
     this.moveRecorder?.notePermanentLeft(permanent);
+    if (permanent.owner !== null && !permanent.token)
+      this.cardsGoingToTheirOwner.push({
+        card: permanent.card,
+        owner: permanent.owner,
+      });
   }
 
   /** Takes a permanent off the battlefield if it is there. Returns whether it was. */

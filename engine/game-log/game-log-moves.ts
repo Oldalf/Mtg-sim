@@ -43,6 +43,9 @@ const CARD_ZONES = [
 ] as const;
 export type CardZone = (typeof CARD_ZONES)[number];
 const TOKEN_ZONE = 'miscCards';
+/** Archidekt's zone for another player's cards: where a card goes when another player gains control of it, and
+ *  where it comes from when it goes back to its owner (see GameCore.giveControlTo). */
+const OTHER_PLAYER_ZONE = 'opponentsCards';
 /** Where a card is written to when it left every zone the engine keeps (a deck dropped it), and where it is
  *  written from when it shows up out of nowhere. */
 const UNKNOWN_ZONE: CardZone = 'exile';
@@ -218,6 +221,25 @@ export class MoveRecorder {
       });
     this.lastState.permanents.delete(permanent);
     this.noteCardLeft(card, 'battlefield', permanent.token);
+  }
+
+  /** A permanent went to another player's battlefield (a change of control). A token is written as gone, as it
+   *  comes from nowhere on the other side. */
+  notePermanentGivenAway(permanent: Permanent): void {
+    this.notePermanentLeft(permanent);
+    if (!permanent.token) this.noteCardGivenAway(permanent.card.name);
+  }
+
+  /** A card on its way (it left a zone) went to another player: a stolen card that died goes to its owner. */
+  noteCardGivenAway(card: string): void {
+    const fromZone = this.takeCardOnItsWay(card);
+    this.recordedMoves.push({ card, fromZone, toZone: OTHER_PLAYER_ZONE });
+  }
+
+  /** A card of ours (or a permanent we now control) came from another player into a zone of ours. */
+  noteCardFromOtherPlayer(card: string, toZone: CardZone): void {
+    addToCount(this.lastState.cardsInZone[toZone], card, 1);
+    this.recordedMoves.push({ card, fromZone: OTHER_PLAYER_ZONE, toZone });
   }
 
   /** The game took a card out of a zone. A token that leaves the battlefield is gone. */

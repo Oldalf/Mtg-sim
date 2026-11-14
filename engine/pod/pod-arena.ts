@@ -9,6 +9,7 @@ import {
   answerWin,
   attackPreference,
   counterSpell,
+  exchangeForStormdrake,
   makeOpponentsSacrifice,
   shouldGoForKill,
   snipeBestTarget,
@@ -41,6 +42,8 @@ export function buildArena(table: PodTable): Arena {
       table.runOffTurn(() =>
         everyOpponentDiscardsAndDraws(table, game, cardsInOwnHand),
       ),
+    stormdrakeExchange: (game, stormdrake) =>
+      table.runOffTurn(() => exchangeForStormdrake(table, game, stormdrake)),
     eachDraws: (game, cardCount) =>
       table.runOffTurn(() => {
         for (const opponent of table.livingOpponents(table.playerOf(game)))

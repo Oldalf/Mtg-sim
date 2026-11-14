@@ -20,6 +20,7 @@ import {
   Permanent,
   Target,
   WinAttempt,
+  Zone,
 } from './game-types';
 
 export abstract class Game<S = unknown> extends GameCore<S> {
@@ -70,7 +71,9 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   isCommander(permanent: Permanent): boolean {
     return (
-      !permanent.token && this.commanderNames.includes(permanent.card.name)
+      !permanent.token &&
+      permanent.owner === null &&
+      this.commanderNames.includes(permanent.card.name)
     );
   }
   fighter(
@@ -736,7 +739,26 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     );
     return card && this.podCast(card) ? 'bounce' : 'none';
   }
+
+  // ================================================================ change of control (a pod only)
+  override enter(
+    card: CardDef,
+    from: Zone = 'hand',
+    options: { token?: boolean; tapped?: boolean } = {},
+  ): Permanent {
+    const permanent = super.enter(card, from, options);
+    if (
+      card.name === VOLATILE_STORMDRAKE &&
+      this.inArena() &&
+      this.battlefield.includes(permanent)
+    )
+      // in a goldfish game there is no creature to take: it stays a 3/2 flyer
+      this.arena!.stormdrakeExchange(this, permanent);
+    return permanent;
+  }
 }
+
+const VOLATILE_STORMDRAKE = 'Volatile Stormdrake';
 
 /** Base for decks that have no kill search (no combo to find), so they skip the three search hooks. */
 export abstract class GameWithoutKillSearch extends Game<null> {
