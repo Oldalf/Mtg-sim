@@ -17,19 +17,14 @@
           class="deck-field"
         >
           <mat-label>Seat {{ seatIndex + 1 }}: deck</mat-label>
-          <select
-            matNativeControl
-            (change)="chooseDeck(seatIndex, $any($event.target).value)"
+          <mat-select
+            [value]="seatField.deck().value()"
+            (valueChange)="chooseDeck(seatIndex, $event)"
           >
             @for (deck of decks.value(); track deck.name) {
-              <option
-                [value]="deck.name"
-                [selected]="deck.name === seatField.deck().value()"
-              >
-                {{ deck.name }}
-              </option>
+              <mat-option [value]="deck.name">{{ deck.name }}</mat-option>
             }
-          </select>
+          </mat-select>
         </mat-form-field>
         <mat-form-field
           appearance="outline"
@@ -37,14 +32,16 @@
           class="list-field"
         >
           <mat-label>List</mat-label>
-          <select matNativeControl [formField]="seatField.list">
+          <mat-select [formField]="seatField.list">
             @for (
               listFile of listsOf(seatField.deck().value());
               track listFile
             ) {
-              <option [value]="listFile">{{ listLabel(listFile) }}</option>
+              <mat-option [value]="listFile">{{
+                listLabel(listFile)
+              }}</mat-option>
             }
-          </select>
+          </mat-select>
         </mat-form-field>
         @if (podForm.seats.length > minSeats) {
           <button
@@ -90,11 +87,11 @@
       class="number-field"
     >
       <mat-label>Threat</mat-label>
-      <select matNativeControl [formField]="podForm.threat">
+      <mat-select [formField]="podForm.threat">
         @for (choice of threatChoices; track choice) {
-          <option [value]="choice">{{ choice }}</option>
+          <mat-option [value]="choice">{{ choice }}</mat-option>
         }
-      </select>
+      </mat-select>
       <app-help-icon matSuffix [text]="threatHelp" />
     </mat-form-field>
     <mat-form-field
@@ -103,11 +100,11 @@
       class="number-field"
     >
       <mat-label>Policy</mat-label>
-      <select matNativeControl [formField]="podForm.policy">
+      <mat-select [formField]="podForm.policy">
         @for (choice of policyChoices; track choice) {
-          <option [value]="choice">{{ choice }}</option>
+          <mat-option [value]="choice">{{ choice }}</mat-option>
         }
-      </select>
+      </mat-select>
       <app-help-icon matSuffix [text]="policyHelp" />
     </mat-form-field>
   </div>

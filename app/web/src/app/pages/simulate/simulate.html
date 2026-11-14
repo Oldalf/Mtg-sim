@@ -8,11 +8,11 @@
   <div class="row">
     <mat-form-field appearance="outline" floatLabel="always" class="deck-field">
       <mat-label>Deck</mat-label>
-      <select matNativeControl [formField]="simulateForm.deck">
+      <mat-select [formField]="simulateForm.deck">
         @for (deck of decks.value(); track deck.name) {
-          <option [value]="deck.name">{{ deck.name }}</option>
+          <mat-option [value]="deck.name">{{ deck.name }}</mat-option>
         }
-      </select>
+      </mat-select>
     </mat-form-field>
     <mat-form-field appearance="outline" class="number-field">
       <mat-label>Games</mat-label>
@@ -52,11 +52,13 @@
           <mat-label>
             {{ listIndex === 0 ? 'Base list' : 'Compare with' }}
           </mat-label>
-          <select matNativeControl [formField]="listField">
+          <mat-select [formField]="listField">
             @for (listFile of chosenDeck()?.lists; track listFile) {
-              <option [value]="listFile">{{ listLabel(listFile) }}</option>
+              <mat-option [value]="listFile">{{
+                listLabel(listFile)
+              }}</mat-option>
             }
-          </select>
+          </mat-select>
         </mat-form-field>
         @if (simulateForm.lists.length > 1) {
           <button

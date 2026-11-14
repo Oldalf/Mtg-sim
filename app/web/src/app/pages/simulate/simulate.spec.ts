@@ -88,7 +88,7 @@ describe('Simulate form', () => {
     await fixture.whenStable();
     await chooseOption(
       fixture,
-      fieldLabelled<HTMLSelectElement>(fixture, 'Deck'),
+      fieldLabelled<HTMLElement>(fixture, 'Deck'),
       'beta',
     );
     expect(numberField('Turns').value).toBe('9');

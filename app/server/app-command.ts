@@ -1,14 +1,13 @@
 /**
- * `npm run app`: starts the app's server and opens the page in the browser (PLAN.md, roadmap step 4).
+ * `npm run app`: starts the app's server and prints its address (PLAN.md, roadmap step 4). It does not open the browser.
  *
- *   npm run app                  build the simulator and the page, start the server, open the browser
+ *   npm run app                  build the simulator and the page, start the server
  *   npm run app -- --port 5000   another port than 4173
  *   npm run app:dev              the server plus `ng serve` (live reload while working on the page)
  *   npm run app -- --test        the app's tests (progress and stopping of runs, deck calls, card image calls, run calls)
  *
  * It runs inside the simulator's bundle (dist/sim.js app), so the worker threads of a run start as they always do.
  */
-import { spawn } from 'child_process';
 import { DECKS } from '../../decks/index';
 import { runRunControlTests } from '../../engine/run/worker-pool.test';
 import { clearSessionLogs } from '../../engine/game-log/game-log-files';
@@ -22,8 +21,6 @@ const DEFAULT_PORT = 4173;
 
 interface AppOptions {
   port: number;
-  /** --no-open: don't open the browser (app:dev opens the page of `ng serve` instead). */
-  opensBrowser: boolean;
   /** --test: run the app's tests instead of the server. */
   runsTests: boolean;
 }
@@ -31,7 +28,6 @@ interface AppOptions {
 function parseAppOptions(argv: string[]): AppOptions {
   const options: AppOptions = {
     port: DEFAULT_PORT,
-    opensBrowser: true,
     runsTests: false,
   };
   for (let index = 0; index < argv.length; index++) {
@@ -40,25 +36,11 @@ function parseAppOptions(argv: string[]): AppOptions {
       options.port = parseInt(argv[++index] ?? '', 10);
       if (!Number.isInteger(options.port))
         throw new Error('--port needs a number');
-    } else if (option === '--no-open') options.opensBrowser = false;
-    else if (option === '--test') options.runsTests = true;
+    } else if (option === '--test') options.runsTests = true;
     else
-      throw new Error(
-        `unknown option ${option} (app takes --port N, --no-open, --test)`,
-      );
+      throw new Error(`unknown option ${option} (app takes --port N, --test)`);
   }
   return options;
-}
-
-/** Opens the page in the default browser of this machine. */
-function openBrowser(url: string): void {
-  const [command, commandArguments] =
-    process.platform === 'win32'
-      ? ['cmd', ['/c', 'start', '', url]] // '' = the window title `start` expects first
-      : process.platform === 'darwin'
-        ? ['open', [url]]
-        : ['xdg-open', [url]];
-  spawn(command, commandArguments, { stdio: 'ignore', detached: true }).unref();
 }
 
 export async function runAppCommand(argv: string[]): Promise<void> {
@@ -82,5 +64,4 @@ export async function runAppCommand(argv: string[]): Promise<void> {
   await startServer(options.port);
   const url = `http://127.0.0.1:${options.port}/`;
   console.log(`The app is running at ${url} (Ctrl+C stops it).`);
-  if (options.opensBrowser) openBrowser(url);
 }

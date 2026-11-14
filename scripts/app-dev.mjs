@@ -24,7 +24,7 @@ function start(command, commandArguments, folder) {
 
 const server = start(
   'node',
-  ['--enable-source-maps', path.join('dist', 'sim.js'), 'app', '--no-open'],
+  ['--enable-source-maps', path.join('dist', 'sim.js'), 'app'],
   PROJECT_FOLDER,
 );
 const pageServer = start(

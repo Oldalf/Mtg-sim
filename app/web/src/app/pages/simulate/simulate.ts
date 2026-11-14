@@ -31,6 +31,7 @@ import {
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatOption, MatSelect } from '@angular/material/select';
 import type { DeckSummary, GoldfishRunRequest } from '../../../../../api-types';
 import { ApiService } from '../../core/api';
 import { CurrentRunService } from '../../core/current-run';
@@ -110,7 +111,9 @@ const SIMULATE_FORM_RULES = schema<SimulateFormModel>((path) => {
     MatIconButton,
     MatInput,
     MatLabel,
+    MatOption,
     MatProgressBar,
+    MatSelect,
     RunProgress,
   ],
   templateUrl: './simulate.html',

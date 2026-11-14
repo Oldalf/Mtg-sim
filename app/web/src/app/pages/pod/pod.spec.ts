@@ -31,8 +31,8 @@ describe('Pod form', () => {
     return fakeApi.startedRuns.at(-1) as PodRunRequest;
   }
 
-  function select(labelText: string): HTMLSelectElement {
-    return fieldLabelled<HTMLSelectElement>(fixture, labelText);
+  function select(labelText: string): HTMLElement {
+    return fieldLabelled<HTMLElement>(fixture, labelText);
   }
 
   function labels(): string[] {

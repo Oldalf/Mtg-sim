@@ -12,14 +12,19 @@ export async function typeInto(
   await fixture.whenStable();
 }
 
+/** Opens a Material select and clicks the option with this text (the options are in the overlay, outside the page). */
 export async function chooseOption(
   fixture: ComponentFixture<unknown>,
-  select: HTMLSelectElement,
-  optionValue: string,
+  select: HTMLElement,
+  optionText: string,
 ): Promise<void> {
-  select.value = optionValue;
-  select.dispatchEvent(new Event('input'));
-  select.dispatchEvent(new Event('change'));
+  select.querySelector<HTMLElement>('.mat-mdc-select-trigger')!.click();
+  await fixture.whenStable();
+  const option = [...document.querySelectorAll<HTMLElement>('mat-option')].find(
+    (candidate) => candidate.textContent?.trim() === optionText,
+  );
+  if (!option) throw new Error(`no option ${optionText}`);
+  option.click();
   await fixture.whenStable();
 }
 
@@ -44,7 +49,7 @@ export function fieldLabelled<FieldElement extends HTMLElement>(
     (candidate) =>
       candidate.querySelector('mat-label')?.textContent?.trim() === labelText,
   );
-  const field = formField?.querySelector<FieldElement>('input, select');
+  const field = formField?.querySelector<FieldElement>('input, mat-select');
   if (!field) throw new Error(`no field labelled ${labelText}`);
   return field;
 }
@@ -73,9 +78,7 @@ export function numberFields(
   return [...page.querySelectorAll<HTMLInputElement>('input[type=number]')];
 }
 
-export function selects(
-  fixture: ComponentFixture<unknown>,
-): HTMLSelectElement[] {
+export function selects(fixture: ComponentFixture<unknown>): HTMLElement[] {
   const page = fixture.nativeElement as HTMLElement;
-  return [...page.querySelectorAll('select')];
+  return [...page.querySelectorAll<HTMLElement>('mat-select')];
 }
