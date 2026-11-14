@@ -96,8 +96,17 @@ import { CardImage } from '../../shared/card-image/card-image';
       }
     }
     @media (max-width: 700px) {
+      :host {
+        flex-wrap: wrap;
+      }
       .line {
         font: var(--mat-sys-title-small);
+      }
+      // a line can carry many cards: on a phone they scroll inside the caption, not the page
+      .cards {
+        flex: 1 1 100%;
+        min-width: 0;
+        overflow-x: auto;
       }
       .cards app-card-image {
         width: 56px;

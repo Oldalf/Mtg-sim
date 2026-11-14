@@ -249,6 +249,8 @@ Exact steps (written for Haiku 5.5 after E3):
 6. **Fix** only what breaks, in the files of `pages/game/`. `player-seat.scss` is at the 4 kB budget: a fix there must remove as much as it adds (or stop and ask). Anything that needs a design change stops and goes to Pontus.
 7. **Done when:** every check above holds, `npm run format`, `npm run verify` gives VERIFY OK, one commit, and a done line here plus what was learned in `app/web/CLAUDE.md`. Then step 5 is finished: ask Pontus about the plays he saw that looked off (he said he would bring them up), and update `ROADMAP.md` (suggestion 9).
 
+Done 2026-11-14 (eco runs): goldfish samfrodo (10 games), pods of 3, 4, 5 and 6 (6 games each, 12 rounds), real logs aesi and codie. Desktop (1920 x 945): no page scroll, no permanents box scrolls, one active seat, the caption shows the line, the 19-land aesi board holds. Phone (390 px iframe): found two breaks and fixed them: the caption's card row was 568 px wide and made the page scroll sideways (now the caption stacks and its cards scroll inside it), and the single seat of a one-player game folded and hid its board (a seat now opens when it is the only seat). Keys: Space, Up/Down (lines), Left/Right (turns), `h`, Home, End, `l`, Escape all work; a zone count opens its cards. Accessibility by script: every button has a name, the scrub bar is labelled, the focus ring shows (3 px outline), text contrast 5 to 16:1 (low life 7.5, white on the two chip colours 5.1 and 5.6). Not checked: a click on a log line pausing, and the mouse path of every zone popover. No AXE tool was added (the plan says to ask Pontus first; not asked yet). `npm run verify -- --eco` gives VERIFY OK (see the commit).
+
 ---
 
 ## Suggestions (not decided: Pontus picks)

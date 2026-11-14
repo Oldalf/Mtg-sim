@@ -38,6 +38,8 @@ export class PlayerSeat {
   readonly playerIndex = input.required<number>();
   readonly board = input.required<PlayerBoard>();
   readonly isActive = input(false);
+  /** A one-player game has no active seat, but its board still opens on a phone. */
+  readonly isOnlySeat = input(false);
   readonly cardFacts = input<CardFactsAnswer>({});
   /** The cards the chosen line moved or changed on this seat: they glow. */
   readonly changedCards = input<string[]>([]);
@@ -45,7 +47,9 @@ export class PlayerSeat {
   readonly lifeChange = input(0);
 
   /** Phone only: the active seat is open, the others folded (a tap on the name opens one). */
-  protected readonly isUnfolded = linkedSignal(() => this.isActive());
+  protected readonly isUnfolded = linkedSignal(
+    () => this.isActive() || this.isOnlySeat(),
+  );
 
   protected readonly isOut = computed(() => {
     const life = this.board().life;

@@ -34,6 +34,9 @@ The page of the app (roadmap step 4): an Angular 22 project with Angular Materia
 - A seat sizes its cards with container query units (`cqw`, `cqh`) from CSS variables the component sets (`--permanent-rows`, `--permanents-per-row`, from `permanentGrid`). Pure CSS can't count the cards, so the count comes from TypeScript and the sizing stays in CSS.
 - The arrow keys step through the game, so other shortcuts there use letters (`l` for the log, `h` / `H` for highlights).
 - A component's style has a 4 kB budget (`angular.json`); `player-seat.scss` is close to it.
+- A one-player game has no active seat (`isActive` is false there, on purpose), so its seat opens on a phone through `isOnlySeat`. Without it the board of a goldfish game or a real log folds away.
+- A caption's card row can be wider than the phone: it stacks under the text and scrolls inside its own box (`overflow-x: auto`). Check phone width with a 390 px iframe and `scrollWidth === clientWidth`, not just the window, since a browser window cannot be shrunk from the page.
+- The arrow keys: Up and Down step lines, Left and Right step turns (not lines).
 
 ## Angular skills
 
