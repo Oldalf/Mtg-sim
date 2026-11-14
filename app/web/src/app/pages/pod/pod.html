@@ -1,0 +1,154 @@
+<h1>Pod</h1>
+
+@if (decks.isLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<form class="run-form" [formRoot]="podForm">
+  <fieldset>
+    <legend>
+      Seats ({{ minSeats }} to {{ maxSeats }}; the first plays first)
+    </legend>
+    @for (seatField of podForm.seats; track $index; let seatIndex = $index) {
+      <div class="row">
+        <mat-form-field
+          appearance="outline"
+          floatLabel="always"
+          class="deck-field"
+        >
+          <mat-label>Seat {{ seatIndex + 1 }}: deck</mat-label>
+          <select
+            matNativeControl
+            (change)="chooseDeck(seatIndex, $any($event.target).value)"
+          >
+            @for (deck of decks.value(); track deck.name) {
+              <option
+                [value]="deck.name"
+                [selected]="deck.name === seatField.deck().value()"
+              >
+                {{ deck.name }}
+              </option>
+            }
+          </select>
+        </mat-form-field>
+        <mat-form-field
+          appearance="outline"
+          floatLabel="always"
+          class="list-field"
+        >
+          <mat-label>List</mat-label>
+          <select matNativeControl [formField]="seatField.list">
+            @for (
+              listFile of listsOf(seatField.deck().value());
+              track listFile
+            ) {
+              <option [value]="listFile">{{ listLabel(listFile) }}</option>
+            }
+          </select>
+        </mat-form-field>
+        @if (podForm.seats.length > minSeats) {
+          <button
+            mat-icon-button
+            type="button"
+            [attr.aria-label]="'Remove seat ' + (seatIndex + 1)"
+            (click)="removeSeat(seatIndex)"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    }
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="podForm.seats.length >= maxSeats"
+      (click)="addSeat()"
+    >
+      <mat-icon>add</mat-icon>
+      Add a seat
+    </button>
+  </fieldset>
+
+  <div class="row">
+    <mat-form-field appearance="outline" class="number-field">
+      <mat-label>Games</mat-label>
+      <input matInput type="number" [formField]="podForm.games" />
+      @if (podForm.games().errors()[0]; as error) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="number-field">
+      <mat-label>Round cap</mat-label>
+      <input matInput type="number" [formField]="podForm.rounds" />
+      @if (podForm.rounds().errors()[0]; as error) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field
+      appearance="outline"
+      floatLabel="always"
+      class="number-field"
+    >
+      <mat-label>Threat</mat-label>
+      <select matNativeControl [formField]="podForm.threat">
+        @for (choice of threatChoices; track choice) {
+          <option [value]="choice">{{ choice }}</option>
+        }
+      </select>
+    </mat-form-field>
+    <mat-form-field
+      appearance="outline"
+      floatLabel="always"
+      class="number-field"
+    >
+      <mat-label>Policy</mat-label>
+      <select matNativeControl [formField]="podForm.policy">
+        @for (choice of policyChoices; track choice) {
+          <option [value]="choice">{{ choice }}</option>
+        }
+      </select>
+    </mat-form-field>
+  </div>
+
+  <div class="row">
+    <mat-checkbox [formField]="podForm.powerSave">
+      Power save (slower, keeps the machine usable)
+    </mat-checkbox>
+  </div>
+
+  <div class="row">
+    <button
+      mat-flat-button
+      type="submit"
+      [disabled]="podForm().invalid() || currentRun.isRunning()"
+    >
+      <mat-icon>play_arrow</mat-icon>
+      Run
+    </button>
+    @if (currentRun.isRunning()) {
+      <span class="note"
+        >A run is going; a new one can start when it ends.</span
+      >
+    }
+  </div>
+</form>
+
+@if (currentRun.run(); as run) {
+  @if (run.request.mode === 'pod' || currentRun.isRunning()) {
+    <section class="run" aria-label="The run">
+      <h2>
+        @if (run.request.mode === 'pod') {
+          The pod: {{ run.request.decks.length }} seats
+        } @else {
+          A goldfish run is going (see Simulate)
+        }
+      </h2>
+      <app-run-progress [run]="run" (stop)="currentRun.stop()" />
+      @if (podRun(); as finishedRun) {
+        @if (finishedRun.status !== 'running') {
+          <app-pod-result [run]="finishedRun" />
+        }
+      }
+    </section>
+  }
+}
