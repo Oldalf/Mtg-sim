@@ -21,8 +21,8 @@ export const routes: Routes = [
   {
     path: 'simulate',
     title: 'Simulate',
-    loadComponent: loadPageToCome,
-    data: { title: 'Simulate', task: 9 },
+    loadComponent: () =>
+      import('./pages/simulate/simulate').then((module) => module.Simulate),
   },
   {
     path: 'pod',

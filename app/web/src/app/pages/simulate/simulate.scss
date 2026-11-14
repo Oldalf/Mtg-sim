@@ -1,0 +1,73 @@
+.run-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 900px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+fieldset {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-small);
+  padding: 8px 16px 12px;
+  margin: 0;
+}
+
+legend {
+  color: var(--mat-sys-on-surface-variant);
+  padding: 0 4px;
+}
+
+.deck-field,
+.list-field {
+  width: 260px;
+}
+
+.number-field {
+  width: 120px;
+}
+
+.list-row {
+  gap: 4px;
+}
+
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.setting-field {
+  width: 200px;
+}
+
+.error {
+  color: var(--mat-sys-error);
+}
+
+.note {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.run {
+  margin-top: 24px;
+  max-width: 1100px;
+
+  h2 {
+    font: var(--mat-sys-title-medium);
+  }
+}
+
+@media (max-width: 600px) {
+  .deck-field,
+  .list-field,
+  .setting-field {
+    width: 100%;
+  }
+}
