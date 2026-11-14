@@ -31,7 +31,7 @@ Local only, never published. Everything the command line does today keeps workin
     - Current Angular style: standalone components, signals for state, the built-in control flow (`@if`, `@for`), the Angular router, `HttpClient` / `httpResource` and Signal Forms (stable in Angular 22, agreed 2026-11-13). No extra state library.
     - Angular Material gives the theme (dark, one accent colour) and the ready-made pieces: toolbar, table, form fields, buttons, progress bar, chips, tabs.
     - The official Angular agent skills (`angular-developer`, `angular-new-app`; https://angular.dev/ai/agent-skills) are installed inside `app/web/`, so that an agent working on the page follows Angular's own current practice. `app/web/` also gets a short `CLAUDE.md` that points to them and to the rules of this plan.
-    - Shared with the rest of the project as plain TypeScript imports: `app/api-types.ts` and the engine's plain type files (`engine/game-log-types.ts`, `engine/run-types.ts`, `engine/pod-types.ts`). Nothing else from `engine/` builds in the page: it reaches Node code (see task 13).
+    - Shared with the rest of the project as plain TypeScript imports: `app/api-types.ts` and the Node-free folder `shared/` (the plain types, the log's board; moved there from `engine/` in task 13). Nothing from `engine/` builds in the page: it reaches Node code.
 2. **The server is a command of the existing bundle:** `npm run app` runs `dist/sim.js app`. That way the worker threads work unchanged.
 3. **Folders:** `app/server/` (the server and its routes), `app/web/` (the Angular project of the page), `app/api-types.ts` (the shapes both sides share). The page is built into `dist/web/`.
 4. **One run at a time.** A second run can be started when the first is done or stopped. This keeps the server simple and the machine usable.
@@ -61,6 +61,7 @@ All answers are JSON. Errors are `{ error: "message" }` with a 4xx or 5xx status
 | `GET /api/decks/<deck>/logs` | the deck's real Archidekt logs (the file names in its `logs/` folder) |
 | `GET /api/decks/<deck>/logs/<file>` | one real log as a `GameLog` (`readArchidektLog`) |
 | `GET /api/cards/<name>/image` | the card's image (fetched from Scryfall and kept on disk the first time) |
+| `POST /api/cards/facts` | type line and mana cost of the named cards (added in task 13: a game log has names only) |
 | `GET /` and other paths | the page and its files |
 
 The board of a game is worked out in the page, so it can step through a game without asking the server. How it gets the board code is open: see the note under task 13.
@@ -84,7 +85,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 10 | Charts for the results | 9 | small model | done (2026-11-14) |
 | 11 | Page: pod | 4, 6 (after 9: same pattern) | small model | done (2026-11-14) |
 | 12 | Page: the games of a run | 5, 6 | small model | done (2026-11-14) |
-| 13 | Page: the game viewer | 5, 6, 7 | big model | open |
+| 13 | Page: the game viewer | 5, 6, 7 | big model | done (2026-11-14) |
 | 14 | Finish | all | small model | open |
 
 After task 0, tasks 1, 2, 3, 5, 6 and 7 can all go side by side.
@@ -209,7 +210,7 @@ ode-versions26.13.1\installation`); the shell's default Node 22.12 is too old.
 The main new thing of this step.
 
 - Left: the log, grouped by turn (round and player in a pod), highlights marked, lines by another player than the one whose turn it is named, as `formatGameLog` does in text. Click a line to go there.
-- State: the game and the chosen line are signals; the board is computed from them with `TableBoards` (imported from `engine/game-log-board.ts`).
+- State: the game and the chosen line are signals; the board is computed from them with `TableBoards` (imported from `shared/game-log-board.ts`).
 - Right: the board after the chosen line: per player the battlefield (lands apart from the rest, tapped ones turned, counters shown, tokens marked), hand, graveyard, exile, command zone, library size and life. In a pod: every player, the one whose turn it is on top.
 - Stepping: next and previous line, next and previous highlight, next and previous turn, by buttons and keys (arrow keys, `h` for highlights).
 - The cards of the chosen line (`GameEvent.cards` and its moves) are shown large.
@@ -217,6 +218,7 @@ The main new thing of this step.
 - A real Archidekt log opens in the same viewer (one player, no life totals, a line per card move).
 - Done when: a goldfish game, a 4-player pod game and a real log can be stepped from the opening hand to the end, and the last board equals what `npm run logs -- <run> --seed N --board` prints.
 - Note from task 0: `engine/game-log-board.ts` cannot be imported into the page as it is: it imports `game-log.ts`, which imports `cards.ts` (reads files with Node). The way to go (Pontus, 2026-11-13): as with the types in task 0, move what the board needs out of the engine into a shared folder that both the engine and the page import, free of Node and engine code. The plain type files of task 0 (`engine/game-log-types.ts`, `engine/run-types.ts`, `engine/pod-types.ts`) move into that folder at the same time.
+- Notes (task 13, 2026-11-14): the shared folder is `shared/` at the top (`game-log-types.ts`, `run-types.ts`, `pod-types.ts`, `game-log-board.ts`, and the new `game-log-lines.ts`: seat order, which lines name their player, where a turn starts, used by `engine/game-log-text.ts` and the page). The engine imports it directly (no re-export stubs left in `engine/`); `tsconfig.json` and `scripts/verify.mjs` count it as engine code; `npm run logs` prints the same as before. A game log has card names only, so the board could not tell lands apart: `POST /api/cards/facts` (`CardFactsRequest` / `CardFactsAnswer`, test in `cards-routes.test.ts`) gives type line and mana cost. The page is `pages/game/`: `game.ts` (both routes; keys: up/down a line, left/right a turn, `h` / shift+`h` a highlight; "previous turn" goes to the start of the turn first), `game-log-view.ts` (the log), `player-board.ts` (alike permanents stacked with a count, +1/+1 counters as "+2/+2", graveyard and exile as names) and `game-steps.ts` with a spec (grouping, steps, board). `pages/page-to-come.ts` is gone (no route uses it). Seen in a browser: a pod game, a goldfish game and a real log stepped to the end; each last board equals `npm run logs -- ... --board`.
 
 ### 14. Finish
 

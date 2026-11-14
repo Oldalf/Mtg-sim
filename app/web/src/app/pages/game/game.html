@@ -129,7 +129,9 @@
             <app-player-board
               [player]="gameLog.players[player]"
               [board]="boards()[player]"
-              [isActive]="player === event.activePlayer"
+              [isActive]="
+                gameLog.players.length > 1 && player === event.activePlayer
+              "
               [cardFacts]="facts()"
             />
           }

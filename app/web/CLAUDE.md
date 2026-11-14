@@ -5,7 +5,7 @@ The page of the app (roadmap step 4): an Angular 22 project with Angular Materia
 ## Where things are
 
 - `../api-types.ts`: every request and answer of the server. Use these types for every call; a shape that is missing is added there first, in its own small change.
-- The engine's plain type files (`../../engine/game-log-types.ts`, `../../engine/run-types.ts`) may be imported. Nothing else from `engine/`: it uses Node (`fs`, `path`) and does not build here.
+- `../../shared/` (the plain types of game logs and runs, the log's board, the rules for reading log lines) may be imported. Nothing from `engine/`: it uses Node (`fs`, `path`) and does not build here.
 - `proxy.conf.json`: `ng serve` sends `/api` to the server on port 4173 (`npm run app:dev` in the project folder starts both).
 - Theme: `src/styles.scss` (dark, dense, one accent colour: orange). Fonts ship with the page (`angular.json` "styles"), so it works without the network.
 
