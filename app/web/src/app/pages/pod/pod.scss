@@ -33,6 +33,16 @@ legend {
   width: 120px;
 }
 
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.setting-field {
+  width: 200px;
+}
+
 .note {
   color: var(--mat-sys-on-surface-variant);
 }
@@ -48,7 +58,8 @@ legend {
 
 @media (max-width: 600px) {
   .deck-field,
-  .list-field {
+  .list-field,
+  .setting-field {
     width: 100%;
   }
 }
