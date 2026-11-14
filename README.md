@@ -21,7 +21,7 @@ npm run app                                          # the app: builds the simul
 npm run app:dev                                      # for working on the page: the server plus `ng serve`, which reloads the page on every change
 npm run sim -- gale                                  # kill-turn table for decks/gale/decklist.txt (5000 games)
 npm run sim -- gale -n 20000                         # more games = less noise
-npm run sim -- gale decklist.txt lists/a.txt lists/b.txt   # compare lists on the same seeds (first = base)
+npm run sim -- gale decklist.txt lists/proposed.txt   # compare lists on the same seeds (first = base)
 npm run sim -- gale --set planner=0                  # same list, default AI vs a changed setting
 npm run sim -- gale --turns 10                       # look further than turn 8
 npm run sim -- gale --trace 3                        # play-by-play of 3 games, to check the AI's lines (--moves adds the card moves)
@@ -35,7 +35,7 @@ npm run sim -- gale --no-log                         # don't write the games to 
 npm run sim -- gale --rank                           # rank cards by how much seeing them by turn 4 helps
 npm run sim -- gale --cut "Card A" "Card B"          # cut each card for an Island (--replace Swamp) and compare
 npm run sim -- gale --analyze logs/game6.txt -d lists/proposed.txt   # check a real game for missed kills
-npm run sim -- aesi lists/a.txt lists/b.txt --diag   # a deck's own consistency measures per list (Aesi, Meren: slow starts, when the commander comes down)
+npm run sim -- aesi decklist.txt lists/proposed.txt --diag   # a deck's own consistency measures per list (Aesi, Meren: slow starts, when the commander comes down)
 npm run sim -- gale --eco                            # power-save mode: for long runs in the background while you play (see below)
 npm run sim -- aesi --hands -n 8000                  # how opening hands do, by land count and contents (for mulligan advice)
 npm run cards                                       # when the Scryfall data was downloaded, and its latest set

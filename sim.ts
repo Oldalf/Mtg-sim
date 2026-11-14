@@ -14,8 +14,8 @@
  *   npm run sim -- gale --eco                             power-save mode: runs in the background without loading the machine
  *                                                         (below-normal priority, a quarter of the cores, resting between chunks;
  *                                                         --duty N sets the busy percentage, -w N the worker count)
- *   npm run sim -- aesi lists/a.txt --diag                the deck's own consistency measures per list (same seeds)
- *   npm run sim -- aesi lists/a.txt --hands -n 8000       how opening hands do (by land count and contents), for mulligan advice
+ *   npm run sim -- aesi lists/proposed.txt --diag        the deck's own consistency measures per list (same seeds)
+ *   npm run sim -- aesi lists/proposed.txt --hands -n 8000 how opening hands do (by land count and contents), for mulligan advice
  *   npm run logs                                         read the games of the last run (see cli/logs-command.ts);
  *                                                        every run writes its games to session-logs/ unless --no-log is given
  *   npm run app                                          the app: a local server and a page in the browser

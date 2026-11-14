@@ -83,3 +83,13 @@ All within noise: a Swamp does about as well as each of them, so none speeds up 
 
 - Test replacements for the weakest slots (more ramp or graveyard filling), with `npm run sim -- meren decklist.txt lists/test.txt -n 5000`.
 - The card ranking and cut tests above were run before the planner; rerun them when there are new cut ideas.
+
+## Swap tests (moved here from `lists/SWAPS.txt` on 2026-11-14; the lists were removed, see git history)
+
+Test lists compared with `decklist.txt` (checked with a diff):
+
+- `lists/proposed.txt` (was `b3.txt`): out Eternal Witness, Timeless Witness, Songs of the Damned, Puppeteer Clique, Solemn Simulacrum; in Carrion Feeder, Stitcher's Supplier, Wood Elves, Ophiomancer, Skull Prophet.
+- `lists/proposed_marauder_and_elves.txt` (was `a3.txt`): the adopted list, plus out Village Rites and Rune-Scarred Demon; in Fleshbag Marauder, Fyndhorn Elves.
+- `lists/proposed_solemn_kept.txt` (was `b3x.txt`): the adopted list with Solemn Simulacrum kept and no Skull Prophet (four cuts, four adds: Carrion Feeder, Stitcher's Supplier, Wood Elves, Ophiomancer).
+
+Tried and dropped: Zulaport Cutthroat (drain, not the plan), Elvish Mystic (replaced by Ophiomancer), Sylvan Caryatid (replaced by Skull Prophet), cutting Twilight Diviner and Sepulchral Primordial (list C3: fewer wins).

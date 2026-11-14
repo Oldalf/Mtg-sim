@@ -3,7 +3,7 @@
 Simic "reverse landfall" (based on DefCatMtg's list), bracket 3, built to be fun to play and fair to play against. Aesi draws a card for every land; moonfolk return lands to hand so they can be played again; extra land drops and "put a land onto the battlefield" creatures turn that into a stream of landfall triggers. Phase 3 of the root `ROADMAP.md`.
 
 - Run: `npm run sim -- aesi` (more in the root README). Tests: `npm run sim -- aesi --test` (58 rules checks). Replay a real game: `--analyze logs/<file>.txt`.
-- **Lists:** `decklist.txt` is the list as Pontus first gave it. `lists/package.txt` is the new list built on 2026-11-06 that he looked at on 2026-11-07 ("looks good"; see "Current state" and "Open"). The other files in `lists/` are test lists from the swap tests.
+- **Lists:** `decklist.txt` is the list as Pontus first gave it. `lists/proposed.txt` (named `package.txt` until 2026-11-14) is the new list built on 2026-11-06 that he looked at on 2026-11-07 ("looks good"; see "Current state" and "Open"). The three `lists/proposed_*.txt` files are the alternatives from the swap tests (see the table in "Current state").
 - **Pontus's preferences:** consistent, fun and fair rather than fast; no mana rocks (land theme); at most 39 lands; not more engine pieces; interaction and protection cards stay; cards that are sad without lands in hand go.
 
 ## How the deck wins (Pontus)
@@ -63,7 +63,7 @@ Pontus: the deck should be consistently playable, not a useless spectator. `npm 
 
 ## Current state
 
-`lists/package.txt` (100 cards, 39 lands, about 4.8 € of new cards) against `decklist.txt`:
+`lists/proposed.txt` (100 cards, 39 lands, about 4.8 € of new cards) against `decklist.txt`:
 - **Out:** Explore, Growth Spiral, Into the Wilds, Azusa's Many Journeys (cards that are sad without lands in hand; Pontus: a land-only hand is as bad as a spell-only one).
 - **In:** Search for Tomorrow 0.16 €, Wood Elves 0.06 €, Skyshroud Claim 1.36 € (land-fetch spells that never miss); Elven Raft-Steerer 0.11 € (a second untapper); six duals instead of 3 Islands + 3 Forests: Command Tower 0.20 €, Vineglimmer Snarl 0.22 €, Hinterland Harbor 0.35 €, Yavimaya Coast 0.52 €, Botanical Sanctum 1.64 €, Temple of Mystery 0.14 €. Prices vary by printing.
 - Nature's Lore (about 2.90 €) and Three Visits (about 4.89 €) play like Search for Tomorrow's land and tested the same. Pontus: Nature's Lore "works, not the most fun".
@@ -89,7 +89,7 @@ Four other mixes of the fetch spells tested the same within noise, so the cheap 
 
 Won on turn 10: Omniscience + Onnas → Cobra, Retreat, Atlas, Uyo → endless mana → Blue Sun's Zenith copied about 25 times. The analyzer finds the first kill right after Omniscience on turn 10; the AI with the same draws wins on turn 10 in 84% of runs (turn 9: 1%), so the real game was on par. Probably off in the log: Terramorphic's Forest should enter tapped (T3); no Aesi draw after Budoka's Island (T8); Dokai's and Loot's abilities cost 4 with Familiar, not 6, and four land plays with three drops (T9); on T10 the Mindsweeper loop mills everyone without Zenith, and the Onna loop can be shortcut.
 
-## Opening hands (`--hands`, 8,000 hands of `lists/package.txt`; the basis of the MULLIGANS section in `PRIMER.txt`)
+## Opening hands (`--hands`, 8,000 hands of `lists/proposed.txt`; the basis of the MULLIGANS section in `PRIMER.txt`)
 
 Average win turn by lands in the 7: 0 lands 11.3, 1 land 10.1, 2 lands 9.1, 3 lands 8.6, 4 lands 8.4, 5 lands 8.3, 6 lands 8.8 (a fresh 7 averages 9.0, a mulligan to 6 9.3). A green source is worth about 1.1 turns. A 2-lander is only worth keeping with a green source and a cheap ramp piece (8.5). Best cards in the opening 7: Sol Ring (+1.4), Lotus Cobra (+0.9), Walking Atlas, Cultivate, Sakura-Tribe Scout, PuPu UFO (+0.4–0.5). Expensive blue creatures (Kiri-Onna, Patron, Mirror-Mage, Mindsweeper) are a drag in the opening 7 (−0.5).
 
@@ -97,8 +97,8 @@ Average win turn by lands in the 7: 0 lands 11.3, 1 land 10.1, 2 lands 9.1, 3 la
 
 ## Open
 
-- **Pontus decides:** make `lists/package.txt` the default `decklist.txt` (then re-record the regress baseline); Many Journeys out or kept; Search for Tomorrow or Nature's Lore / Three Visits; which duals he already owns.
+- **Pontus decides:** make `lists/proposed.txt` the default `decklist.txt` (then re-record the regress baseline); Many Journeys out or kept; Search for Tomorrow or Nature's Lore / Three Visits; which duals he already owns.
 - **Not modelled yet:** Haru-Onna returning when a Spirit is cast without Omniscience; Familiar's adapt ability; PuPu UFO's Town ability; Likeness of the Seeker's untap.
 - **To check:** the low-ranked cards (Mirror-Mage, Savant, Patron of the Moon, Uyo, Endless Swarm, Graceful Adept): is the AI playing them well, or are they weak in a goldfish game? The old ranking predates the package.
 - More logs (the sim rarely wins via Uyo or Endless Swarm, so games that do would help), then further cut ideas.
-- Housekeeping: `lists/` holds about 30 test lists from the swap tests; keep `package.txt`, `decklist.txt` and whichever Pontus wants.
+- Housekeeping (2026-11-14): the other swap test lists were removed; they are in git history before that date. `lists/` holds `proposed.txt` and the three `proposed_*.txt` alternatives.

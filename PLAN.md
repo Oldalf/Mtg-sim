@@ -4,13 +4,13 @@ Written 2026-11-14. Five pieces of work Pontus asked for, split into tasks that 
 
 ## How to read this plan
 
-Each task has a tier. Give a task to a model of that tier or a stronger one.
+Each task names a model. Give it to that model or a stronger one.
 
-| Tier | Model | What it gets |
+| Model | Tier | What it gets |
 |---|---|---|
-| **S** (small) | Haiku | Mechanical work with exact steps. No design choices. A command says if it worked. |
-| **M** (medium) | Sonnet | A feature or refactor with a clear goal, in patterns the code already has. Small choices only. |
-| **L** (large) | Opus or Fable | Design, work across many files where judgement is needed, or writing that other models will follow. |
+| Claude Haiku 5.5 | S (small) | Mechanical work with exact steps. No design choices. A command says if it worked. |
+| Claude Sonnet 5.5 | M (medium) | A feature or refactor with a clear goal, in patterns the code already has. Small choices only. |
+| Claude Opus 5.5, or Fable 5.2 | L (large) | Design, work across many files where judgement is needed, or writing that other models will follow. |
 | **P** | Pontus | A decision. Tasks marked "after P" wait for it. |
 
 Rules for every task:
@@ -18,27 +18,27 @@ Rules for every task:
 - Read `CLAUDE.md` first (rule 0 names, KISS). For the engine also `ENGINE.md`, for the page also `app/web/CLAUDE.md`.
 - One task is one branch and one commit. `npm run format`, then `npm run verify` must end with VERIFY OK.
 - Ask Pontus eco or full power before any task that runs simulations (`verify` with regress checks counts).
-- A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change. This matters most for tier S.
+- A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change. This matters most for Haiku 5.5.
 - When a task is done, add one line under it here: what was built and anything the next task must know.
 
 ## Order
 
 The tasks run one at a time, in this order. Each row is one session: one branch, one commit (B2 is seven commits).
 
-| # | Task | What | Tier |
+| # | Task | What | Model |
 |---|---|---|---|
-| 1 | A2 | Remove and rename the decklists | S |
-| 2 | A3 | Remove the app's archive switch (skip if suggestion 4 keeps an archive folder) | S |
-| 3 | B2 | Move the engine into folders, one folder per commit | M |
-| 4 | B3 | Docs follow the move | S |
-| 5 | C1 | Write the add-a-deck skill | L |
-| 6 | C2 | Try the skill on a real deck | M |
-| 7 | D1 | Autoplay | M |
-| 8 | D2 | Remember speed and position | S |
-| 9 | E1 | Table view: design as a prototype, Pontus picks | L, then P |
-| 10 | E2 | Table view: the logic as plain functions | M |
-| 11 | E3 | Table view: build it | M (L if the design is far from today's components) |
-| 12 | E4 | Table view: check every size | S or M |
+| 1 | A2 | Remove and rename the decklists | Haiku 5.5 |
+| 2 | A3 | Remove the app's archive switch (skip if suggestion 4 keeps an archive folder) | Haiku 5.5 |
+| 3 | B2 | Move the engine into folders, one folder per commit | Sonnet 5.5 |
+| 4 | B3 | Docs follow the move | Haiku 5.5 |
+| 5 | C1 | Write the add-a-deck skill | Opus 5.5 |
+| 6 | C2 | Try the skill on a real deck | Sonnet 5.5 |
+| 7 | D1 | Autoplay | Sonnet 5.5 |
+| 8 | D2 | Remember speed and position | Haiku 5.5 |
+| 9 | E1 | Table view: design as a prototype, Pontus picks | Opus 5.5, then Pontus |
+| 10 | E2 | Table view: the logic as plain functions | Sonnet 5.5 |
+| 11 | E3 | Table view: build it | Sonnet 5.5 (Opus 5.5 if the design is far from today's components) |
+| 12 | E4 | Table view: check every size | Haiku 5.5 or Sonnet 5.5 |
 
 Why this order: the decklists are the smallest and touch nothing else. The engine move comes before the skill because the skill names engine paths. Autoplay comes before the table view because the table view builds on it.
 
@@ -75,7 +75,7 @@ Everything else goes: every other file in gale's `lists/` with `lists/cuts/` and
 
 Checked for aesi: `p_b.txt` holds the same cards as `package.txt`, and `p_c.txt` is both alternatives at once (Many Journeys kept, Lore and Visits in), so both go. `SWAPS.txt` says Nature's Lore or Three Visits can stand in for Search for Tomorrow; no kept list does exactly that swap, `p_a` and `p_e` are the nearest (they put them in for Skyshroud Claim).
 
-### A2. Remove and rename the lists (S)
+### A2. Remove and rename the lists (Haiku 5.5)
 
 - `git rm` every list that is not in the table of A1, and `git mv` the ones with a new name. Nothing else.
 - The renamed lists are named in `decks/aesi/PLAN.md`, `SWAPS.txt` and `PRIMER.txt` (`lists/package.txt`), and `decks/meren/PLAN.md` and `SWAPS.txt` (`b3`, `a3`, `b3x`): update each. The text may still call aesi's list "the package".
@@ -83,7 +83,9 @@ Checked for aesi: `p_b.txt` holds the same cards as `package.txt`, and `p_c.txt`
 - Check with a search that no removed or old file name is left in `*.ts`, `*.md`, `*.txt` or `regress_baseline/`.
 - Done when: `npm run verify` is OK (`REGRESS` in `decks/index.ts` only uses `decklist.txt` and gale's `lists/proposed.txt`, so no baseline changes), and the Decks page of the app shows only the kept lists.
 
-### A3. The archive switch of the app (S, after A2)
+Done 2026-11-14: gale keeps `decklist.txt` and `proposed.txt`; aesi `proposed.txt` and three `proposed_*.txt`; meren `proposed.txt` and two `proposed_*.txt`; mike unchanged. The removed meren swap notes moved into `decks/meren/PLAN.md`. `npm run verify -- --eco` gave VERIFY OK, every regress IDENTICAL. A3 still has to remove the archive switch (`lists/old` and `lists/cuts` are gone, so `?all=1` lists nothing).
+
+### A3. The archive switch of the app (Haiku 5.5, after A2)
 
 With `lists/cuts/` and `lists/old/` gone, `?all=1` in `app/server/decks-routes.ts` (`ARCHIVE_FOLDERS`, `includeArchive`) lists nothing. Remove it: the route, its test in `decks-routes.test.ts`, the type in `app/api-types.ts`, the call in `app/web/src/app/core/api.ts` and whatever the Deck page shows for it. Done when `npm run app -- --test` and `ng test` pass. Skip this task if Pontus wants to keep archive folders for future cut tests (see suggestion 4).
 
@@ -107,9 +109,9 @@ Goal: `engine/` has 42 files in one folder. Move them into folders by topic. Pur
 
 File names stay as they are in this step, so the diff is only moves and import lines. Dropping the now doubled prefixes (`game-log/game-log-files.ts` to `game-log/files.ts`) is suggestion 2.
 
-### B2. Move one folder at a time (M)
+### B2. Move one folder at a time (Sonnet 5.5)
 
-Seven commits, one per folder, in this order: `util`, `cards`, `game`, `game-log`, `pod`, `run`, `tools`. A tier S model can do a folder if it is given the exact file list and the checks below, but the first folder (which finds the traps) is tier M.
+Seven commits, one per folder, in this order: `util`, `cards`, `game`, `game-log`, `pod`, `run`, `tools`. Haiku 5.5 can do a folder if it is given the exact file list and the checks below, but the first folder (which finds the traps) needs Sonnet 5.5.
 
 - Before starting: save the output of a fixed-seed pod run (`npm run pod -- gale meren samfrodo aesi -n 200 --no-log`) to the scratchpad. `--regress check` does not cover pod mode.
 - Per folder: `git mv` the files, fix the imports (engine, `decks/`, `cli/`, `app/server/`, `sim.ts`; about 230 import lines in all), `npm run check`, `npm run format`.
@@ -120,7 +122,7 @@ Seven commits, one per folder, in this order: `util`, `cards`, `game`, `game-log
   - The page (`app/web/`) imports only `shared/` and `app/api-types.ts`, never `engine/`. Check that `app/api-types.ts` still builds there (`npx ng build` in `app/web/`).
 - After the last folder: `npm run verify -- --full` must be OK with every deck IDENTICAL, and the pod output must equal the saved one byte for byte.
 
-### B3. Docs follow the move (S, after B2)
+### B3. Docs follow the move (Haiku 5.5, after B2)
 
 Update every `engine/<file>.ts` path in `ENGINE.md`, `README.md`, `CLAUDE.md`, `app/web/CLAUDE.md`, `POD_PLAN.md`, `ROADMAP.md`, the deck `PLAN.md` files and the header comments in the code. Add a short "Folders" table to `ENGINE.md` (the table of B1). Done when a search for `engine/[a-z-]+\.ts` finds only paths that exist.
 
@@ -130,9 +132,9 @@ Update every `engine/<file>.ts` path in `ENGINE.md`, `README.md`, `CLAUDE.md`, `
 
 Goal: `/add-deck` walks a model through adding a deck the way the six decks were added, so the next deck costs less and looks like the others. It lives in `.claude/skills/add-deck/SKILL.md` at the project root (the page has its own skills in `app/web/.claude/skills/`).
 
-### C1. Write down what adding a deck takes (L)
+### C1. Write down what adding a deck takes (Opus 5.5)
 
-Read how the six decks are built and write the skill. It is tier L because it must pick what is common from six different decks and say it so a smaller model can follow. Use the `skill-creator` skill for the format. The skill must cover, in this order:
+Read how the six decks are built and write the skill. It needs Opus 5.5 because it must pick what is common from six different decks and say it so a smaller model can follow. Use the `skill-creator` skill for the format. The skill must cover, in this order:
 
 1. **What to ask Pontus first:** the list (Archidekt export), the commander, how the deck wins, the bracket, whose deck it is, real game logs if there are any, and what he wants from it (speed, consistency, fun). Memory notes hold here: no cut tests until he names cuts, logs contain misplays.
 2. **Which deck to copy from:** gale for a kill search, meren for combat and the planner, samfrodo for tokens, aesi for loops, codie for a solver, goldfish for the smallest possible deck.
@@ -143,9 +145,9 @@ Read how the six decks are built and write the skill. It is tier L because it mu
 7. **The pod layer** as a second, optional part: interaction cards, the "close to winning" flag, `POD_PLAN.md`.
 8. **Done when:** `--test` prints ALL OK, the baseline is recorded, `npm run verify` is OK, the deck shows in the app.
 
-### C2. Try the skill on a real deck (M, after C1)
+### C2. Try the skill on a real deck (Sonnet 5.5, after C1)
 
-The next deck Pontus wants is added by a tier M model using only the skill. Every place where it had to guess or ask is fixed in the skill. If no new deck is waiting, re-add `goldfish` under another name on a throwaway branch as a smoke test.
+The next deck Pontus wants is added by Sonnet 5.5 using only the skill. Every place where it had to guess or ask is fixed in the skill. If no new deck is waiting, re-add `goldfish` under another name on a throwaway branch as a smoke test.
 
 ---
 
@@ -153,7 +155,7 @@ The next deck Pontus wants is added by a tier M model using only the skill. Ever
 
 Goal: a play button in the viewer (`app/web/src/app/pages/game/`) that steps through the game by itself, slowly enough to follow.
 
-### D1. Autoplay (M)
+### D1. Autoplay (Sonnet 5.5)
 
 - A play / pause button in the step toolbar, and Space as its key (add it to `STEP_KEYS`' tooltips the same way). A speed choice next to it: slow, normal, fast.
 - Playing moves to the next line with text (`nextEvent` already skips to it). It stops at the last line and the button turns back to play.
@@ -163,7 +165,7 @@ Goal: a play button in the viewer (`app/web/src/app/pages/game/`) that steps thr
 - The log already follows the chosen line (`scrollIntoView` in `game-log-view.ts`). Check it stays smooth while playing.
 - Done when: `ng test` passes with the new spec, and a goldfish game and a 4-seat pod game play to the end by themselves in the browser.
 
-### D2. Remember speed and position (S, after D1)
+### D2. Remember speed and position (Haiku 5.5, after D1)
 
 The chosen speed is kept in `localStorage`. The chosen line goes in the URL (`?line=120`) so a refresh or a shared link opens the same spot. Small, and useful for the table view too.
 
@@ -175,7 +177,7 @@ Goal: with autoplay on, the viewer feels like watching a Commander game on video
 
 What is wrong today: the boards are stacked top to bottom and reordered every turn (`playersTopDown` puts the active player first), so with 4 players the page is several screens tall and jumps on each turn change. Every card is full size. The log takes a third of the width.
 
-### E1. Design, shown as a prototype (L, then P)
+### E1. Design, shown as a prototype (Opus 5.5, then Pontus)
 
 Use the `prototype` skill: a throwaway page with made-up boards, for 1, 3, 4, 5 and 6 players, on a desktop and a phone width. Pontus picks before anything is built. The proposal to prototype:
 
@@ -189,7 +191,7 @@ Use the `prototype` skill: a throwaway page with made-up boards, for 1, 3, 4, 5 
 
 Done when Pontus has picked a variant and the choices are written here under this task.
 
-### E2. The logic as plain functions (M, after E1)
+### E2. The logic as plain functions (Sonnet 5.5, after E1)
 
 In `game-steps.ts` (or a new `table-layout.ts` if it passes about 300 lines), each with a spec:
 
@@ -199,11 +201,11 @@ In `game-steps.ts` (or a new `table-layout.ts` if it passes about 300 lines), ea
 
 No new server calls: all of it comes from `GameLog` and `boardAt`.
 
-### E3. Build the table (M with the design of E1, or L)
+### E3. Build the table (Sonnet 5.5, or Opus 5.5 if the design of E1 is far from today's components)
 
 New components next to the old ones: a compact seat (from `player-board.ts`), the caption bar, the control bar with the scrub bar, the log drawer. `game.html` puts them together. Keep the components small, state in signals, per `app/web/CLAUDE.md`. Keyboard steps and autoplay from D keep working. The old stacked view is removed once the new one covers it, not kept as an option.
 
-### E4. Check every size (S or M, after E3)
+### E4. Check every size (Haiku 5.5 or Sonnet 5.5, after E3)
 
 In the browser, with real runs: a goldfish game, a pod of 3, 4, 5 and 6, and a real Archidekt log, at desktop and at phone width (no page may scroll sideways). A big board (samfrodo tokens, aesi lands) must stay readable. AXE checks pass. Fix what breaks; write what was learned into `app/web/CLAUDE.md`.
 
@@ -211,15 +213,15 @@ In the browser, with real runs: a goldfish game, a pod of 3, 4, 5 and 6, and a r
 
 ## Suggestions (not decided: Pontus picks)
 
-Found while planning. Each has a tier in case it is taken.
+Found while planning. Each names the model it would need, in case it is taken.
 
-1. **Split `engine/game-core.ts`** (L). It is 2,276 lines; the size guide says about 800. With `engine/game/` in place it can become one file per topic (zones, mana and payment, casting, creatures and combat, turn loop, planner). Must be IDENTICAL. Best done right after B, while the folder is fresh. `decks/aesi/game.ts` (1,129) and `decks/mike/game.ts` (962) are over the guide too.
-2. **Shorter file names inside the folders** (S, after B). `game-log/game-log-files.ts` to `game-log/files.ts`, `pod/pod-table.ts` to `pod/table.ts`. Reads better, but it is a second round of import changes.
-3. **One place to register a deck** (M). Today a new deck is named in five places: `DECKS`, `TESTS`, `REGRESS` in `decks/index.ts` and two arrays in `scripts/verify.mjs`. If each deck's `index.ts` exported its tests and regress lists, and `verify` asked the simulator for the deck names, it would be one line. Makes skill C shorter and harder to get wrong. Do it before C1 if taken.
-4. **A rule for test lists from now on** (P, then S). So the lists do not pile up again: test lists are written to a folder git ignores (say `lists/scratch/`), and only a list Pontus picks is copied into `lists/`. The rule goes into `CLAUDE.md` and each deck's `PLAN.md`.
-5. **The app knows the adopted list** (M). After A2 every adopted list is `lists/proposed.txt`, but the code knows only `defaultList` (`decklist.txt`, the original). The app could mark `lists/proposed.txt` where it exists and preselect it in Simulate and Pod. Also the open point in `decks/aesi/PLAN.md`: make the proposed list the default `decklist.txt` or not.
-6. **A skill for testing a swap** (L). The other thing done over and over: build the list, run 16,000 games against the base with the same seeds, read `--diag`, write the result into the deck's `PLAN.md` and `SWAPS.txt`. Fits the notes already kept (wait for Pontus's cuts, judge aesi with `--diag`, ask eco or full power).
-7. **One board, not two** (M). `engine/log-board.ts` (the analyzer) and `shared/game-log-board.ts` (the log) each apply card moves with their own code (`ENGINE.md`, "Ideas for later"). The table view (E) leans on the shared one, so a bug fixed in one stays in the other.
-8. **Leftovers of roadmap step 1** (S). The card-nickname constants in aesi (`BSZ`, `OMNI`) and a few abbreviations. Must be IDENTICAL.
-9. **Docs that have gone stale** (S). `ROADMAP.md` gets this plan as step 5. `ENGINE.md` says "all six decks" in the safety-net rule; it should point at `verify` instead of counting. `app/web/CLAUDE.md` says to read `PLAN.md` for "the tasks and their rules" of step 4.
-10. **Watch a game straight from a result** (S, after D). A "watch" button next to each game in "games worth a look" and the pod report that opens the viewer already playing (`?play=1`).
+1. **Split `engine/game-core.ts`** (Opus 5.5). It is 2,276 lines; the size guide says about 800. With `engine/game/` in place it can become one file per topic (zones, mana and payment, casting, creatures and combat, turn loop, planner). Must be IDENTICAL. Best done right after B, while the folder is fresh. `decks/aesi/game.ts` (1,129) and `decks/mike/game.ts` (962) are over the guide too.
+2. **Shorter file names inside the folders** (Haiku 5.5, after B). `game-log/game-log-files.ts` to `game-log/files.ts`, `pod/pod-table.ts` to `pod/table.ts`. Reads better, but it is a second round of import changes.
+3. **One place to register a deck** (Sonnet 5.5). Today a new deck is named in five places: `DECKS`, `TESTS`, `REGRESS` in `decks/index.ts` and two arrays in `scripts/verify.mjs`. If each deck's `index.ts` exported its tests and regress lists, and `verify` asked the simulator for the deck names, it would be one line. Makes skill C shorter and harder to get wrong. Do it before C1 if taken.
+4. **A rule for test lists from now on** (Pontus, then Haiku 5.5). So the lists do not pile up again: test lists are written to a folder git ignores (say `lists/scratch/`), and only a list Pontus picks is copied into `lists/`. The rule goes into `CLAUDE.md` and each deck's `PLAN.md`.
+5. **The app knows the adopted list** (Sonnet 5.5). After A2 every adopted list is `lists/proposed.txt`, but the code knows only `defaultList` (`decklist.txt`, the original). The app could mark `lists/proposed.txt` where it exists and preselect it in Simulate and Pod. Also the open point in `decks/aesi/PLAN.md`: make the proposed list the default `decklist.txt` or not.
+6. **A skill for testing a swap** (Opus 5.5). The other thing done over and over: build the list, run 16,000 games against the base with the same seeds, read `--diag`, write the result into the deck's `PLAN.md` and `SWAPS.txt`. Fits the notes already kept (wait for Pontus's cuts, judge aesi with `--diag`, ask eco or full power).
+7. **One board, not two** (Sonnet 5.5). `engine/log-board.ts` (the analyzer) and `shared/game-log-board.ts` (the log) each apply card moves with their own code (`ENGINE.md`, "Ideas for later"). The table view (E) leans on the shared one, so a bug fixed in one stays in the other.
+8. **Leftovers of roadmap step 1** (Haiku 5.5). The card-nickname constants in aesi (`BSZ`, `OMNI`) and a few abbreviations. Must be IDENTICAL.
+9. **Docs that have gone stale** (Haiku 5.5). `ROADMAP.md` gets this plan as step 5. `ENGINE.md` says "all six decks" in the safety-net rule; it should point at `verify` instead of counting. `app/web/CLAUDE.md` says to read `PLAN.md` for "the tasks and their rules" of step 4.
+10. **Watch a game straight from a result** (Haiku 5.5, after D1). A "watch" button next to each game in "games worth a look" and the pod report that opens the viewer already playing (`?play=1`).

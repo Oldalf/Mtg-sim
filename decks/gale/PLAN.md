@@ -2,7 +2,7 @@
 
 Dimir spellslinger mill combo (Gale, Waterdeep Prodigy + Scion of Halaster). Wins in one big turn by milling all three opponents. Run it with `npm run sim -- gale` (see the root README). How the deck plays, win lines and tutor targets for the table: `PRIMER.txt`. What the simulator models and its settings: `README.md`. This file keeps the AI's rules, why the list looks as it does, and what is still open (it used to be the root `PLAN.md`).
 
-**Lists:** `decklist.txt` is the list as first given. **`lists/proposed.txt` is the adopted list** (Pontus, 2026-11-04). The other files in `lists/` are test lists from the rounds below (`cuts/` and `old/` too); `logs/` holds Pontus's real games.
+**Lists:** `decklist.txt` is the list as first given. **`lists/proposed.txt` is the adopted list** (Pontus, 2026-11-04). The other test lists from the rounds below were removed on 2026-11-14 (they are in git history); `logs/` holds Pontus's real games.
 
 ## Simulation rules
 
@@ -27,7 +27,7 @@ Dimir spellslinger mill combo (Gale, Waterdeep Prodigy + Scion of Halaster). Win
 
 **The adopted list** (`lists/proposed.txt`), 4,000 games: kill by turn 6 / 7 / 8 **19.9 / 51.4 / 75.3%**, with counter backup by turn 8 **57.4%**, average kill turn 7.0. The original `decklist.txt` was 10.2 / 31.9 / 55.7% (3,000 games, counter backup by turn 8: 36.0%).
 
-**Changes vs `decklist.txt`:** + Prologue to Phyresis, Expansion Algorithm, Turnabout, Muddle the Mixture, Spell Pierce, Pieces of the Puzzle, Energy Tap, Drain Power, 3 Island; − Jidoor, Cut Your Losses, Traumatize, Secrets of the Dead, Academy Wall, Emet-Selch, Archmage Emeritus, Archmage's Charm, Case of the Ransacked Lab, Baleful Strix, Reliquary Tower. 37 lands + Waterlogged Teachings. The step before the rituals is in `lists/old/proposed_before_rituals.txt`.
+**Changes vs `decklist.txt`:** + Prologue to Phyresis, Expansion Algorithm, Turnabout, Muddle the Mixture, Spell Pierce, Pieces of the Puzzle, Energy Tap, Drain Power, 3 Island; − Jidoor, Cut Your Losses, Traumatize, Secrets of the Dead, Academy Wall, Emet-Selch, Archmage Emeritus, Archmage's Charm, Case of the Ransacked Lab, Baleful Strix, Reliquary Tower. 37 lands + Waterlogged Teachings. The step before the rituals is in git history (before 2026-11-14).
 
 **What the tests showed** (3,000 games per list, noise about ±2.6 points; goldfish only):
 - **The 4 engines are dead weight.** Cutting Secrets of the Dead, Academy Wall, Emet-Selch and Archmage Emeritus together for Islands: +6 points by turn 7 / 8. None of them beats an Island alone (Wizards of Thay too, but its flash value isn't modelled).
@@ -55,4 +55,4 @@ More logs help most when they show a line the simulator hasn't seen, or a stalle
 - Pontus's goldfish feedback on the adopted list; whether to add a protection card, and for what.
 - Ideas, none started: play at instant speed on opponents' turns (Wizards of Thay, end-of-turn draw and tutors);  Thunderclap Drake's copy ability; Mana Sculpt's mana; kill-finder mana leftovers (outside mana isn't used up by other spells, a dual paying for High Tide still counts for Muck, the AI doesn't save a rock to pay for High Tide).
 - Speed: the planner is about 40% of the run time. Running it only when the top plays are close in score would be the next saving. 4,000 games take about 1 minute.
-- Housekeeping: `lists/` holds about 35 test lists from the rounds above; the cut-test files are in `cuts/`. `README.md` still says `decklist.txt` is the current list.
+- Housekeeping (2026-11-14): `lists/` holds only `proposed.txt`; the test lists and the cut tests were removed (in git history before that date).
