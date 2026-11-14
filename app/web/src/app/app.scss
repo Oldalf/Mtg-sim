@@ -37,6 +37,27 @@ nav a.is-active {
   background-color: var(--mat-sys-secondary-container);
 }
 
+// a phone: the four places fit without scrolling (Decks leads home, so the name can go)
+@media (max-width: 480px) {
+  mat-toolbar {
+    gap: 4px;
+    padding: 0 4px;
+  }
+
+  .app-name {
+    display: none;
+  }
+
+  nav {
+    gap: 0;
+  }
+
+  nav a {
+    min-width: 0;
+    padding: 0 8px;
+  }
+}
+
 main {
   flex: 1;
   box-sizing: border-box;

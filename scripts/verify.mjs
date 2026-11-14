@@ -13,8 +13,9 @@
  * The regress checks and the pod run are the slow ones, so they run only where the change can alter results: it
  * looks at the files changed since the branch left main (committed, uncommitted and new). A change to the shared
  * simulator (engine/, cli/, sim.ts, the card data, ...) checks every deck; a change inside decks/<name>/ checks that
- * deck (and the pod run if it plays in it); a change elsewhere (the app, the docs) checks none. Each check prints
- * how long it took.
+ * deck (and the pod run if it plays in it); a change elsewhere (the app, the docs) checks none. The page's own build
+ * and tests (`ng build`, `ng test` in app/web/) run when the page, app/api-types.ts or shared/ changed. Each check
+ * prints how long it took.
  */
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -158,18 +159,45 @@ function checkPodRun() {
   }
 }
 
-const { decksToRegress, needsPodRun } = chooseSlowChecks(
-  filesChangedSinceMain(),
-);
+/** Files the app's page builds from: the page itself and the shapes and code it shares with the Node side. */
+const PAGE_PATHS = ['app/web/', 'app/api-types.ts', 'shared/'];
+
+/** The page's build and tests (Angular, a few seconds) when the change can touch the page. */
+function needsPageChecks(changedFiles) {
+  if (isFullRun || changedFiles === null) return true;
+  return changedFiles.some((file) =>
+    PAGE_PATHS.some((pagePath) => file.startsWith(pagePath)),
+  );
+}
+
+function checkPage() {
+  const pageBuild = run('npm', ['--prefix', 'app/web', 'run', '-s', 'build']);
+  report('page: ng build', pageBuild.exitCode === 0, pageBuild);
+  const pageTests = run('npm', [
+    '--prefix',
+    'app/web',
+    'run',
+    '-s',
+    'test',
+    '--',
+    '--watch=false',
+  ]);
+  report('page: ng test', pageTests.exitCode === 0, pageTests);
+}
+
+const changedFiles = filesChangedSinceMain();
+const { decksToRegress, needsPodRun } = chooseSlowChecks(changedFiles);
+const runsPageChecks = needsPageChecks(changedFiles);
 const skippedDecks = DECKS_WITH_BASELINE.filter(
   (deck) => !decksToRegress.includes(deck),
 );
-if (skippedDecks.length || !needsPodRun)
+if (skippedDecks.length || !needsPodRun || !runsPageChecks)
   console.log(
     `Skipped, as the change cannot alter their results (--full runs them): ` +
       [
         ...skippedDecks.map((deck) => `${deck} --regress`),
         ...(needsPodRun ? [] : ['the pod run']),
+        ...(runsPageChecks ? [] : ['the page build and tests']),
       ].join(', ') +
       '\n',
   );
@@ -221,6 +249,8 @@ if (build.exitCode === 0) {
 
   if (needsPodRun) checkPodRun();
 }
+
+if (runsPageChecks) checkPage();
 
 const totalSeconds = Math.round((Date.now() - verifyStartTime) / 1000);
 console.log(

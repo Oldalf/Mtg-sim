@@ -14,6 +14,20 @@ The page of the app (roadmap step 4): an Angular 22 project with Angular Materia
 - `npx ng build`: must pass before a task is done. `npx ng test --watch=false`: the page's tests (Vitest).
 - `npm run format` in the project folder formats this folder too (Prettier, same settings).
 
+## Tests
+
+- `src/testing/`: `FakeApi` (stands in for `ApiService`: two made-up decks, keeps each run request as JSON would carry it) and the form actions (`typeInto`, `chooseOption`, `submitForm`). The form tests (`simulate.spec.ts`, `pod.spec.ts`) use them through the DOM, as a user would.
+- Logic the pages need is kept in plain functions next to the page (`report-tables.ts`, `pod-tables.ts`, `game-steps.ts`), each with a spec.
+
+## Learned while building it (step 4)
+
+- `ng` needs Node 26 on the PATH; an older default Node fails. With fnm: `%APPDATA%\fnm\node-versions\v26.13.1\installation`.
+- Signal Forms: put `[formRoot]="theForm"` on the `<form>` and give the action as `form(model, rules, { submission: { action } })`. `formRoot` adds `novalidate`; without it the browser's own number check silently blocks the submit. Number fields of settings get `step="any"` (0.25 is a valid setting).
+- Signal Forms marks the items of an array in the model with a symbol key. JSON leaves it out, so the server never sees it, but a test comparing objects directly does.
+- At the theme's density (-2) a `fill` form field hides its label: use `appearance="outline"` per field (setting it app-wide pulls the form field into the first bundle). A native `<select matNativeControl>` needs `floatLabel="always"`.
+- The first bundle is a little over 500 kB (Angular code the lazy pages share); the warning budget in `angular.json` is 600 kB.
+- Phone width: no page may scroll sideways; a wide table scrolls inside its own box. Below 480 px the toolbar drops the app name so the four places fit.
+
 ## Angular skills
 
 The official Angular agent skills are in `.claude/skills/` (`angular-developer`, `angular-new-app`; reinstall or update with `npx skills update` here). Follow `angular-developer` for anything Angular: it points to a reference file per topic (signals, httpResource, Signal Forms, routing, testing). Angular's CLI MCP server is set up in `.mcp.json`.

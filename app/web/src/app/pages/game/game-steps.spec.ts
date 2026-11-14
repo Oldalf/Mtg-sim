@@ -152,6 +152,28 @@ describe('game steps', () => {
     ]);
   });
 
+  it('leaves out the cards of a line that end where they started (a mulligan)', () => {
+    const backToLibrary = (card: string): CardMove => ({
+      player: 0,
+      card,
+      action: 'moved hand => library',
+    });
+    const mulligan: GameEvent = {
+      ...makeEvent(0, 0, 'note', 'opening hand', [
+        fromLibrary(0, 'Opt'),
+        fromLibrary(0, 'Swamp'),
+        backToLibrary('Opt'),
+        backToLibrary('Swamp'),
+        fromLibrary(0, 'Swamp'),
+        fromLibrary(0, 'Island'),
+      ]),
+      cards: [], // as the engine logs an opening hand: no card named
+    };
+    expect(cardsOfEvent(mulligan)).toEqual(['Swamp', 'Island']);
+    // the land of POD_GAME's line 6 is drawn, played and tapped: shown once
+    expect(cardsOfEvent(POD_GAME.events[6])).toEqual(['Island']);
+  });
+
   it('builds the board after a line, lands apart and alike ones stacked', () => {
     const [galeBoard, merenBoard] = boardAt(POD_GAME, 6);
     expect(merenBoard.hand).toEqual([]);
