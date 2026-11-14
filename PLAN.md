@@ -86,7 +86,7 @@ Each task stands on its own once the tasks it depends on are done. "Who" says wh
 | 11 | Page: pod | 4, 6 (after 9: same pattern) | small model | done (2026-11-14) |
 | 12 | Page: the games of a run | 5, 6 | small model | done (2026-11-14) |
 | 13 | Page: the game viewer | 5, 6, 7 | big model | done (2026-11-14) |
-| 14 | Finish | all | small model | open |
+| 14 | Finish | all | small model | done (2026-11-14) |
 
 After task 0, tasks 1, 2, 3, 5, 6 and 7 can all go side by side.
 
@@ -225,6 +225,7 @@ The main new thing of this step.
 - README: `npm run app` and `npm run app:dev`, the second `npm install` in `app/web/`, the folders, where the images are kept. ENGINE.md: what the server calls. ROADMAP: step 4 done.
 - A `--test` for the app (`npm run app -- --test`): the API tests of tasks 2 to 5 and 7 in one go, with the server on a free port and nothing left in `session-logs/` afterwards. The page's own tests are Angular's (`ng test` in `app/web/`): at least the board of the game viewer and the two forms.
 - A look at the whole thing on a phone-width window and with the network off (images that were never fetched fall back to text).
+- Notes (task 14, 2026-11-14): the API tests were already in `npm run app -- --test` (tasks 2 to 5 and 7, free port, `session-logs/` untouched). New: `simulate.spec.ts` and `pod.spec.ts` (the two forms, through the DOM, with `src/testing/`); `npm run verify` now also runs `ng build` and `ng test` when the page, `app/api-types.ts` or `shared/` changed. Phone width (390 px): no page scrolls sideways; the toolbar hid "Games" behind a scroller, fixed (no app name below 480 px). Found in the viewer: a mulligan's opening-hand line showed the hand put back as its cards; `cardsOfEvent` now leaves out cards whose moves cancel out. Network off was not tried for real (the browser could not be cut off); a card whose fetch fails takes the same 404 path as a token, which the card tests cover, and the fonts ship with the page. Docs: README (tests, `shared/`, images, the app's `session-logs/` rule), ENGINE.md (what the server calls), ROADMAP (step 4 done), `app/web/CLAUDE.md` (the lessons of this plan for the page), `app/web/README.md` (was Angular's boilerplate).
 
 ## How to work on a task
 

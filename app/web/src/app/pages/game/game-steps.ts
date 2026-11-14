@@ -129,11 +129,45 @@ export function previousTurn(turns: LogTurn[], eventIndex: number): number {
 
 // ================================================================ what is shown
 
-/** The cards of an event: those named in its line, then those it moved, each once. */
+const MOVE_BETWEEN_ZONES = /^moved (\w+) => (\w+)$/;
+
+/**
+ * The cards of an event: those named in its line, then those it moved, each once. A card that ends the line where
+ * it started (the hand put back for a mulligan) is left out, unless the line names it.
+ */
 export function cardsOfEvent(event: GameEvent): string[] {
-  return [
-    ...new Set([...event.cards, ...event.moves.map((move) => move.card)]),
-  ];
+  return [...new Set([...event.cards, ...cardsMovedForGood(event)])];
+}
+
+/** The cards an event moved, without those whose moves cancel out (as many arrivals as departures in every zone). */
+function cardsMovedForGood(event: GameEvent): string[] {
+  const countChanges = new Map<string, Map<string, number>>();
+  const changeCount = (card: string, zone: string, change: number) => {
+    const countsOfCard = countChanges.get(card) ?? new Map<string, number>();
+    countsOfCard.set(zone, (countsOfCard.get(zone) ?? 0) + change);
+    countChanges.set(card, countsOfCard);
+  };
+  const otherChanges: string[] = [];
+  for (const move of event.moves) {
+    const zones = MOVE_BETWEEN_ZONES.exec(move.action);
+    if (!zones) {
+      // tapped, counters...: the card changed, so it is shown
+      otherChanges.push(move.card);
+      continue;
+    }
+    const [, fromZone, toZone] = zones;
+    changeCount(move.card, fromZone, -1);
+    changeCount(move.card, toZone, +1);
+  }
+  return event.moves
+    .map((move) => move.card)
+    .filter(
+      (card) =>
+        otherChanges.includes(card) ||
+        [...(countChanges.get(card)?.values() ?? [])].some(
+          (change) => change !== 0,
+        ),
+    );
 }
 
 /** The players top to bottom: the one whose turn it is first, then the others in the order they play after it. */

@@ -23,12 +23,10 @@ Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (ne
 - Every zone change in the engine and the decks goes through the engine's functions (`takeCard`, `putCard`, `moveCard`...), which record it; `--test` fails on one that does not. Results did not change: `--regress check` IDENTICAL for all decks.
 - For step 4: the board at any point is rebuilt from the moves (`boardAt`), and a game can be played again from its run (`replayGame`).
 
-## 4. App with a simple UI
+## 4. App with a simple UI (first step done 2026-11-14)
 
-- A local web page (decided 2026-11-12): a small Node program serves the page and runs the sim code directly. Started with one command, opened on localhost in the browser. Local only, never published. The Node side reads and writes the files (decks, lists, logs).
-- Browse the decks and decklists.
-- Simulation mode: pick a deck and which lists to simulate.
-- Pod mode: pick 3 to 6 decks, a list for each, and the number of games.
-- Open a tagged game from a run, read its log and step through it as it plays out (needs step 3).
-- Comes after steps 2 and 3.
-- Pick the print of a card in a decklist (for its image): the image call and the card component already take a Scryfall id (`?print=`); still to do are the list of prints of a card (from Scryfall's search, not in the bulk data) and a place for the choice in the decklist file.
+- `npm run app` starts a local server (Node's own `http`, 127.0.0.1:4173, inside the simulator's bundle so the worker threads work as before) and opens an Angular page (Angular Material, dark). The plan and its notes per task are in git (`PLAN.md` at the commit that finished step 4); `README.md` has the commands and folders, `ENGINE.md` what the server calls, `app/web/CLAUDE.md` the page's rules.
+- Pages: Decks (decklists by section, card images), Simulate (one deck, one or more lists, settings, `--diag`, progress and stop, kill-turn tables and chart, games worth a look), Pod (3 to 6 seats, threat, policy, settings, the pod report), Games (the runs of the session, filters, each deck's real Archidekt logs) and the game viewer (log by turn, the board after any line, stepping by line, turn and highlight).
+- Card images come from Scryfall by `scryfall_id` and are kept in `data/scryfall/images/`; without them a card shows as text.
+- Tests: `npm run app -- --test` (the API) and `ng test` in `app/web/` (the board of the viewer, the report tables, the two forms); `npm run verify` runs both.
+- Left for later: pick the print of a card in a decklist (for its image): the image call and the card component already take a Scryfall id (`?print=`); still to do are the list of prints of a card (from Scryfall's search, not in the bulk data) and a place for the choice in the decklist file. Not in the app yet (still on the command line): `--rank`, `--cut`, `--hands`, `--analyze`, `--regress`, the card data commands, editing lists.
