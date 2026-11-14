@@ -88,7 +88,9 @@ const GAMES_PER_PAGE = 50;
       <ng-container matColumnDef="seed">
         <th mat-header-cell *matHeaderCellDef>Seed</th>
         <td mat-cell *matCellDef="let row">
-          <a [routerLink]="['/games', run(), row.seed]">{{ row.seed }}</a>
+          <a class="row-link" [routerLink]="['/games', run(), row.seed]">{{
+            row.seed
+          }}</a>
         </td>
       </ng-container>
       <ng-container matColumnDef="result">
@@ -130,6 +132,16 @@ const GAMES_PER_PAGE = 50;
     }
     table {
       width: 100%;
+    }
+    tr[mat-row] {
+      position: relative;
+      cursor: pointer;
+    }
+    /* The seed's link covers the whole row, so a click anywhere opens the game. */
+    .row-link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
     }
     .tags {
       display: flex;
