@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, input, signal } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import type { KillKind } from '../../../../../../engine/run-types';
+import type { KillKind } from '../../../../../../shared/run-types';
 import type { GoldfishRunRequest, RunState } from '../../../../../api-types';
 import { LineChart } from '../../shared/line-chart/line-chart';
 import { ResultsTable } from '../../shared/results-table/results-table';

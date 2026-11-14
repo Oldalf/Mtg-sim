@@ -1,0 +1,90 @@
+h1 {
+  margin: 4px 0 8px;
+}
+
+// the log keeps its place beside the board while the page scrolls
+.viewer {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.log-column {
+  position: sticky;
+  top: 72px;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+}
+
+.steps {
+  position: sticky;
+  top: 56px;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  background: var(--mat-sys-surface);
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: var(--mat-sys-outline-variant);
+}
+
+.position {
+  margin-left: auto;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.chosen-line {
+  margin: 8px 0 12px;
+}
+
+.chosen-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  font: var(--mat-sys-title-small);
+}
+
+.note {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.chosen-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 24px;
+  app-card-image {
+    width: 150px;
+  }
+}
+
+.boards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 800px) {
+  .viewer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .log-column {
+    position: static;
+    max-height: 40vh;
+  }
+  .chosen-cards app-card-image {
+    width: 120px;
+  }
+}

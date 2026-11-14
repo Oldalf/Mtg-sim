@@ -1,4 +1,4 @@
-import type { Table } from '../../../../../../engine/run-types';
+import type { Table } from '../../../../../../shared/run-types';
 import type { KillTurnReport } from '../../../../../api-types';
 import {
   comparisonTable,

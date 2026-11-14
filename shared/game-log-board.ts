@@ -5,7 +5,7 @@
  *   boardAt(gameLog, eventIndex)   every player's board after that event
  *   TableBoards                    the same, stepping through the events one by one
  */
-import { CardMove, GameEvent, GameLog } from './game-log';
+import type { CardMove, GameEvent, GameLog } from './game-log-types';
 
 export interface BoardPermanent {
   name: string;

@@ -1,8 +1,14 @@
 /**
  * The card calls (PLAN.md task 7): one card's image, served from data/scryfall/images/ and fetched from Scryfall
- * the first time, and the update of all the images the decklists need (the app's refresh button).
+ * the first time, the update of all the images the decklists need (the app's refresh button), and the facts of the
+ * cards of a game (task 13: a game log has card names only).
  */
-import type { ImageUpdateState } from '../api-types';
+import type {
+  CardFactsAnswer,
+  CardFactsRequest,
+  ImageUpdateState,
+} from '../api-types';
+import * as C from '../../engine/cards';
 import {
   downloadImage,
   hasImage,
@@ -55,6 +61,35 @@ async function fetchImageOnce(
     failedAt.set(scryfallId, Date.now());
     throw new RequestError(404, `no image for ${cardName} (fetch failed)`);
   }
+}
+
+// ------------------------------------------------------------------ card facts
+/** More names than any game has; a bigger request is a mistake. */
+const MAX_NAMES_PER_REQUEST = 2000;
+
+/** POST /api/cards/facts: the type line and mana cost of each named card that has card data. */
+export function answerCardFacts(body: unknown): CardFactsAnswer {
+  const names = (body as Partial<CardFactsRequest> | null)?.names;
+  if (
+    !Array.isArray(names) ||
+    names.length > MAX_NAMES_PER_REQUEST ||
+    !names.every((name) => typeof name === 'string')
+  )
+    throw new RequestError(
+      400,
+      `the body must be { names: [...] } with at most ${MAX_NAMES_PER_REQUEST} card names`,
+    );
+  const cardData = C.cardDatabase();
+  const facts: CardFactsAnswer = {};
+  for (const name of names) {
+    const data = cardData[name];
+    if (data)
+      facts[name] = {
+        typeLine: data.type_line ?? '',
+        manaCost: data.mana_cost ?? '',
+      };
+  }
+  return facts;
 }
 
 // ------------------------------------------------------------------ the update of all images

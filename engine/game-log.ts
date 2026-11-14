@@ -12,7 +12,7 @@ import type {
   GameEvent,
   GameLog,
   LogPlayer,
-} from './game-log-types';
+} from '../shared/game-log-types';
 
 export type { CardMove, EventKind, GameEvent, GameLog, LogPlayer };
 

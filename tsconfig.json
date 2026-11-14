@@ -16,6 +16,7 @@
     "cli/**/*.ts",
     "engine/**/*.ts",
     "decks/**/*.ts",
+    "shared/**/*.ts",
     "app/api-types.ts",
     "app/server/**/*.ts"
   ]

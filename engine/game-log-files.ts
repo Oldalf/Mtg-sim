@@ -17,7 +17,7 @@ import * as path from 'path';
 import * as zlib from 'zlib';
 import * as C from './cards';
 import { GameLog } from './game-log';
-import type { GameIndexRow, RunInfo } from './run-types';
+import type { GameIndexRow, RunInfo } from '../shared/run-types';
 
 export type { GameIndexRow, RunInfo };
 

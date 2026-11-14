@@ -2,7 +2,7 @@
  * The reports of a goldfish run as the columns and rows of a results table: what the command line prints
  * (engine/report.ts: printSingle, printCompare, printDiag), as data for the page.
  */
-import type { KillKind, Table } from '../../../../../../engine/run-types';
+import type { KillKind, Table } from '../../../../../../shared/run-types';
 import type { DiagReport, KillTurnReport } from '../../../../../api-types';
 import type { ChartLine } from '../../shared/line-chart/line-chart';
 import type {

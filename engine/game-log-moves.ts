@@ -182,7 +182,7 @@ export class MoveRecorder {
   /**
    * The game took a permanent off the battlefield. If the log has it as tapped it is untapped first: a log tells
    * permanents apart by name only, so whoever replays it takes an untapped one off the battlefield (see applyMove
-   * in game-log-board.ts), and the number of tapped ones stays right.
+   * in shared/game-log-board.ts), and the number of tapped ones stays right.
    */
   notePermanentLeft(permanent: Permanent): void {
     const card = permanent.card.name;

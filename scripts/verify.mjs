@@ -41,6 +41,7 @@ const POD_ARGUMENTS = ['pod', ...POD_DECKS, '-n', '200', '--no-log'];
 /** Files and folders outside the deck folders that can change the results of every deck. */
 const SHARED_SIMULATOR_PATHS = [
   'engine/',
+  'shared/',
   'cli/',
   'sim.ts',
   'data/',

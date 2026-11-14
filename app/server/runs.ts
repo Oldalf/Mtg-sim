@@ -14,7 +14,7 @@ import {
 } from '../../engine/logged-runs';
 import * as Pod from '../../engine/pod';
 import { buildPodReport } from '../../engine/pod-report';
-import { PodSpec } from '../../engine/pod-types';
+import { PodSpec } from '../../shared/pod-types';
 import {
   POWER_SAVE_BUSY_PERCENT,
   powerSaveWorkers,

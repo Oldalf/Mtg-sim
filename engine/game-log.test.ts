@@ -7,7 +7,7 @@
 import * as C from './cards';
 import { Game } from './game';
 import { goldfishGameLog } from './game-log';
-import { PlayerBoard, TableBoards } from './game-log-board';
+import { PlayerBoard, TableBoards } from '../shared/game-log-board';
 import { playPod, playRounds, podSpec, seatPlayers } from './pod';
 import { Rng } from './rng';
 import { Deck, resolveList } from './runner';

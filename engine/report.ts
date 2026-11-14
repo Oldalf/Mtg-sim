@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as C from './cards';
 import { Config } from './game-types';
 import { Deck, DiagRow, KillTurns } from './runner';
-import type { KillKind, Table } from './run-types';
+import type { KillKind, Table } from '../shared/run-types';
 import type { DiagReport, KillTurnReport } from '../app/api-types';
 
 export type { Table };

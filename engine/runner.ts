@@ -9,7 +9,7 @@ import * as C from './cards';
 import { Config } from './game-types';
 import { Game } from './game';
 import { goldfishGameLog } from './game-log';
-import type { KillTurns } from './run-types';
+import type { KillTurns } from '../shared/run-types';
 import { GameIndexRow, gamesFileName, writeGamesFile } from './game-log-files';
 import { describeKillTurns } from './game-log-run';
 import { formatGameLog } from './game-log-text';

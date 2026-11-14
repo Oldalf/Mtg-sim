@@ -4,8 +4,8 @@
  *
  * A task that needs a shape that is not here adds it here first, in its own small change.
  */
-import type { GameLog } from '../engine/game-log-types';
-import type { GameIndexRow, RunInfo, Table } from '../engine/run-types';
+import type { GameLog } from '../shared/game-log-types';
+import type { GameIndexRow, RunInfo, Table } from '../shared/run-types';
 
 export type { GameIndexRow, GameLog, RunInfo, Table };
 
@@ -270,6 +270,20 @@ export type GameAnswer = GameLog;
 
 /** GET /api/decks/<deck>/logs: the file names in the deck's logs/ folder. */
 export type RealLogsAnswer = string[];
+
+/** What the card data says about a card: enough to sort a board (lands apart) and to show a card without its image. */
+export interface CardFacts {
+  typeLine: string;
+  manaCost: string;
+}
+
+/** POST /api/cards/facts: the cards to describe (the game viewer asks for every card of a game at once). */
+export interface CardFactsRequest {
+  names: string[];
+}
+
+/** POST /api/cards/facts: the facts of each name that has card data; tokens and unknown names are left out. */
+export type CardFactsAnswer = Record<string, CardFacts>;
 
 /** GET /api/cards/images/update (the state) and POST /api/cards/images/update (starts it, answers the state). */
 export interface ImageUpdateState {
