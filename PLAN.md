@@ -34,7 +34,7 @@ The tasks run one at a time, in this order. Each row is one session and one comm
 | 5 | C1 (done) | Write the add-a-deck skill | Opus 5.5 |
 | 6 | C2 (done) | Try the skill on a real deck | Sonnet 5.5 |
 | 7 | D1 (done) | Autoplay | Sonnet 5.5 |
-| 8 | D2 | Remember speed and position | Haiku 5.5 |
+| 8 | D2 (done) | Remember speed and position | Haiku 5.5 |
 | 9 | E1 | Table view: design as a prototype, Pontus picks | Opus 5.5, then Pontus |
 | 10 | E2 | Table view: the logic as plain functions | Sonnet 5.5 |
 | 11 | E3 | Table view: build it | Sonnet 5.5 (Opus 5.5 if the design is far from today's components) |
@@ -204,6 +204,18 @@ Use the `prototype` skill: a throwaway page with made-up boards, for 1, 3, 4, 5 
 - **Phone:** seats in one column, the active one first and open, the others folded to their header line.
 
 Done when Pontus has picked a variant and the choices are written here under this task.
+
+Done 2026-11-14: Pontus picked the **grid** ("seems like it will scale the best"), and it replaces the stacked view (no option to keep the old one). Three layouts were prototyped on the real game page (grid, spotlight with the active seat large, stage with what happened in the middle of the table); the prototype was not committed. The grid as chosen:
+
+- Seats keep their place all game, clockwise: the first half left to right along the top, the rest right to left along the bottom (3 = 2 + 1, 5 = 3 + 2). One player fills the table. The window holds the whole table; the page does not scroll.
+- A seat: turn marker, name, commanders, life big with a +/- chip for the line's change; the permanents as cards sized to fit the seat (more permanents, more rows, smaller cards), the lands fanned with overlap in a thin row with "N lands, M untapped"; library as a count, hand and graveyard (and exile, command zone when not empty) as counts that open their cards in a popover. The active seat has the accent border and glow; a player at 0 life or less is greyed.
+- The cards a line moved glow for a moment. A goldfish game shows the opponents' life in the caption.
+- The caption bar under the table: the turn title, the line (with the player's name when the log names it), its cards; a highlight is tinted.
+- The controls at the bottom like a video player: play / pause, speed, turn and line steps, a scrub bar (a tick per turn, a taller tick per round, a dot per highlight), the position, highlight steps, the log button.
+- The log is a drawer over the right of the table, closed by default, `l` opens it; the card moves toggle lives in it.
+- Phone (under 700 px): one column, the caption on top, the active seat first and open, the others folded to their header (a tap opens one), the controls fixed at the bottom.
+
+Checked in the browser with real games: goldfish (samfrodo), pods of 3, 4 and 6, a real Archidekt log (aesi), phone width (390 px, no sideways scroll). Learned for E2/E3: a seat must size its cards from how many permanents it has (rows and cards per row), else a big board scrolls inside its seat; lands fanned with overlap fit ten in the room of four cards; the arrow keys are taken by stepping, so the log drawer got `l`.
 
 ### E2. The logic as plain functions (Sonnet 5.5, after E1)
 
