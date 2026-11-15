@@ -14,6 +14,31 @@ The shared engine and how the project is run. Each deck keeps its own plan (`dec
   - Card data comes from Scryfall's bulk files (`engine/cards/scryfall.ts`, `npm run cards -- update`, run by hand when new sets are out). Cards a list needs are copied into `data/cards.json` automatically before a run.
   - Tokens: the deck owns a token's stats (`makeToken`, `makeArtifactToken` for Treasure, Food, Clue and Servo), Scryfall only gives it art (`data/token-art.json`, `pickTokenArt`). The log writes a creature token's face (`CardMove.token`) next to its name, so tokens with the same name and other stats stay apart; a marker token is logged as what it stands for (`makeToken(..., { loggedAs })`, Aesi's armies as x999).
 
+## Rules followed
+
+The reference is the Comprehensive Rules (Wizards' rules text; numbers as in the 2026-06-19 edition, and rule numbers shift between editions). The engine follows the rules where they change results, and says here where it does not.
+
+**The turn and its steps.** `GameCore.step` is `upkeep | draw | main1 | combat | main2 | end`; `enterStep(step)` moves to the next one, empties the pool and, with the log on, notes mana that was lost. A deck reads `step`, or fills in `onEnterStep(step)` (Codie's Mana Drain adds its mana at the start of `main1`). Mana made in a step must be spent in that step.
+
+Followed:
+- 106.4: the mana pool empties at the end of each step and phase (`enterStep`). There is no mana burn.
+- 500–514: the turn's steps, in order (see the exception for combat below).
+- 514.1: discard down to seven cards at cleanup (`endTurn`).
+- 514.2: "until end of turn" effects end at cleanup (High Tide, Bubbling Muck and Energybending are per-turn flags, reset in `startTurn`).
+- 302.6: a creature with summoning sickness can't tap for mana.
+- 601.2g–h and 605: mana abilities are activated while paying a cost, and don't use the stack (`pay` taps sources into the pool, then pays from the pool).
+- 602.2: a Signet's {1} is a cost of activating it (it is only tapped when a mana is in the pool to feed it).
+- 117: priority, only as far as the pod's answer window goes.
+
+Knowingly not followed:
+- Goldfish opponents never act, and in a pod they act only in answer windows. There is no full stack and no priority.
+- Combat's steps (506–511) are one step, `combat`.
+- No instant-speed plays on other players' turns except the pod's answers (see ideas below).
+- A goldfish opponent's library is a number, not cards.
+- Filter lands, Hideaway and Bojuka Bog's exile are not modelled.
+- Loops are cut short after their first rounds, as rule 732 (Taking Shortcuts) lets a player do.
+- Untap has no step value: nothing happens in it.
+
 ## Folders
 
 | Folder | Files | What it is |

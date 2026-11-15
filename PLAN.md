@@ -266,6 +266,8 @@ Rules for every B task:
 8. Add a "Rules followed" list to `ENGINE.md`, using the rule numbers in B1 point 7. Look up the current number of the "Taking Shortcuts" rule rather than guessing it.
 9. Run `npm run format`, then `npm run verify` (ask eco or full power first). Re-record the baselines once Pontus has seen the numbers.
 
+**Done (2026-11-15), baselines re-recorded after Pontus saw the numbers; `npm run verify` is VERIFY OK.** `GameCore.step`, `enterStep` (empties the pool, notes lost mana) and an `onEnterStep` hook, called in `takeTurn` and both turns of `rolloutValue`. Codie's flat Mana Drain moved into `onEnterStep('main1')`. No other mana is added outside main phases; the pod runs no steps on its own, so another player's turn never empties a pool mid-payment. `ENGINE.md` has "Rules followed" (Taking Shortcuts is 732 in the 2026-06-19 rules). Tests added in Codie's. Win by T8 (any), 3,000 games, before -> after: Gale 57.7 -> 57.6, Meren 18.1 -> 18.1, Sam & Frodo 15.4 -> 14.4, Aesi 43.4 -> 43.2, Mike 32.0 -> 32.0, Codie 21.5 -> 18.7, Edgar 12.2 -> 12.1. Run times unchanged. Change comes from mana left over in the pool (a Sol Ring tapped for {1}) that used to float into the second main phase.
+
 ### B3. Kill lines played for real (Opus 5.5)
 
 Build B1 point 6 for the engine and Gale:

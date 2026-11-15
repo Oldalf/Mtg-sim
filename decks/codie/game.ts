@@ -52,6 +52,7 @@ import {
   Permanent,
 } from '../../engine/game/game-types';
 import { Game } from '../../engine/game/game';
+import { TurnStep } from '../../engine/game/game-core';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -91,14 +92,16 @@ export class CodieGame extends Game<CodieGame> {
         fetchCardFromLibrary(this, chooseTutorTarget(this), false);
       }
     }
-    if (this.config.mana_drain_flat && this.turn >= 2) {
-      const card = this.cardInHand('Mana Drain');
-      if (card) {
-        this.takeCardIfThere(card, 'hand');
-        this.putCard(card, 'graveyard');
-        this.pool.C += 2 + Math.floor(this.rng.random() * 4);
-      }
-    }
+  }
+  /** Mana Drain (flat option) adds its mana at the start of the first main phase, where the real card does. */
+  override onEnterStep(step: TurnStep): void {
+    if (step !== 'main1' || !this.config.mana_drain_flat || this.turn < 2)
+      return;
+    const card = this.cardInHand('Mana Drain');
+    if (!card) return;
+    this.takeCardIfThere(card, 'hand');
+    this.putCard(card, 'graveyard');
+    this.pool.C += 2 + Math.floor(this.rng.random() * 4);
   }
   override startTurn(): void {
     super.startTurn();

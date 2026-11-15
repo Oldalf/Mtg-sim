@@ -447,6 +447,25 @@ export function runCodieTests(): boolean {
     [afterOne, game.hand.length],
     [0, 1],
   );
+  game = board(five, [], [], repeatName('Island', 40));
+  game.pool.B += 3;
+  game.enterStep('main2');
+  check(
+    'Entering a step empties the pool (rule 106.4) and sets the step',
+    [game.pool.B, game.step],
+    [0, 'main2'],
+  );
+  game = board(five, ['Mana Drain'], [], repeatName('Island', 40));
+  game.config = { ...game.config, mana_drain_flat: true };
+  game.turn = 2;
+  game.enterStep('upkeep');
+  const poolInUpkeep = game.pool.C;
+  game.enterStep('main1');
+  check(
+    'Mana Drain (flat) adds 2 to 5 colourless at the start of main 1, not in upkeep',
+    [poolInUpkeep, game.pool.C >= 2 && game.pool.C <= 5],
+    [0, true],
+  );
   game = board(
     five,
     ['Flashback'],

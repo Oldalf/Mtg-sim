@@ -61,6 +61,8 @@ const BASIC_OF: Record<string, string> = {
   G: 'Forest',
 };
 type Snap = [ManaPool, boolean[]];
+/** The steps of a turn the engine tells apart (untap has no step: nothing happens in it; cleanup is part of endTurn). */
+export type TurnStep = 'upkeep' | 'draw' | 'main1' | 'combat' | 'main2' | 'end';
 /** What the game log calls each zone (Archidekt's names). */
 const LOG_ZONE: Record<CardListZone, CardZone> = {
   library: 'library',
@@ -146,6 +148,8 @@ export abstract class GameCore<S = unknown> {
   /** The deck's colours: what an "either colour" source (Command Tower, a dual land) makes. */
   colors: string[] = ['U', 'B'];
   turn = 0;
+  /** Which step of our turn we are in (see enterStep). Before the first turn it is the first thing a turn does. */
+  step: TurnStep = 'upkeep';
   life: number[];
   opponentLibrarySizes: number[];
   opponentGraveyardSizes: number[];
@@ -1837,23 +1841,35 @@ export abstract class GameCore<S = unknown> {
     };
     let won = this.develop(main2);
     if (!won && !main2) {
+      this.enterStep('combat');
       this.combat();
-      if (!this.areOpponentsBeaten()) this.develop(true);
+      if (!this.areOpponentsBeaten()) {
+        this.enterStep('main2');
+        this.develop(true);
+      }
     }
     let killResult = killScore();
     if (killResult !== null) return killResult;
+    this.enterStep('end');
     this.endTurn();
     const valueAtTurnEnd = this.positionValue();
     if (this.turn >= (this.config.max_turn as number) + 1)
       return valueAtTurnEnd;
     this.startTurn();
+    this.enterStep('upkeep');
     this.upkeep();
+    this.enterStep('draw');
     this.draw(1);
+    this.enterStep('main1');
     this.playLand();
     won = this.develop();
     if (!won) {
+      this.enterStep('combat');
       this.combat();
-      if (!this.areOpponentsBeaten()) this.develop(true);
+      if (!this.areOpponentsBeaten()) {
+        this.enterStep('main2');
+        this.develop(true);
+      }
     }
     killResult = killScore();
     if (killResult !== null) return killResult / 2 + 0.2 * valueAtTurnEnd;
@@ -1995,6 +2011,25 @@ export abstract class GameCore<S = unknown> {
     }
   }
 
+  /** Moves the turn on to `step`. Mana left in the pool is lost (rule 106.4: it empties at the end of each step
+   *  and phase). Lost mana usually means the AI wasted it, so the log says so. */
+  enterStep(step: TurnStep): void {
+    const manaLost = Object.values(this.pool).reduce(
+      (total, amount) => total + amount,
+      0,
+    );
+    if (manaLost > 0)
+      this.say(
+        `${manaLost} mana left in the pool is lost at the end of ${this.step}`,
+      );
+    this.pool = emptyPool();
+    this.step = step;
+    this.onEnterStep(step);
+  }
+
+  /** Deck hook: something happens at the start of a step (e.g. mana added to the pool). */
+  onEnterStep(_step: TurnStep): void {}
+
   endTurn(): void {
     this.endStep();
     if (this.isCast >= 4 && this.isOnBattlefield('Case of the Ransacked Lab'))
@@ -2016,12 +2051,16 @@ export abstract class GameCore<S = unknown> {
   takeTurn(): boolean {
     this.startTurn();
     this.sayEvent('turn-start');
+    this.enterStep('upkeep');
     this.upkeep();
+    this.enterStep('draw');
     if (!(this.turn === 1 && this.onPlay)) this.draw(1);
     this.logCardMovesSoFar();
+    this.enterStep('main1');
     this.playLand();
     if (this.developWin()) return true;
     this.logCardMovesSoFar();
+    this.enterStep('combat');
     this.combat();
     this.logCardMovesSoFar();
     if (this.areOpponentsBeaten()) {
@@ -2032,7 +2071,9 @@ export abstract class GameCore<S = unknown> {
       return true;
     }
     this.lastKey = null;
+    this.enterStep('main2');
     if (this.developWin(true)) return true;
+    this.enterStep('end');
     if (this.inArena() && this.config.pod_defence !== false) this.podDefence();
     this.logCardMovesSoFar();
     this.endTurn();
