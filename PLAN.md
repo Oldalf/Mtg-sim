@@ -204,6 +204,8 @@ One task per list, following `/add-deck`'s light path (A4).
 | B5 | DnD | M1, M4, M5 | Opus 5.5 | Blink engines, dungeons, the initiative. |
 | B6 | Azula | | Opus 5.5, after P | Ask Pontus first for the infinite combos (which cards, how each wins) and the bracket. Free casts while Azula is out, spells during combat, counterspells (add to `answers.ts`), the combos as a declared win (`winAttempt`, like Gale's kill line or Aesi's loops). |
 
+
+**B1 built (2026-11-15).** `decks/helga`, on `CreatureDeckGame` and the light path (A4 worked as written). Helga's mana and cast trigger, the Eldrazi cast triggers, the draw engines, Craterhoof; annihilator and the removal on enter are not modelled (see `decks/helga/PLAN.md`). Goldfish average win turn 10.99; against three goldfish in a pod 99.3%, round 11.29.
 ---
 
 ## C. Game night

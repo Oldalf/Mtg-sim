@@ -8,6 +8,7 @@ import { deck as aesi } from './aesi/index';
 import { deck as mike } from './mike/index';
 import { deck as codie } from './codie/index';
 import { deck as edgar } from './edgar/index';
+import { deck as helga } from './helga/index';
 import { deck as goldfish } from './goldfish/index';
 
 export const DECKS: Record<string, Deck> = {
@@ -18,5 +19,6 @@ export const DECKS: Record<string, Deck> = {
   mike,
   codie,
   edgar,
+  helga,
   goldfish,
 };
