@@ -262,6 +262,7 @@ export function castBeseechTheMirror(
   game.takeCard(card, 'hand');
   game.sayEvent('cast', 'cast', card, bargainFodder ? '(bargained)' : '');
   game.spellsCast += 1;
+  game.podAnnounceCast(card);
   if (bargainFodder) game.sacrifice(bargainFodder);
   const found = game.tutorTarget(() => true, false);
   game.putCard(card, 'graveyard');

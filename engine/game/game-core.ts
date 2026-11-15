@@ -55,6 +55,7 @@ import {
   emptyPool,
 } from './game-types';
 import { playKillLineOnCopy } from './kill-line';
+import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
@@ -1531,6 +1532,7 @@ export abstract class GameCore<S = unknown> {
     this.spellsCast += 1;
     this.onCastInstantOrSorcery(fromGraveyard);
     this.castTriggers(card, fromGraveyard, triggerOptions);
+    this.podAnnounceCast(card);
     if (this.podCounters(card)) {
       this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
       return true;
@@ -1567,6 +1569,7 @@ export abstract class GameCore<S = unknown> {
     } else this.takeCard(card, 'hand');
     this.spellsCast += 1;
     this.sayEvent('cast', 'cast', card);
+    this.podAnnounceCast(card);
     if (this.podCounters(card)) {
       // countered: a commander goes back to the command zone (its tax still counts this cast)
       this.putCard(card, fromCommand ? 'command' : 'graveyard');
@@ -1858,6 +1861,7 @@ export abstract class GameCore<S = unknown> {
     this.sayEvent('cast', 'flashback', card);
     this.spellsCast += 1;
     this.onCastInstantOrSorcery(true);
+    this.podAnnounceCast(card);
     this.resolve(card, true);
     this.putCard(card, 'exile');
     return true;
@@ -2585,6 +2589,13 @@ export abstract class GameCore<S = unknown> {
   /** We cast this spell: does an opponent counter it? */
   podCounters(_card: CardDef): boolean {
     return false;
+  }
+  /** We cast this spell: tell the opponents, so their "whenever an opponent casts a spell" cards trigger (before
+   *  any counterspell, as the trigger goes on the stack above the spell). */
+  podAnnounceCast(_card: CardDef): void {}
+  /** An opponent cast this spell: run our triggers for it (see opponent-cast-triggers.ts). A deck may add its own. */
+  onOpponentCast(spell: CardDef, caster: GameCore<unknown>): void {
+    triggerOnOpponentCast(this, caster, spell);
   }
   /** We declared a win: do the others answer it (true = it was stopped)? */
   podAnswersWin(): boolean {

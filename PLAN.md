@@ -58,7 +58,7 @@ Rules for every task:
 | 10 | C1 | The game-night pod, a report (done) | Sonnet 5.5 |
 | | | **After game night** | |
 | 11 | M2 | Forced attacks and goad in pod combat (done) | Opus 5.5 |
-| 12 | M3 | Triggers on another player's spell | Sonnet 5.5 |
+| 12 | M3 | Triggers on another player's spell (done) | Sonnet 5.5 |
 | 13 | M4 | Blink | Opus 5.5 |
 | 14 | M5 | Dungeons, venture and the initiative | Opus 5.5 |
 | 15 | B4 | Thantis | Sonnet 5.5 |
@@ -181,6 +181,8 @@ Both go on the pod's attacker choice (`engine/pod/pod-combat.ts`), so every deck
 ### M3. Triggers on another player's spell (Sonnet 5.5)
 
 Taurean Mauler ("whenever an opponent casts a spell, you may put a +1/+1 counter"; its size matters in a pod, Pontus 2026-11-15), Rhystic Study, and the like. The pod tells each game when another player casts a spell (a hook such as `onOpponentCast(card)`); in a goldfish game the opponents cast nothing, so nothing changes there.
+
+**Built (2026-11-15).** `engine/game/opponent-cast-triggers.ts`: Taurean Mauler (+1/+1 counter) and Rhystic Study (draw unless the caster pays {1}: it pays when it has a mana left, tapping it). Every cast calls `podAnnounceCast(card)` (`castInstantOrSorcery`, `castPerm`, `flashback`, the pod's `podCast` for removal and counterspells, Edgar's Beseech the Mirror and Teval's Muldrotha casts); in a pod it goes through `Arena.announceCast` to each living opponent's `onOpponentCast(spell, caster)`, before any counterspell (the trigger is on the stack above the spell). A deck overrides `onOpponentCast` for its own cards. Mystic Remora (cumulative upkeep) and Esper Sentinel are not modelled. Tests: `engine/pod/pod-opponent-cast.test.ts` (in `npm run pod -- --test`). Not covered: spells a deck casts through its own code without `castInstantOrSorcery`/`castPerm` (Gale's counter-your-own-spell line, Codie's finishers) don't announce.
 
 ### M4. Blink (Opus 5.5)
 

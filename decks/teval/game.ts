@@ -448,6 +448,7 @@ export class TevalGame extends CreatureDeckGame {
     this.takeCard(card, 'graveyard');
     this.spellsCast += 1;
     this.sayEvent('cast', 'cast from the graveyard', card);
+    this.podAnnounceCast(card);
     this.enter(card, 'graveyard');
     return true;
   }

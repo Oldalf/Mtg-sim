@@ -36,6 +36,11 @@ export function buildArena(table: PodTable): Arena {
     answerWin: (game) => table.runOffTurn(() => answerWin(table, game)),
     counter: (game, spell) =>
       table.runOffTurn(() => counterSpell(table, game, spell)),
+    announceCast: (game, spell) =>
+      table.runOffTurn(() => {
+        for (const opponent of table.livingOpponents(table.playerOf(game)))
+          table.games[opponent].onOpponentCast(spell, game);
+      }),
     prefer: (game, slot) => attackPreference(table, game, slot),
     mustAttack: (_game, creature) => table.mustAttack(creature),
     goaderSlots: (game, creature) =>

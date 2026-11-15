@@ -45,6 +45,9 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   override podCounters(card: CardDef): boolean {
     return this.inArena() && this.arena!.counter(this, card);
   }
+  override podAnnounceCast(card: CardDef): void {
+    if (this.inArena()) this.arena!.announceCast(this, card);
+  }
   override podAnswersWin(): boolean {
     return this.inArena() && this.arena!.answerWin(this);
   }
@@ -524,6 +527,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     const cost = this.answerCost(card);
     if (!this.hand.includes(card) || !this.pay(cost, true)) return false;
     this.moveCard(card, 'hand', 'graveyard');
+    this.podAnnounceCast(card);
     const life = this.answer(card)?.pay ?? 0;
     if (life) this.loseLife(life);
     return true;
