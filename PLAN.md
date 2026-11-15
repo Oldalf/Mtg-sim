@@ -30,8 +30,12 @@ Rules for every task:
 | 0 | Z0 | `npm run verify` for step 6's D4 (skipped on 2026-11-15) | Haiku 5.5 |
 | 1 | A1 | Gale's High Tide kill with a Dimir Signet: a test that shows it, and why | Opus 5.5 |
 | 2 | A2 | Fix the kill search's High Tide double count (after P: before or instead of B) | Opus 5.5 |
-| 3 | B1 | Real mana: the design (tapping in order, a floating pool, the steps of a turn) | Opus 5.5, then Pontus |
-| 4 | B2... | Real mana: the build, in tasks B1 writes | B1 says |
+| 3 | B1 | Real mana: the design (done, approved 2026-11-15) | Opus 5.5, then Pontus |
+| 4a | B2 | Steps and the pool: the pool empties at each step | Sonnet 5.5 |
+| 4b | B3 | Kill lines played for real (engine + Gale), kill misses counted | Opus 5.5 |
+| 4c | B4 | Kill lines played for real for Codie and Aesi | Sonnet 5.5 |
+| 4d | B5 | `pay`: a better tapping order when the first try fails | Opus 5.5 |
+| 4e | B6 | The log's "paid with" text and the viewer's pool chip | Sonnet 5.5 |
 | 5 | C1 | Meren's Snake: deathtouch or not | Sonnet 5.5, after P |
 | 6 | D1 | The viewer: a card grows on hover | Sonnet 5.5 |
 | 7 | E1 | The Games tab: a run's stats page | Opus 5.5 (design), Sonnet 5.5 (build) |
@@ -240,9 +244,60 @@ Forge and XMage are open-source full rules engines. Running a full rules engine 
 - (b) Yes: `--test` fails when a deck has a kill miss over 300 seeds.
 - (c) Both: the "paid with" text and the pool chip.
 
-### B2... (written by B1)
+Rules for every B task:
+- Read B1's design above first.
+- Ask Pontus eco or full power before running sims.
+- Before you change anything, save the numbers you'll compare against: `-n 3000` for each deck the task touches, and the verify pod run (gale meren samfrodo aesi edgar, `-n 200 --no-log`).
+- Afterwards, show Pontus the numbers before and after, then re-record the baselines.
+- If a deck gets more than about 5% slower, stop and show Pontus before you commit.
+- When the task is done, write one line under it.
 
-See the table under point 5. Each task's details are filled in here when it starts, from the design above.
+### B2. Steps and the pool (Sonnet 5.5)
+
+1. Add `step` to `GameCore` (`engine/game/game-core.ts`). Its type is `'upkeep' | 'draw' | 'main1' | 'combat' | 'main2' | 'end'`. Copy it in `clone`.
+2. Add `enterStep(step)`:
+   - It sets `step` and empties the pool (rule 106.4).
+   - With `verbose` on and mana left in the pool, it logs a note with `say`, e.g. `2 mana left in the pool is lost at the end of main1`.
+3. Call `enterStep` in `takeTurn` before upkeep, the draw, `playLand`/`developWin`, `combat`, `developWin(true)` and `endTurn`.
+4. Call it the same way in `rolloutValue`, for both the turn being finished and the next turn.
+5. Check `engine/pod/` for code that runs a deck's steps on its own (blocking, answers on other players' turns). Another player's turn must not empty our pool in the middle of a payment. If it would, stop and say so.
+6. Move Codie's flat Mana Drain (`decks/codie/game.ts`, the `mana_drain_flat` branch in upkeep) so its mana is added when `main1` starts. Use a hook, or a field that `enterStep('main1')` reads.
+7. Look for other mana that is added outside main phases: `grep "pool\.[A-Z] +="` in `decks/` and `engine/`. Each one must be spent in the same step, or moved.
+8. Add a "Rules followed" list to `ENGINE.md`, using the rule numbers in B1 point 7. Look up the current number of the "Taking Shortcuts" rule rather than guessing it.
+9. Run `npm run format`, then `npm run verify` (ask eco or full power first). Re-record the baselines once Pontus has seen the numbers.
+
+### B3. Kill lines played for real (Opus 5.5)
+
+Build B1 point 6 for the engine and Gale:
+- Kill steps become data: `KillSearcher.lastLine` holds `{ kind, card?, variant?, text }`.
+- Gale gets `playKillStep`.
+- `checkKill` plays the line on a copy. It adopts the copy, or logs the failed step and counts a miss.
+- Loops show their first 3 rounds and then a summary line.
+- Count `killMisses` and `killChanceFails`, and show both in `--diag`.
+- `--test` fails if a deck has any kill miss over 300 seeds.
+- Rollouts don't play lines.
+- In a pod, the copy is adopted only when the win stands.
+- Measure Gale's speed before and after.
+
+### B4. Codie and Aesi (Sonnet 5.5)
+
+- **Codie:** keep the copy of the game its solver paid on, so the log shows the real plays, and replace the 99-mana loop shortcut with loop rounds plus a summary line.
+- **Aesi:** log the first rounds of a loop, then a summary line.
+- Both decks: B3's miss test passes.
+
+### B5. A better tapping order (Opus 5.5)
+
+Build B1 point 2:
+- **Fallback search:** when the first try fails but enough mana exists, `pay` tries other orders and other colour choices, with the same undo between tries.
+- **`preferredSources`:** a deck can name the sources to tap first.
+- **`lastPayment`:** records what was tapped and what each source made.
+- **Speed:** measure every deck.
+
+### B6. "Paid with" and the pool chip (Sonnet 5.5)
+
+- **"Paid with":** cast lines end with the sources that paid, taken from `lastPayment` (e.g. `paid with Island, Swamp, Dimir Signet (fed by Island)`). The event gets a `paidWith` field.
+- **The pool chip:** the event gets a `pool` field, but only when the pool isn't empty. The types go in `shared/` and are set the same way `playerCounters` is. The viewer shows it as a chip on the seat, the way energy is shown.
+- **Checks:** `ng build`, `ng test`, and look at it in the browser.
 
 ---
 
