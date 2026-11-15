@@ -67,25 +67,30 @@ Other files (`actions.ts`, `triggers.ts`, `combat.ts`, `spells.ts`, `loops.ts`) 
 
 ## 4. Where to register it
 
-A deck is named in four places. Missing one is the most common mistake: `npm run verify` then skips the deck silently.
+A deck is registered in one place: `decks/index.ts` imports its `deck` object and adds it to `DECKS`. Everything else is on the deck's own `deck` object in its `index.ts`:
 
-1. `decks/index.ts`: import the deck and its tests, then add it to `DECKS`, `TESTS` and `REGRESS` (`{ lists: ['decklist.txt'], tests: run<Name>Tests }`).
-2. `scripts/verify.mjs`: add the name to `DECKS_WITH_BASELINE`. Add it to `POD_DECKS` only if Pontus wants it in the fixed-seed pod run (that changes `regress_baseline/pod.txt`: re-record it on purpose, and say so in the commit).
-3. `README.md`: one line under "Current decks" (commander, colours, archetype, bracket, how it wins, `npm run sim -- <name>`).
-4. Nothing for the app: it reads `DECKS`. Check that the deck shows on the Decks page.
+- `tests: run<Name>Tests` (its `--test`).
+- `regress: { lists: ['decklist.txt'] }` (what `--regress` records). Leave it out for a pod-only deck: it has no goldfish baseline.
+
+`npm run verify` asks the simulator for the deck names (`node dist/sim.js --list-decks`), so nothing to add there. Two things stay by hand:
+
+1. `scripts/verify.mjs`: `POD_DECKS` only if Pontus wants the deck in the fixed-seed pod run (that changes `regress_baseline/pod.txt`: re-record it on purpose, and say so in the commit).
+2. `README.md`: one line under "Current decks" (commander, colours, archetype, bracket, how it wins, `npm run sim -- <name>`).
+
+The app reads `DECKS`: check that the deck shows on the Decks page.
 
 ## 5. The order of work
 
 One step at a time; each step ends with something that runs. Ask Pontus "eco or full power?" before each step that runs simulations (`npm run verify` with regress checks counts); eco is `--eco` on `sim` and `-- --eco` on `verify`.
 
 1. **Card data.** Put the list in `decklist.txt` and run `npm run sim -- <name> -n 50` (after a first registration, step 2). Cards missing from `data/cards.json` are copied from the Scryfall bulk data automatically. A card that is not found is from a newer set: `npm run cards -- update`, then try again. The run prints the cards it plays generically (by type and cost, not by their text): that is the list of cards to give rules to, most important first. A card leaves the list when `cards.ts` passes it to `C.registerKnown`.
-2. **A game that plays.** `index.ts`, `config.ts`, `game.ts` with the must-have hooks only (`candidates` returning casts of what is in hand, no win yet), registered in `DECKS`. Check with `npm run sim -- <name> --trace 1`: lands are played, spells are cast, the mana is right.
+2. **A game that plays.** `index.ts`, `config.ts`, `game.ts` with the must-have hooks only (`candidates` returning casts of what is in hand, no win yet), registered in `DECKS` (`decks/index.ts`). Check with `npm run sim -- <name> --trace 1`: lands are played, spells are cast, the mana is right.
 3. **The win.** `checkKill()` returns 2 when the game is won (`areOpponentsBeaten()`, or the deck's own win); `play()` returns the two numbers (`[win turn, second measure]`). Then the cards that matter most to the win get their rules, in `cards.ts` and `game.ts`.
-4. **Tests.** `tests/<name>.test.ts` with one check per rule written so far; add it to `TESTS`. `npm run sim -- <name> --test` must exit with code 0 (it prints one OK / BAD line per check, no ALL OK line). From here, every new card rule gets a test in the same change.
+4. **Tests.** `tests/<name>.test.ts` with one check per rule written so far; add it as `tests` on the deck's `deck` object. `npm run sim -- <name> --test` must exit with code 0 (it prints one OK / BAD line per check, no ALL OK line). From here, every new card rule gets a test in the same change.
 5. **The other cards**, most important first, until `--trace` games look like a real game. Read three or four traced games each round; a log of Pontus's (`npm run sim -- <name> --analyze logs/<file>`) shows where the AI plays differently from him.
 6. **The first numbers**: `npm run sim -- <name> -n 3000`, then 16,000 games for anything Pontus decides on. Put them in `PLAN.md` with the game count. `--rank` may be shown, not cuts (section 1).
 7. **The mulligan rule** from `npm run sim -- <name> --hands -n 8000`: which land counts and cards win, written as `mulligan.ts`. Compare with `--set smart_mulligan=0` on 8,000+ games.
-8. **The baseline.** Add the deck to `REGRESS` and `DECKS_WITH_BASELINE`, then `npm run sim -- <name> --regress record` and `--regress check` (must print IDENTICAL). Commit `regress_baseline/<name>.json`.
+8. **The baseline.** Add `regress` to the deck's `deck` object, then `npm run sim -- <name> --regress record` and `--regress check` (must print IDENTICAL). Commit `regress_baseline/<name>.json`.
 9. **The deck's `PLAN.md`** (section 8). Pontus may then ask for `PRIMER.txt` and swap tests.
 
 ## 6. The rules
@@ -134,3 +139,16 @@ Use the sections the other decks use, in this order (see `decks/samfrodo/PLAN.md
 - The deck shows in the app (`npm run app`, Decks page) and a game of it opens in the game viewer.
 - `README.md` lists it and its `PLAN.md` has the sections above.
 - One commit per working step (section 5), each passing `npm run verify`.
+
+## 10. A pod-only deck (the light path)
+
+For a friend's deck that only plays in pods (Pontus, 2026-11-15: no goldfish tuning unless the owner asks). The engine owns what cards do; the deck decides what to do and writes only its own cards. Skip sections 5.6 to 5.9 (first numbers, mulligan study, baseline, primer) and keep the rest short.
+
+1. **Ask** (one message): the list, the commander, how it wins in a sentence or two, the bracket. No logs, goals or swaps.
+2. **Folder:** `decklist.txt` as given, `index.ts`, `config.ts`, `cards.ts`, `game.ts`, `candidates.ts`, `tests/<name>.test.ts`, `PLAN.md`. No `mulligan.ts` (the default rule: keep 2-5 lands), no `regress` on the `deck` object.
+3. **What the engine already does** (do not write these again): lands, mana rocks and mana creatures, rituals, cost reducers, draw spells (`DRAW_SPELLS`), land-search spells (`LAND_SEARCH`: Cultivate, Farseek...; the deck may override `chooseLandToFetch`), reanimation spells (`REANIMATION_SPELLS`: Animate Dead, Reanimate...; `reanimationValue` picks the creature), common permanents (`COMMON_PERMANENTS`: Solemn, Wood Elves, the Witnesses, Phyrexian Arena; they run from the default `onEnter` / `onDies` / `upkeep`, so a deck that overrides one of those calls `enterTriggerOfCommonCard` / `deathTriggerOfCommonCard` / `upkeepOfCommonCards` itself), and the pod's removal and counterspells (`engine/game/answers.ts`). A creature with no rules is a body with its power, toughness and Scryfall keywords. Run `npm run sim -- <name> -n 50` to see the cards still played generically.
+4. **The game class** extends `CreatureDeckGame` (`engine/game/creature-deck.ts`) when the deck wins by beating the opponents down (creatures, combat, drains): it has the win (`win_dead`), the two numbers, the goldfish combat, card values from `values` (the deck's `VALUE`), the planner score and a default `podClose`. A combo deck extends `GameWithoutKillSearch` or `Game` as in section 2.
+5. **What the deck writes:** `cards.ts` with `VALUE` (how much the AI wants each card on the battlefield) and `HOLD` (removal and other cards with no goldfish target); `candidates.ts` (cast the commander, then the hand by `VALUE`, plus the deck's own activated abilities; copy `decks/edgar/candidates.ts` and cut it down); in `game.ts` the commander's rules, the few cards the plan depends on (the ones in "how it wins"), and `podClose()` if the default (power on the board) misses how the deck wins. A card rule that holds in any deck goes in the engine instead (a topic file in `engine/game/`, not `game-core.ts`), with every other deck IDENTICAL.
+6. **Tests:** one check per card rule the deck writes.
+7. **PLAN.md:** "How the deck wins (Pontus, <date>)", "Simulation rules", "Not modelled" (the cards played as plain bodies or not cast, said plainly: the pod report shows it next to the deck's numbers), and the first pod numbers.
+8. **Done when:** `npm run sim -- <name> --test` passes; a `--trace 1` game and a pod `--trace` game look like real play; `npm run pod -- <name> goldfish goldfish goldfish --set pod_race=true` gives a sane kill turn; `npm run verify` passes (only Gale's known line BAD); the deck shows in the app.

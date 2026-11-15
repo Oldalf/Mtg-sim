@@ -153,6 +153,8 @@ A section in `/add-deck` (`.claude/skills/add-deck/SKILL.md`) for a pod-only dec
 
 Try it on the first B deck and fix the section from what went wrong.
 
+**Built (2026-11-15).** `/add-deck` section 10, "A pod-only deck (the light path)", and `CreatureDeckGame` (`engine/game/creature-deck.ts`): the win, the two numbers, combat, card values and the planner score that Edgar, Meren and Sam & Frodo each wrote, for the light decks to extend (the old decks keep theirs for now). To be checked on Helga (B1).
+
 ---
 
 ## M. Mechanics the new lists need

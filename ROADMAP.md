@@ -2,6 +2,10 @@
 
 Decided 2026-11-12 (Pontus). The big steps below go in this order. Deck work (new decks, cuts, logs, refinements, pod steps) is ongoing, happens before, during or after these steps, and is not part of the roadmap. It lives in each deck's `PLAN.md` and in `POD_PLAN.md`. The goal of the roadmap is to make that ongoing work easier.
 
+## Where the project is going (Pontus, 2026-11-15)
+
+A heavy engine and light decks. The engine runs the turns and owns the rules of the cards (what a card does, in any deck), split by topic into files that are easy to read. A deck makes the decisions: what to cast, attack, keep or fetch, using what the engine tells it it can do, and it handles only the few things that are its own (its win, its combo). Each step moves a little more into the engine: step 8 moves what the friends' decks need.
+
 ## 1. Code follows the coding standards (CLAUDE.md) (done)
 
 - Prettier is set up and the code is formatted (`npm run format`).
