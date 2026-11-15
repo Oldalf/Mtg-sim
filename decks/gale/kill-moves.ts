@@ -2,6 +2,7 @@
 import * as C from '../../engine/cards/cards';
 import * as Facts from '../../engine/cards/card-facts';
 import {
+  GaleKillStep,
   KillSearchState,
   Path,
   RELEVANT,
@@ -11,15 +12,12 @@ import {
 } from './kill-state';
 import { CardDef, Cost } from '../../engine/cards/cards';
 
-/** Gives a new state its description for the printed kill line. */
-function labelled(
-  state: KillSearchState,
-  description: string,
-): KillSearchState {
+/** Gives a new state the step that led to it, for the kill line. */
+function labelled(state: KillSearchState, step: GaleKillStep): KillSearchState {
   // a labelled snapshot is never changed afterwards: its children get their own copies of these lists
   state.killLine = [
     state.killLine,
-    description,
+    step,
     state.opponentLife,
     state.opponentLibrary,
     state.opponentPoison,
@@ -27,30 +25,32 @@ function labelled(
   return state;
 }
 
-/** The printed kill line: one text per step, the first step first. */
-export function renderPath(path: unknown): string[] {
-  const lines: string[] = [];
-  let step = path as Path;
-  while (step) {
-    const [previous, description, life, lib, poison] = step;
+/** The kill line: its steps, the first step first, each with the opponents the search expects after it. */
+export function renderPath(path: unknown): GaleKillStep[] {
+  const steps: GaleKillStep[] = [];
+  let link = path as Path;
+  while (link) {
+    const [previous, step, life, lib, poison] = link;
     let opponentsAlive = 0;
     for (let i = 0; i < life.length; i++)
       if (life[i] > 0 && lib[i] > 0 && poison[i] < 10) opponentsAlive++;
-    lines.push(
-      `${description}   | opp life [${life.join(', ')}] library [${lib.join(', ')}]` +
+    steps.push({
+      ...step,
+      forecast:
+        `   | opp life [${life.join(', ')}] library [${lib.join(', ')}]` +
         (opponentsAlive ? '' : '  => ALL OPPONENTS DONE'),
-    );
-    step = previous;
+    });
+    link = previous;
   }
-  return lines.reverse();
+  return steps.reverse();
 }
 
-const COST_GUILDMAGE_DRAIN = new Cost(1, 1, 1);
-const COST_GUILDMAGE_MILL = new Cost(2, 1, 1);
-const COST_KONRAD_MILL = new Cost(1, 0, 1);
-const COST_MONUMENT_EXHAUST = new Cost(2, 2);
-const COST_MONUMENT = new Cost(1);
-const OVERTURE_COST = Cost.parse('{4}{U}{U}');
+export const COST_GUILDMAGE_DRAIN = new Cost(1, 1, 1);
+export const COST_GUILDMAGE_MILL = new Cost(2, 1, 1);
+export const COST_KONRAD_MILL = new Cost(1, 0, 1);
+export const COST_MONUMENT_EXHAUST = new Cost(2, 2);
+export const COST_MONUMENT = new Cost(1);
+export const OVERTURE_COST = Cost.parse('{4}{U}{U}');
 
 /** Every state reachable from this one with one more move. */
 export function children(state: KillSearchState): KillSearchState[] {
@@ -85,7 +85,13 @@ function addPermanentCastMoves(
         (first, second) => second - first,
       ); // (Energy Tap can tap a creature that just arrived)
     }
-    moves.push(labelled(next, `cast ${name}`));
+    moves.push(
+      labelled(next, {
+        kind: 'castPermanent',
+        card: name,
+        text: `cast ${name}`,
+      }),
+    );
   };
   castComboPermanent('Duskmantle Guildmage', 'hasGuildmage');
   castComboPermanent('Mindcrank', 'hasMindcrank');
@@ -98,7 +104,13 @@ function addPermanentCastMoves(
       next.hand = remove1(next.hand, name);
       next.creatureCount += 1;
       next.untapLands(landsUntapped);
-      moves.push(labelled(next, `cast ${name} (untap ${landsUntapped} lands)`));
+      moves.push(
+        labelled(next, {
+          kind: 'castPermanent',
+          card: name,
+          text: `cast ${name} (untap ${landsUntapped} lands)`,
+        }),
+      );
     }
   }
   if (hand.includes('Riverchurn Monument') && !state.hasMonument) {
@@ -106,7 +118,13 @@ function addPermanentCastMoves(
     if (next.payForSpell(C.get('Riverchurn Monument'))) {
       next.hand = remove1(next.hand, 'Riverchurn Monument');
       next.hasMonument = next.monumentCanExhaust = true;
-      moves.push(labelled(next, 'cast Riverchurn Monument'));
+      moves.push(
+        labelled(next, {
+          kind: 'castPermanent',
+          card: 'Riverchurn Monument',
+          text: 'cast Riverchurn Monument',
+        }),
+      );
     }
   }
 }
@@ -121,10 +139,11 @@ function addAbilityMoves(
     if (next.spendMana(COST_GUILDMAGE_DRAIN)) {
       next.guildmageActivations += 1;
       moves.push(
-        labelled(
-          next,
-          'activate Guildmage {1}{U}{B} (opponents lose 1 life per card to graveyard)',
-        ),
+        labelled(next, {
+          kind: 'ability',
+          ability: 'guildmageDrain',
+          text: 'activate Guildmage {1}{U}{B} (opponents lose 1 life per card to graveyard)',
+        }),
       );
     }
   }
@@ -138,14 +157,26 @@ function addAbilityMoves(
       next.biggestLibraryOpponent() !== null
     ) {
       next.recordOpponentStep('millBiggestLibrary', 2);
-      moves.push(labelled(next, 'Guildmage {2}{U}{B}: opponent mills 2'));
+      moves.push(
+        labelled(next, {
+          kind: 'ability',
+          ability: 'guildmageMill',
+          text: 'Guildmage {2}{U}{B}: opponent mills 2',
+        }),
+      );
     }
   }
   if (state.hasKonrad) {
     const next = state.copy();
     if (next.spendMana(COST_KONRAD_MILL)) {
       next.recordOpponentStep('konact');
-      moves.push(labelled(next, 'Syr Konrad {1}{B}: each player mills 1'));
+      moves.push(
+        labelled(next, {
+          kind: 'ability',
+          ability: 'konradMill',
+          text: 'Syr Konrad {1}{B}: each player mills 1',
+        }),
+      );
     }
   }
   if (state.hasMonument) {
@@ -155,10 +186,11 @@ function addAbilityMoves(
         next.hasMonument = next.monumentCanExhaust = false;
         next.millEach('graveyardSize');
         moves.push(
-          labelled(
-            next,
-            'Riverchurn Monument exhaust {2}{U}{U}: mill = graveyard size',
-          ),
+          labelled(next, {
+            kind: 'ability',
+            ability: 'monumentExhaust',
+            text: 'Riverchurn Monument exhaust {2}{U}{U}: mill = graveyard size',
+          }),
         );
       }
     }
@@ -167,7 +199,11 @@ function addAbilityMoves(
       next.hasMonument = false;
       next.millEach(2);
       moves.push(
-        labelled(next, 'Riverchurn Monument {1}: each opponent mills 2'),
+        labelled(next, {
+          kind: 'ability',
+          ability: 'monumentMill',
+          text: 'Riverchurn Monument {1}: each opponent mills 2',
+        }),
       );
     }
   }
@@ -177,7 +213,11 @@ function addAbilityMoves(
     if (next.biggestLibraryOpponent() !== null) {
       next.recordOpponentStep('damageBiggestLibrary', 10);
       moves.push(
-        labelled(next, 'attack with The Mindskinner (each opponent mills 10)'),
+        labelled(next, {
+          kind: 'attack',
+          card: 'The Mindskinner',
+          text: 'attack with The Mindskinner (each opponent mills 10)',
+        }),
       );
     }
   }
@@ -324,7 +364,19 @@ function addResponseMoves(
       responseState.graveyardSpells = addSorted(responseState.graveyardSpells, [
         name,
       ]);
-    moves.push(labelled(responseState, description));
+    moves.push(
+      labelled(responseState, {
+        kind: 'castSpell',
+        card: name,
+        variant,
+        galeRecast:
+          galeRecast !== null && recastVariant !== null
+            ? [galeRecast, recastVariant[0]]
+            : undefined,
+        guildmageResponses: responseCount,
+        text: description,
+      }),
+    );
   });
 }
 
@@ -344,10 +396,12 @@ function addEmetSelchMoves(
         next.graveyardSpells = remove1(next.graveyardSpells, name);
         next.resolveSpell(name, variant);
         moves.push(
-          labelled(
-            next,
-            `Emet-Selch trigger: cast ${name} [${variant}] from graveyard`,
-          ),
+          labelled(next, {
+            kind: 'emetSelch',
+            card: name,
+            variant,
+            text: `Emet-Selch trigger: cast ${name} [${variant}] from graveyard`,
+          }),
         );
       }
     }
@@ -502,15 +556,21 @@ function selfCounterMoves(state: KillSearchState): KillSearchState[] {
               : [counterName],
           );
           moves.push(
-            labelled(
-              next,
-              describeSelfCounter(
+            labelled(next, {
+              kind: 'selfCounter',
+              card: targetName,
+              counter: counterName,
+              galeRecast:
+                firstName !== null ? [firstName, firstVariant!] : undefined,
+              counterRecast:
+                secondName !== null ? [secondName, secondVariant!] : undefined,
+              text: describeSelfCounter(
                 targetName,
                 counterName,
                 [firstName, firstVariant],
                 [secondName, secondVariant],
               ),
-            ),
+            }),
           );
         }
       }

@@ -13,6 +13,7 @@
 import * as C from '../../engine/cards/cards';
 import { COMBO_SPELLS } from './roles';
 import { CardDef, Cost } from '../../engine/cards/cards';
+import { KillStep } from '../../engine/game/game-types';
 
 export const FODDER_EXCLUDE = new Set([
   'Syr Konrad, the Grim',
@@ -53,8 +54,35 @@ export interface OlogNode {
   opponentStep: Op;
 }
 
-/** Linked step description: [parent, text, life, lib, poison] (text is only built for the winning line). */
-export type Path = [Path, string, number[], number[], number[]] | null;
+/** Gale's abilities the kill search activates. */
+export type GaleAbility =
+  | 'guildmageDrain'
+  | 'guildmageMill'
+  | 'konradMill'
+  | 'monumentExhaust'
+  | 'monumentMill';
+
+/** One step of a Gale kill line, as data the real game plays (kill-play.ts). */
+export interface GaleKillStep extends KillStep {
+  kind:
+    | 'castPermanent'
+    | 'ability'
+    | 'attack'
+    | 'castSpell'
+    | 'emetSelch'
+    | 'selfCounter';
+  ability?: GaleAbility;
+  /** Gale's trigger: the graveyard spell cast after this one, and its variant. */
+  galeRecast?: [string, string];
+  /** Guildmage drains activated in response, while the hand spell is on the stack. */
+  guildmageResponses?: number;
+  /** A self-counter: our counterspell, and the spell Gale recasts after it. */
+  counter?: string;
+  counterRecast?: [string, string];
+}
+
+/** Linked steps: [parent, step, life, lib, poison] (the opponents after the step; the line is only built for the winner). */
+export type Path = [Path, GaleKillStep, number[], number[], number[]] | null;
 
 export function remove1(list: string[], name: string): string[] {
   const i = list.indexOf(name);

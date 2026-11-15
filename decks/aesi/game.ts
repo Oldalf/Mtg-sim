@@ -265,7 +265,10 @@ export class AesiGame extends Game<AesiGame> {
       search: (game: AesiGame) => {
         const lives = game.areOpponentsBeaten();
         game.comboSolve();
-        killSearcher.lastLine = game.log.map((event) => event.text);
+        killSearcher.lastLine = game.log.map((event) => ({
+          kind: 'logged',
+          text: event.text,
+        }));
         if (!lives && game.areOpponentsBeaten()) return 1;
         if (
           game.battlefield.some(
@@ -275,7 +278,10 @@ export class AesiGame extends Game<AesiGame> {
           ) ||
           game.dominionCopies >= (game.config.dominion_win as number)
         ) {
-          killSearcher.lastLine.push('(wins on the next turn)');
+          killSearcher.lastLine.push({
+            kind: 'logged',
+            text: '(wins on the next turn)',
+          });
           return 1;
         }
         return 0;

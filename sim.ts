@@ -37,6 +37,7 @@ import {
   runTagTests,
 } from './engine/game-log/game-log.test';
 import { runTokenTests } from './engine/game-log/game-log-tokens.test';
+import { runKillMissTests } from './engine/game/kill-line.test';
 import * as Pod from './engine/pod/pod';
 import { PodJob } from './shared/pod-types';
 import { Args, parseArgs, wantsEcoMode } from './cli/args';
@@ -89,6 +90,7 @@ async function runSpecialCommand(
     const isBoardRight = runBoardTests(deck);
     const areTagsRight = runTagTests();
     const areTokensRight = runTokenTests();
+    const areKillLinesPlayable = runKillMissTests(deck);
     // a deck without tests of its own (the goldfish) only gets the log checks above
     const deckTests = TESTS[deck.name];
     const deckTestsPassed = deckTests ? deckTests() : true;
@@ -99,7 +101,9 @@ async function runSpecialCommand(
       isBoardRight &&
       areTagsRight &&
       areTokensRight;
-    process.exit(logTestsPassed && deckTestsPassed ? 0 : 1);
+    process.exit(
+      logTestsPassed && areKillLinesPlayable && deckTestsPassed ? 0 : 1,
+    );
   }
   if (args.regress) {
     const identical = await regress(

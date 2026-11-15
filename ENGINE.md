@@ -30,6 +30,8 @@ Followed:
 - 602.2: a Signet's {1} is a cost of activating it (it is only tapped when a mana is in the pool to feed it).
 - 117: priority, only as far as the pod's answer window goes.
 
+**Kill lines are played, not declared** (`engine/game/kill-line.ts`). When a deck's kill search finds a line, `checkKill` plays it on a copy of the game, step by step, through the deck's `playKillStep` (Gale: `decks/gale/kill-play.ts`; Codie does its solver's moves again and casts the finisher). Every cost is paid with `pay`, every card moves. The copy becomes the game only when the line wins there, and in a pod only when no one answers the win (`developWin`, `adoptKillLineCopy`). A line that cannot be played is no win: the log gets a `KILL MISS` line and `killMisses` counts it (the search counted something wrong; `--test` fails on any miss over 300 seeds). A line that only wins on average and falls short with the real cards is a `killChanceFails`. Both are in every deck's `--diag`. A run of the same step (a loop) is logged for 3 rounds, then summed up. Planner rollouts don't play lines: they keep the search's answer. A deck without `playsKillLines()` (no search, or Aesi, whose loops already play in the game) is unchanged. Gale's opponents are hit by the search's own rules (`KillSearchState`, through `applyOpponentStep`), so a goldfish opponent's creature cards milled stay the expected share, while our own library is the real cards.
+
 Knowingly not followed:
 - Goldfish opponents never act, and in a pod they act only in answer windows. There is no full stack and no priority.
 - Combat's steps (506–511) are one step, `combat`.
@@ -44,7 +46,7 @@ Knowingly not followed:
 | Folder | Files | What it is |
 |---|---|---|
 | `engine/cards/` | `cards`, `card-facts`, `land-text`, `scryfall`, `card-images` | Card data and facts that hold in any deck |
-| `engine/game/` | `game-core`, `game`, `game-types`, `mulligan`, `answers`, `search`, `log-format` | One game: zones, mana, turns, the hooks a deck fills in |
+| `engine/game/` | `game-core`, `game`, `game-types`, `mulligan`, `answers`, `search`, `kill-line`, `kill-line.test`, `log-format` | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
 | `engine/game-log/` | `game-log`, `game-log-moves`, `-text`, `-tags`, `-files`, `-run`, `-replay`, `-archidekt`, `logged-runs`, `game-log.test` | Logging a game and reading logs back |
 | `engine/pod/` | `pod`, `pod-arena`, `pod-table`, `pod-combat`, `pod-blocking`, `pod-interaction`, `pod-report`, `pod.test` | Decks playing each other |
 | `engine/run/` | `runner`, `worker-pool`, `worker-pool.test`, `power-save`, `setting-descriptions` | Running many games |

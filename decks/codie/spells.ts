@@ -282,8 +282,12 @@ export function chooseTutorTarget(
 ): CardDef | null {
   const candidates = game.library.filter(isAllowed);
   if (!candidates.length) return null;
-  // 1. a card that completes a kill line (tried on a copy of the game)
-  if (!game.inRollout || game.config.rollout_solver) {
+  // 1. a card that completes a kill line (tried on a copy of the game). A kill line being played chooses as the solver
+  // did on its copies (they are rollouts), so the line it found is the line played.
+  if (
+    (!game.inRollout && !game.isPlayingKillLine) ||
+    game.config.rollout_solver
+  ) {
     for (const name of tutorPriorityList(game)) {
       const candidate = candidates.find((card) => card.name === name);
       if (!candidate) continue;

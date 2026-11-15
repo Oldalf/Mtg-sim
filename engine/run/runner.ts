@@ -234,7 +234,12 @@ export function runJob(deck: Deck, job: Job): JobResult {
       const killTurns = game.play();
       const [anyKillTurn] = killTurns;
       if (job.what === 'diag')
-        result.diag!.push({ win: anyKillTurn, ...game.diag() });
+        result.diag!.push({
+          win: anyKillTurn,
+          killMisses: game.killMisses,
+          killChanceFails: game.killChanceFails,
+          ...game.diag(),
+        });
       else if (job.what === 'seen4') {
         if (game.seen4 !== null)
           result.seen4!.push([anyKillTurn, [...game.seen4]]);

@@ -94,10 +94,27 @@ export interface Candidate {
   rock?: CardDef; // the mana rock this casts from hand (see rockFirst)
 }
 
+/** One step of a kill line a search found. The game plays it for real (GameCore.playKillStep); a deck's steps may carry
+ *  more fields. `text` says what the step does; `forecast` what the search expects after it (e.g. the opponents' life). */
+export interface KillStep {
+  kind: string;
+  text: string;
+  forecast?: string;
+  card?: string;
+  variant?: string;
+}
+
+/** A kill step as the log and the analyzer print it. */
+export const describeKillStep = (step: KillStep): string =>
+  step.text + (step.forecast ?? '');
+
+/** A step kind that ends a played kill line early: the rest of the line wins next turn, so it is not played now. */
+export const KILL_STEP_NEXT_TURN = 'nextTurn';
+
 /** The kill search a deck provides. */
 export interface KillSearcher<S> {
   search(state: S, budget: number): number;
-  lastLine: string[] | null;
+  lastLine: KillStep[] | null;
   lastLineProbability: number | null;
   bestMiss: number | null;
   readonly minChance: number;

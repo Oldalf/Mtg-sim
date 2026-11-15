@@ -18,7 +18,7 @@
  * combo, so kills that need a tutor first are not found.
  */
 import * as C from '../cards/cards';
-import { Config } from '../game/game-types';
+import { Config, describeKillStep } from '../game/game-types';
 import { Game } from '../game/game';
 import { Board, BoardGame, LogEvent, parseLog } from './log-board';
 import { Rng } from '../util/rng';
@@ -60,7 +60,7 @@ function checkForKill(
     note = ` (a ${game.chanceName} kills on average, but only ${percentText(search.bestMiss)} with real shuffles; needs ${percentText(search.minChance)})`;
   return {
     killLevel,
-    line: killLevel ? [...(search.lastLine ?? [])] : null,
+    line: killLevel ? (search.lastLine ?? []).map(describeKillStep) : null,
     note,
   };
 }

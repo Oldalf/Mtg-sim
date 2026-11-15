@@ -34,6 +34,7 @@ Rules for every task:
 | 4a | B2 | Steps and the pool: the pool empties at each step | Sonnet 5.5 |
 | 4b | B3 | Kill lines played for real (engine + Gale), kill misses counted | Opus 5.5 |
 | 4c | B4 | Kill lines played for real for Codie and Aesi | Sonnet 5.5 |
+| 4c' | B3b | Gale's kill search without misses (after B3) | Opus 5.5 |
 | 4d | B5 | `pay`: a better tapping order when the first try fails | Opus 5.5 |
 | 4e | B6 | The log's "paid with" text and the viewer's pool chip | Sonnet 5.5 |
 | 5 | C1 | Meren's Snake: deathtouch or not | Sonnet 5.5, after P |
@@ -281,11 +282,19 @@ Build B1 point 6 for the engine and Gale:
 - In a pod, the copy is adopted only when the win stands.
 - Measure Gale's speed before and after.
 
+**Built (2026-11-15), committed with Gale's miss test failing, on Pontus's word ("commit as it is, then fix Gale").** `engine/game/kill-line.ts` plays a found line on a copy (`playKillStep` per deck, runs of the same step logged 3 rounds then summed up); `checkKill` keeps the copy, `developWin` adopts it when the win stands (`adoptKillLineCopy`, which keeps the kill turns). `killMisses` / `killChanceFails` in every deck's `--diag`; `engine/game/kill-line.test.ts` in every `--test` (300 seeds, prints the first misses; `KILL_MISS_SEEDS_SHOWN=100` shows more). Steps are data: `KillStep` (`text`, `forecast`), Gale's `GaleKillStep` (kill-state.ts), played by `decks/gale/kill-play.ts`. Gale's opponents are hit by the search's own rules (`applyOpponentStep`, `applyKillSpellToOpponents`). While a line plays, `discard` keeps the cards it names. Results, 3,000 games, same seeds: Gale win by T8 57.6% -> 47.4%, with backup 37.3% -> 31.8%; Gale 26.2 s -> 28.7 s (+9.5%, mostly longer games); pod run Gale 13.5% -> 10.5% (its wins now "last standing": the line really kills). **Open: 53 of 300 seeds have a Gale kill miss.** Of 103 failed lines: 52 with High Tide out (the search gives High Tide's bonus to Islands already tapped for earlier steps: it never lowers `islandsForHighTide` when land mana is spent before High Tide; e.g. the kill test "Guildmage + High Tide + Turnabout + kicked Cacophony" is only a kill in another order), 29 with an untapped filter Signet (`pay` only feeds it from floating mana: B5), the rest smaller miscounts (an An Offer You Can't Refuse's Treasures are U+B, not any colour). Next: fix these until Gale has no miss (B3b below, then B5).
+
+### B3b. Gale's kill search without misses (Opus 5.5)
+
+Pontus, 2026-11-15: fix Gale's problems so its played kill lines don't miss. Start from the miss list (`KILL_MISS_SEEDS_SHOWN=100 npm run sim -- gale --test`): the High Tide count in `KillSearchState` (land mana spent before High Tide resolves must not get the bonus), then B5's tapping order (feed a filter Signet), then whatever is left. Done when `gale --test` has no miss; show Pontus the numbers and the speed before and after.
+
 ### B4. Codie and Aesi (Sonnet 5.5)
 
 - **Codie:** keep the copy of the game its solver paid on, so the log shows the real plays, and replace the 99-mana loop shortcut with loop rounds plus a summary line.
 - **Aesi:** log the first rounds of a loop, then a summary line.
 - Both decks: B3's miss test passes.
+
+**Done (2026-11-15), in the same commit as B3.** Codie: the solver's steps keep their move (`CodieKillStep.play`), so the real game does each move again; the finisher is cast for real (`castFinisher`: copies paid, Reiterate / Return the Favor to the graveyard, each resolution hits). A next-turn line (Ad Nauseam + Teferi's Protection) plays this turn's steps and stops at `KILL_STEP_NEXT_TURN`. In the real game the Reiterate loop is paid round by round up to 99 more mana (`playLoopRounds`; Treasures make the colour that gained least), 3 rounds logged then summed up; the solver and the planner keep the 99 at once. While a line plays, a tutor chooses as the solver's copies did (`isPlayingKillLine`). Aesi: each loop has a `round` text; drawing through a loop and Mindsweeper's mill log 3 rounds, then "repeats N more times". Both decks 0 misses over 300 seeds. Codie 3,000 games IDENTICAL by the table, about 18 s before and after; Aesi IDENTICAL (0 of 600 seeds differ), only the log analyzer's text gained the round lines. Baselines re-recorded.
 
 ### B5. A better tapping order (Opus 5.5)
 

@@ -2,16 +2,17 @@
  * Kill-search driver shared by every deck.
  *
  * A deck supplies a snapshot type (with hasWon(), searchKey() and a killLine field) and these functions:
- *   children(st)       next snapshots (each one with .killLine extended by a description; render(path)
- *                      turns the winning path into text, so it's only built once)
+ *   children(st)       next snapshots (each one with .killLine extended by a step; render(path)
+ *                      turns the winning path into the line's steps, so it's only built once)
  *   protected(st)      true if a counterspell can still back up the kill
  *   uncertain(st)      true if a won leaf is only won "on average" (then chance is asked)
  *   chance(root, st)   the probability that such a line really wins (below minChance: rejected)
  * search(root, budget) returns 2 (win with counter backup), 1 (win), 0 (no win found). After a call:
- *   lastLine  the winning line (step descriptions), lastLineProbability its chance (null = certain),
+ *   lastLine  the winning line (its steps), lastLineProbability its chance (null = certain),
  *   bestMiss  the best chance among rejected lines (or null).
  * Results are cached per position: the search is deterministic, so a repeat costs nothing.
  */
+import { KillStep } from './game-types';
 
 export interface Snapshot {
   killLine: unknown;
@@ -28,18 +29,18 @@ export interface KillSearchOptions<S extends Snapshot> {
   minChance?: number;
   depth?: number;
   prepare?: (root: S) => void;
-  render?: (path: unknown) => string[];
+  render?: (path: unknown) => KillStep[];
 }
 
 export class KillSearch<S extends Snapshot> {
   readonly minChance: number;
   readonly stats = [0, 0]; // cache hits, misses
-  lastLine: string[] | null = null;
+  lastLine: KillStep[] | null = null;
   lastLineProbability: number | null = null;
   bestMiss: number | null = null;
   private cache = new Map<
     string,
-    [number, string[] | null, number | null, number | null]
+    [number, KillStep[] | null, number | null, number | null]
   >();
 
   constructor(private options: KillSearchOptions<S>) {
@@ -118,7 +119,7 @@ export class KillSearch<S extends Snapshot> {
     this.lastLine = best
       ? options.render
         ? options.render(line)
-        : (line as string[])
+        : (line as KillStep[])
       : null;
     this.lastLineProbability = prob;
     this.bestMiss = miss;

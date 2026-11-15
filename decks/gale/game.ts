@@ -26,7 +26,13 @@ import {
   SCION,
   permScore,
 } from './roles';
-import { OPPONENT_EVENT, KillSearchState } from './kill-state';
+import {
+  GaleKillStep,
+  KillSearchState,
+  OPPONENT_EVENT,
+  Op,
+} from './kill-state';
+import { playGaleKillStep } from './kill-play';
 import { finisherReachable, search } from './kills';
 import { chooseTutorTarget } from './tutoring';
 import { buildCandidates, castWithGaleRecast } from './candidates';
@@ -36,6 +42,7 @@ import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
   KillSearcher,
+  KillStep,
   LogBoardView,
   Permanent,
   WinAttempt,
@@ -271,10 +278,37 @@ export class GaleGame extends Game<KillSearchState> {
   applyOpponentEvents(events: number[]): void {
     const state = buildKillSearchState(this);
     state.resolveOpponentEvents(events);
+    this.takeOpponentsFrom(state);
+  }
+
+  /** A kill line's step that touches the opponents, by the kill search's rules (KillSearchState.applyOpponentStep). */
+  applyOpponentStep(step: Op): void {
+    const state = buildKillSearchState(this);
+    state.applyOpponentStep(step);
+    this.takeOpponentsFrom(state);
+  }
+
+  /** A kill line's mill, drain or poison spell resolves: what it does to the opponents, by the kill search's rules. */
+  applyKillSpellToOpponents(name: string, variant: string): void {
+    const state = buildKillSearchState(this);
+    state.resolveSpell(name, variant);
+    this.takeOpponentsFrom(state);
+  }
+
+  private takeOpponentsFrom(state: KillSearchState): void {
     this.life = state.opponentLife;
     this.opponentLibrarySizes = state.opponentLibrary;
     this.opponentGraveyardSizes = state.opponentGraveyard;
     this.opponentCreatureAccumulator = state.opponentCreatureAccumulator;
+    this.poison = state.opponentPoison;
+  }
+
+  // ---------------------------------------------------------------- kill lines played for real (kill-play.ts)
+  override playsKillLines(): boolean {
+    return true;
+  }
+  override playKillStep(step: KillStep): string | null {
+    return playGaleKillStep(this, step as GaleKillStep);
   }
 
   // ---------------------------------------------------------------- what the AI wants

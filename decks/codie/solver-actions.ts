@@ -17,6 +17,7 @@ import { manamorphoseCost } from './candidates';
 import { lookAtTopAndKeep, putCardsBackOnLibrary } from './spells';
 import type { CodieGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
+import { firstMin } from '../../engine/util/lists';
 
 export function exileFromHand(game: CodieGame, name: string): void {
   const card = game.cardInHand(name)!;
@@ -103,16 +104,59 @@ export function beginReiterateLoop(
     game.putCard(card, 'graveyard');
   }
   game.pay(first, true);
-  if (manaPerLoopCopy(game, spell)[1] === 'R') game.pool.R += 99;
-  else {
-    game.pool.W += 99;
-    game.pool.U += 99;
-    game.pool.B += 99;
-    game.pool.R += 99;
-    game.pool.G += 99;
-  }
+  if (game.inRollout) addLoopManaAtOnce(game, spell);
+  else playLoopRounds(game, spell);
   // Jeska's Will with a commander out: each copy also exiles the top three cards, which may be played this turn: the whole library
   if (spell === JESKAS_WILL && game.isOnBattlefield(CODIE)) game.digAll = true;
+}
+
+/** What the loop is played up to: this much of its colour (of each colour for Brass's Bounty's Treasures). */
+const LOOP_MANA = 99;
+const LOOP_ROUNDS_SHOWN = 3;
+const REITERATE_WITH_BUYBACK = Cost.parse('{1}{R}{R}').plus(new Cost(3));
+const TREASURE_COLOURS = ['W', 'U', 'B', 'R', 'G'] as const;
+
+/** The solver and the planner take the loop's mana at once: it is bottomless. */
+function addLoopManaAtOnce(game: CodieGame, spell: string): void {
+  if (manaPerLoopCopy(game, spell)[1] === 'R') game.pool.R += LOOP_MANA;
+  else for (const colour of TREASURE_COLOURS) game.pool[colour] += LOOP_MANA;
+}
+
+/** The real game plays the loop: the spell and the first copy resolve, then each round Reiterate (buyback) is cast
+ *  again for 6 and copies the spell, until the pool holds what the solver counted on. The first rounds are logged,
+ *  the rest summed up. */
+function playLoopRounds(game: CodieGame, spell: string): void {
+  const [manaPerCopy, colour] = manaPerLoopCopy(game, spell);
+  const colours = colour === 'R' ? (['R'] as const) : TREASURE_COLOURS;
+  const poolBefore = { ...game.pool };
+  const isDone = () =>
+    colours.every(
+      (loopColour) =>
+        game.pool[loopColour] >= poolBefore[loopColour] + LOOP_MANA,
+    );
+  // a Treasure makes the colour that has gained least so far (so Reiterate's {R}{R} is always there)
+  const gainOf = (loopColour: (typeof colours)[number]) =>
+    game.pool[loopColour] - poolBefore[loopColour];
+  const addCopyMana = () => {
+    for (let mana = 0; mana < manaPerCopy; mana++)
+      game.pool[firstMin([...colours], gainOf)] += 1;
+  };
+  addCopyMana(); // the spell itself
+  let rounds = 0;
+  for (;;) {
+    addCopyMana(); // a Reiterate copy
+    rounds++;
+    if (rounds <= LOOP_ROUNDS_SHOWN)
+      game.say(
+        `  Reiterate (buyback) copies ${spell}: +${manaPerCopy}${colour === 'R' ? ' R' : ' (Treasures)'}`,
+      );
+    if (isDone() || rounds >= 1000) break;
+    if (!game.pay(REITERATE_WITH_BUYBACK, true)) break;
+  }
+  if (rounds > LOOP_ROUNDS_SHOWN)
+    game.say(
+      `  ... Reiterate (buyback, {1}{R}{R} + {3}) copies ${spell}: repeats ${rounds - LOOP_ROUNDS_SHOWN} more times`,
+    );
 }
 
 /** Flashback (R) on a spell in the graveyard: it may be cast again for its mana cost. */

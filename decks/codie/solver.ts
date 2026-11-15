@@ -38,11 +38,24 @@ import {
 import { findFinisherCast } from './finishers';
 import type { CodieGame } from './game';
 import { CardDef } from '../../engine/cards/cards';
-import { Permanent } from '../../engine/game/game-types';
+import {
+  KILL_STEP_NEXT_TURN,
+  KillStep,
+  Permanent,
+} from '../../engine/game/game-types';
 import { removeIfPresent } from '../../engine/util/lists';
 
+/** One step of a Codie kill line. A solver move keeps how it was done (`play`), so the real game can do it again;
+ *  the finisher is cast for real (finishers.ts castFinisher). */
+export interface CodieKillStep extends KillStep {
+  kind: 'move' | 'finisher' | typeof KILL_STEP_NEXT_TURN;
+  play?: (game: CodieGame) => boolean;
+  xValue?: number;
+  resolutionCount?: number;
+}
+
 export interface Line {
-  steps: string[];
+  steps: CodieKillStep[];
   backup: boolean;
   nextTurn?: boolean; // the kill is on the next turn (Ad Nauseam + Teferi's Protection put the library in hand, the mana is spent)
 }
@@ -69,7 +82,7 @@ export function searchForKill(
 export function exploreMoves(
   game: CodieGame,
   state: CodieGame,
-  steps: string[],
+  steps: CodieKillStep[],
   depth: number,
   needBackup: boolean,
 ): Line | null {
@@ -77,10 +90,10 @@ export function exploreMoves(
   if (game.searchedStates.has(key)) return null;
   game.searchedStates.add(key);
   if (++game.searchedNodeCount > game.searchNodeLimit) return null; // a search budget: a rich hand can have a huge tree
-  const fin = findFinisherCast(state, needBackup);
-  if (fin)
+  const finisherStep = findFinisherCast(state, needBackup);
+  if (finisherStep)
     return {
-      steps: [...steps, ...fin],
+      steps: [...steps, finisherStep],
       backup: needBackup,
       nextTurn: state.nextTurn,
     };
@@ -100,7 +113,7 @@ export function exploreMoves(
     const line = exploreMoves(
       game,
       nextState,
-      [...steps, name],
+      [...steps, { kind: 'move', text: name, play: apply }],
       depth + 1,
       needBackup,
     );
@@ -337,7 +350,13 @@ export function findNextTurnKill(
   const line = searchForKill(copy, needBackup, 1500);
   return line
     ? {
-        steps: ['(next turn, the library in hand)', ...line.steps],
+        steps: [
+          {
+            kind: KILL_STEP_NEXT_TURN,
+            text: 'next turn, with the library in hand',
+          },
+          ...line.steps,
+        ],
         backup: line.backup,
         nextTurn: true,
       }

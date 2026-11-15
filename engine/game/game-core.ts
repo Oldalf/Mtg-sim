@@ -45,12 +45,15 @@ import {
   CardListZone,
   Config,
   KillSearcher,
+  KillStep,
   LogBoardView,
   ManaPool,
   Permanent,
   Zone,
+  describeKillStep,
   emptyPool,
 } from './game-types';
+import { playKillLineOnCopy } from './kill-line';
 
 const COLOURS: readonly string[] = ['W', 'U', 'B', 'R', 'G'];
 const BASIC_OF: Record<string, string> = {
@@ -230,6 +233,7 @@ export abstract class GameCore<S = unknown> {
     copy.pool = { ...this.pool };
     copy.rng = this.rng.clone();
     copy.moveRecorder = null;
+    copy.killLineCopy = null;
     return copy;
   }
 
@@ -668,15 +672,12 @@ export abstract class GameCore<S = unknown> {
     this.lastKey = stateKey;
     if (!this.killReachable(killState)) return 0;
     const search = this.killSearch();
-    const killLevel = search.search(
+    let killLevel = search.search(
       killState,
       this.config.search_budget as number,
     );
-    if (
-      killLevel >= 1 &&
-      this.verbose &&
-      (this.unprotectedKillTurn === null || killLevel === 2)
-    ) {
+    const isNewKill = this.unprotectedKillTurn === null || killLevel === 2;
+    if (killLevel >= 1 && this.verbose && isNewKill) {
       this.say(
         `--- state: mana ${formatPool(this.killSearchStatePool(this.buildKillSearchState()))}, hand ${formatList(this.hand.map((card) => card.name))}`,
       );
@@ -684,9 +685,27 @@ export abstract class GameCore<S = unknown> {
         `--- battlefield ${formatList(this.battlefield.filter((permanent) => permanent.land === null).map((permanent) => permanent.name))}, ` +
           `lands ${this.landsOnBattlefield().length}, graveyard ${formatList(this.graveyard.map((card) => card.name))}`,
       );
-      for (const step of search.lastLine ?? []) this.say('      > ' + step);
+      for (const step of search.lastLine ?? [])
+        this.say('      > ' + describeKillStep(step));
     }
-    if (killLevel >= 1) this.lastKillLine = (search.lastLine ?? []).slice();
+    this.killLineCopy = null;
+    if (
+      killLevel >= 1 &&
+      isNewKill &&
+      this.playsKillLines() &&
+      !this.inRollout
+    ) {
+      // the line is played for real on a copy; it only counts if it wins there
+      this.killLineLogLength = this.log.length;
+      this.killLineCopy = playKillLineOnCopy(
+        this,
+        search.lastLine ?? [],
+        search.lastLineProbability !== null,
+      );
+      if (this.killLineCopy === null) killLevel = 0;
+    }
+    if (killLevel >= 1)
+      this.lastKillLine = (search.lastLine ?? []).map(describeKillStep);
     if (killLevel >= 1 && this.unprotectedKillTurn === null)
       this.unprotectedKillTurn = this.turn;
     if (killLevel === 2) this.protectedKillTurn = this.turn;
@@ -695,13 +714,15 @@ export abstract class GameCore<S = unknown> {
       killLevel === 2 ||
       (killLevel === 1 && this.mode === 'any' && this.podAllowsKill())
     ) {
-      this.sayEvent(
+      // with a played line, the win is logged after its plays (on the copy that becomes the game)
+      (this.killLineCopy ?? this).sayEvent(
         'win',
         'KILL -> WIN' +
           (killLevel === 2 ? ' (with counter backup)' : ' (no counter backup)'),
       );
       return 2;
     }
+    this.killLineCopy = null;
     if (killLevel === 1) {
       this.podWaits++;
       this.sayHighlight(
@@ -870,8 +891,11 @@ export abstract class GameCore<S = unknown> {
   discard(count: number): void {
     for (let i = 0; i < count; i++) {
       if (!this.hand.length) return;
-      const card = firstMin(this.hand, (otherCard) =>
-        this.discardValue(otherCard),
+      const card = firstMin(
+        this.hand,
+        (otherCard) =>
+          this.discardValue(otherCard) +
+          (this.cardsTheKillLineNeeds.has(otherCard.name) ? 1000 : 0),
       );
       this.takeCard(card, 'hand');
       this.toGraveyard(card);
@@ -2099,12 +2123,34 @@ export abstract class GameCore<S = unknown> {
   developWin(main2 = false): boolean {
     for (let tries = 0; tries < 4; tries++) {
       if (!this.develop(main2)) return false;
-      if (this.died || !this.podAnswersWin()) return true;
+      if (this.died || !this.podAnswersWin()) {
+        this.adoptKillLineCopy();
+        return true;
+      }
+      this.killLineCopy = null;
       this.unprotectedKillTurn = this.protectedKillTurn = null;
       this.killNow = false;
       this.lastKey = null;
     }
     return false;
+  }
+
+  /** The win stands: the copy the kill line was played on becomes the game, with its log and card moves. */
+  adoptKillLineCopy(): void {
+    const copy = this.killLineCopy;
+    if (copy === null) return;
+    const log = this.log;
+    const logLengthAtCopy = this.killLineLogLength;
+    // the kill was recorded on the game after the copy was made
+    const { unprotectedKillTurn, protectedKillTurn, lastKillLine } = this;
+    Object.assign(this, copy);
+    Object.assign(this, {
+      unprotectedKillTurn,
+      protectedKillTurn,
+      lastKillLine,
+    });
+    this.killLineCopy = null;
+    this.log = [...log, ...copy.log.slice(logLengthAtCopy)];
   }
 
   /** Play the game. Returns [first turn with any kill, first turn with a kill + counter backup]. */
@@ -2344,6 +2390,26 @@ export abstract class GameCore<S = unknown> {
   ): void {}
   /** The steps of the kill the search found (Gale), for winAttempt(). */
   lastKillLine: string[] = [];
+  /** The copy of the game the found kill line was played on, waiting to become the game when the win stands. */
+  killLineCopy: this | null = null;
+  /** The log's length when that copy was made (the copy's own lines come after it). */
+  killLineLogLength = 0;
+  /** Kill lines the search found that the real game could not play (a step could not be paid, or the end fell short). */
+  killMisses = 0;
+  /** Kill lines that only win on average and fell short with the real cards. */
+  killChanceFails = 0;
+  /** True while a found kill line is played (kill-line.ts): a deck may then choose the way its search chose. */
+  isPlayingKillLine = false;
+  /** While a kill line is played: the cards it names. A discard (Frantic Search draws and discards) keeps them. */
+  cardsTheKillLineNeeds = new Set<string>();
+  /** Does this deck play its kill lines for real (playKillStep)? Otherwise the search's answer is the win. */
+  playsKillLines(): boolean {
+    return false;
+  }
+  /** Plays one step of a found kill line in this game. Returns null when done, or why it could not be done. */
+  playKillStep(step: KillStep): string | null {
+    return `the deck cannot play a "${step.kind}" step`;
+  }
   /** Times we found a kill and didn't go for it (no counter backup, the deck's policy said wait). */
   podWaits = 0;
   /** Untapped mana sources. */

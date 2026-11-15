@@ -40,6 +40,7 @@ export interface Loops {
   start: number; // mana needed to keep a loop going (kept in reserve while the solver casts things)
   putter: Permanent | null; // the "put a land" creature a Retreat loop uses (Retreat untaps it after every land) // a way to replay a land (Retreat + putter, or Kodama + Meloku)
   how: string[];
+  round: string | null; // one round of the first loop found, for the log
 }
 
 // ================================================================ the loop solver
@@ -109,6 +110,7 @@ export function findLoops(game: AesiGame): Loops {
     start: 99,
     putter: null,
     how: [],
+    round: null,
   };
   const context: LoopContext = {
     cobraBonus: game.isOnBattlefield(COBRA) ? 1 : 0,
@@ -130,11 +132,12 @@ export function findLoops(game: AesiGame): Loops {
   return loops;
 }
 
-/** Records a landfall loop: its description, the mana it nets, and the mana needed to start it. */
+/** Records a landfall loop: its description, one round of it, the mana it nets, and the mana needed to start it. */
 function recordLandfallLoop(
   loops: Loops,
   context: LoopContext,
   how: string,
+  round: string,
   netMana: number,
   startMana = 0,
   viaPutter = false,
@@ -144,6 +147,16 @@ function recordLandfallLoop(
   loops.start = Math.min(loops.start, startMana);
   if (netMana > 0) loops.mana = true;
   loops.how.push(how);
+  loops.round ??= round;
+}
+
+/** What each land entering gives on top of the loop: Lotus Cobra's mana, Aesi's and Tatyova's draw. */
+function describeLandfall(game: AesiGame, context: LoopContext): string {
+  const parts: string[] = [];
+  if (context.cobraBonus) parts.push('Lotus Cobra adds a mana');
+  if (game.isOnBattlefield(AESI)) parts.push('Aesi draws a card');
+  if (game.isOnBattlefield(TATYOVA)) parts.push('Tatyova draws a card');
+  return parts.length ? `, ${parts.join(', ')}` : '';
 }
 
 /** Omniscience with both Onnas: they are cast for free and returned over and over, drawing as many cards as needed. */
@@ -160,6 +173,8 @@ function findOmniscienceDrawLoop(game: AesiGame, loops: Loops): void {
     loops.how.push(
       'Omniscience + Kiri-Onna + Haru-Onna (draw as many as needed, bounce their creatures)',
     );
+    loops.round ??=
+      'cast Haru-Onna free (draw a card), it returns Kiri-Onna to hand; cast Kiri-Onna free, it returns Haru-Onna';
   }
 }
 
@@ -172,12 +187,14 @@ function findRetreatLoops(
   const { putter } = context;
   if (!putter) return;
   const putterName = putter.card.name.split(',')[0];
+  const landfall = `landfall: Retreat untaps ${putterName}${describeLandfall(game, context)}`;
   const chamber = game.hand.find((card) => card.land?.special === 'chamber');
   if (chamber)
     recordLandfallLoop(
       loops,
       context,
       `Retreat + ${putterName} + ${chamber.name}`,
+      `${putterName} puts ${chamber.name} onto the battlefield and it returns itself to hand; ${landfall}`,
       context.cobraBonus,
       0,
       true,
@@ -196,10 +213,13 @@ function findRetreatLoops(
       (effect === 'untap' ? 1 : 0) -
       cost;
     if (netMana < 0 && !game.infMana) continue;
+    const returnerName = permanent.card.name.split(',')[0];
     recordLandfallLoop(
       loops,
       context,
-      `Retreat + ${putterName} + ${permanent.card.name.split(',')[0]}`,
+      `Retreat + ${putterName} + ${returnerName}`,
+      `${returnerName} ({${cost}}) returns ${landsReturned === 1 ? 'a land' : `${landsReturned} lands`} to hand; ` +
+        `${putterName} puts a land onto the battlefield, ${landfall}`,
       netMana,
       cost,
       true,
@@ -232,7 +252,14 @@ function findKodamaMelokuLoop(
     context.availableMana >= 1 &&
     (netMana >= 0 || game.infMana)
   ) {
-    recordLandfallLoop(loops, context, 'Kodama + Meloku', netMana, 1);
+    recordLandfallLoop(
+      loops,
+      context,
+      'Kodama + Meloku',
+      `Meloku ({1}) returns a land to hand and makes an Illusion; the land comes back onto the battlefield${describeLandfall(game, context)}`,
+      netMana,
+      1,
+    );
     loops.tokens = true;
   }
 }
@@ -315,7 +342,14 @@ export function solveLoops(game: AesiGame): boolean {
     if (winFromLoops(game, loops)) return true;
     // draw everything first (keeping some cards), then put the lands down, then cast
     if (loops.draw && game.library.length > game.libraryCardsToKeep()) {
-      game.draw(game.library.length - game.libraryCardsToKeep());
+      const cardsToDraw = game.library.length - game.libraryCardsToKeep();
+      logLoopRounds(
+        game,
+        loops.round,
+        cardsToDraw,
+        `${cardsToDraw} cards drawn`,
+      );
+      game.draw(cardsToDraw);
       if (loops.landfall && loops.replay) dumpLandsFromHand(game);
       loops = findLoops(game);
       continue;
@@ -377,6 +411,7 @@ export function winFromLoops(game: AesiGame, loops: Loops): boolean {
     }
   }
   if (loops.mill) {
+    logMindsweeperRounds(game);
     game.millAll('endless Soratami Mindsweeper activations');
     return true;
   }
@@ -421,6 +456,42 @@ export function winFromLoops(game: AesiGame, loops: Loops): boolean {
     return game.areOpponentsBeaten();
   }
   return false;
+}
+
+const LOOP_ROUNDS_SHOWN = 3;
+
+/** A loop in the log: its first rounds, then one line for the rest (the loop is shortcut, as rule 732 allows). */
+function logLoopRounds(
+  game: AesiGame,
+  round: string | null,
+  roundCount: number,
+  outcome: string,
+): void {
+  if (!game.verbose || round === null) return;
+  for (
+    let roundNumber = 1;
+    roundNumber <= Math.min(LOOP_ROUNDS_SHOWN, roundCount);
+    roundNumber++
+  )
+    game.say(`  round ${roundNumber}: ${round}`);
+  if (roundCount > LOOP_ROUNDS_SHOWN)
+    game.say(
+      `  ... repeats ${roundCount - LOOP_ROUNDS_SHOWN} more times (${outcome})`,
+    );
+}
+
+/** Soratami Mindsweeper's loop: each activation mills an opponent 2, until every library is empty. */
+function logMindsweeperRounds(game: AesiGame): void {
+  let activations = 0;
+  for (let i = 0; i < game.opponentLibrarySizes.length; i++)
+    if (game.isOpponentAlive(i))
+      activations += Math.ceil(game.opponentLibrarySizes[i] / 2);
+  logLoopRounds(
+    game,
+    'Soratami Mindsweeper returns a land to hand: an opponent mills 2; the land comes back onto the battlefield',
+    activations,
+    'every library is empty',
+  );
 }
 
 /** Cast Blue Sun's Zenith with this X (at an opponent: they draw / mill X). */

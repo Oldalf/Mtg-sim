@@ -500,6 +500,44 @@ export function runKillTests(): boolean {
     }),
     1,
   );
+  allPassed = runPlayedKillTests() && allPassed;
   console.log(allPassed ? 'ALL OK' : 'SOME FAILED');
+  return allPassed;
+}
+
+/** Kill lines are played for real (engine/game/kill-line.ts): the game wins only when the line it found wins when
+ *  played, and then the game is the one the line was played in (cards moved, lands tapped, opponents beaten). */
+function runPlayedKillTests(): boolean {
+  let allPassed = true;
+  const checkPlayed = (label: string, game: GaleGame) => {
+    const killResult = game.checkKill();
+    game.adoptKillLineCopy();
+    const outcome = [
+      killResult,
+      game.areOpponentsBeaten(),
+      game.killMisses,
+      game.hand.map((card) => card.name),
+    ];
+    const expected = [2, true, 0, []];
+    const isGood = JSON.stringify(outcome) === JSON.stringify(expected);
+    console.log(
+      `${isGood ? 'OK ' : 'BAD'} played for real: ${label}: got ${JSON.stringify(outcome)}, expected ${JSON.stringify(expected)}`,
+    );
+    allPassed = allPassed && isGood;
+  };
+  checkPlayed(
+    'Guildmage + Mindcrank, Cacophony cast from hand (5 lands)',
+    board({
+      battlefieldNames: ['Duskmantle Guildmage', 'Mindcrank'],
+      hand: ['Maddening Cacophony'],
+    }),
+  );
+  checkPlayed(
+    'Riverchurn Monument cast, kicked Cacophony, Monument exhausted (12 lands)',
+    board({
+      hand: ['Maddening Cacophony', 'Riverchurn Monument'],
+      lands: [...repeatName('Island', 9), ...repeatName('Swamp', 3)],
+    }),
+  );
   return allPassed;
 }

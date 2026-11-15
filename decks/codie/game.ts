@@ -43,12 +43,14 @@ import {
   fetchCardFromLibrary,
   resolveCodieSpell,
 } from './spells';
-import { findKillLine } from './solver';
+import { CodieKillStep, findKillLine } from './solver';
+import { castFinisher } from './finishers';
 import { beginReiterateLoop, manaPerLoopCopy } from './solver-actions';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
   KillSearcher,
+  KillStep,
   Permanent,
 } from '../../engine/game/game-types';
 import { Game } from '../../engine/game/game';
@@ -400,14 +402,25 @@ export class CodieGame extends Game<CodieGame> {
         const line = findKillLine(game);
         if (!line) return 0;
         killSearcher.lastLine = line.steps;
-        this.winLine = line.steps;
+        this.winLine = line.steps.map((step) => step.text);
         this.nextTurnKillFound = !!line.nextTurn;
-        if (line.steps.some((step) => step.startsWith('loop')))
+        if (line.steps.some((step) => step.text.startsWith('loop')))
           this.loopUsed = 'loop';
         return line.backup ? 2 : 1;
       },
     };
     return killSearcher;
+  }
+  // ---------------------------------------------------------------- kill lines played for real
+  /** The solver's moves are done again in the real game (each one was done on a copy of it); the finisher is cast. */
+  override playsKillLines(): boolean {
+    return true;
+  }
+  override playKillStep(step: KillStep): string | null {
+    const codieStep = step as CodieKillStep;
+    if (codieStep.kind === 'finisher') return castFinisher(this, codieStep);
+    this.say(`> ${step.text}`);
+    return codieStep.play!(this) ? null : `could not ${step.text}`;
   }
   searchedStates = new Set<string>();
   searchedNodeCount = 0;

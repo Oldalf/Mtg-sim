@@ -164,6 +164,24 @@ ${report.gameCount} games each, same seeds. Difference to ${rows[0].label} in br
   }
 }
 
+/** Every deck's --diag ends with how its kill lines did when played for real (engine/game/kill-line.ts). */
+const KILL_LINE_METRICS = [
+  {
+    label: 'Kill misses (lines the game could not play)',
+    unit: 'n' as const,
+    measure: (rows: DiagRow[]) => sumOf(rows, 'killMisses'),
+  },
+  {
+    label: 'Kill chance fails (average lines fell short)',
+    unit: 'n' as const,
+    measure: (rows: DiagRow[]) => sumOf(rows, 'killChanceFails'),
+  },
+];
+
+function sumOf(rows: DiagRow[], field: string): number {
+  return rows.reduce((total, row) => total + (row[field] ?? 0), 0);
+}
+
 /** --diag as data: the deck's own measures for each list, on the same seeds. The first list is the base. */
 export function buildDiagReport(
   deck: Deck,
@@ -171,7 +189,7 @@ export function buildDiagReport(
   rowsPerList: DiagRow[][],
   gameCount: number,
 ): DiagReport {
-  const metrics = deck.diagMetrics ?? [];
+  const metrics = [...(deck.diagMetrics ?? []), ...KILL_LINE_METRICS];
   return {
     kind: 'diag',
     gameCount,

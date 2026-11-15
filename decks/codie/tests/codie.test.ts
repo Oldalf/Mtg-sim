@@ -65,7 +65,8 @@ export function runCodieTests(): boolean {
   const twelve = [...five, 'Mountain', 'Swamp', 'Island']; // 12 lands: 4 red, 3 black
   const thirteen = [...twelve, 'Plains'];
   const loops = (game: CodieGame) =>
-    findKillLine(game)?.steps.some((step) => step.startsWith('loop')) ?? false;
+    findKillLine(game)?.steps.some((step) => step.text.startsWith('loop')) ??
+    false;
 
   // ---- the finishers' arithmetic
   let game = board(five, []);
@@ -293,7 +294,9 @@ export function runCodieTests(): boolean {
     [
       silenceKillLine !== null,
       silenceKillLine?.nextTurn,
-      silenceKillLine?.steps.some((step) => step.startsWith('Codie + Silence')),
+      silenceKillLine?.steps.some((step) =>
+        step.text.startsWith('Codie + Silence'),
+      ),
     ],
     [true, true, true],
   );
@@ -317,8 +320,9 @@ export function runCodieTests(): boolean {
   game.library = game.library.filter((card) => card.name !== 'Profane Tutor');
   check(
     'Profane Tutor already gone: Codie + Fog finds nothing',
-    findKillLine(game)?.steps.some((step) => step.startsWith('Codie + Fog')) ??
-      false,
+    findKillLine(game)?.steps.some((step) =>
+      step.text.startsWith('Codie + Fog'),
+    ) ?? false,
     false,
   );
   // Codie's trigger in development finds Profane Tutor for a spell of mana value 1
@@ -407,7 +411,7 @@ export function runCodieTests(): boolean {
     "Jeska's Will + Reiterate with Codie out: the exile mode digs the library, so a Crackle in the library is enough",
     [
       exileModeKillLine !== null,
-      exileModeKillLine?.steps.some((step) => step.startsWith('loop')),
+      exileModeKillLine?.steps.some((step) => step.text.startsWith('loop')),
     ],
     [true, true],
   );
@@ -492,7 +496,7 @@ export function runCodieTests(): boolean {
   check(
     "Flashback Jeska's Will + Reiterate (1 + 3 + 6 = 10 mana): a bottomless loop, then Crackle",
     findKillLine(game)?.steps.some((step) =>
-      step.startsWith('loop: Flashback'),
+      step.text.startsWith('loop: Flashback'),
     ) ?? false,
     true,
   );
