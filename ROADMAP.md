@@ -40,6 +40,21 @@ The plan and its notes per task are in git (`PLAN.md` at commit `85acdc5`).
 - `/add-deck` (`.claude/skills/add-deck/SKILL.md`) walks a model through adding a deck; it was tried on the Edgar deck.
 - The game viewer has autoplay (Space, three speeds, kept in `localStorage`), the line in the URL (`?line=`), and is a grid table of seats that keep their place (see step 4), checked at 1 to 6 seats, real logs and phone width.
 
+## 6. What Pontus saw in the viewer (done 2026-11-15)
+
+The plan and its notes per task are in git (`PLAN.md` at commit `330b641`).
+
+- Whole game rows are links; the caption keeps one height while autoplay runs.
+- The fastest and slowest tags go only to games won on the earliest and latest turn (none when every game won on the same turn), `most-interaction` the same way.
+- Energy, experience and poison are player counters in the engine, the log and the viewer (a chip on the seat).
+- Volatile Stormdrake takes a creature in a pod: a permanent can change control between players (`Permanent.owner`, `GameCore.giveControlTo`), with energy paid to keep it.
+- Tokens: the deck owns a token's stats, Scryfall only gives its art (`data/token-art.json`, `pickTokenArt`). The log writes a creature token's face next to its name, so tokens with the same name and other stats stay apart; Aesi's armies are logged as x999. The viewer shows a creature token as Scryfall's art in our own frame with the game's stats, other tokens as their Scryfall token card.
+- D4 was committed without `npm run verify` (Pontus skipped it); step 7 runs it first.
+
+## 7. Mana as it really is, then Pontus's ideas (in progress)
+
+The plan is in `PLAN.md`: a wrong Gale win (a filter Signet counted as free mana by the kill search), then mana tapped in order into a floating pool that empties between the steps of a turn, then Meren's Snake, cards that grow on hover in the viewer, and a stats page per run in the Games tab.
+
 ## Ideas not decided (Pontus picks)
 
 Left from the planning of step 5. Each names the model it would need.
