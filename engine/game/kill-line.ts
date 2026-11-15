@@ -13,7 +13,7 @@ import { KILL_STEP_NEXT_TURN, KillStep } from './game-types';
 /** A run of the same step (a loop: Konrad's mill, a Guildmage activation) is logged for this many rounds, then summed up. */
 const ROUNDS_SHOWN = 3;
 /** After the deck's own tapping orders, a failed line is tried with this many orders that shuffle the sources'
- *  ranks a little (GameCore.killLineRankShuffle): a payment puzzle (tap the dual land now so an untap gets it back)
+ *  ranks a little (GameCore.killLineRankChange): a payment puzzle (tap the dual land now so an untap gets it back)
  *  that no fixed rule finds. */
 const SHUFFLED_TAPPING_ORDERS = 12;
 

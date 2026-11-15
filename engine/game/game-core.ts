@@ -468,20 +468,26 @@ export abstract class GameCore<S = unknown> {
     return rank;
   }
 
-  /** While a kill line is played with one of the shuffled tapping orders (kill-line.ts, after the deck's own): a
-   *  fixed small change (0 to 4) to a source's rank, the same for the same order, source and need. */
-  private killLineRankShuffle(permanent: Permanent, short: string): number {
+  /** While a kill line is played (kill-line.ts): how much later than its rank a source is tapped. A source the deck
+   *  keeps back (avoidsSource) comes last; with one of the shuffled tapping orders (after the deck's own) each source
+   *  gets a fixed small change (0 to 4), the same for the same order, source and need. */
+  private killLineRankChange(permanent: Permanent, short: string): number {
+    let change = this.avoidsSource(permanent) ? 10 : 0;
     const shuffledOrder =
       this.killLineTappingOrder - this.killLineTappingOrders() + 1;
-    if (!this.isPlayingKillLine || shuffledOrder <= 0) return 0;
-    const sourceIndex = this.battlefield.indexOf(permanent);
-    const hash =
-      (shuffledOrder * 7919 + sourceIndex * 104729 + short.charCodeAt(0) * 31) %
-      1000;
-    return hash / 250;
+    if (shuffledOrder > 0) {
+      const sourceIndex = this.battlefield.indexOf(permanent);
+      const hash =
+        (shuffledOrder * 7919 +
+          sourceIndex * 104729 +
+          short.charCodeAt(0) * 31) %
+        1000;
+      change += hash / 250;
+    }
+    return change;
   }
 
-  /** A deck may keep a source for later: it is tapped only when no other source will do. */
+  /** While a kill line is played, a deck may keep a source for later: it is tapped only when no other will do. */
   avoidsSource(_permanent: Permanent): boolean {
     return false;
   }
@@ -502,8 +508,8 @@ export abstract class GameCore<S = unknown> {
       if (!(sourceKind in rank)) {
         let fallbackRank = extraRank(short, sourceKind);
         if (fallbackRank === null) continue;
-        if (this.avoidsSource(permanent)) fallbackRank += 10;
-        fallbackRank += this.killLineRankShuffle(permanent, short);
+        if (this.isPlayingKillLine)
+          fallbackRank += this.killLineRankChange(permanent, short);
         if (fallbackRank < bestRank) {
           best = permanent;
           bestRank = fallbackRank;
@@ -513,8 +519,8 @@ export abstract class GameCore<S = unknown> {
       if (sourceKind === 'S' && !isInstantOrSorcery) continue;
       if (sourceKind === 'F' && feed < 1) continue;
       let adjustedRank = this.rankAdjust(short, sourceKind, rank[sourceKind]);
-      if (this.avoidsSource(permanent)) adjustedRank += 10;
-      adjustedRank += this.killLineRankShuffle(permanent, short);
+      if (this.isPlayingKillLine)
+        adjustedRank += this.killLineRankChange(permanent, short);
       if (
         this.highTidesThisTurn &&
         this.islandTyped(permanent) &&
