@@ -11,6 +11,11 @@ const KILL_LINE_SEEDS = 300;
 const SEEDS_SHOWN = Number(process.env.KILL_MISS_SEEDS_SHOWN ?? 5);
 
 export function runKillMissTests(deck: Deck): boolean {
+  // KILL_MISS_LOG_SEED=24 prints that seed's whole log (to see how a miss came about)
+  const seedToLog = Number(process.env.KILL_MISS_LOG_SEED ?? 0);
+  if (seedToLog > 0)
+    for (const event of playSeed(deck, seedToLog, true).log)
+      console.log(`T${event.turn} ${event.text}`);
   const seedsWithMisses: number[] = [];
   let chanceFails = 0;
   for (let seed = 1; seed <= KILL_LINE_SEEDS; seed++) {
