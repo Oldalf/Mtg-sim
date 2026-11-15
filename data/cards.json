@@ -7323,5 +7323,1585 @@
   "layout": "normal",
   "oracle_id": "dc974eb4-72b9-4213-887b-8ee684b93420",
   "scryfall_id": "df797e0d-8ae2-4fdb-a33d-4ba7852b0172"
+ },
+ "Glacial Fortress": {
+  "name": "Glacial Fortress",
+  "full_name": "Glacial Fortress",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {W} or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "027dd013-baa7-4111-b3c9-f4d1414e9c45",
+  "scryfall_id": "d306154a-7adb-4b35-b0cf-9c8d2fc1f72f"
+ },
+ "Aggressive Mammoth": {
+  "name": "Aggressive Mammoth",
+  "full_name": "Aggressive Mammoth",
+  "mana_cost": "{3}{G}{G}{G}",
+  "type_line": "Creature — Elephant",
+  "oracle": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)\nOther creatures you control have trample.",
+  "power": "8",
+  "toughness": "8",
+  "keywords": [
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "032b5fc4-5aca-41b6-9bf6-2c1ed0018968",
+  "scryfall_id": "7724b978-999b-4654-96f3-58e28aa7cb34"
+ },
+ "Helga, Skittish Seer": {
+  "name": "Helga, Skittish Seer",
+  "full_name": "Helga, Skittish Seer",
+  "mana_cost": "{G}{W}{U}",
+  "type_line": "Legendary Creature — Frog Druid",
+  "oracle": "Whenever you cast a creature spell with mana value 4 or greater, you draw a card, gain 1 life, and put a +1/+1 counter on Helga.\n{T}: Add X mana of any one color, where X is Helga's power. Spend this mana only to cast creature spells with mana value 4 or greater or creature spells with {X} in their mana costs.",
+  "power": "1",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "0a0d25a8-4f28-453b-9270-4d449fe0ca65",
+  "scryfall_id": "40339715-22d0-4f99-822b-a00d9824f27a"
+ },
+ "Sungrass Prairie": {
+  "name": "Sungrass Prairie",
+  "full_name": "Sungrass Prairie",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{1}, {T}: Add {G}{W}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "0a28dff0-2bd6-4105-b73a-b6c4735833fd",
+  "scryfall_id": "841f369e-6532-469c-8565-78094b33a3d9"
+ },
+ "Breaker of Armies": {
+  "name": "Breaker of Armies",
+  "full_name": "Breaker of Armies",
+  "mana_cost": "{8}",
+  "type_line": "Creature — Eldrazi",
+  "oracle": "All creatures able to block this creature do so.",
+  "power": "10",
+  "toughness": "8",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "0be1ace3-2b3d-4465-b63a-be523f73df36",
+  "scryfall_id": "784e843e-7010-466d-adbd-1dd1595aead1"
+ },
+ "Ulamog, the Ceaseless Hunger": {
+  "name": "Ulamog, the Ceaseless Hunger",
+  "full_name": "Ulamog, the Ceaseless Hunger",
+  "mana_cost": "{10}",
+  "type_line": "Legendary Creature — Eldrazi",
+  "oracle": "When you cast this spell, exile two target permanents.\nIndestructible\nWhenever Ulamog attacks, defending player exiles the top twenty cards of their library.",
+  "power": "10",
+  "toughness": "10",
+  "keywords": [
+   "Indestructible"
+  ],
+  "layout": "normal",
+  "oracle_id": "0bfa4512-e35a-4c93-b324-80ec659f5a97",
+  "scryfall_id": "c74ae706-b3b3-4097-a387-6f6c38a9b603"
+ },
+ "Angel of the Ruins": {
+  "name": "Angel of the Ruins",
+  "full_name": "Angel of the Ruins",
+  "mana_cost": "{5}{W}{W}",
+  "type_line": "Artifact Creature — Angel",
+  "oracle": "Flying\nWhen this creature enters, exile up to two target artifacts and/or enchantments.\nPlainscycling {2} ({2}, Discard this card: Search your library for a Plains card, reveal it, put it into your hand, then shuffle.)",
+  "power": "5",
+  "toughness": "7",
+  "keywords": [
+   "Flying",
+   "Plainscycling",
+   "Landcycling",
+   "Typecycling",
+   "Cycling"
+  ],
+  "layout": "normal",
+  "oracle_id": "14878a5f-7983-4133-a1a7-9d539531e092",
+  "scryfall_id": "4ad8d899-5901-4fc8-b4f0-adcc0d97fc6e"
+ },
+ "Terastodon": {
+  "name": "Terastodon",
+  "full_name": "Terastodon",
+  "mana_cost": "{6}{G}{G}",
+  "type_line": "Creature — Elephant",
+  "oracle": "When this creature enters, you may destroy up to three target noncreature permanents. For each permanent put into a graveyard this way, its controller creates a 3/3 green Elephant creature token.",
+  "power": "9",
+  "toughness": "9",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "17975a20-2c13-4325-be1e-0bcda5063a2d",
+  "scryfall_id": "63195796-197e-47ec-85f0-d4ec0065f6e6"
+ },
+ "Demolisher Spawn": {
+  "name": "Demolisher Spawn",
+  "full_name": "Demolisher Spawn",
+  "mana_cost": "{5}{G}{G}",
+  "type_line": "Enchantment Creature — Horror",
+  "oracle": "Trample, haste\nDelirium — Whenever this creature attacks, if there are four or more card types among cards in your graveyard, other attacking creatures get +4/+4 until end of turn.",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Delirium",
+   "Haste",
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "17bdd827-2e89-4559-939a-fc5c153189ed",
+  "scryfall_id": "16b97600-e4cf-4b9e-8f2d-2eb74298eb54"
+ },
+ "Myojin of Towering Might": {
+  "name": "Myojin of Towering Might",
+  "full_name": "Myojin of Towering Might",
+  "mana_cost": "{5}{G}{G}{G}",
+  "type_line": "Legendary Creature — Spirit",
+  "oracle": "Myojin of Towering Might enters with an indestructible counter on it if you cast it from your hand.\nRemove an indestructible counter from Myojin of Towering Might: Distribute eight +1/+1 counters among any number of target creatures you control. They gain trample until end of turn.",
+  "power": "8",
+  "toughness": "8",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1cb42cf5-ae69-46c5-b2ff-d2c1cd60099b",
+  "scryfall_id": "54803ba5-a2d7-4997-8e76-298aff6e1aff"
+ },
+ "Ruin Processor": {
+  "name": "Ruin Processor",
+  "full_name": "Ruin Processor",
+  "mana_cost": "{7}",
+  "type_line": "Creature — Eldrazi Processor",
+  "oracle": "When you cast this spell, you may put a card an opponent owns from exile into that player's graveyard. If you do, you gain 5 life.",
+  "power": "7",
+  "toughness": "8",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1cf82e44-99dd-48d3-a272-8df9835ebc0d",
+  "scryfall_id": "d997088b-f8f9-4e4c-ba64-aa7f43cc7505"
+ },
+ "Selvala, Heart of the Wilds": {
+  "name": "Selvala, Heart of the Wilds",
+  "full_name": "Selvala, Heart of the Wilds",
+  "mana_cost": "{1}{G}{G}",
+  "type_line": "Legendary Creature — Elf Scout",
+  "oracle": "Whenever another creature enters, its controller may draw a card if its power is greater than each other creature's power.\n{G}, {T}: Add X mana in any combination of colors, where X is the greatest power among creatures you control.",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1d725121-e50c-42f0-9128-56802f07c89e",
+  "scryfall_id": "812856be-cf51-42de-96d2-4ac91e71d442"
+ },
+ "Koma, World-Eater": {
+  "name": "Koma, World-Eater",
+  "full_name": "Koma, World-Eater",
+  "mana_cost": "{3}{G}{G}{U}{U}",
+  "type_line": "Legendary Creature — Serpent",
+  "oracle": "This spell can't be countered.\nTrample, ward {4}\nWhenever Koma deals combat damage to a player, create four 3/3 blue Serpent creature tokens named Koma's Coil.",
+  "power": "8",
+  "toughness": "12",
+  "keywords": [
+   "Trample",
+   "Ward"
+  ],
+  "layout": "normal",
+  "oracle_id": "1ebf2142-f171-40cd-8143-15f50084b707",
+  "scryfall_id": "c3b92caa-3401-4b11-9515-152f3e057c05"
+ },
+ "Seaside Citadel": {
+  "name": "Seaside Citadel",
+  "full_name": "Seaside Citadel",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\n{T}: Add {G}, {W}, or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "2ae77795-6a80-498b-bf69-6fd612f601e4",
+  "scryfall_id": "3a2bb545-87c2-4c09-b56d-8f2a2bf9f9e5"
+ },
+ "Garruk's Uprising": {
+  "name": "Garruk's Uprising",
+  "full_name": "Garruk's Uprising",
+  "mana_cost": "{2}{G}",
+  "type_line": "Enchantment",
+  "oracle": "When this enchantment enters, if you control a creature with power 4 or greater, draw a card.\nCreatures you control have trample. (Each of those creatures can deal excess combat damage to the player or planeswalker it's attacking.)\nWhenever a creature you control with power 4 or greater enters, draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "3127ae9b-a7a7-43ec-89d7-688f8445b33d",
+  "scryfall_id": "b58c4033-f764-42f6-966f-b7202a2babbf"
+ },
+ "Kozilek, the Broken Reality": {
+  "name": "Kozilek, the Broken Reality",
+  "full_name": "Kozilek, the Broken Reality",
+  "mana_cost": "{9}",
+  "type_line": "Legendary Creature — Eldrazi",
+  "oracle": "When you cast this spell, up to two target players each manifest two cards from their hands. For each card manifested this way, you draw a card. (To manifest a card, put it onto the battlefield face down as a 2/2 creature. Turn it face up any time for its mana cost if it's a creature card.)\nOther colorless creatures you control get +3/+2.",
+  "power": "9",
+  "toughness": "9",
+  "keywords": [
+   "Manifest"
+  ],
+  "layout": "normal",
+  "oracle_id": "39f4bf0e-47d5-4ae8-a504-71acda849850",
+  "scryfall_id": "04066abb-44d2-4730-9cc3-2584bc4c7d8c"
+ },
+ "Ob Nixilis, the Ascended": {
+  "name": "Ob Nixilis, the Ascended",
+  "full_name": "Ob Nixilis, the Ascended",
+  "mana_cost": "{5}{W}{W}",
+  "type_line": "Legendary Creature — Angel",
+  "oracle": "Flying\nWhen Ob Nixilis enters, destroy all tapped creatures your opponents control. You gain 1 life for each creature destroyed this way.\nAt the beginning of each end step, if you gained life this turn, create a 4/4 white Angel creature token with flying.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "3a49b518-61c8-4dea-8008-c5edf8384581",
+  "scryfall_id": "a022d35a-9d24-4818-9ff3-a522cfcb178e"
+ },
+ "Moldgraf Monstrosity": {
+  "name": "Moldgraf Monstrosity",
+  "full_name": "Moldgraf Monstrosity",
+  "mana_cost": "{4}{G}{G}{G}",
+  "type_line": "Creature — Insect",
+  "oracle": "Trample\nWhen this creature dies, exile it, then return two creature cards at random from your graveyard to the battlefield.",
+  "power": "8",
+  "toughness": "8",
+  "keywords": [
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "3c4d5392-27cf-492e-9ae1-dee330b82223",
+  "scryfall_id": "714ba062-f8ae-4ae6-a1c2-8fa093cc0fb2"
+ },
+ "Seedborn Muse": {
+  "name": "Seedborn Muse",
+  "full_name": "Seedborn Muse",
+  "mana_cost": "{3}{G}{G}",
+  "type_line": "Creature — Spirit",
+  "oracle": "Untap all permanents you control during each other player's untap step.",
+  "power": "2",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "463865bc-087e-477b-9e86-84e77f1ad931",
+  "scryfall_id": "76f58441-5674-4f1e-af9b-94e14ab7e619"
+ },
+ "Guardian Project": {
+  "name": "Guardian Project",
+  "full_name": "Guardian Project",
+  "mana_cost": "{3}{G}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever a nontoken creature you control enters, if it doesn't have the same name as another creature you control or a creature card in your graveyard, draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4f9e07ae-6341-4b46-9f77-f17ab659d266",
+  "scryfall_id": "5e45740f-a38a-4c73-9f81-0741aa98767b"
+ },
+ "Prairie Stream": {
+  "name": "Prairie Stream",
+  "full_name": "Prairie Stream",
+  "mana_cost": "",
+  "type_line": "Land — Plains Island",
+  "oracle": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5330e24a-8568-446e-840a-594cd08bd1bc",
+  "scryfall_id": "dd3d841f-9bac-4b4d-bf21-2dfadd1397fc"
+ },
+ "Omnath, Locus of the Void": {
+  "name": "Omnath, Locus of the Void",
+  "full_name": "Omnath, Locus of the Void",
+  "mana_cost": "{7}",
+  "type_line": "Legendary Creature — Elemental",
+  "oracle": "Omnath gets +1/+1 for each unspent mana you have.\nIf you would lose unspent mana, that mana becomes colorless instead.\nLandfall — Whenever a land you control enters, add {C}{C}.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Landfall"
+  ],
+  "layout": "normal",
+  "oracle_id": "579225b5-50e2-4891-8871-0bf6dbc07e33",
+  "scryfall_id": "727511d8-be1a-4c2e-92f6-5cc9d67a2b0c"
+ },
+ "Ulamog's Crusher": {
+  "name": "Ulamog's Crusher",
+  "full_name": "Ulamog's Crusher",
+  "mana_cost": "{8}",
+  "type_line": "Creature — Eldrazi",
+  "oracle": "Annihilator 2 (Whenever this creature attacks, defending player sacrifices two permanents of their choice.)\nThis creature attacks each combat if able.",
+  "power": "8",
+  "toughness": "8",
+  "keywords": [
+   "Annihilator"
+  ],
+  "layout": "normal",
+  "oracle_id": "597bce51-af89-4d13-9a97-667b4f4f4694",
+  "scryfall_id": "699c0f6f-b26b-4741-8140-8a6030cad127"
+ },
+ "Wandering Archaic": {
+  "name": "Wandering Archaic",
+  "full_name": "Wandering Archaic // Explore the Vastlands",
+  "mana_cost": "{5}",
+  "type_line": "Creature — Avatar",
+  "oracle": "Whenever an opponent casts an instant or sorcery spell, they may pay {2}. If they don't, you may copy that spell. You may choose new targets for the copy.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "modal_dfc",
+  "oracle_id": "6556c4c0-b10d-4208-821b-0c0a49abd188",
+  "scryfall_id": "18a2bdc8-b705-4eb5-b3a5-ff2e2ab8f312",
+  "back": {
+   "name": "Explore the Vastlands",
+   "mana_cost": "{3}",
+   "type_line": "Sorcery",
+   "oracle": "Each player looks at the top five cards of their library and may reveal a land card and/or an instant or sorcery card from among them. Each player puts the cards they revealed this way into their hand and the rest on the bottom of their library in a random order. Each player gains 3 life."
+  }
+ },
+ "Reflecting Pool": {
+  "name": "Reflecting Pool",
+  "full_name": "Reflecting Pool",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add one mana of any type that a land you control could produce.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "67f43ac6-2a58-4b53-b5d7-0330e2a252e2",
+  "scryfall_id": "cbc4281a-b70d-4f96-b309-38e986484829"
+ },
+ "Verdant Sun's Avatar": {
+  "name": "Verdant Sun's Avatar",
+  "full_name": "Verdant Sun's Avatar",
+  "mana_cost": "{5}{G}{G}",
+  "type_line": "Creature — Dinosaur Avatar",
+  "oracle": "Whenever this creature or another creature you control enters, you gain life equal to that creature's toughness.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "6ee71432-a44d-495e-86ea-d495d891c331",
+  "scryfall_id": "e8fce06a-56f7-4d0c-b094-ff147fec8256"
+ },
+ "Wilderness Reclamation": {
+  "name": "Wilderness Reclamation",
+  "full_name": "Wilderness Reclamation",
+  "mana_cost": "{3}{G}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your end step, untap all lands you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "6f856f99-4cb4-479d-958d-964220965ed6",
+  "scryfall_id": "5e6c0cb4-f17d-48ae-9bbf-9498505a23b0"
+ },
+ "Stormsurge Kraken": {
+  "name": "Stormsurge Kraken",
+  "full_name": "Stormsurge Kraken",
+  "mana_cost": "{3}{U}{U}",
+  "type_line": "Creature — Kraken",
+  "oracle": "Hexproof\nLieutenant — As long as you control your commander, this creature gets +2/+2 and has \"Whenever this creature becomes blocked, you may draw two cards.\"",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Hexproof",
+   "Lieutenant"
+  ],
+  "layout": "normal",
+  "oracle_id": "72bdc7ba-2906-436d-8405-6a8a3335fdae",
+  "scryfall_id": "525d742f-dadb-4a59-b70d-3b328bf99cca"
+ },
+ "Return to Nature": {
+  "name": "Return to Nature",
+  "full_name": "Return to Nature",
+  "mana_cost": "{1}{G}",
+  "type_line": "Instant",
+  "oracle": "Choose one —\n• Destroy target artifact.\n• Destroy target enchantment.\n• Exile target card from a graveyard.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "777b8ec4-a783-4297-96b7-4f200d0eb734",
+  "scryfall_id": "7e99f99a-68a1-4f35-853c-794630d313fc"
+ },
+ "Regal Behemoth": {
+  "name": "Regal Behemoth",
+  "full_name": "Regal Behemoth",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Creature — Dinosaur",
+  "oracle": "Trample\nWhen this creature enters, you become the monarch.\nWhenever you tap a land for mana while you're the monarch, add an additional one mana of any color.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "797c2b1c-c373-4735-b397-f561559c7c61",
+  "scryfall_id": "e3a8bdfa-a39c-4ca7-b591-1c6aca4cc5ac"
+ },
+ "Serra's Emissary": {
+  "name": "Serra's Emissary",
+  "full_name": "Serra's Emissary",
+  "mana_cost": "{4}{W}{W}{W}",
+  "type_line": "Creature — Angel",
+  "oracle": "Flying\nAs this creature enters, choose a card type.\nYou and creatures you control have protection from the chosen card type.",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "7a56c6e1-0509-4783-9b29-cf3163977166",
+  "scryfall_id": "0a69b668-7b7c-4da9-af49-e8cbc13797cc"
+ },
+ "Kozilek, Butcher of Truth": {
+  "name": "Kozilek, Butcher of Truth",
+  "full_name": "Kozilek, Butcher of Truth",
+  "mana_cost": "{10}",
+  "type_line": "Legendary Creature — Eldrazi",
+  "oracle": "When you cast this spell, draw four cards.\nAnnihilator 4 (Whenever this creature attacks, defending player sacrifices four permanents of their choice.)\nWhen Kozilek is put into a graveyard from anywhere, its owner shuffles their graveyard into their library.",
+  "power": "12",
+  "toughness": "12",
+  "keywords": [
+   "Annihilator"
+  ],
+  "layout": "normal",
+  "oracle_id": "7b8528b0-71eb-4c9e-bed9-aa2d2e84038f",
+  "scryfall_id": "d27cf7b7-7982-46bd-a559-7789c0e74bae"
+ },
+ "Cancel": {
+  "name": "Cancel",
+  "full_name": "Cancel",
+  "mana_cost": "{1}{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Counter target spell.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7d00fb28-ea6c-49a9-b4af-ffb38860a9a7",
+  "scryfall_id": "475bff39-220a-4490-9c2e-d311e306a6db"
+ },
+ "Radagast of Rhosgobel": {
+  "name": "Radagast of Rhosgobel",
+  "full_name": "Radagast of Rhosgobel",
+  "mana_cost": "{2}{G}{G}",
+  "type_line": "Legendary Creature — Avatar Wizard",
+  "oracle": "The first creature spell you cast each turn costs {2} less to cast and can be cast as though it had flash.",
+  "power": "2",
+  "toughness": "5",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "84d648c7-655e-4590-a3e0-366a8a4a4cb3",
+  "scryfall_id": "5741bbad-a6e4-45e0-b827-73f48c9975bf"
+ },
+ "Craterhoof Behemoth": {
+  "name": "Craterhoof Behemoth",
+  "full_name": "Craterhoof Behemoth",
+  "mana_cost": "{5}{G}{G}{G}",
+  "type_line": "Creature — Beast",
+  "oracle": "Haste\nWhen this creature enters, creatures you control gain trample and get +X/+X until end of turn, where X is the number of creatures you control.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Haste"
+  ],
+  "layout": "normal",
+  "oracle_id": "8c52bd39-0586-48ca-b263-17210cf9feb6",
+  "scryfall_id": "276f5cee-a501-4658-bd4d-7a044bf1ccbc"
+ },
+ "Aura Shards": {
+  "name": "Aura Shards",
+  "full_name": "Aura Shards",
+  "mana_cost": "{1}{G}{W}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever a creature you control enters, you may destroy target artifact or enchantment.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8d03d050-391c-4311-8c42-4ee632d40fdc",
+  "scryfall_id": "a6222cc6-996e-4b73-af87-e837bf1eb921"
+ },
+ "Akroma's Memorial": {
+  "name": "Akroma's Memorial",
+  "full_name": "Akroma's Memorial",
+  "mana_cost": "{7}",
+  "type_line": "Legendary Artifact",
+  "oracle": "Creatures you control have flying, first strike, vigilance, trample, haste, and protection from black and from red.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "967e8b3f-8266-4d9a-a38b-d0e10184e1e4",
+  "scryfall_id": "950ee61d-0bc1-4d7b-ba68-157061aa98eb"
+ },
+ "Rishkar's Expertise": {
+  "name": "Rishkar's Expertise",
+  "full_name": "Rishkar's Expertise",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Draw cards equal to the greatest power among creatures you control.\nYou may cast a spell with mana value 5 or less from your hand without paying its mana cost.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "97407cd0-2bd2-4074-94d3-4ec3d243fa78",
+  "scryfall_id": "efa9d2dc-b3b8-4475-bbfc-2db457ee4ffd"
+ },
+ "Ulamog, the Defiler": {
+  "name": "Ulamog, the Defiler",
+  "full_name": "Ulamog, the Defiler",
+  "mana_cost": "{10}",
+  "type_line": "Legendary Creature — Eldrazi",
+  "oracle": "When you cast this spell, target opponent exiles the top half of their library, rounded up.\nWard—Sacrifice two permanents.\nUlamog enters with a number of +1/+1 counters on it equal to the greatest mana value among cards in exile.\nUlamog has annihilator X, where X is the number of +1/+1 counters on it.",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Ward"
+  ],
+  "layout": "normal",
+  "oracle_id": "97836c48-8777-4b4e-98fb-e99204f38bdd",
+  "scryfall_id": "fd00d56a-86bd-41d8-82b6-975404ef8067"
+ },
+ "It That Betrays": {
+  "name": "It That Betrays",
+  "full_name": "It That Betrays",
+  "mana_cost": "{12}",
+  "type_line": "Creature — Eldrazi",
+  "oracle": "Annihilator 2 (Whenever this creature attacks, defending player sacrifices two permanents of their choice.)\nWhenever an opponent sacrifices a nontoken permanent, put that card onto the battlefield under your control.",
+  "power": "11",
+  "toughness": "11",
+  "keywords": [
+   "Annihilator"
+  ],
+  "layout": "normal",
+  "oracle_id": "b11187ab-f8a8-422b-b550-4495f96de0f2",
+  "scryfall_id": "ca08b369-783d-4fe4-8fc8-9cd595638550"
+ },
+ "Apex Devastator": {
+  "name": "Apex Devastator",
+  "full_name": "Apex Devastator",
+  "mana_cost": "{8}{G}{G}",
+  "type_line": "Creature — Chimera Hydra",
+  "oracle": "Cascade, cascade, cascade, cascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order. Multiple instances of cascade each trigger separately.)",
+  "power": "10",
+  "toughness": "10",
+  "keywords": [
+   "Cascade"
+  ],
+  "layout": "normal",
+  "oracle_id": "b4d6747c-3516-4e71-be30-af007c6b1dc4",
+  "scryfall_id": "8fa281e1-5c48-4bba-b8e9-88c6f5f53abb"
+ },
+ "Ohran Frostfang": {
+  "name": "Ohran Frostfang",
+  "full_name": "Ohran Frostfang",
+  "mana_cost": "{3}{G}{G}",
+  "type_line": "Snow Creature — Snake",
+  "oracle": "Attacking creatures you control have deathtouch.\nWhenever a creature you control deals combat damage to a player, draw a card.",
+  "power": "2",
+  "toughness": "6",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b99ada26-9a61-4175-9fb8-15a106960220",
+  "scryfall_id": "55fb93e6-d057-4b70-ad12-e98291fd4a2c"
+ },
+ "Goreclaw, Terror of Qal Sisma": {
+  "name": "Goreclaw, Terror of Qal Sisma",
+  "full_name": "Goreclaw, Terror of Qal Sisma",
+  "mana_cost": "{3}{G}",
+  "type_line": "Legendary Creature — Bear",
+  "oracle": "Creature spells you cast with power 4 or greater cost {2} less to cast.\nWhenever Goreclaw attacks, each creature you control with power 4 or greater gets +1/+1 and gains trample until end of turn.",
+  "power": "4",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "befb211f-37ca-4083-98d4-9ff1f28be3f2",
+  "scryfall_id": "ee47f23a-3ba9-4615-b170-c89d8ab99d78"
+ },
+ "Desolation Twin": {
+  "name": "Desolation Twin",
+  "full_name": "Desolation Twin",
+  "mana_cost": "{10}",
+  "type_line": "Creature — Eldrazi",
+  "oracle": "When you cast this spell, create a 10/10 colorless Eldrazi creature token.",
+  "power": "10",
+  "toughness": "10",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c0cb1f37-1679-42c7-a794-81e088157eeb",
+  "scryfall_id": "935ad5f7-f86c-4fea-94fe-d111d4435ac4"
+ },
+ "Turbulent Shore": {
+  "name": "Turbulent Shore",
+  "full_name": "Turbulent Shore",
+  "mana_cost": "",
+  "type_line": "Land — Plains Island",
+  "oracle": "({T}: Add {W} or {U}.)\nThis land enters tapped unless your opponents control eight or more lands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c13c5f07-dac5-47d0-a088-e24b9fbec3c5",
+  "scryfall_id": "92039341-152a-4797-a3df-e89e8d5145d3"
+ },
+ "Lightning Greaves": {
+  "name": "Lightning Greaves",
+  "full_name": "Lightning Greaves",
+  "mana_cost": "{2}",
+  "type_line": "Artifact — Equipment",
+  "oracle": "Equipped creature has haste and shroud. (It can't be the target of spells or abilities.)\nEquip {0}",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Equip"
+  ],
+  "layout": "normal",
+  "oracle_id": "ca204b66-8d0c-431a-8d34-282f7c2d17da",
+  "scryfall_id": "659ef698-96ea-4fa9-b63c-0da93a2d1e78"
+ },
+ "Colossal Majesty": {
+  "name": "Colossal Majesty",
+  "full_name": "Colossal Majesty",
+  "mana_cost": "{2}{G}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your upkeep, if you control a creature with power 4 or greater, draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "cac95494-0db0-4bec-8665-998431a6f76b",
+  "scryfall_id": "db1cadc7-f79e-4cc9-855b-68cb1ef25d5f"
+ },
+ "Tranquil Landscape": {
+  "name": "Tranquil Landscape",
+  "full_name": "Tranquil Landscape",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{T}, Sacrifice this land: Search your library for a basic Forest, Plains, or Island card, put it onto the battlefield tapped, then shuffle.\nCycling {G}{W}{U} ({G}{W}{U}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal",
+  "oracle_id": "d4eb65d5-99fd-4daf-b7d3-8ebf99ee9c61",
+  "scryfall_id": "228a8488-f2f2-4a60-b9ec-60cb5649c15c"
+ },
+ "Elemental Bond": {
+  "name": "Elemental Bond",
+  "full_name": "Elemental Bond",
+  "mana_cost": "{2}{G}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever a creature you control with power 3 or greater enters, draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d9a7e5a6-3e41-4fc6-987a-18fe1b9d67dd",
+  "scryfall_id": "8efbc925-54ac-4dda-82af-9091b1cf2fda"
+ },
+ "Temple of Plenty": {
+  "name": "Temple of Plenty",
+  "full_name": "Temple of Plenty",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {G} or {W}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Scry"
+  ],
+  "layout": "normal",
+  "oracle_id": "e521322b-0e83-458c-8936-7021a80ee279",
+  "scryfall_id": "ee59cd8e-490f-4382-a4e9-c6e2341897f1"
+ },
+ "Become the Avalanche": {
+  "name": "Become the Avalanche",
+  "full_name": "Become the Avalanche",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Draw a card for each creature you control with power 4 or greater. Then creatures you control get +X/+X until end of turn, where X is the number of cards in your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e5fcbbaf-9431-4fa8-ac11-12ace1f2054c",
+  "scryfall_id": "f49b7b11-ce78-44c4-98c2-dc8e2332c667"
+ },
+ "Akroma's Will": {
+  "name": "Akroma's Will",
+  "full_name": "Akroma's Will",
+  "mana_cost": "{3}{W}",
+  "type_line": "Instant",
+  "oracle": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Creatures you control gain flying, vigilance, and double strike until end of turn.\n• Creatures you control gain lifelink, indestructible, and protection from each color until end of turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "fd949f82-fc10-4e37-8aa9-6c7569fe3c55",
+  "scryfall_id": "608cdbdb-6f7e-438a-bab0-0e7782435f0f"
+ },
+ "Fell the Profane": {
+  "name": "Fell the Profane",
+  "full_name": "Fell the Profane // Fell Mire",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Instant",
+  "oracle": "Destroy target creature or planeswalker.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "modal_dfc",
+  "oracle_id": "053a69d8-2b5e-4f14-8b02-ca405891dc4a",
+  "scryfall_id": "a3cb782d-c459-468d-9779-9b5669abc337",
+  "back": {
+   "name": "Fell Mire",
+   "mana_cost": "",
+   "type_line": "Land",
+   "oracle": "As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {B}."
+  }
+ },
+ "Cabal Stronghold": {
+  "name": "Cabal Stronghold",
+  "full_name": "Cabal Stronghold",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{3}, {T}: Add {B} for each basic Swamp you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "066cd584-773c-4623-be53-8f6feda5a26a",
+  "scryfall_id": "0bda51ef-ee3e-48d4-92e2-c9083bbe0f80"
+ },
+ "Caged Sun": {
+  "name": "Caged Sun",
+  "full_name": "Caged Sun",
+  "mana_cost": "{6}",
+  "type_line": "Artifact",
+  "oracle": "As this artifact enters, choose a color.\nCreatures you control of the chosen color get +1/+1.\nWhenever a land's ability causes you to add one or more mana of the chosen color, add an additional one mana of that color.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "09b895ff-e729-48d1-bfc1-ea5fd7adda6a",
+  "scryfall_id": "dfe6f9ec-3b7f-4c11-acd1-440e14217e5d"
+ },
+ "Gauntlet of Power": {
+  "name": "Gauntlet of Power",
+  "full_name": "Gauntlet of Power",
+  "mana_cost": "{5}",
+  "type_line": "Artifact",
+  "oracle": "As this artifact enters, choose a color.\nCreatures of the chosen color get +1/+1.\nWhenever a basic land is tapped for mana of the chosen color, its controller adds an additional one mana of that color.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1182591d-8660-4a2e-8d77-2fc544b02b66",
+  "scryfall_id": "d153663f-f08a-483e-92c9-82b5a9723807"
+ },
+ "Will of the Abzan": {
+  "name": "Will of the Abzan",
+  "full_name": "Will of the Abzan",
+  "mana_cost": "{3}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Any number of target opponents each sacrifice a creature with the greatest power among creatures that player controls and lose 3 life.\n• Return target creature card from your graveyard to the battlefield.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1ae29791-aa7c-4050-bf72-dd0f739b11b8",
+  "scryfall_id": "e7e92b6b-ec63-477b-8a83-18c0e52615cc"
+ },
+ "Sheoldred's Edict": {
+  "name": "Sheoldred's Edict",
+  "full_name": "Sheoldred's Edict",
+  "mana_cost": "{1}{B}",
+  "type_line": "Instant",
+  "oracle": "Choose one —\n• Each opponent sacrifices a nontoken creature of their choice.\n• Each opponent sacrifices a creature token of their choice.\n• Each opponent sacrifices a planeswalker of their choice.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "217062f5-96f1-454c-9507-17f34ef37070",
+  "scryfall_id": "a9225cc3-90f0-448f-a8d9-7c6c2796d077"
+ },
+ "Magus of the Coffers": {
+  "name": "Magus of the Coffers",
+  "full_name": "Magus of the Coffers",
+  "mana_cost": "{4}{B}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "{2}, {T}: Add {B} for each Swamp you control.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "23dd895c-92bd-4af0-8b1a-7d76ca49178f",
+  "scryfall_id": "962a16bb-516c-4e74-b8dd-edd4c63c5fff"
+ },
+ "Blood Speaker": {
+  "name": "Blood Speaker",
+  "full_name": "Blood Speaker",
+  "mana_cost": "{3}{B}",
+  "type_line": "Creature — Ogre Shaman",
+  "oracle": "At the beginning of your upkeep, you may sacrifice this creature. If you do, search your library for a Demon card, reveal that card, put it into your hand, then shuffle.\nWhenever a Demon you control enters, return this card from your graveyard to your hand.",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "2659c0ea-9ae0-4be3-b9f7-5a38230815ad",
+  "scryfall_id": "f218bb94-d5a2-41f6-8bca-b689dcd09a43"
+ },
+ "Roaming Throne": {
+  "name": "Roaming Throne",
+  "full_name": "Roaming Throne",
+  "mana_cost": "{4}",
+  "type_line": "Artifact Creature — Golem",
+  "oracle": "Ward {2}\nAs this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nIf a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "Ward"
+  ],
+  "layout": "normal",
+  "oracle_id": "3640c29b-1534-4952-b297-619ade948431",
+  "scryfall_id": "32fd8b7c-baf3-4d3d-be6f-044a917b11a0"
+ },
+ "Urza's Cave": {
+  "name": "Urza's Cave",
+  "full_name": "Urza's Cave",
+  "mana_cost": "",
+  "type_line": "Land — Urza's Cave",
+  "oracle": "{T}: Add {C}.\n{3}, {T}, Sacrifice this land: Search your library for a land card, put it onto the battlefield tapped, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4474ecee-0ec3-409b-90df-738d9313fe3c",
+  "scryfall_id": "926916ed-2f22-4ba9-9427-194886ad6c1e"
+ },
+ "Bloodletter of Aclazotz": {
+  "name": "Bloodletter of Aclazotz",
+  "full_name": "Bloodletter of Aclazotz",
+  "mana_cost": "{1}{B}{B}{B}",
+  "type_line": "Creature — Vampire Demon",
+  "oracle": "Flying\nIf an opponent would lose life during your turn, they lose twice that much life instead. (Damage causes loss of life.)",
+  "power": "2",
+  "toughness": "4",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "469956a2-7cd4-4695-b8f4-c841526f160d",
+  "scryfall_id": "d4f6027a-003a-4f9d-929a-0b6da1fa42c9"
+ },
+ "Defile": {
+  "name": "Defile",
+  "full_name": "Defile",
+  "mana_cost": "{B}",
+  "type_line": "Instant",
+  "oracle": "Target creature gets -1/-1 until end of turn for each Swamp you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "49dddec0-d958-4810-8c6e-225fc8118c8f",
+  "scryfall_id": "5bcb4398-edd1-41a7-a496-b12bce22ceb6"
+ },
+ "Flare of Malice": {
+  "name": "Flare of Malice",
+  "full_name": "Flare of Malice",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Instant",
+  "oracle": "You may sacrifice a nontoken black creature rather than pay this spell's mana cost.\nEach opponent sacrifices a creature or planeswalker with the greatest mana value among creatures and planeswalkers they control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4ce156f8-6b0b-41ce-9e8f-b2735c757406",
+  "scryfall_id": "19efb9ce-62eb-4cbf-b01e-979f3fd09ba6"
+ },
+ "Harvester of Souls": {
+  "name": "Harvester of Souls",
+  "full_name": "Harvester of Souls",
+  "mana_cost": "{4}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhenever another nontoken creature dies, you may draw a card.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Deathtouch"
+  ],
+  "layout": "normal",
+  "oracle_id": "5987ce77-10ad-4871-900a-5a005fcf4955",
+  "scryfall_id": "3e02dd03-cced-43b7-ba8f-cdcf9083252a"
+ },
+ "Throne of Eldraine": {
+  "name": "Throne of Eldraine",
+  "full_name": "Throne of Eldraine",
+  "mana_cost": "{5}",
+  "type_line": "Legendary Artifact",
+  "oracle": "As Throne of Eldraine enters, choose a color.\n{T}: Add four mana of the chosen color. Spend this mana only to cast monocolored spells of that color.\n{3}, {T}: Draw two cards. Spend only mana of the chosen color to activate this ability.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5b9a2b81-a645-43be-8001-03817ac210ca",
+  "scryfall_id": "6d98bdb7-bdba-4e06-a122-9bcf131f4cc8"
+ },
+ "Soul Shatter": {
+  "name": "Soul Shatter",
+  "full_name": "Soul Shatter",
+  "mana_cost": "{2}{B}",
+  "type_line": "Instant",
+  "oracle": "Each opponent sacrifices a creature or planeswalker with the greatest mana value among creatures and planeswalkers they control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "615927c2-3fb0-4e64-a1a7-55fb56de1423",
+  "scryfall_id": "2c2fb07b-0f70-403b-be8b-b5217f12e671"
+ },
+ "Lord of the Void": {
+  "name": "Lord of the Void",
+  "full_name": "Lord of the Void",
+  "mana_cost": "{4}{B}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Flying\nWhenever this creature deals combat damage to a player, exile the top seven cards of that player's library, then put a creature card from among them onto the battlefield under your control.",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "626b85f8-8889-46e6-9659-460bac79ae9b",
+  "scryfall_id": "2e014649-0d96-4bc9-8446-e57df50a2a4c"
+ },
+ "Demonlord Belzenlok": {
+  "name": "Demonlord Belzenlok",
+  "full_name": "Demonlord Belzenlok",
+  "mana_cost": "{4}{B}{B}",
+  "type_line": "Legendary Creature — Elder Demon",
+  "oracle": "Flying, trample\nWhen Demonlord Belzenlok enters, exile cards from the top of your library until you exile a nonland card, then put that card into your hand. If the card's mana value is 4 or greater, repeat this process. Demonlord Belzenlok deals 1 damage to you for each card put into your hand this way.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Flying",
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "667ece0e-a474-4e11-8ac4-6c8fc354457c",
+  "scryfall_id": "b07114d8-40b3-4102-8d70-e3ed94a7f515"
+ },
+ "Varragoth, Bloodsky Sire": {
+  "name": "Varragoth, Bloodsky Sire",
+  "full_name": "Varragoth, Bloodsky Sire",
+  "mana_cost": "{2}{B}",
+  "type_line": "Legendary Creature — Demon Rogue",
+  "oracle": "Deathtouch\nBoast — {1}{B}: Target player searches their library for a card, then shuffles and puts that card on top. (Activate only if this creature attacked this turn and only once each turn.)",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [
+   "Boast",
+   "Deathtouch"
+  ],
+  "layout": "normal",
+  "oracle_id": "68b41a04-8cb0-4edf-b488-a219494453ae",
+  "scryfall_id": "efa8dbf0-4e5a-452b-826f-5813e8cd9d85"
+ },
+ "Necromancy": {
+  "name": "Necromancy",
+  "full_name": "Necromancy",
+  "mana_cost": "{2}{B}",
+  "type_line": "Enchantment",
+  "oracle": "You may cast this spell as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.\nWhen this enchantment enters, if it's on the battlefield, it becomes an Aura with \"enchant creature put onto the battlefield with Necromancy.\" Put target creature card from a graveyard onto the battlefield under your control and attach this enchantment to it. When this enchantment leaves the battlefield, that creature's controller sacrifices it.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "699b192c-f3f2-4ac5-9ca9-e35bcf08ad8a",
+  "scryfall_id": "3dd34a1a-e76b-46ee-be8d-5f7f4a092648"
+ },
+ "Blasphemous Edict": {
+  "name": "Blasphemous Edict",
+  "full_name": "Blasphemous Edict",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "You may pay {B} rather than pay this spell's mana cost if there are thirteen or more creatures on the battlefield.\nEach player sacrifices thirteen creatures of their choice.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "6cf50e21-0f60-4e9a-b910-ebe1bad2a29e",
+  "scryfall_id": "11040ecd-3153-4029-b42b-1441bc51ec34"
+ },
+ "Nirkana Revenant": {
+  "name": "Nirkana Revenant",
+  "full_name": "Nirkana Revenant",
+  "mana_cost": "{4}{B}{B}",
+  "type_line": "Creature — Vampire Shade",
+  "oracle": "Whenever you tap a Swamp for mana, add an additional {B}.\n{B}: This creature gets +1/+1 until end of turn.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "6dff1def-5b94-40c8-a942-dea8743ab47c",
+  "scryfall_id": "96da0a4c-2865-4383-875a-9f5d6503baee"
+ },
+ "Demonic Counsel": {
+  "name": "Demonic Counsel",
+  "full_name": "Demonic Counsel",
+  "mana_cost": "{1}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Search your library for a Demon card, reveal it, put it into your hand, then shuffle.\nDelirium — If there are four or more card types among cards in your graveyard, instead search your library for any card, put it into your hand, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Delirium"
+  ],
+  "layout": "normal",
+  "oracle_id": "712e3479-722c-40a1-9b61-d5bdde93042b",
+  "scryfall_id": "ff79c845-4115-4fbf-b20f-37470f2bf7fb"
+ },
+ "Ob Nixilis, Unshackled": {
+  "name": "Ob Nixilis, Unshackled",
+  "full_name": "Ob Nixilis, Unshackled",
+  "mana_cost": "{4}{B}{B}",
+  "type_line": "Legendary Creature — Demon",
+  "oracle": "Flying, trample\nWhenever an opponent searches their library, that player sacrifices a creature of their choice and loses 10 life.\nWhenever another creature dies, put a +1/+1 counter on Ob Nixilis.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "Flying",
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "73021bd2-3b60-4fe4-8858-6eb525be1422",
+  "scryfall_id": "6c727f49-833a-4b79-9946-bfbc6b06999c"
+ },
+ "Vilis, Broker of Blood": {
+  "name": "Vilis, Broker of Blood",
+  "full_name": "Vilis, Broker of Blood",
+  "mana_cost": "{5}{B}{B}{B}",
+  "type_line": "Legendary Creature — Demon",
+  "oracle": "Flying\n{B}, Pay 2 life: Target creature gets -1/-1 until end of turn.\nWhenever you lose life, draw that many cards. (Damage causes loss of life.)",
+  "power": "8",
+  "toughness": "8",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "7c209753-121b-4859-944b-4e33f885e777",
+  "scryfall_id": "d68ce39b-0847-4132-b3b5-8bc25f2e7be9"
+ },
+ "Command Beacon": {
+  "name": "Command Beacon",
+  "full_name": "Command Beacon",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{T}, Sacrifice this land: Put your commander into your hand from the command zone.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7e8c2a18-e404-40ff-a9e0-ec3eeb6d576e",
+  "scryfall_id": "e537cbf9-1e27-48bf-bb52-97daf3e5b41d"
+ },
+ "Nykthos, Shrine to Nyx": {
+  "name": "Nykthos, Shrine to Nyx",
+  "full_name": "Nykthos, Shrine to Nyx",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "{T}: Add {C}.\n{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color. (Your devotion to a color is the number of mana symbols of that color in the mana costs of permanents you control.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "84dc18f0-8225-4b40-a165-b10321e41769",
+  "scryfall_id": "834b27a0-dfd7-4f96-8cde-cacac4b24acc"
+ },
+ "Burnished Hart": {
+  "name": "Burnished Hart",
+  "full_name": "Burnished Hart",
+  "mana_cost": "{3}",
+  "type_line": "Artifact Creature — Elk",
+  "oracle": "{3}, Sacrifice this creature: Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "893fed41-c144-433f-af88-bc7d419b7fb3",
+  "scryfall_id": "65ebbff0-fbe6-4310-a33f-e00bb2534979"
+ },
+ "Cavern of Souls": {
+  "name": "Cavern of Souls",
+  "full_name": "Cavern of Souls",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "89ca686a-7c72-4d8f-9290-e89635624a83",
+  "scryfall_id": "3aad15a2-8a1b-4460-9b06-e85863081878"
+ },
+ "Indulgent Tormentor": {
+  "name": "Indulgent Tormentor",
+  "full_name": "Indulgent Tormentor",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Flying\nAt the beginning of your upkeep, draw a card unless target opponent sacrifices a creature of their choice or pays 3 life.",
+  "power": "5",
+  "toughness": "3",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "8b202c63-c961-4590-958f-d17e76610ab5",
+  "scryfall_id": "af042ca9-c57d-4477-965e-182fc557ca6b"
+ },
+ "Exquisite Blood": {
+  "name": "Exquisite Blood",
+  "full_name": "Exquisite Blood",
+  "mana_cost": "{4}{B}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever an opponent loses life, you gain that much life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8f933fae-6c0c-42d7-a817-14760d8285cd",
+  "scryfall_id": "0e8ccfa7-4178-476a-a155-0ca1c98556c9"
+ },
+ "Sheoldred, Whispering One": {
+  "name": "Sheoldred, Whispering One",
+  "full_name": "Sheoldred, Whispering One",
+  "mana_cost": "{5}{B}{B}",
+  "type_line": "Legendary Creature — Phyrexian Praetor",
+  "oracle": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)\nAt the beginning of your upkeep, return target creature card from your graveyard to the battlefield.\nAt the beginning of each opponent's upkeep, that player sacrifices a creature of their choice.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Landwalk",
+   "Swampwalk"
+  ],
+  "layout": "normal",
+  "oracle_id": "9218b56d-aaec-482f-99e9-d95d227bfe25",
+  "scryfall_id": "8b207a4a-47d1-4905-81d3-455c59bfd7da"
+ },
+ "Liliana of the Dark Realms": {
+  "name": "Liliana of the Dark Realms",
+  "full_name": "Liliana of the Dark Realms",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Legendary Planeswalker — Liliana",
+  "oracle": "+1: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.\n−3: Target creature gets +X/+X or -X/-X until end of turn, where X is the number of Swamps you control.\n−6: You get an emblem with \"Swamps you control have '{T}: Add {B}{B}{B}{B}.'\"",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "92301066-8904-41bc-84bd-4aa286cbab9c",
+  "scryfall_id": "00cbe506-7332-4d29-9404-b7c6e1e791d8"
+ },
+ "The Soul Stone": {
+  "name": "The Soul Stone",
+  "full_name": "The Soul Stone",
+  "mana_cost": "{1}{B}",
+  "type_line": "Legendary Artifact — Infinity Stone",
+  "oracle": "Indestructible\n{T}: Add {B}.\n{6}{B}, {T}, Exile a creature you control: Harness The Soul Stone. (Once harnessed, its ∞ ability is active.)\n∞ — At the beginning of your upkeep, return target creature card from your graveyard to the battlefield.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Indestructible"
+  ],
+  "layout": "normal",
+  "oracle_id": "92cfba68-12f6-4f97-9187-0f6a39656a0f",
+  "scryfall_id": "1982f910-a9bd-4e94-a187-84381b22aacc"
+ },
+ "Bontu's Monument": {
+  "name": "Bontu's Monument",
+  "full_name": "Bontu's Monument",
+  "mana_cost": "{3}",
+  "type_line": "Legendary Artifact",
+  "oracle": "Black creature spells you cast cost {1} less to cast.\nWhenever you cast a creature spell, each opponent loses 1 life and you gain 1 life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "940ba435-7abc-40f8-a5af-c1c653b3284e",
+  "scryfall_id": "171a9a3f-6278-4921-9848-2b8459869d6c"
+ },
+ "Taborax, Hope's Demise": {
+  "name": "Taborax, Hope's Demise",
+  "full_name": "Taborax, Hope's Demise",
+  "mana_cost": "{2}{B}",
+  "type_line": "Legendary Creature — Demon Cleric",
+  "oracle": "Flying\nTaborax has lifelink as long as it has five or more +1/+1 counters on it.\nWhenever another nontoken creature you control dies, put a +1/+1 counter on Taborax. If that creature was a Cleric, you may draw a card. If you do, you lose 1 life.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "955abada-aba2-41c2-96ff-58e3679ad7e5",
+  "scryfall_id": "505ffef6-511b-4eca-85e1-195a56004611"
+ },
+ "Ardyn, the Usurper": {
+  "name": "Ardyn, the Usurper",
+  "full_name": "Ardyn, the Usurper",
+  "mana_cost": "{5}{B}{B}{B}",
+  "type_line": "Legendary Creature — Elder Human Noble",
+  "oracle": "Demons you control have menace, lifelink, and haste.\nStarscourge — At the beginning of combat on your turn, exile up to one target creature card from a graveyard. If you exiled a card this way, create a token that's a copy of that card, except it's a 5/5 black Demon.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "Starscourge"
+  ],
+  "layout": "normal",
+  "oracle_id": "9ae13026-960a-4d31-b775-d47209a1e313",
+  "scryfall_id": "4627072e-9c72-4084-8021-690777342548"
+ },
+ "Archfiend of Despair": {
+  "name": "Archfiend of Despair",
+  "full_name": "Archfiend of Despair",
+  "mana_cost": "{6}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Flying\nYour opponents can't gain life.\nAt the beginning of each end step, each opponent loses life equal to the life that player lost this turn. (Damage causes loss of life.)",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "9c36760b-57c5-488b-afc9-ef141942c6ab",
+  "scryfall_id": "137b69ad-3296-49f1-bddf-24818a03830f"
+ },
+ "Reanimate": {
+  "name": "Reanimate",
+  "full_name": "Reanimate",
+  "mana_cost": "{B}",
+  "type_line": "Sorcery",
+  "oracle": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "a044474a-cd72-4e9d-bd8d-a08f2de9cdc0",
+  "scryfall_id": "368b6903-5fc4-43e7-bd44-46b8107c8bb4"
+ },
+ "Crypt Ghast": {
+  "name": "Crypt Ghast",
+  "full_name": "Crypt Ghast",
+  "mana_cost": "{3}{B}",
+  "type_line": "Creature — Spirit",
+  "oracle": "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nWhenever you tap a Swamp for mana, add an additional {B}.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Extort"
+  ],
+  "layout": "normal",
+  "oracle_id": "a3c8d817-7949-4dae-b9f5-f9d952479270",
+  "scryfall_id": "60bebd79-f88c-44ef-8920-e19031bad1d6"
+ },
+ "Malakir Rebirth": {
+  "name": "Malakir Rebirth",
+  "full_name": "Malakir Rebirth // Malakir Mire",
+  "mana_cost": "{B}",
+  "type_line": "Instant",
+  "oracle": "Choose target creature. You lose 2 life. Until end of turn, that creature gains \"When this creature dies, return it to the battlefield tapped under its owner's control.\"",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "modal_dfc",
+  "oracle_id": "a731e87b-8d99-4b64-8ee3-8e540d652366",
+  "scryfall_id": "609d3ecf-f88d-4268-a8d3-4bf2bcf5df60",
+  "back": {
+   "name": "Malakir Mire",
+   "mana_cost": "",
+   "type_line": "Land",
+   "oracle": "This land enters tapped.\n{T}: Add {B}."
+  }
+ },
+ "Archfiend of Depravity": {
+  "name": "Archfiend of Depravity",
+  "full_name": "Archfiend of Depravity",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Flying\nAt the beginning of each opponent's end step, that player chooses up to two creatures they control, then sacrifices the rest.",
+  "power": "5",
+  "toughness": "4",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "af247e2f-b271-4f5b-ab98-4579d2c17c21",
+  "scryfall_id": "0ec85db7-c8ec-4730-b692-c140977436aa"
+ },
+ "Urza's Incubator": {
+  "name": "Urza's Incubator",
+  "full_name": "Urza's Incubator",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "As this artifact enters, choose a creature type.\nCreature spells of the chosen type cost {2} less to cast.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b380c04b-0bce-4328-8f0a-1425e48bee72",
+  "scryfall_id": "c4589226-6072-409b-b598-ebd87f675a6a"
+ },
+ "Ancient Cellarspawn": {
+  "name": "Ancient Cellarspawn",
+  "full_name": "Ancient Cellarspawn",
+  "mana_cost": "{1}{B}{B}",
+  "type_line": "Enchantment Creature — Horror",
+  "oracle": "Each spell you cast that's a Demon, Horror, or Nightmare costs {1} less to cast.\nWhenever you cast a spell, if the amount of mana spent to cast it was less than its mana value, target opponent loses life equal to the difference.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b8510b34-0e5f-4639-9db1-1ba40d84b800",
+  "scryfall_id": "27e2477d-4f04-408d-8c39-8a886ac81f44"
+ },
+ "Jet Medallion": {
+  "name": "Jet Medallion",
+  "full_name": "Jet Medallion",
+  "mana_cost": "{2}",
+  "type_line": "Artifact",
+  "oracle": "Black spells you cast cost {1} less to cast.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "bccb06f1-8839-4104-9ffa-c79a817f8378",
+  "scryfall_id": "d423365c-a32c-4060-b178-3221e3200387"
+ },
+ "Unholy Annex": {
+  "name": "Unholy Annex",
+  "full_name": "Unholy Annex // Ritual Chamber",
+  "mana_cost": "{2}{B}",
+  "type_line": "Enchantment — Room",
+  "oracle": "At the beginning of your end step, draw a card. If you control a Demon, each opponent loses 2 life and you gain 2 life. Otherwise, you lose 2 life.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "split",
+  "oracle_id": "bd388ad9-a47b-4b0b-b94a-8e4343cd3de5",
+  "scryfall_id": "0fb4c734-c698-46f2-bc78-5f036f472e5b",
+  "back": {
+   "name": "Ritual Chamber",
+   "mana_cost": "{3}{B}{B}",
+   "type_line": "Enchantment — Room",
+   "oracle": "When you unlock this door, create a 6/6 black Demon creature token with flying.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)"
+  }
+ },
+ "Herald's Horn": {
+  "name": "Herald's Horn",
+  "full_name": "Herald's Horn",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "As this artifact enters, choose a creature type.\nCreature spells you cast of the chosen type cost {1} less to cast.\nAt the beginning of your upkeep, look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c02c5547-b9c9-4b2d-9d12-e87bfba8f2d2",
+  "scryfall_id": "e8fcf84c-0c2e-42c4-b860-622227e3cde3"
+ },
+ "Animate Dead": {
+  "name": "Animate Dead",
+  "full_name": "Animate Dead",
+  "mana_cost": "{1}{B}",
+  "type_line": "Enchantment — Aura",
+  "oracle": "Enchant creature card in a graveyard\nWhen this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Return enchanted creature card to the battlefield under your control and attach this Aura to it. When this Aura leaves the battlefield, that creature's controller sacrifices it.\nEnchanted creature gets -1/-0.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Enchant"
+  ],
+  "layout": "normal",
+  "oracle_id": "c0d8fef4-65f4-4769-982d-b397d2b7e977",
+  "scryfall_id": "cc0c2bab-4392-4e7b-9d14-2901f4ffbae8"
+ },
+ "Sower of Discord": {
+  "name": "Sower of Discord",
+  "full_name": "Sower of Discord",
+  "mana_cost": "{4}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Flying\nAs this creature enters, choose two players.\nWhenever damage is dealt to one of the chosen players, the other chosen player also loses that much life.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "c6aadaf0-eb47-4228-95e2-48e3ff7b6e2f",
+  "scryfall_id": "f532301e-9005-4770-9e04-868f69f6becf"
+ },
+ "Valgavoth, Terror Eater": {
+  "name": "Valgavoth, Terror Eater",
+  "full_name": "Valgavoth, Terror Eater",
+  "mana_cost": "{6}{B}{B}{B}",
+  "type_line": "Legendary Creature — Elder Demon",
+  "oracle": "Flying, lifelink\nWard—Sacrifice three nonland permanents.\nIf a card you didn't control would be put into an opponent's graveyard from anywhere, exile it instead.\nDuring your turn, you may play cards exiled with Valgavoth. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost.",
+  "power": "9",
+  "toughness": "9",
+  "keywords": [
+   "Flying",
+   "Lifelink",
+   "Ward"
+  ],
+  "layout": "normal",
+  "oracle_id": "cae3ec72-436d-4086-9dcb-17b3d92ad5c4",
+  "scryfall_id": "7740ff55-67bb-409e-90f7-2c2c8b8c770a"
+ },
+ "K'rrik, Son of Yawgmoth": {
+  "name": "K'rrik, Son of Yawgmoth",
+  "full_name": "K'rrik, Son of Yawgmoth",
+  "mana_cost": "{4}{B/P}{B/P}{B/P}",
+  "type_line": "Legendary Creature — Phyrexian Horror Minion",
+  "oracle": "({B/P} can be paid with either {B} or 2 life.)\nLifelink\nFor each {B} in a cost, you may pay 2 life rather than pay that mana.\nWhenever you cast a black spell, put a +1/+1 counter on K'rrik.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Lifelink"
+  ],
+  "layout": "normal",
+  "oracle_id": "cbe3a4e7-5dbe-4f58-8ee6-a1762b65acfd",
+  "scryfall_id": "4f087b1c-97e0-4379-a94d-beac53685314"
+ },
+ "Reaper from the Abyss": {
+  "name": "Reaper from the Abyss",
+  "full_name": "Reaper from the Abyss",
+  "mana_cost": "{3}{B}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Flying\nMorbid — At the beginning of each end step, if a creature died this turn, destroy target non-Demon creature.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Flying",
+   "Morbid"
+  ],
+  "layout": "normal",
+  "oracle_id": "d3a50d73-3a1f-43aa-ab97-c6c0031bb734",
+  "scryfall_id": "1465dbbf-d34f-4e07-8b24-15f0f4875957"
+ },
+ "Burning-Rune Demon": {
+  "name": "Burning-Rune Demon",
+  "full_name": "Burning-Rune Demon",
+  "mana_cost": "{4}{B}{B}",
+  "type_line": "Creature — Demon Berserker",
+  "oracle": "Flying\nWhen this creature enters, you may search your library for exactly two cards not named Burning-Rune Demon that have different names. If you do, reveal those cards. An opponent chooses one of them. Put the chosen card into your hand and the other into your graveyard, then shuffle.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "d551fae8-6b40-4118-b9db-29d2f5dff405",
+  "scryfall_id": "f358a52b-8044-404e-8d04-2ec5903386cc"
+ },
+ "Rakshasa Debaser": {
+  "name": "Rakshasa Debaser",
+  "full_name": "Rakshasa Debaser",
+  "mana_cost": "{4}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Whenever this creature attacks, put target creature card from defending player's graveyard onto the battlefield under your control.\nEncore {6}{B}{B} ({6}{B}{B}, Exile this card from your graveyard: For each opponent, create a token copy that attacks that opponent this turn if able. They gain haste. Sacrifice them at the beginning of the next end step. Activate only as a sorcery.)",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Encore"
+  ],
+  "layout": "normal",
+  "oracle_id": "db286eef-f0df-4f7c-8e06-957447166950",
+  "scryfall_id": "e31fd23d-e6b2-412b-b2ff-c99812365001"
+ },
+ "Rise of the Dark Realms": {
+  "name": "Rise of the Dark Realms",
+  "full_name": "Rise of the Dark Realms",
+  "mana_cost": "{7}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Put all creature cards from all graveyards onto the battlefield under your control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e5223a09-f732-4747-8914-e6546ab0ef4c",
+  "scryfall_id": "8645bf0c-631f-4003-bd24-3e069ae23513"
+ },
+ "Bloodgift Demon": {
+  "name": "Bloodgift Demon",
+  "full_name": "Bloodgift Demon",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Creature — Demon",
+  "oracle": "Flying\nAt the beginning of your upkeep, target player draws a card and loses 1 life.",
+  "power": "5",
+  "toughness": "4",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "e64b184d-9746-4723-a928-d459b5c3ee6c",
+  "scryfall_id": "04151a78-eb5a-4cb2-aa1f-e4835f3124c1"
+ },
+ "Venomcrawler": {
+  "name": "Venomcrawler",
+  "full_name": "Venomcrawler",
+  "mana_cost": "{3}{B}",
+  "type_line": "Artifact Creature — Demon",
+  "oracle": "Lifelink\nDevourer of Souls — Whenever another creature dies, put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Lifelink",
+   "Devourer of Souls"
+  ],
+  "layout": "normal",
+  "oracle_id": "f3a07ae4-b0f8-43e6-adba-217f220cc2d0",
+  "scryfall_id": "7b44099c-0b24-423a-b8c0-5d5e8687fe61"
+ },
+ "Heartless Summoning": {
+  "name": "Heartless Summoning",
+  "full_name": "Heartless Summoning",
+  "mana_cost": "{1}{B}",
+  "type_line": "Enchantment",
+  "oracle": "Creature spells you cast cost {2} less to cast.\nCreatures you control get -1/-1.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "fa1be67e-a07e-42ce-88be-446acd643dc6",
+  "scryfall_id": "c50fdb09-e06c-463c-87dd-3c46f4db889a"
+ },
+ "Bloodthirsty Conqueror": {
+  "name": "Bloodthirsty Conqueror",
+  "full_name": "Bloodthirsty Conqueror",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Creature — Vampire Knight",
+  "oracle": "Flying, deathtouch\nWhenever an opponent loses life, you gain that much life. (Damage causes loss of life.)",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Deathtouch",
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "fd505c02-c59e-476d-8e88-35da862ddc23",
+  "scryfall_id": "ce860ed4-a5bd-4347-9eab-dd716ea84db1"
  }
 }
