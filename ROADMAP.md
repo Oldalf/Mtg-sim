@@ -51,11 +51,22 @@ The plan and its notes per task are in git (`PLAN.md` at commit `330b641`).
 - Tokens: the deck owns a token's stats, Scryfall only gives its art (`data/token-art.json`, `pickTokenArt`). The log writes a creature token's face next to its name, so tokens with the same name and other stats stay apart; Aesi's armies are logged as x999. The viewer shows a creature token as Scryfall's art in our own frame with the game's stats, other tokens as their Scryfall token card.
 - D4 was committed without `npm run verify` (Pontus skipped it); step 7 runs it first.
 
-## 7. Mana as it really is, then Pontus's ideas (in progress)
+## 7. Mana as it really is, then Pontus's ideas (done 2026-11-15)
 
-The plan is in `PLAN.md`: a wrong Gale win (a filter Signet counted as free mana by the kill search), then mana tapped in order into a floating pool that empties between the steps of a turn, then Meren's Snake, cards that grow on hover in the viewer, and a stats page per run in the Games tab.
+The plan and its notes per task are in git (`PLAN.md` at commit `ed1a598`).
 
-## 8. Gale's kill search taps lands and counts mana for real (planned, after step 7)
+- A wrong Gale win fixed (a filter Signet counted as free mana by the kill search).
+- Mana is tapped in order into a floating pool that empties between the steps of a turn; kill lines are played for real, and `pay` tries other orders when the first fails. The log says what paid for each spell, and the viewer shows the pool as a chip on the seat.
+- Meren's Snake (Ophiomancer) has deathtouch and comes at each upkeep.
+- In the viewer a card grows on hover, focus or tap.
+- The Games tab has a stats page per run (the report is stored with the run).
+- Left: Gale's kill search still misses 9 of 300 seeds (step 9).
+
+## 8. The friends' decks for game night, then Gale (in progress)
+
+The plan is in `PLAN.md`: first the engine takes over the card rules decks keep writing for themselves and a deck is registered in one place, then the friends' decks are added as pod-only decks, then the pods expected on 2026-11-16 are run. After game night: Pontus's real list as a deck's `decklist.txt`, then step 9.
+
+## 9. Gale's kill search taps lands and counts mana for real (planned, the last task of step 8)
 
 Pontus, 2026-11-15: do this after step 7's other tasks. Step 7's B3 plays every kill line for real, and 9 of 300 Gale seeds still have a kill miss (`KILL_MISS_SEEDS_SHOWN=100 npm run sim -- gale --test` lists them; until then Gale's `--test`, and so `npm run verify`, fails on them). The cause: `KillSearchState` keeps all its mana in one pool, lands and rocks and rituals together, as if every land were already tapped. So it can't tell which lands are still untapped when a High Tide or Bubbling Muck resolves or an untap spell comes (seed 199: Gale recasts Dark Ritual before the Muck resolves, so a Swamp is tapped for it and loses the bonus).
 
@@ -63,14 +74,8 @@ The idea: the search keeps its untapped lands as counts by kind (Islands, Swamps
 
 ## Ideas not decided (Pontus picks)
 
-Left from the planning of step 5. Each names the model it would need.
+Each names the model it would need. Pontus dropped the others on 2026-11-15 (shorter engine file names, a rule for test lists, the app knowing the adopted list, step 1's leftovers, a "watch" button). Registering a deck in one place is now task A3 of step 8.
 
-1. **Split `engine/game/game-core.ts`** (Opus 5.5). 2,276 lines, the size guide says about 800: one file per topic (zones, mana and payment, casting, creatures and combat, turn loop, planner). Must be IDENTICAL. `decks/aesi/game.ts` (1,129) and `decks/mike/game.ts` (962) are over the guide too.
-2. **Shorter file names inside the engine folders** (Haiku 5.5). `game-log/game-log-files.ts` to `game-log/files.ts`, `pod/pod-table.ts` to `pod/table.ts`. A second round of import changes.
-3. **One place to register a deck** (Sonnet 5.5). Today a deck is named in `DECKS`, `TESTS`, `REGRESS` in `decks/index.ts` and two arrays in `scripts/verify.mjs`. If each deck's `index.ts` exported its tests and regress lists and `verify` asked the simulator for the names, it would be one line (and `/add-deck` shorter).
-4. **A rule for test lists** (Pontus, then Haiku 5.5). Test lists go to a folder git ignores (say `lists/scratch/`); only a list Pontus picks is copied into `lists/`. The rule goes into `CLAUDE.md` and each deck's `PLAN.md`.
-5. **The app knows the adopted list** (Sonnet 5.5). Mark `lists/proposed.txt` where it exists and preselect it in Simulate and Pod. Also the open point in `decks/aesi/PLAN.md`: make the proposed list the default or not.
-6. **A skill for testing a swap** (Opus 5.5). Build the list, run 16,000 games against the base with the same seeds, read `--diag`, write the result into the deck's `PLAN.md` and `SWAPS.txt`.
-7. **One board, not two** (Sonnet 5.5). `engine/tools/log-board.ts` (the analyzer) and `shared/game-log-board.ts` (the log, which the viewer uses) each apply card moves with their own code.
-8. **Leftovers of step 1** (Haiku 5.5). The card-nickname constants in aesi (`BSZ`, `OMNI`) and a few abbreviations. Must be IDENTICAL.
-9. **Watch a game straight from a result** (Haiku 5.5). A "watch" button next to each game in "games worth a look" and the pod report that opens the viewer already playing (`?play=1`).
+1. **Split `engine/game/game-core.ts`** (Opus 5.5). 2,628 lines, the size guide says about 800: one file per topic (zones, mana and payment, casting, creatures and combat, turn loop, planner). Must be IDENTICAL. `decks/aesi/game.ts` (1,186) and `decks/mike/game.ts` (961) are over the guide too. Step 8's A2 starts it: new engine card rules go in their own files.
+2. **A skill for testing a swap** (Opus 5.5). Build the list, run 16,000 games against the base with the same seeds, read `--diag`, write the result into the deck's `PLAN.md` and `SWAPS.txt`.
+3. **One board, not two** (Sonnet 5.5). `engine/tools/log-board.ts` (the analyzer and `npm run logs`) and `shared/game-log-board.ts` (the viewer) each rebuild the board from the logged card moves with their own code, so a fix in one can be missed in the other. Pontus is unsure it is needed.

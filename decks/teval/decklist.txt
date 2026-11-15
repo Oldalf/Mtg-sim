@@ -1,0 +1,101 @@
+Commander
+1x Teval, the Balanced Scale
+
+Artifact
+1x Arcane Signet
+1x Chromatic Lantern
+1x Conduit of Worlds
+1x Hedge Shredder
+1x Midnight Clock
+1x Sol Ring
+1x Whip of Erebos
+
+Creature
+1x Aesi, Tyrant of Gyre Strait
+1x Ancient Greenwarden
+1x Colossal Grave-Reaver
+1x Demolisher Spawn
+1x Eternal Witness
+1x Gravecrawler
+1x Lier, Disciple of the Drowned
+1x Lost Monarch of Ifnir
+1x Lumra, Bellow of the Woods
+1x Meren of Clan Nel Toth
+1x Millikin
+1x Multani, Yavimaya's Avatar
+1x Nyxbloom Ancient
+1x Ob Nixilis, the Fallen
+1x Rampaging Baloths
+1x Sakura-Tribe Elder
+1x Sheoldred, Whispering One
+1x Sidisi, Brood Tyrant
+1x Sidisi, Undead Vizier
+1x Six
+1x Tatyova, Benthic Druid
+1x Muldrotha, the Gravetide
+1x The Scarab God
+1x Timeless Witness
+1x Tormod, the Desecrator
+1x Underrealm Lich
+1x Wilhelt, the Rotcleaver
+1x Wonder
+
+Enchantment
+1x Animate Dead
+1x Beastmaster Ascension
+1x Doubling Season
+1x Endless Ranks of the Dead
+1x Necromancy
+1x Oversold Cemetery
+1x Parallel Lives
+1x Phyrexian Reclamation
+1x Ripples of Undeath
+1x Teval's Judgment
+
+Instant
+1x Cyclonic Rift
+1x Growth Spiral
+1x Vampiric Tutor
+
+Land
+1x Boseiju, Who Endures
+1x Cabal Coffers
+1x Command Beacon
+1x Command Tower
+1x Contaminated Aquifer
+1x Darkwater Catacombs
+1x Dreamroot Cascade
+1x Drownyard Temple
+1x Exotic Orchard
+1x Fetid Pools
+1x Foreboding Landscape
+5x Forest
+1x Golgari Rot Farm
+1x Haunted Mire
+1x Hinterland Harbor
+4x Island
+1x Morphic Pool
+1x Opulent Palace
+1x Otawara, Soaring City
+1x Rejuvenating Springs
+6x Swamp
+1x Takenuma, Abandoned Mire
+1x Terramorphic Expanse
+1x Undergrowth Stadium
+1x Urborg, Tomb of Yawgmoth
+1x Woodland Cemetery
+
+Sorcery
+1x Breach the Multiverse
+1x Buried Alive
+1x Cultivate
+1x Damnation
+1x Day's Undoing
+1x Demonic Tutor
+1x Farseek
+1x Finale of Revelation
+1x Rampant Growth
+1x Reanimate
+1x Rise of the Dark Realms
+1x Victimize
+1x Will of the Sultai

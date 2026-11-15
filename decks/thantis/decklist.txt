@@ -1,0 +1,114 @@
+Commander
+1x Thantis, the Warweaver
+
+Anthem
+1x Anger
+1x Brawn
+1x Lavaleaper
+
+Burn
+1x Ruric Thar, the Unbowed
+1x Syr Konrad, the Grim
+1x Titan Hunter
+
+Counters
+1x Taurean Mauler
+
+Drain
+1x Grave Venerations
+
+Draw
+1x Archon of Cruelty
+1x Garruk's Uprising
+1x Glissa Sunslayer
+1x Indulgent Tormentor
+1x Lurking Predators
+1x Morbid Opportunist
+1x Neyith of the Dire Hunt
+1x Phyrexian Arena
+1x Professor Dellian Fel
+1x Raph & Mikey, Troublemakers
+1x Read the Bones
+1x Spinner of Souls
+
+Finisher
+1x Pyrewood Gearhulk
+1x Shredder, Shadow Master
+
+Land
+1x Blazemire Verge
+1x Cinder Glade
+1x Command Tower
+1x Dragonskull Summit
+1x Evolving Wilds
+1x Exotic Orchard
+8x Forest
+3x Mountain
+1x Reliquary Tower
+1x Riveteers Overlook
+1x Rootbound Crag
+1x Savage Lands
+1x Smoldering Marsh
+9x Swamp
+1x Tainted Peak
+1x Tainted Wood
+1x Terramorphic Expanse
+1x Thornspire Verge
+1x Turbulent Crater
+1x Wastewood Verge
+1x Woodland Cemetery
+
+Landfall
+1x Geode Rager
+
+Lifegain
+1x Sangromancer
+
+Protection
+1x Kardur, Doomscourge
+1x Rhythm of the Wild
+
+Pump
+1x Zopandrel, Hunger Dominus
+
+Ramp
+1x Arcane Signet
+1x Black Market
+1x Chromatic Lantern
+1x Explore
+1x Farseek
+1x Icetill Explorer
+1x Rampant Growth
+1x Sakura-Tribe Elder
+1x Selvala, Heart of the Wilds
+1x Sol Ring
+1x Talisman of Resilience
+1x Yavimaya Elder
+
+Recursion
+1x Alesha, Who Laughs at Fate
+1x Ares, God of War
+1x Avacyn, Angel of Horror
+1x Bala Ged Recovery // Bala Ged Sanctuary
+1x Chainer, Nightmare Adept
+1x Dread Return
+1x Eternal Witness
+1x Graveshifter
+1x Meren of Clan Nel Toth
+1x Reanimate
+1x Rise of the Dark Realms
+1x Tortured Existence
+1x Victimize
+1x Whip of Erebos
+
+Removal
+1x Archfiend of Depravity
+1x Assassin's Trophy
+1x Beast Within
+1x Blasphemous Edict
+1x Chaos Warp
+1x Deadly Rollick
+1x Dictate of Erebos
+
+Tutor
+1x Buried Alive

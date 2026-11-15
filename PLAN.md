@@ -1,6 +1,22 @@
-﻿# Plan: step 7, mana as it really is, then Pontus's ideas
+﻿# Plan: step 8, the friends' decks for game night, then Gale
 
-Written 2026-11-15 from `IDEAS.md` and a pod game Pontus watched. Tasks Z0 to B5 are done; their full text (the B1 design, results, what each found) is in git (`PLAN.md` at commit `e686967`). The plan of step 6 is at commit `330b641`.
+Written 2026-11-15. Step 7's plan (mana as it really is, B6, C1, D1, E1) is in git (`PLAN.md` at commit `ed1a598`).
+
+Pontus plays a real pod with friends on 2026-11-16 and wants to simulate it before then. The friends' lists are in `decks/<folder>/decklist.txt`, as given on 2026-11-15. The table plays bracket 2-3 (Pontus, 2026-11-15).
+
+| Friend | Deck (folder) | Commander | Bracket | How it wins (Pontus's words, short) |
+|---|---|---|---|---|
+| William | Edgar (`edgar`) | Edgar Markov | 2-3 | modelled already |
+| William | DnD (`dnd`) | Hama Pashar, Ruin Seeker | 2-3 | blinks enter / leave triggers, and with them ventures into the dungeon again and again (mostly Lost Mine of Phandelver: scry, tokens, pings, cards; also the Undercity through the initiative) |
+| Friend 2 | Helga (`helga`) | Helga, Skittish Seer | 2-3 | Helga grows and taps for more and more mana, so huge threats (Eldrazi titans, Craterhoof) come turns early |
+| Friend 2 | Thantis (`thantis`) | Thantis, the Warweaver | 2-3 | forced combat: every creature must attack each combat. Taurean Mauler grows on everyone's spells |
+| Friend 3 | Azula (`azula`) | Fire Lord Azula | ask at B6 | value engines, free casts while Azula is out, spells during combat while she attacks, many infinite mana combos |
+| Friend 3 | Ardyn (`ardyn`) | Ardyn, the Usurper | 3 | Demon tribal: extra enter triggers (Roaming Throne), copied abilities, many value effects. Friend 3 mostly plays bracket 2; this deck is his exception |
+| Friend 4 | Teval (`teval`) | Teval, the Balanced Scale | strong 3 | ramps with the commander and self-mill; wins with Rise of the Dark Realms or a value engine that makes many Zombies that attack. The owner pilots it poorly |
+
+**The pod for game night** (Pontus, 2026-11-15, assuming the friends bring their simplest decks): **Meren, Edgar, Helga, Ardyn, Teval.** So Helga, Ardyn and Teval come first; Thantis, DnD and Azula come after game night.
+
+The new decks are **pod-only**: no goldfish tuning, no mulligan study, no swap tests, no primer, unless the owner asks (Pontus, 2026-11-15). Before so many decks arrive, the engine should take over what decks keep writing for themselves, so a new deck is mostly data. The lists also need mechanics the engine has none of yet (doubled enter triggers, forced attacks and goad, triggers on an opponent's spell, blink, dungeons and the initiative): tasks M1 to M5.
 
 ## How to read this plan
 
@@ -11,88 +27,178 @@ Each task names a model. Give it to that model or a stronger one.
 | Claude Haiku 5.5 | S (small) | Mechanical work with exact steps. No design choices. A command says if it worked. |
 | Claude Sonnet 5.5 | M (medium) | A feature or fix with a clear goal, in patterns the code already has. Small choices only. |
 | Claude Opus 5.5, or Fable 5.2 | L (large) | Design, work across many files where judgement is needed, or writing that other models will follow. |
-| **P** | Pontus | A decision. Tasks marked "after P" wait for it. |
+| **P** | Pontus | A decision or input. Tasks marked "after P" wait for it. |
 
 Rules for every task:
 
-- Read `CLAUDE.md` first (rule 0 names, KISS). For the engine also `ENGINE.md`, for the page also `app/web/CLAUDE.md`.
+- Read `CLAUDE.md` first (rule 0 names, KISS). For the engine also `ENGINE.md`, for the page also `app/web/CLAUDE.md`, for a new deck `/add-deck`.
 - One task is one commit, straight on `main`. `npm run format`, then `npm run verify` must end with VERIFY OK, except for Gale's known kill misses (below).
 - Ask Pontus eco or full power before any task that runs simulations (`verify` with regress checks counts).
-- Before changing pod code, save a fixed-seed pod run (`npm run pod -- gale meren samfrodo aesi -n 200 --no-log`) and compare afterwards; `--regress check` does not cover pod mode.
-- A task that changes results on purpose shows Pontus the numbers before and after (same seeds), then re-records the baselines (`--regress record`, `regress_baseline/pod.txt`).
-- A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change. This matters most for Haiku 5.5.
+- Before changing pod code, save a fixed-seed pod run (`npm run pod -- gale meren samfrodo aesi edgar -n 200 --no-log`) and compare it afterwards; `--regress check` does not cover pod mode.
+- An engine change must leave every existing deck IDENTICAL (goldfish and the pod run). A task that would change them stops and asks.
+- A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change.
 - When a task is done, add one line under it here: what was built and anything the next task must know.
 
-**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss, because Gale's kill search keeps lands and floating mana in one pool. The fix is `ROADMAP.md` step 8, after this plan. Until then `gale --test` fails on those 9 seeds, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line.
-
-## Done
-
-| Task | What |
-|---|---|
-| Z0 | `npm run verify` for step 6 |
-| A1, A2 | Gale's High Tide kill with a Signet: test, cause (High Tide's payment counted twice), fix |
-| B1 | Real mana: the design, approved by Pontus |
-| B2 | Steps and the pool: `GameCore.step`, `enterStep` empties the pool (rule 106.4), "Rules followed" in `ENGINE.md` |
-| B3, B4 | Kill lines played for real (engine, Gale, Codie, Aesi); `killMisses` / `killChanceFails` in `--diag`; `--test` fails on a miss over 300 seeds |
-| B3b | Gale's misses 53 -> 9 seeds; the rest is `ROADMAP.md` step 8 |
-| B5 | `pay` tries other orders when the first fails (`engine/game/payment-search.ts`); `GameCore.lastPayment` records what paid |
+**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss (step 7, B3b). Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line.
 
 ## Order
 
 | # | Task | What | Model |
 |---|---|---|---|
-| 1 | B6 | The log's "paid with" text and the viewer's pool chip | Sonnet 5.5 |
-| 2 | D1 | The viewer: a card grows on hover | Sonnet 5.5 |
-| 3 | C1 | Meren's Snake: deathtouch or not | Sonnet 5.5, after P |
-| 4 | E1 | The Games tab: a run's stats page | Opus 5.5 (design), Sonnet 5.5 (build) |
+| | | **Before game night** | |
+| 1 | P0 | The lists, the commanders and the pod (done) | Pontus |
+| 2 | A1 | What decks write for themselves that the engine should own | Opus 5.5 |
+| 3 | A2 | Move the shared card rules into the engine | Opus 5.5 / Sonnet 5.5 |
+| 4 | A3 | Register a deck in one place | Sonnet 5.5 |
+| 5 | A4 | A pod-only deck: the light path in `/add-deck` | Opus 5.5 |
+| 6 | M1 | Doubled enter triggers (Roaming Throne) | Opus 5.5 |
+| 7 | B1 | Helga | Sonnet 5.5 |
+| 8 | B2 | Ardyn | Sonnet 5.5 |
+| 9 | B3 | Teval | Sonnet 5.5 |
+| 10 | C1 | The game-night pod, a report | Sonnet 5.5 |
+| | | **After game night** | |
+| 11 | M2 | Forced attacks and goad in pod combat | Opus 5.5 |
+| 12 | M3 | Triggers on another player's spell | Sonnet 5.5 |
+| 13 | M4 | Blink | Opus 5.5 |
+| 14 | M5 | Dungeons, venture and the initiative | Opus 5.5 |
+| 15 | B4 | Thantis | Sonnet 5.5 |
+| 16 | B5 | DnD | Opus 5.5 |
+| 17 | B6 | Azula | Opus 5.5, after P |
+| 18 | Z1 | Step 7's loose ends | Sonnet 5.5 |
+| 19 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
+| 20 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) | Opus 5.5, after P |
 
-C, D and E stand alone.
-
----
-
-## B6. "Paid with" and the pool chip (Sonnet 5.5)
-
-From the B1 design (point 4), with Pontus's answer: both the text and the chip are wanted.
-
-- **"Paid with":** cast lines end with the sources that paid, taken from `GameCore.lastPayment` (e.g. `cast Syr Konrad, the Grim â€” paid with Island, Island (+2 High Tide), Swamp, Dimir Signet (fed by Island)`). The event gets a `paidWith: string[]` field, so a viewer can later highlight the paying cards. No log line per tap: a kill line of 20 spells would bury the log.
-- **The pool chip:** the event gets a `pool` field, but only when the pool isn't empty, so old logs stay as they are. The types go in `shared/` and are set the same way `playerCounters` is. The viewer shows it as a chip on the seat, the way energy is shown (`U3 B1`).
-- **Checks:** `ng build`, `ng test`, and look at it in the browser. Sim results must stay IDENTICAL (only log text changes).
-
-**Built (2026-11-15).** `GameEvent.paidWith` (`ManaPaid`: card, what it made) and `GameEvent.pool` (the acting player's floating mana as symbols, "UUB") in `shared/game-log-types.ts`. `GameCore` notes each committed payment in `paymentsForLog` while the log is on; the next line takes them. `restore` drops payments a snapshot undoes, because Gale's AI pays to try a plan and then rolls it back. `event.text` itself is unchanged: `describeEventText` (shared) adds " â€” paid with Island (U) x2, Swamp (B)" for the text log, the viewer's log and the caption. The board has `pool` (emptied at a turn start, set from each line of its player), shown as "pool U2 B1" in `describeBoard` and as a chip on the seat. A filter Signet's part is what it added net (fed by U, it shows "B"). Tests: `runPaymentLogTests` in `npm run pod -- --test`, and one in `game-steps.spec.ts`. Checked in the browser at desktop and 390 px.
-
----
-
-## C. Meren's Snake
-
-### C1. Deathtouch or not (Sonnet 5.5, after P)
-
-Meren's Snake token (`decks/meren/cards.ts`: `makeToken('Snake', 1, 1, 'black')`) has no deathtouch, but Scryfall's only black 1/1 Snake token has it (found in step 6's D1). Find the card in Meren's lists that makes it and read its Scryfall text (`all_parts` in the bulk data names the exact token). Tell Pontus what the card makes. If it has deathtouch, add it (`makeToken(..., ['deathtouch'])`): Meren's results may change (blocks in a pod, crackback in goldfish), so show before and after and re-record. Update `decks/meren/PLAN.md`.
-
-**Built (2026-11-15).** The card is Ophiomancer ("At the beginning of each upkeep, if you control no Snakes, create a 1/1 black Snake creature token with deathtouch"). The token has deathtouch, and it now comes at every upkeep, not only ours: `GameCore.opponentUpkeep()` (goldfish: before our upkeep from turn 2; pod: at each other deck's turn start in `pod.ts`). Meren goldfish results IDENTICAL (0 of 600 seeds differ), pod run unchanged; Meren baseline re-recorded for the new test lines. `npm run verify -- --full`: only Gale's kill-line test and the app test fail, and they fail without this change too.
+**If time runs short before game night:** A2 moves only what Helga, Ardyn and Teval need, A3 waits, and a deck can go to the pod with fewer card rules, as long as its `PLAN.md` says what it does not model (C1 then says it next to its numbers).
 
 ---
 
-## D. The viewer
+## P0. What Pontus gives (done 2026-11-15)
 
-### D1. A card grows on hover (Sonnet 5.5)
-
-Cards on the table are small. On hover (and on focus, for the keyboard) a card shows larger, as a pop-up next to the pointer, at the size of a real card image (about 250 px wide), for permanents, lands, the caption's cards and the zone popovers. A token card (`app-token-card`) grows too. It must not cover the card itself or make the page scroll; on a phone a tap opens it and a second tap or a tap elsewhere closes it. Mind `player-seat.scss`'s 4 kB budget: the pop-up belongs in its own component (or in `app-card-image` / `app-token-card`). Check in the browser at desktop and phone width; `ng test` and `npm run verify` pass.
-
-**Built (2026-11-15).** `CardZoom` (`app/web/src/app/shared/card-zoom/`) is a host directive on `app-card-image` and `app-token-card`: on mouse hover (120 ms delay), keyboard focus (`:focus-visible`) or a tap it shows a copy of the card, 262 px wide, as a manual popover in the top layer (no parent clips it, `pointer-events: none`). `placeZoomedCard` puts it right of the card, else left, else above/below (phone), inside the window. A touch tap toggles it; a tap elsewhere or Escape closes it. Checked in the browser at desktop width; phone width and touch not yet checked.
+The lists, commanders, brackets and the game-night pod are in the tables at the top. Azula's combos and bracket are asked for at B6.
 
 ---
 
-## E. The Games tab
+## A. The engine before many decks
 
-### E1. A run's stats (Opus 5.5 for the design, Sonnet 5.5 for the build)
+### A1. What should be the engine's (Opus 5.5)
 
-The Games tab lists runs and their games, but not the result table a run printed (win rates, kill turns). Add a stats page per run: for a goldfish run the kill-turn table and chart of the Simulate page, for a pod run the pod report. First decide (and write here): store the report with the session logs when the run ends (simple, the run's numbers exactly; needs `GameIndex` / run info to carry it) or compute it from the logged games (works for old runs; must match what the run printed). Recommendation: store it, as the report already exists when the run ends. Then build it: the API, a page reusing the Simulate and Pod result components, and a link from the run's games. Done when `ng test`, `npm run app -- --test` and `npm run verify` pass and the browser shows a goldfish and a pod run's stats.
+Read the seven decks (`gale`, `meren`, `samfrodo`, `aesi`, `mike`, `codie`, `edgar`) and list what more than one of them writes for itself that holds for any deck. Likely places to look:
 
-**Built (2026-11-15).** Stored, not recomputed: the report is saved as `report.json` in each run folder of the run (`writeRunReport` / `readRunReport` in `game-log-files.ts`), by the app's `runs.ts` and by the command line (`LogSession.saveReport`). `GET /api/logs/<run>/report` answers it, or null for a stopped or older run (then the page shows no accordion). `PodResult` and `GoldfishResult` now take a `report` (plus `runFolder` / `deck`) instead of a run; the Pod and Simulate pages and the run page of the Games tab (accordion "Stats of the run" above "All runs") share them. Checked in the browser for a goldfish and a pod run.
+- **Triggers:** enter-the-battlefield token makers, death drains (Blood Artist, Zulaport Cutthroat kind), "whenever a creature dies" draws, Treasure / Food / Clue makers (`meren/triggers.ts`, `samfrodo/triggers.ts`, `edgar/triggers.ts`).
+- **Static effects:** anthems and lords, keyword grants (`powerBonus` / `toughnessBonus` overrides).
+- **Activated abilities:** sacrifice outlets (free, {1}, {2}, mana-making altars), Skullclamp.
+- **Mana:** Treasures and Spawn spent last, the `isTestingRitual` workaround (edgar).
+- **Cards:** tutors, card draw, removal and ramp that several lists play (`card-facts.ts` already has some), and token definitions.
+- **Pod:** `podClose()`, `blockValue()` and `evasion()` rules that repeat.
+
+Write the list into this task: for each item, which decks have it, where, and whether moving it is a plain move (same behaviour) or would change a deck's results. Then also what a deck must still write itself (its win check, its combo, its AI priorities). Also say how many cards in Helga's, Ardyn's and Teval's lists are already handled by the engine and how many would be after A2.
+
+No code in this task. Pontus reads the list and picks what A2 moves.
+
+### A2. Move the shared card rules into the engine (Opus 5.5 for the shape, Sonnet 5.5 for the moves, after P)
+
+What Pontus picked from A1, one topic per commit. Each card rule moves to `engine/` (`card-facts.ts` for the data, a new topic file in `engine/game/` for the behaviour: `game-core.ts` is already 2,628 lines and must not grow). Each deck that had it uses the engine's version. Every deck stays IDENTICAL (goldfish `--regress check` and the fixed-seed pod run); a difference means the move is wrong, or the deck's version had a deck-specific twist that must stay in the deck.
+
+### A3. Register a deck in one place (Sonnet 5.5)
+
+Today a deck is named in five places in two files: `DECKS`, `TESTS` and `REGRESS` in `decks/index.ts` (plus its imports), and `DECKS_WITH_BASELINE` and `POD_DECKS` in `scripts/verify.mjs`. With six new decks, one missed line makes `verify` skip a deck silently.
+
+- Each deck's `index.ts` exports its tests and regress lists on its `deck` object (`tests`, `regress`), plus whether it is pod-only.
+- `decks/index.ts` keeps one list, `DECKS`; `TESTS` and `REGRESS` are built from it.
+- `verify.mjs` asks the simulator for the deck names (a small command such as `node dist/sim.js --list-decks --json`) instead of keeping its own arrays. `POD_DECKS` stays a fixed list in `verify.mjs`: it is the pod baseline and changes only on purpose.
+- Pod-only decks: `--test` yes, no goldfish baseline (`--regress`), not in the fixed-seed pod run unless Pontus asks.
+- Update `/add-deck` section 4 to the one place. Results IDENTICAL.
+
+### A4. The light path for a pod-only deck (Opus 5.5)
+
+A section in `/add-deck` (`.claude/skills/add-deck/SKILL.md`) for a pod-only deck, written so Sonnet 5.5 can follow it alone:
+
+- What to ask (the list, the commander, how it wins, the bracket; no logs, no goals, no swaps).
+- Which existing deck to copy from, now that A2 moved the shared rules.
+- The minimum: `index.ts`, `config.ts`, `cards.ts` (its roles, `VALUE`, `HOLD`), `game.ts` (the win check, the deck's few own rules), a short `candidates.ts`, the default mulligan, tests for each card rule written, `PLAN.md` with the sections "How the deck wins", "Simulation rules", "Not modelled" and the pod numbers.
+- Its interaction cards checked against `engine/game/answers.ts` (new ones added there with a test).
+- Done when: `--test` passes, a `--trace` game and a pod `--trace` game look like real play, `npm run pod -- <deck> goldfish goldfish goldfish --set pod_race=true` gives a sane kill turn, and it shows in the app.
+
+Try it on the first B deck and fix the section from what went wrong.
 
 ---
 
-## Not in this plan
+## M. Mechanics the new lists need
 
-The ideas left from step 5 are in `ROADMAP.md` under "Ideas not decided". New memos from Pontus go at the end of `IDEAS.md`.
+Each is engine code with tests in `engine/pod/pod.test.ts` or a new test file, and leaves every existing deck IDENTICAL. Check the card text in the Scryfall bulk data, not from memory.
 
+### M1. Doubled enter triggers (Opus 5.5)
+
+For Ardyn (Roaming Throne) before game night, and later DnD (Panharmonicon). An effect that doubles enter triggers makes the deck's `onEnter` for that permanent run one more time (Panharmonicon: artifacts and creatures; Roaming Throne: creatures of the chosen type). Teval's Doubling Season and Parallel Lives double tokens and counters, not triggers: they stay in Teval's folder unless A1 finds them elsewhere too. Look first at how `enter` and `onEnter` work in `game-core.ts`; the deck still writes its own card's trigger.
+
+### M2. Forced attacks and goad (Opus 5.5)
+
+For Thantis ("each creature attacks each combat if able") and, later, Pontus's and Friend 2's goad decks. The two must stay different (Pontus, 2026-11-15):
+
+- **Must attack:** the creature attacks each combat if able, any player its controller picks.
+- **Goaded** (rule 701.15): it attacks each combat if able, and attacks a player other than the one who goaded it if able. It attacks the goader only when no other player can be attacked. Goad lasts until the goader's next turn.
+
+Both go on the pod's attacker choice (`engine/pod/pod-combat.ts`), so every deck's creatures obey them without the deck knowing. A forced attacker's controller still picks the defender (by the threat rule) within what is allowed. Tests: a goaded creature with two possible defenders never attacks the goader; with only the goader left, it attacks the goader; a "must attack" creature attacks even when the deck's own rule would hold it back.
+
+### M3. Triggers on another player's spell (Sonnet 5.5)
+
+Taurean Mauler ("whenever an opponent casts a spell, you may put a +1/+1 counter"; its size matters in a pod, Pontus 2026-11-15), Rhystic Study, and the like. The pod tells each game when another player casts a spell (a hook such as `onOpponentCast(card)`); in a goldfish game the opponents cast nothing, so nothing changes there.
+
+### M4. Blink (Opus 5.5)
+
+For DnD (Ephemerate, Ghostly Flicker, Brago, Thassa, Displacer Beast...). A blinked permanent leaves and comes back as a new object: leave and enter triggers fire again, counters and attached auras are lost, a token blinked away is gone, and the log shows both moves.
+
+### M5. Dungeons, venture and the initiative (Opus 5.5)
+
+For DnD. Rules 309 (dungeons) and 725 (the initiative):
+
+- **Venture into the dungeon:** start a dungeon (the player picks one of Lost Mine of Phandelver, Dungeon of the Mad Mage, Tomb of Annihilation) or move one room down; each room has its effect; finishing a dungeon counts for "completed a dungeon" cards.
+- **The initiative:** taking it ventures into the Undercity (only there). The holder ventures again at their upkeep. A player who deals combat damage to the holder takes it. It is a pod-wide thing: one player has it at a time, and the others want to take it, so the pod's attack choice must value it.
+- The rooms as data (one table per dungeon, the room effects as small functions), the dungeon a player is in and the room they are in as game state, shown in the log ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin").
+- Which dungeon and which path to pick: a simple rule first (Lost Mine for DnD, as Pontus says the owner plays; the path that gives cards or tokens), written in the deck, not the engine.
+
+## B. The friends' decks (after A4; the M tasks a deck needs come first)
+
+One task per list, following `/add-deck`'s light path (A4).
+
+| Task | Deck | Needs | Model | Notes |
+|---|---|---|---|---|
+| B1 | Helga | | Sonnet 5.5 | Ramp into big threats. Helga's counters and mana are the core; Eldrazi annihilator and "cast" triggers (Ulamog, Kozilek), Craterhoof. |
+| B2 | Ardyn | M1 | Sonnet 5.5 | Demon tribal, drains and life loss (Gray Merchant, Exquisite Blood, Vilis). Reanimation: reuse Meren's `reanimate`. |
+| B3 | Teval | | Sonnet 5.5 | Self-mill as ramp, reanimation, Zombie tokens (Rise of the Dark Realms, The Scarab God), Doubling Season and Parallel Lives. The AI plays the list as built, not the owner's misplays: C1 says the numbers may overrate it. |
+| B4 | Thantis | M2, M3 | Sonnet 5.5 | Forced combat, Taurean Mauler, reanimation, Syr Konrad. |
+| B5 | DnD | M1, M4, M5 | Opus 5.5 | Blink engines, dungeons, the initiative. |
+| B6 | Azula | | Opus 5.5, after P | Ask Pontus first for the infinite combos (which cards, how each wins) and the bracket. Free casts while Azula is out, spells during combat, counterspells (add to `answers.ts`), the combos as a declared win (`winAttempt`, like Gale's kill line or Aesi's loops). |
+
+---
+
+## C. Game night
+
+### C1. The game-night pod (Sonnet 5.5, after B1 to B3)
+
+`npm run pod -- meren edgar helga ardyn teval -n 1000` (ask Pontus eco or full power). Write a short report for Pontus, in this plan and as plain text he can read on his phone: each deck's win rate, average win turn, how it wins, who goes out first, and next to each friend's deck what is not modelled. Point out anything that looks too strong or too weak for the table, and which deck the others should watch. Teval's numbers come from an AI that plays it well; its owner does not, so say so.
+
+---
+
+## Z. Step 7's loose ends
+
+### Z1. Check and fix (Sonnet 5.5)
+
+- D1's card pop-up was checked only at desktop width: check it at 390 px and with touch (tap opens, a second tap or a tap elsewhere closes).
+- C1's note says `npm run verify -- --full` also failed an app test (it failed before C1 too). Find which and fix it, or write here why it fails.
+
+---
+
+## D. Pontus's real list
+
+### D1. The list he plays becomes `decklist.txt` (Sonnet 5.5, after P)
+
+Pontus has updated one of his decks in real life, partly from its `lists/proposed.txt`. Same as was done for Aesi (commit `e686967`): the current `decklist.txt` moves to `lists/original.txt`, his assembled list becomes `decklist.txt`, then results before and after with the same seeds, the baseline re-recorded (`--regress record`) and the deck's `PLAN.md` updated. Pontus gives the deck and the list.
+
+---
+
+## E. Gale
+
+### E1. Gale's kill search taps lands for real (Opus 5.5, after P)
+
+`ROADMAP.md` step 9 has the problem and the idea; `PLAN.md` B3b part 2 at commit `e686967` has the details. Design first, the speed measured (Gale's search is most of its 25 s), Pontus's yes, then build. Done when `KILL_MISS_SEEDS_SHOWN=100 npm run sim -- gale --test` shows no kill miss and `npm run verify` ends VERIFY OK.

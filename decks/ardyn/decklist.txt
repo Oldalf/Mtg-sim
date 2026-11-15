@@ -1,0 +1,89 @@
+Commander
+1x Ardyn, the Usurper
+
+Artifact
+1x Arcane Signet
+1x Bontu's Monument
+1x Caged Sun
+1x Expedition Map
+1x Gauntlet of Power
+1x Herald's Horn
+1x Jet Medallion
+1x Sol Ring
+1x The Soul Stone
+1x Thought Vessel
+1x Throne of Eldraine
+1x Urza's Incubator
+
+Creature
+1x Ancient Cellarspawn
+1x Archfiend of Depravity
+1x Archfiend of Despair
+1x Blood Speaker
+1x Bloodgift Demon
+1x Bloodletter of Aclazotz
+1x Bloodthirsty Conqueror
+1x Burning-Rune Demon
+1x Burnished Hart
+1x Crypt Ghast
+1x Demonlord Belzenlok
+1x Disciple of Bolas
+1x Gray Merchant of Asphodel
+1x Harvester of Souls
+1x Indulgent Tormentor
+1x K'rrik, Son of Yawgmoth
+1x Lord of the Void
+1x Magus of the Coffers
+1x Nirkana Revenant
+1x Ob Nixilis, Unshackled
+1x Rakshasa Debaser
+1x Reaper from the Abyss
+1x Roaming Throne
+1x Rune-Scarred Demon
+1x Sheoldred, Whispering One
+1x Solemn Simulacrum
+1x Sower of Discord
+1x Taborax, Hope's Demise
+1x Valgavoth, Terror Eater
+1x Varragoth, Bloodsky Sire
+1x Venomcrawler
+1x Vilis, Broker of Blood
+
+Enchantment
+1x Animate Dead
+1x Exquisite Blood
+1x Heartless Summoning
+1x Necromancy
+1x Phyrexian Arena
+1x Unholy Annex // Ritual Chamber
+
+Instant
+1x Dark Ritual
+1x Defile
+1x Flare of Malice
+1x Saw in Half
+1x Sheoldred's Edict
+1x Soul Shatter
+
+Land
+1x Cabal Coffers
+1x Cabal Stronghold
+1x Cavern of Souls
+1x Command Beacon
+1x Fell the Profane // Fell Mire
+1x Malakir Rebirth // Malakir Mire
+1x Nykthos, Shrine to Nyx
+1x Reliquary Tower
+27x Swamp
+1x Urza's Cave
+
+Planeswalker
+1x Liliana of the Dark Realms
+
+Sorcery
+1x Blasphemous Edict
+1x Demonic Counsel
+1x Kindred Dominance
+1x Reanimate
+1x Rise of the Dark Realms
+1x Will of the Abzan

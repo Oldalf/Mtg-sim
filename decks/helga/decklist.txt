@@ -1,0 +1,111 @@
+Commander
+1x Helga, Skittish Seer
+
+Copy
+1x Wandering Archaic // Explore the Vastlands
+
+Counters
+1x Myojin of Towering Might
+
+Creature
+1x Ob Nixilis, the Ascended
+1x Omnath, Locus of the Void
+1x Radagast of Rhosgobel
+
+Draw
+1x Apex Devastator
+1x Become the Avalanche
+1x Colossal Majesty
+1x Elemental Bond
+1x Garruk's Uprising
+1x Guardian Project
+1x Kozilek, Butcher of Truth
+1x Kozilek, the Broken Reality
+1x Ohran Frostfang
+1x Rishkar's Expertise
+1x Stormsurge Kraken
+
+Evasion
+1x Aggressive Mammoth
+
+Finisher
+1x Craterhoof Behemoth
+1x Demolisher Spawn
+1x Ulamog, the Defiler
+
+Land
+1x Command Tower
+1x Evolving Wilds
+1x Exotic Orchard
+1x Fabled Passage
+9x Forest
+1x Fortified Village
+1x Glacial Fortress
+1x Hinterland Harbor
+5x Island
+5x Plains
+1x Prairie Stream
+1x Reflecting Pool
+1x Reliquary Tower
+1x Rogue's Passage
+1x Seaside Citadel
+1x Sungrass Prairie
+1x Temple of Mystery
+1x Temple of Plenty
+1x Terramorphic Expanse
+1x Tranquil Landscape
+1x Turbulent Shore
+1x Yavimaya, Cradle of Growth
+
+Lifegain
+1x Ruin Processor
+1x Verdant Sun's Avatar
+
+Protection
+1x Akroma's Memorial
+1x Akroma's Will
+1x Lightning Greaves
+1x Serra's Emissary
+
+Ramp
+1x Arcane Signet
+1x Chromatic Lantern
+1x Cultivate
+1x Explore
+1x Farseek
+1x Fellwar Stone
+1x Goreclaw, Terror of Qal Sisma
+1x Llanowar Elves
+1x Rampant Growth
+1x Regal Behemoth
+1x Sakura-Tribe Elder
+1x Seedborn Muse
+1x Selvala, Heart of the Wilds
+1x Sol Ring
+1x Solemn Simulacrum
+1x Thought Vessel
+1x Wilderness Reclamation
+
+Recursion
+1x Moldgraf Monstrosity
+
+Removal
+1x An Offer You Can't Refuse
+1x Angel of the Ruins
+1x Aura Shards
+1x Beast Within
+1x Breaker of Armies
+1x Cancel
+1x Counterspell
+1x It That Betrays
+1x Negate
+1x Path to Exile
+1x Return to Nature
+1x Swords to Plowshares
+1x Terastodon
+1x Ulamog, the Ceaseless Hunger
+1x Ulamog's Crusher
+
+Tokens
+1x Desolation Twin
+1x Koma, World-Eater
