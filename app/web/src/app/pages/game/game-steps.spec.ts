@@ -233,6 +233,26 @@ describe('game steps', () => {
       [flyingVampire, 1],
     ]);
   });
+
+  it('ends a line with what paid for it, and keeps the pool on the acting seat until the next turn', () => {
+    const cast: GameEvent = {
+      ...makeEvent(1, 1, 'cast', 'cast Dark Ritual'),
+      paidWith: [
+        { card: 'Swamp', made: 'B' },
+        { card: 'Swamp', made: 'B' },
+      ],
+      pool: 'BBB',
+    };
+    const game: GameLog = {
+      ...POD_GAME,
+      events: [cast, makeEvent(2, 0, 'turn-start', '')],
+    };
+    expect(turnsOfGame(game)[0].lines[0].text).toBe(
+      'cast Dark Ritual — paid with Swamp (B) x2',
+    );
+    expect(boardAt(game, 0).map((board) => board.pool)).toEqual(['', 'BBB']);
+    expect(boardAt(game, 1).map((board) => board.pool)).toEqual(['', '']);
+  });
 });
 
 describe('autoplayDelay', () => {

@@ -24,6 +24,11 @@
     <!-- a non-breaking space: the chip never wraps (the style budget has no room for a nowrap rule) -->
     <span class="badge">{{ counter.count }}&nbsp;{{ counter.kind }}</span>
   }
+  @if (floatingMana(); as mana) {
+    <span class="badge" title="mana floating in the pool"
+      >pool&nbsp;{{ mana }}</span
+    >
+  }
 </header>
 
 <div class="body">

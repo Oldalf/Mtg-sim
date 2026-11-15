@@ -4,6 +4,7 @@
  * board after that event.
  */
 import {
+  describeEventText,
   describeTokenFace,
   type BoardPermanent,
   type PlayerBoard,
@@ -73,7 +74,7 @@ export function turnsOfGame(gameLog: GameLog): LogTurn[] {
       playerName: namesItsPlayer(gameLog, event)
         ? gameLog.players[event.player].name
         : '',
-      text: event.text.trimEnd(),
+      text: describeEventText(event),
       isHighlight: event.isHighlight,
       moves: movesOf(gameLog, event),
     });

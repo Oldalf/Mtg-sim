@@ -1,6 +1,9 @@
 import { Component, computed, input, linkedSignal } from '@angular/core';
 import type { CardFactsAnswer } from '../../../../../api-types';
-import type { PlayerBoard } from '../../../../../../shared/game-log-board';
+import {
+  describeMana,
+  type PlayerBoard,
+} from '../../../../../../shared/game-log-board';
 import {
   PLAYER_COUNTER_KINDS,
   type LogPlayer,
@@ -70,6 +73,10 @@ export class PlayerSeat {
       (kind) => ({ kind, count: counters[kind] }),
     );
   });
+  /** The floating mana as a chip: "U3 B1" (non-breaking spaces, so it never wraps). Empty when the pool is. */
+  protected readonly floatingMana = computed(() =>
+    describeMana(this.board().pool).replaceAll(' ', ' '),
+  );
   protected readonly battlefield = computed(() =>
     splitBattlefield(this.board(), (cardName) =>
       /\bLand\b/.test(this.cardFacts()[cardName]?.typeLine ?? ''),

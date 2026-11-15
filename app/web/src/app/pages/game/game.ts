@@ -14,7 +14,10 @@ import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { boardAt } from '../../../../../../shared/game-log-board';
+import {
+  boardAt,
+  describeEventText,
+} from '../../../../../../shared/game-log-board';
 import { namesItsPlayer } from '../../../../../../shared/game-log-lines';
 import type { GameLog } from '../../../../../../shared/game-log-types';
 import { ApiService } from '../../core/api';
@@ -224,6 +227,11 @@ export class Game {
     const gameLog = this.gameLog();
     const event = this.event();
     return gameLog && event ? goldfishOpponents(gameLog, event) : [];
+  });
+  /** The line as the log shows it, with what paid for it. */
+  protected readonly captionText = computed(() => {
+    const event = this.event();
+    return event ? describeEventText(event) : '';
   });
   protected readonly captionPlayerName = computed(() => {
     const gameLog = this.gameLog();

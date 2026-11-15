@@ -10,6 +10,7 @@ import { runControlExchangeTests } from '../engine/pod/pod-exchange.test';
 import {
   runPodExactMoveTests,
   runPodLogTests,
+  runPaymentLogTests,
   runPlayerCounterTests,
 } from '../engine/game-log/game-log.test';
 import { describePodResult } from '../engine/pod/pod-report';
@@ -55,12 +56,14 @@ export async function runPodCommand(
     const isLogHarmless = runPodLogTests(decks);
     const areMovesRecorded = runPodExactMoveTests(decks);
     const areCountersLogged = runPlayerCounterTests(decks);
+    const arePaymentsLogged = runPaymentLogTests(decks);
     const isExchangeRight = runControlExchangeTests(decks);
     process.exit(
       podTestsPassed &&
         isLogHarmless &&
         areMovesRecorded &&
         areCountersLogged &&
+        arePaymentsLogged &&
         isExchangeRight
         ? 0
         : 1,

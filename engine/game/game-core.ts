@@ -36,6 +36,7 @@ import {
   buildEvent,
   cardNamesAmong,
   CardMove,
+  ManaPaid,
   PlayerCounters,
 } from '../game-log/game-log';
 import { CardZone, MoveRecorder } from '../game-log/game-log-moves';
@@ -69,7 +70,8 @@ const BASIC_OF: Record<string, string> = {
   R: 'Mountain',
   G: 'Forest',
 };
-type Snap = [ManaPool, boolean[]];
+/** The pool, which permanents are tapped, and how many payments the log has noted (an undone payment is not logged). */
+type Snap = [ManaPool, boolean[], number];
 /** The steps of a turn the engine tells apart (untap has no step: nothing happens in it; cleanup is part of endTurn). */
 export type TurnStep = 'upkeep' | 'draw' | 'main1' | 'combat' | 'main2' | 'end';
 /** What the game log calls each zone (Archidekt's names). */
@@ -260,7 +262,23 @@ export abstract class GameCore<S = unknown> {
       this.playerCountersForLog(),
     );
     event.moves = this.collectCardMoves(kind === 'turn-end', event.text);
+    if (kind !== 'turn-start' && this.paymentsForLog.length)
+      event.paidWith = this.paymentsForLog;
+    this.paymentsForLog = [];
+    const pool = this.poolAsSymbols();
+    if (pool) event.pool = pool;
     this.log.push(event);
+  }
+
+  /** The sources tapped by committed payments since the last log line (only kept while the log is on). */
+  paymentsForLog: ManaPaid[] = [];
+
+  /** The floating mana as mana symbols ("UUB"), empty when the pool is empty. */
+  poolAsSymbols(): string {
+    let symbols = '';
+    for (const [kind, amount] of Object.entries(this.pool))
+      symbols += kind.repeat(Math.max(0, amount));
+    return symbols;
   }
 
   /** The counters on the players for a log line, in the order of its life totals: ours, then the opponents'
@@ -637,11 +655,16 @@ export abstract class GameCore<S = unknown> {
     return [
       { ...this.pool },
       this.battlefield.map((permanent) => permanent.tapped),
+      this.paymentsForLog.length,
     ];
   }
 
   restore(snapshot: Snap): void {
     this.pool = { ...snapshot[0] };
+    this.paymentsForLog.length = Math.min(
+      this.paymentsForLog.length,
+      snapshot[2],
+    );
     const permanentCount = Math.min(
       this.battlefield.length,
       snapshot[1].length,
@@ -700,6 +723,12 @@ export abstract class GameCore<S = unknown> {
         source,
         made: made[i],
       }));
+      if (this.verbose)
+        for (const part of this.lastPayment)
+          this.paymentsForLog.push({
+            card: part.source.card.logName,
+            made: part.made,
+          });
     }
     this.painTaps = 0;
     return true;

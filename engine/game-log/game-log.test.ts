@@ -14,7 +14,9 @@ import {
   TableBoards,
   boardAt,
   describeBoard,
+  describeEventText,
 } from '../../shared/game-log-board';
+import { Permanent } from '../game/game-types';
 import { playPod, playRounds, podSpec, seatPlayers } from '../pod/pod';
 import { Rng } from '../util/rng';
 import { Deck, resolveList } from '../run/runner';
@@ -485,5 +487,59 @@ export function runPodLogTests(allDecks: Record<string, Deck>): boolean {
     'the log does not change a pod game',
     differingSeeds,
     POD_SEEDS,
+  );
+}
+
+/** A payment's sources are on the next log line (and only on that one), the floating mana is on every line while it
+ *  floats, and the board and the line's text show both. */
+export function runPaymentLogTests(allDecks: Record<string, Deck>): boolean {
+  const game = newLoggedGame(allDecks.gale, 1);
+  for (const cardName of ['Island', 'Swamp']) {
+    const card = C.get(cardName);
+    game.battlefield.push(new Permanent(card, card.land));
+  }
+  game.say('lands out');
+  game.pay(C.Cost.parse('{U}{B}'));
+  game.pool.B += 2; // as a Dark Ritual would leave it
+  game.say('cast a test spell');
+  game.say('nothing paid');
+  const [paidLine, laterLine] = game.log.slice(-2);
+  const gameLog = goldfishGameLog(1, 'gale', game.commanderNames, 0, game.log);
+  const board = boardAt(gameLog, gameLog.events.length - 1)[0];
+
+  const checks: [string, unknown, unknown][] = [
+    [
+      'paid line',
+      paidLine.paidWith,
+      [
+        { card: 'Island', made: 'U' },
+        { card: 'Swamp', made: 'B' },
+      ],
+    ],
+    ['paid line pool', paidLine.pool, 'BB'],
+    [
+      'paid line text',
+      describeEventText(paidLine),
+      'cast a test spell — paid with Island (U), Swamp (B)',
+    ],
+    ['later line', laterLine.paidWith, undefined],
+    ['later line pool', laterLine.pool, 'BB'],
+    ['board pool', board.pool, 'BB'],
+    ['board as text', describeBoard(board)[0].includes('pool B2,'), true],
+  ].map(([label, actual, expected]) => [
+    label as string,
+    JSON.stringify(actual),
+    JSON.stringify(expected),
+  ]);
+  const wrong = checks
+    .filter(([, actual, expected]) => actual !== expected)
+    .map(
+      ([label, actual, expected]) =>
+        `${label}: ${actual}, expected ${expected}`,
+    );
+  return reportDifferences(
+    'payments and the pool in the log and on the board',
+    'payment lines wrong',
+    wrong,
   );
 }

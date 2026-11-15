@@ -12,6 +12,7 @@ import type {
   GameEvent,
   GameLog,
   LogPlayer,
+  ManaPaid,
   PlayerCounters,
 } from '../../shared/game-log-types';
 import { PLAYER_COUNTER_KINDS } from '../../shared/game-log-types';
@@ -22,6 +23,7 @@ export type {
   GameEvent,
   GameLog,
   LogPlayer,
+  ManaPaid,
   PlayerCounters,
 };
 

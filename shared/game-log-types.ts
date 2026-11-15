@@ -60,6 +60,17 @@ export interface GameEvent {
   /** The counters on the players after the event, in the same order as `life`. Left out when every count is 0, so
    *  a game without them (and a log from before them) has none. */
   playerCounters?: PlayerCounters[];
+  /** The mana sources the acting player tapped since its line before, in the order tapped. Left out when none. */
+  paidWith?: ManaPaid[];
+  /** The acting player's floating mana after the event, as mana symbols ("UUB"; S = mana only for instants and
+   *  sorceries). Left out when the pool is empty. */
+  pool?: string;
+}
+
+/** A mana source tapped for a payment, and what it added to the pool ("U", "UUU" with High Tide). */
+export interface ManaPaid {
+  card: string;
+  made: string;
 }
 
 /** Counters a player has (not a permanent). Only the kinds above 0 are written. */

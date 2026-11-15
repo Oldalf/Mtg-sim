@@ -506,6 +506,7 @@ function emptyPlayerBoard(): PlayerBoard {
     librarySize: 0,
     life: null,
     playerCounters: {},
+    pool: '',
   };
 }
 

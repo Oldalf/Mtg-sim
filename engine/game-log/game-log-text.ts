@@ -13,6 +13,7 @@ import { GameEvent, GameLog } from './game-log';
 import {
   TableBoards,
   describeBoard,
+  describeEventText,
   describeLoggedCard,
   describePlayerCounters,
 } from '../../shared/game-log-board';
@@ -82,7 +83,7 @@ function eventLine(gameLog: GameLog, event: GameEvent): string {
   const actingPlayer = namesItsPlayer(gameLog, event)
     ? `${gameLog.players[event.player].name}: `
     : '';
-  return lineStart + actingPlayer + event.text.trimEnd();
+  return lineStart + actingPlayer + describeEventText(event);
 }
 
 function moveLines(gameLog: GameLog, event: GameEvent): string[] {

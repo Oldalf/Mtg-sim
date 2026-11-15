@@ -11,6 +11,7 @@ import {
   type CardMove,
   type GameEvent,
   type GameLog,
+  type ManaPaid,
   type PlayerCounters,
   type TokenFace,
 } from './game-log-types';
@@ -63,6 +64,8 @@ export interface PlayerBoard {
   life: number | null;
   /** Energy, experience and poison: only the kinds above 0 (a real Archidekt log has none). */
   playerCounters: PlayerCounters;
+  /** Floating mana as mana symbols ("UUB"), empty when the pool is empty. */
+  pool: string;
 }
 
 /** The zones that are lists of card names. */
@@ -166,10 +169,16 @@ export class TableBoards {
       librarySize: player.librarySize,
       life: null,
       playerCounters: {},
+      pool: '',
     }));
   }
 
   apply(event: GameEvent): void {
+    // the pool empties between steps; an event carries only the acting player's pool
+    if (event.kind === 'turn-start')
+      for (const board of this.boards) board.pool = '';
+    if (this.boards[event.player])
+      this.boards[event.player].pool = event.pool ?? '';
     for (const move of event.moves) applyMove(this.boards[move.player], move);
     event.life
       .slice(0, this.boards.length)
@@ -228,13 +237,44 @@ export function describePlayerCounters(counters: PlayerCounters): string {
     .join(', ');
 }
 
+/** Mana symbols counted by kind, in the order they first appear: "UUBU" -> "U3 B1". Empty for no mana. */
+export function describeMana(symbols: string): string {
+  const counts = new Map<string, number>();
+  for (const symbol of symbols)
+    counts.set(symbol, (counts.get(symbol) ?? 0) + 1);
+  return [...counts].map(([symbol, count]) => `${symbol}${count}`).join(' ');
+}
+
+/** "paid with Island (U) x2, Island (UUU), Dimir Signet (UB)": alike sources grouped. Empty when nothing was
+ *  tapped. */
+export function describePaidWith(paidWith: ManaPaid[] | undefined): string {
+  if (!paidWith?.length) return '';
+  const counts = new Map<string, number>();
+  for (const paid of paidWith) {
+    const label = paid.made ? `${paid.card} (${paid.made})` : paid.card;
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  const sources = [...counts].map(([label, count]) =>
+    count > 1 ? `${label} x${count}` : label,
+  );
+  return `paid with ${sources.join(', ')}`;
+}
+
+/** A log line's text with what paid for it: "cast Syr Konrad, the Grim — paid with Island (UUU), Swamp (B)". */
+export function describeEventText(event: GameEvent): string {
+  const paidWith = describePaidWith(event.paidWith);
+  const text = event.text.trimEnd();
+  return paidWith ? `${text} — ${paidWith}` : text;
+}
+
 /** A player's board as lines of text. */
 export function describeBoard(board: PlayerBoard): string[] {
   const names = (cards: string[]) => (cards.length ? cards.join(', ') : '-');
   const life = board.life === null ? '' : `life ${board.life}, `;
   const counters = describePlayerCounters(board.playerCounters);
+  const pool = board.pool ? `pool ${describeMana(board.pool)}, ` : '';
   return [
-    `${life}${counters ? counters + ', ' : ''}library ${board.librarySize}, hand ${board.hand.length}`,
+    `${life}${counters ? counters + ', ' : ''}${pool}library ${board.librarySize}, hand ${board.hand.length}`,
     `battlefield: ${describePermanents(board.battlefield) || '-'}`,
     `hand: ${names(board.hand)}`,
     `graveyard: ${names(board.graveyard)}`,
