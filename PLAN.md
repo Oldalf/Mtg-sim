@@ -165,6 +165,8 @@ Each is engine code with tests in `engine/pod/pod.test.ts` or a new test file, a
 
 For Ardyn (Roaming Throne) before game night, and later DnD (Panharmonicon). An effect that doubles enter triggers makes the deck's `onEnter` for that permanent run one more time (Panharmonicon: artifacts and creatures; Roaming Throne: creatures of the chosen type). Teval's Doubling Season and Parallel Lives double tokens and counters, not triggers: they stay in Teval's folder unless A1 finds them elsewhere too. Look first at how `enter` and `onEnter` work in `game-core.ts`; the deck still writes its own card's trigger.
 
+**Built (2026-11-15).** `engine/game/trigger-doublers.ts`: `triggerCount` (Roaming Throne, with the type the deck names through `GameCore.roamingThroneType`) and `enterTriggerCount` (plus Panharmonicon); the deck runs its trigger that many times. `hasCreatureType` in `engine/cards/cards.ts` reads a card's type line (Edgar's `isVampire` does the same and could use it later). Tested in Ardyn's tests.
+
 ### M2. Forced attacks and goad (Opus 5.5)
 
 For Thantis ("each creature attacks each combat if able") and, later, Pontus's and Friend 2's goad decks. The two must stay different (Pontus, 2026-11-15):
@@ -206,6 +208,8 @@ One task per list, following `/add-deck`'s light path (A4).
 
 
 **B1 built (2026-11-15).** `decks/helga`, on `CreatureDeckGame` and the light path (A4 worked as written). Helga's mana and cast trigger, the Eldrazi cast triggers, the draw engines, Craterhoof; annihilator and the removal on enter are not modelled (see `decks/helga/PLAN.md`). Goldfish average win turn 10.99; against three goldfish in a pod 99.3%, round 11.29.
+
+**B2 built (2026-11-15).** `decks/ardyn`: Ardyn (haste, lifelink, Starscourge), Roaming Throne, the Swamp mana doublers and cost reducers, the drains and Exquisite Blood, Vilis, the tutors and reanimation. Goldfish average win turn 11.18 (see `decks/ardyn/PLAN.md` for what is not modelled).
 ---
 
 ## C. Game night
