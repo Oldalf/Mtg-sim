@@ -95,6 +95,27 @@ Write the list into this task: for each item, which decks have it, where, and wh
 
 No code in this task. Pontus reads the list and picks what A2 moves.
 
+**Found (2026-11-15).** What the engine already owns: lands (`LANDS`, `land-text.ts`), mana rocks, mana creatures, rituals, cost reducers, counterspells and removal for the pod (`answers.ts`), some draw spells and blue tutors. Every other card rule is in a deck. Of the nonland cards, the engine knows about 12 of Helga's, 4 of Ardyn's and 4 of Teval's; the rest would be cast as plain bodies or plain spells (a creature keeps its power, toughness and Scryfall keywords).
+
+What more than one deck writes for itself, and whether it should move:
+
+| # | What | Written in | New lists that need it | Move? |
+|---|---|---|---|---|
+| 1 | **The candidate list skeleton**: the `AddCandidate` type, cast the commander, go through the hand once per name, skip `HOLD`, cast the rest by `VALUE` | all six AI decks (`*/candidates.ts`) | all | Yes, as an engine helper the new decks use. The old decks keep theirs for now: each has small score differences, so switching them is its own IDENTICAL check, after game night. |
+| 2 | **Land-search ramp** (Rampant Growth, Farseek, Cultivate, Nature's Lore, Three Visits, Explosive Vegetation...) | `aesi/candidates.ts`, `samfrodo/game.ts`, `codie/cards.ts` (a data table: lands, tapped, which kind) | Helga, Teval | Yes: codie's table goes to `card-facts.ts`, one engine function resolves it. The decks keep their own scores (Aesi wants lands in hand for its extra drops). A plain move. |
+| 3 | **Reanimation**: `reanimate()` and the spells (Animate Dead, Necromancy, Reanimate, Victimize, Unearth) | `meren/game.ts`, `meren/actions.ts` | Ardyn, Teval (and Thantis later) | Yes: `reanimate()` and the spells to the engine; Meren calls them. A plain move. |
+| 4 | **Simple value cards**: Phyrexian Arena (upkeep), Solemn Simulacrum, Sakura-Tribe Elder, Wood Elves, Eternal and Timeless Witness | `meren` (all), `edgar` (Arena), `aesi` (Elder, Wood Elves) | Helga (Solemn, Elder, Explore), Ardyn (Arena, Solemn), Teval (Elder, Witnesses) | Yes, as engine rules for `onEnter` / `onDies` / upkeep that a deck gets unless it overrides them. A plain move, but each deck's choice of when to cast them stays in the deck. |
+| 5 | Black tutors (Demonic, Vampiric Tutor) and what to fetch | `codie`; `tutorTarget` in gale, meren, edgar | Teval, Ardyn (Demonic Counsel) | The resolution only (search the library for `tutorTarget()`); what to fetch stays per deck. Small. |
+| 6 | Death drains (Blood Artist, Marionette Apprentice, Susurian Voidborn) | `edgar/game.ts`, `samfrodo/game.ts` | none of the three | No: two decks, and Sam & Frodo's count artifacts too (Food). Revisit with Thantis. |
+| 7 | Sacrifice outlets (Viscera Seer, altars) | `edgar/actions.ts`, `meren/cards.ts` | none of the three | No, for the same reason. |
+| 8 | Treasures spent last | `codie/game.ts`, `edgar/game.ts` | none of the three | No, not yet. |
+
+What stays in each deck: its win check, its combo or kill search (Gale, Aesi's loops, Codie's solver), its `VALUE` and `HOLD` (the AI's taste), its tribe's lords and anthems, its pod hooks (`podClose`, `winAttempt`: each one differs).
+
+What Helga, Ardyn and Teval must still write themselves: Helga's counters and mana ability, the Eldrazi cast triggers and annihilator, Craterhoof. Ardyn himself, the Demons' enter triggers, Exquisite Blood, Roaming Throne (M1). Teval's mill and Zombie triggers, Doubling Season and Parallel Lives, Rise of the Dark Realms, The Scarab God.
+
+**Recommendation for game night:** A2 moves 1 to 4 (four commits, 5 if time allows); 6 to 8 wait for Thantis. After A2 the engine would know about 18 of Helga's, 12 of Ardyn's and 15 of Teval's nonland cards; the rest are mostly creatures the deck gives a `VALUE` and, for the ones that matter, a trigger.
+
 ### A2. Move the shared card rules into the engine (Opus 5.5 for the shape, Sonnet 5.5 for the moves, after P)
 
 What Pontus picked from A1, one topic per commit. Each card rule moves to `engine/` (`card-facts.ts` for the data, a new topic file in `engine/game/` for the behaviour: `game-core.ts` is already 2,628 lines and must not grow). Each deck that had it uses the engine's version. Every deck stays IDENTICAL (goldfish `--regress check` and the fixed-seed pod run); a difference means the move is wrong, or the deck's version had a deck-specific twist that must stay in the deck.
