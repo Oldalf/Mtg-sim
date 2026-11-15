@@ -64,7 +64,7 @@ The plan and its notes per task are in git (`PLAN.md` at commit `ed1a598`).
 - Meren's Snake (Ophiomancer) has deathtouch and comes at each upkeep.
 - In the viewer a card grows on hover, focus or tap.
 - The Games tab has a stats page per run (the report is stored with the run).
-- Left: Gale's kill search still misses 9 of 300 seeds (step 9).
+- Gale's kill search misses 0 of 300 seeds (step 9 done, see `PLAN.md` E1).
 
 ## 8. The friends' decks for game night, then Gale (in progress)
 

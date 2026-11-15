@@ -423,6 +423,8 @@ export abstract class GameCore<S = unknown> {
   // ================================================================ mana
   manaSourceKind(permanent: Permanent, ignoreSick = false): string | null {
     if (permanent.land !== null) {
+      // Energybending: every land is also an Island and a Swamp, so it taps for either colour
+      if (this.isEnergybendingActive && permanent.land.mana) return 'A';
       // "Activate only if you control a Swamp" (Tainted Wood): colourless without one
       const need = permanent.land.colourIf;
       if (
@@ -769,10 +771,17 @@ export abstract class GameCore<S = unknown> {
     made: string[],
     commit: boolean,
   ): string | null {
+    const plannedSources = commit ? this.sourcesPlannedFor(cost) : [];
     for (;;) {
       const short = this.short(cost, isInstantOrSorcery);
       if (short === null) return null;
+      let plannedSource: Permanent | undefined;
+      while (plannedSources.length && !plannedSource) {
+        const candidate = plannedSources.shift()!;
+        if (!candidate.tapped) plannedSource = candidate;
+      }
       const source =
+        plannedSource ??
         this.pick(short, isInstantOrSorcery) ??
         this.filterSignetFeeder(short, isInstantOrSorcery);
       if (source === null) return short;
@@ -783,6 +792,12 @@ export abstract class GameCore<S = unknown> {
       } else this.tap(source, short);
       tapped.push(source);
     }
+  }
+
+  /** A deck that has planned this payment (a kill line the search paid for) names the sources to tap first, in order.
+   *  Only the greedy order uses them; what is still short is paid the usual way. */
+  sourcesPlannedFor(_cost: Cost): Permanent[] {
+    return [];
   }
 
   /** What the last committed payment tapped, and what each source added to the pool ("U", "UB"). */
@@ -1329,8 +1344,14 @@ export abstract class GameCore<S = unknown> {
     const key = (permanent: Permanent) =>
       -2 * manaMade(permanent) + (makesTwoColours(permanent) ? 0 : 1);
     tapped.sort((first, second) => key(first) - key(second));
-    for (const otherPermanent of tapped.slice(0, count))
+    for (const otherPermanent of this.landsToUntap(tapped, count))
       otherPermanent.tapped = false;
+  }
+
+  /** The lands an untap effect untaps, from the tapped ones best first. A deck that planned the untap (a kill line the
+   *  search found) may name others. */
+  landsToUntap(tappedLandsBestFirst: Permanent[], count: number): Permanent[] {
+    return tappedLandsBestFirst.slice(0, count);
   }
 
   enter(

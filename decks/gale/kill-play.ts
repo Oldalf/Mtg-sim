@@ -32,6 +32,15 @@ export function playGaleKillStep(
   game: GaleGame,
   step: GaleKillStep,
 ): string | null {
+  game.plannedPayments = (step.payments ?? []).slice(); // tap what the search tapped
+  try {
+    return playStepKind(game, step);
+  } finally {
+    game.plannedPayments = [];
+  }
+}
+
+function playStepKind(game: GaleGame, step: GaleKillStep): string | null {
   switch (step.kind) {
     case 'castPermanent':
       return castPermanentFromHand(game, step.card!);

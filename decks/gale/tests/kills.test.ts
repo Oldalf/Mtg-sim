@@ -248,13 +248,13 @@ export function runKillTests(): boolean {
     1,
   );
   check(
-    'Energybending (paid with lands) + Muck, 5 Islands + 2 Swamps (8 mana) -> no',
+    'Energybending paid with lands + Muck, 5 Islands + 2 Swamps: Muck first, then a Swamp taps BB for Energybending and the 5 Islands make 2 each (10 mana)',
     board({
       battlefieldNames: GUILDMAGE_ONLY,
       hand: ['Energybending', 'Bubbling Muck', 'Maddening Cacophony'],
       lands: [...islands(5), ...swamps(2)],
     }),
-    0,
+    1,
   );
   check(
     'Energybending made free by Mocking Sprite + Geist taps no lands: every land a Swamp for Muck',

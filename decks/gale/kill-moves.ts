@@ -14,6 +14,8 @@ import { CardDef, Cost } from '../../engine/cards/cards';
 
 /** Gives a new state the step that led to it, for the kill line. */
 function labelled(state: KillSearchState, step: GaleKillStep): KillSearchState {
+  step.payments = state.payments; // (the next step starts with none)
+  state.payments = [];
   // a labelled snapshot is never changed afterwards: its children get their own copies of these lists
   state.killLine = [
     state.killLine,
@@ -546,7 +548,6 @@ function selfCounterMoves(state: KillSearchState): KillSearchState[] {
           }
           if (counterName === "An Offer You Can't Refuse") {
             next.pool.A += 2;
-            next.anyColourFromOutsideLands += 2;
           } else if (counterName === 'Unwind') next.untapLands(3);
           else if (counterName === 'Rewind') next.untapLands(4);
           next.graveyardSpells = addSorted(

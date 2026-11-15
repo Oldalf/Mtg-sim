@@ -39,7 +39,7 @@ Rules for every task:
 - A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change.
 - When a task is done, add one line under it here: what was built and anything the next task must know.
 
-**Gale's known kill misses.** With Pontus's old list (`decks/gale/lists/original.txt`) 9 of 300 Gale seeds have a kill miss (step 7, B3b); with the current `decklist.txt` (2026-11-15, after the list changes) 42 of 300 do. `KILL_MISS_LOG_SEED=24 npm run sim -- gale --test` prints that seed's whole log. Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line. Codie's baseline was re-recorded (2026-11-15) after the Cultivate fix (see A2). `npm run verify` runs its checks in parallel (`--jobs N`, 4 by default, 2 with `--eco`).
+**Gale's kill misses are gone** (task E1, done 2026-11-15): `gale --test` plays 300 seeds with 0 misses and `npm run verify` ends VERIFY OK. Codie's baseline was re-recorded after the Cultivate fix (see A2). `npm run verify` runs its checks in parallel (`--jobs N`, 4 by default, 2 with `--eco`). `KILL_MISS_LOG_SEED=24 npm run sim -- gale --test` prints that seed's whole log.
 
 ## Order
 
@@ -66,7 +66,7 @@ Rules for every task:
 | 17 | B6 | Azula | Opus 5.5, after P |
 | 18 | Z1 | Step 7's loose ends | Sonnet 5.5 |
 | 19 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
-| 20 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) | Opus 5.5, after P |
+| 20 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
 
 **If time runs short before game night:** A2 moves only what Helga, Ardyn and Teval need, A3 waits, and a deck can go to the pod with fewer card rules, as long as its `PLAN.md` says what it does not model (C1 then says it next to its numbers).
 
@@ -260,3 +260,5 @@ Pontus has updated one of his decks in real life, partly from its `lists/propose
 ### E1. Gale's kill search taps lands for real (Opus 5.5, after P)
 
 `ROADMAP.md` step 9 has the problem and the idea; `PLAN.md` B3b part 2 at commit `e686967` has the details. Design first, the speed measured (Gale's search is most of its 25 s), Pontus's yes, then build. Done when `KILL_MISS_SEEDS_SHOWN=100 npm run sim -- gale --test` shows no kill miss and `npm run verify` ends VERIFY OK.
+
+**Built (2026-11-15).** `KillSearchState` (`decks/gale/kill-state.ts`) keeps untapped sources apart from floating mana: `landClasses` (a kind of source: what it taps for, Island / Swamp typed, land or not) with `untappedLands` and `allLands` counts; `pool` holds only mana already made. A payment that falls short taps one more source (`tapAnotherLand`, a filter Signet is fed a mana first), so High Tide / Muck count the Islands / Swamps really untapped, and Turnabout, Frantic Search, Snap, Unwind and Peregrine Drake put real lands back (`untapLands`, the game's own order). An any-colour source makes the colour it is short of when tapped, like the game. The search records what it tapped (`PaymentRecord`, on each step as `payments`; the untaps too) and the real play follows it: engine hooks `sourcesPlannedFor` (in `pay`) and `landsToUntap` (in `untapLands`), Gale fills them from the step being played. Engine rule: with Energybending out every land taps for either colour (`manaSourceKind`). Singularity Rupture also destroys Gale and Emet-Selch in the search. Misses on the current list: 42 -> 0 of 300 seeds. 3,000 games, same seeds, Gale: win by T8 65.2% -> 69.3%, with backup 49.7% -> 51.1%; 51 s -> 55 s (+8%). Other decks IDENTICAL. Gale's regress baseline and the pod baseline were re-recorded (pod: Gale 18.0% -> 18.5%, within noise). Next: move the source classes, the payment record and the untap choice into `engine/` (the deck's search would then only ask the engine's mana model).

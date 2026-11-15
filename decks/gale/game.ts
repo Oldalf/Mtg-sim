@@ -31,8 +31,11 @@ import {
 import {
   GaleKillStep,
   KillSearchState,
+  LandClass,
   OPPONENT_EVENT,
   Op,
+  PaymentRecord,
+  UNTAP,
 } from './kill-state';
 import { TREASURE, playGaleKillStep } from './kill-play';
 import { finisherReachable, search } from './kills';
@@ -72,6 +75,67 @@ export class GaleGame extends Game<KillSearchState> {
   emetSelchUsed = false;
   override chanceName = 'Konrad chain';
 
+  /** How the kill search paid for the costs of the step being played: the real game taps the same lands. */
+  plannedPayments: PaymentRecord[] = [];
+
+  override sourcesPlannedFor(cost: Cost): Permanent[] {
+    const index = this.plannedPayments.findIndex(
+      (payment) => payment.cost === `${cost}`,
+    );
+    if (index < 0) return [];
+    const [payment] = this.plannedPayments.splice(index, 1);
+    const sources: Permanent[] = [];
+    for (const landClass of payment.taps) {
+      const source = this.battlefield.find(
+        (permanent) =>
+          !permanent.tapped &&
+          !sources.includes(permanent) &&
+          this.isLandClass(permanent, landClass),
+      );
+      if (source) sources.push(source);
+    }
+    return sources;
+  }
+
+  /** An untap effect in a kill line untaps the lands the search untapped. */
+  override landsToUntap(
+    tappedLandsBestFirst: Permanent[],
+    count: number,
+  ): Permanent[] {
+    const index = this.plannedPayments.findIndex(
+      (payment) => payment.cost === UNTAP,
+    );
+    if (index < 0) return super.landsToUntap(tappedLandsBestFirst, count);
+    const [payment] = this.plannedPayments.splice(index, 1);
+    const chosen: Permanent[] = [];
+    for (const landClass of payment.taps) {
+      const land = tappedLandsBestFirst.find(
+        (permanent) =>
+          !chosen.includes(permanent) && this.isLandClass(permanent, landClass),
+      );
+      if (land) chosen.push(land);
+    }
+    // anything the plan didn't cover (the real game has other tapped lands) is untapped the usual way
+    for (const land of tappedLandsBestFirst)
+      if (
+        chosen.length < Math.min(count, payment.taps.length) &&
+        !chosen.includes(land)
+      )
+        chosen.push(land);
+    return chosen;
+  }
+
+  /** Is this permanent a source of the kind the search counted (see snapshot.ts)? */
+  private isLandClass(permanent: Permanent, landClass: LandClass): boolean {
+    if (this.manaSourceKind(permanent) !== landClass.kind) return false;
+    const land = permanent.land;
+    return (
+      (land !== null) === landClass.isLand &&
+      !!land?.island === landClass.isIsland &&
+      !!land?.swamp === landClass.isSwamp
+    );
+  }
+
   killSearch(): KillSearcher<KillSearchState> {
     return search;
   }
@@ -82,7 +146,7 @@ export class GaleGame extends Game<KillSearchState> {
     return state.searchKey();
   }
   override killSearchStatePool(state: KillSearchState): Record<string, number> {
-    return { ...state.pool };
+    return { ...state.manaWithAllLandsTapped() };
   }
 
   // ---------------------------------------------------------------- log analyzer hooks
@@ -98,17 +162,14 @@ export class GaleGame extends Game<KillSearchState> {
     amount: number,
   ): void {
     state.pool.A += amount;
-    state.anyColourFromOutsideLands += amount;
   }
   override addLandToKillSearchState(state: KillSearchState): void {
-    state.pool.A += 1;
-    state.landCount += 1;
-    state.landMix = [
-      state.landMix[0],
-      state.landMix[1],
-      state.landMix[2],
-      state.landMix[3] + 1,
-    ];
+    state.addLand({
+      kind: 'A',
+      isIsland: false,
+      isSwamp: false,
+      isLand: true,
+    });
   }
 
   // ---------------------------------------------------------------- card rules only Gale uses
@@ -479,7 +540,7 @@ export class GaleGame extends Game<KillSearchState> {
   override positionValue(): number {
     const state = buildKillSearchState(this, true);
     let value = 0;
-    const pool = state.pool;
+    const pool = state.manaWithAllLandsTapped();
     value += 35 * Math.min(10, pool.U + pool.B + pool.A + pool.C + pool.S);
     value +=
       25 *
