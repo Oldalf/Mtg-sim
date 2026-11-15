@@ -356,6 +356,14 @@ export function get(name: string): CardDef {
   return card;
 }
 
+/** Is the card a creature of this type ("Demon", "Vampire")? A token is its name's type; a card reads its type
+ *  line. (Edgar's isVampire predates this and does the same.) */
+export function hasCreatureType(card: CardDef, creatureType: string): boolean {
+  if (card.isToken) return card.name === creatureType;
+  const typeLine = cardDatabase()[card.name]?.type_line ?? '';
+  return typeLine.includes(creatureType);
+}
+
 /** Does a land card make this colour? Fetch lands count for every colour (they find a basic), "A" lands make all. */
 export function landMakes(card: CardDef, colour: string): boolean {
   const land = card.land ?? card.mdfcLand;

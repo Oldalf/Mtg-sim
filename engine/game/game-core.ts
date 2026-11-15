@@ -2638,6 +2638,10 @@ export abstract class GameCore<S = unknown> {
         shortColours.filter((colour) => C.landMakes(card, colour)).length,
     );
   }
+  /** The creature type named for Roaming Throne (engine/game/trigger-doublers.ts), or null. */
+  roamingThroneType(): string | null {
+    return null;
+  }
   /** How much we want this card back from the graveyard to the hand (Eternal Witness). */
   returnToHandValue(card: CardDef): number {
     return this.cardValue(card);
