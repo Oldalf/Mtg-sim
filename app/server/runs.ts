@@ -4,7 +4,11 @@
  */
 import * as path from 'path';
 import { DECKS } from '../../decks/index';
-import { correctGameCount } from '../../engine/game-log/game-log-files';
+import {
+  correctGameCount,
+  runFolderOf,
+  writeRunReport,
+} from '../../engine/game-log/game-log-files';
 import { finishLoggedRun } from '../../engine/game-log/game-log-run';
 import { Config } from '../../engine/game/game-types';
 import {
@@ -120,6 +124,7 @@ async function playRun(
   setLowPriority(powerSave);
   try {
     const report = await prepared.play(run);
+    if (report) saveReport(run, report);
     run.state.report = report;
     run.state.status = report ? 'done' : 'stopped';
   } catch (error) {
@@ -131,6 +136,12 @@ async function playRun(
     Runner.setDuty(100);
     run.endTime = Date.now();
   }
+}
+
+/** Saves the report in every run folder of the run, so the page shows it later with the games. */
+function saveReport(run: AppRun, report: RunReport): void {
+  for (const runFolder of run.state.runFolders)
+    writeRunReport(runFolderOf(runFolder), report);
 }
 
 /** Progress of one part of a run (a list), counted on top of the games its earlier parts played. */

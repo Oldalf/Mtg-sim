@@ -7,19 +7,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AddressInfo } from 'net';
 import { DECKS } from '../../decks/index';
-import { runFolderOf } from '../../engine/game-log/game-log-files';
+import {
+  runFolderOf,
+  writeRunReport,
+} from '../../engine/game-log/game-log-files';
 import { finishLoggedRun } from '../../engine/game-log/game-log-run';
 import {
   createGoldfishRunFolder,
   createPodRunFolder,
 } from '../../engine/game-log/logged-runs';
 import * as Pod from '../../engine/pod/pod';
+import { buildPodReport } from '../../engine/pod/pod-report';
 import * as Runner from '../../engine/run/runner';
 import type {
   GameAnswer,
   GamesAnswer,
   LogsAnswer,
   RealLogsAnswer,
+  RunReportAnswer,
 } from '../api-types';
 import { forgetUnzippedGamesFile } from './logs-routes';
 import { startServer } from './server';
@@ -84,6 +89,7 @@ async function writePodRun(): Promise<string> {
     runFolder,
   );
   finishLoggedRun(runFolder, result.logRows ?? []);
+  writeRunReport(runFolder, buildPodReport(podSpec, result.games));
   return path.basename(runFolder);
 }
 
@@ -164,6 +170,14 @@ async function checkRuns(
       podGames.body.total === GAME_COUNT &&
         wonByFirstDeck.body.total === expectedWins &&
         wonByFirstDeck.body.rows.every((row) => row.pod?.winner === 0),
+    ),
+    check(
+      'a run answers with its saved report, a run without one with null',
+      (await getJson<RunReportAnswer>(port, `/api/logs/${podName}/report`)).body
+        ?.kind === 'pod' &&
+        (await getJson(port, `/api/logs/${goldfishName}/report`)).body ===
+          null &&
+        (await getJson(port, '/api/logs/99-nosuch/report')).status === 404,
     ),
     check(
       'an unknown run, an unknown seed and a bad count are refused',

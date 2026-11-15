@@ -37,7 +37,7 @@ import { CurrentRunService } from '../../core/current-run';
 import { HelpIcon } from '../../shared/help-icon/help-icon';
 import { RunProgress } from '../../shared/run-progress/run-progress';
 import { podSettingHelp } from '../../shared/setting-help/setting-help';
-import { PodResult } from './pod-result';
+import { PodResult, podRunFolder } from './pod-result';
 
 const MIN_SEATS = 3;
 const MAX_SEATS = 6;
@@ -174,6 +174,8 @@ export class Pod {
   protected readonly podForm = form(this.formModel, POD_FORM_RULES, {
     submission: { action: async () => this.startRun() },
   });
+
+  protected readonly podRunFolder = podRunFolder;
 
   /** The page shows the last pod run; a goldfish run shows on the Simulate page. */
   protected readonly podRun = computed(() => {

@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatPaginator, type PageEvent } from '@angular/material/paginator';
@@ -11,6 +12,8 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService, type GamesFilter } from '../../core/api';
 import { ErrorBox } from '../../shared/error-box/error-box';
 import { TagChip } from '../../shared/tag-chip/tag-chip';
+import { PodResult } from '../pod/pod-result';
+import { GoldfishResult } from '../simulate/goldfish-result';
 
 const ALL = 'all';
 const GAMES_PER_PAGE = 50;
@@ -19,7 +22,10 @@ const GAMES_PER_PAGE = 50;
 @Component({
   selector: 'app-run-games',
   imports: [
+    GoldfishResult,
     MatButton,
+    MatExpansionModule,
+    PodResult,
     MatFormField,
     MatInput,
     MatLabel,
@@ -34,6 +40,27 @@ const GAMES_PER_PAGE = 50;
   ],
   template: `
     <h1>{{ run() }}</h1>
+    @if (report.value(); as shownReport) {
+      <mat-accordion>
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Stats of the run</mat-panel-title>
+          </mat-expansion-panel-header>
+          <ng-template matExpansionPanelContent>
+            @if (runInfo(); as info) {
+              @if (info.mode === 'pod') {
+                <app-pod-result [report]="shownReport" />
+              } @else {
+                <app-goldfish-result
+                  [report]="shownReport"
+                  [deck]="info.decks[0]"
+                />
+              }
+            }
+          </ng-template>
+        </mat-expansion-panel>
+      </mat-accordion>
+    }
     <p><a routerLink="/games">All runs</a></p>
     @if (summary.isLoading() || games.isLoading()) {
       <mat-progress-bar mode="indeterminate" />
@@ -130,6 +157,10 @@ const GAMES_PER_PAGE = 50;
       gap: 12px;
       margin-bottom: 12px;
     }
+    mat-accordion {
+      display: block;
+      margin-bottom: 12px;
+    }
     table {
       width: 100%;
     }
@@ -180,6 +211,12 @@ export class RunGames {
   protected readonly tagNames = computed(() =>
     Object.keys(this.tagCounts()).sort(),
   );
+
+  /** What the run printed; null for a run without a saved report (stopped, or older). */
+  protected readonly report = rxResource({
+    params: () => this.run(),
+    stream: ({ params: runFolder }) => this.api.runReport(runFolder),
+  });
 
   protected readonly games = rxResource({
     params: () => ({

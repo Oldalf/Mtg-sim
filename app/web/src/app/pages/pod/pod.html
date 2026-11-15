@@ -195,7 +195,10 @@
       <app-run-progress [run]="run" (stop)="currentRun.stop()" />
       @if (podRun(); as finishedRun) {
         @if (finishedRun.status !== 'running') {
-          <app-pod-result [run]="finishedRun" />
+          <app-pod-result
+            [report]="finishedRun.report"
+            [runFolder]="podRunFolder(finishedRun)"
+          />
         }
       }
     </section>

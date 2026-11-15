@@ -2,6 +2,7 @@
  * `npm run pod -- gale meren samfrodo aesi mike -n 1000 [--turns 17] [--trace 1 --seed 5] [--eco] [--set key=value]`
  * Decks play each other (see engine/pod/pod.ts).
  */
+import * as path from 'path';
 import { Config } from '../engine/game/game-types';
 import * as Pod from '../engine/pod/pod';
 import { buildPodReport, printPod } from '../engine/pod/pod-report';
@@ -97,7 +98,12 @@ export async function runPodCommand(
     runFolder,
   );
   logSession.finishRun(runFolder, result.logRows);
-  printPod(buildPodReport(spec, result.games));
+  const report = buildPodReport(spec, result.games);
+  logSession.saveReport({
+    ...report,
+    runFolder: runFolder && path.basename(runFolder),
+  });
+  printPod(report);
   logSession.printGamesWorthALook();
   console.log(`\n(${((Date.now() - startTime) / 1000).toFixed(0)}s)`);
 }

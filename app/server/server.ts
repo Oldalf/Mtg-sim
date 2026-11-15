@@ -21,6 +21,7 @@ import {
   answerLogs,
   answerRealLog,
   answerRealLogs,
+  answerRunReport,
 } from './logs-routes';
 import { answerCurrentRun, startRun, stopCurrentRun } from './runs';
 
@@ -100,6 +101,12 @@ const ROUTES: Route[] = [
           count: url.searchParams.get('count'),
         }),
       ),
+  },
+  {
+    method: 'GET',
+    path: /^\/api\/logs\/(?<run>[^/]+)\/report$/,
+    answer: (pathParts) =>
+      ok(answerRunReport(decodeURIComponent(pathParts.run))),
   },
   {
     method: 'GET',

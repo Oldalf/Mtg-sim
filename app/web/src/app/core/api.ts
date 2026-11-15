@@ -13,6 +13,7 @@ import type {
   ImageUpdateState,
   LogsAnswer,
   RealLogsAnswer,
+  RunReportAnswer,
   RunRequest,
   StartRunAnswer,
 } from '../../../../api-types';
@@ -78,6 +79,13 @@ export class ApiService {
     return this.http.get<GamesAnswer>(
       `/api/logs/${encodeURIComponent(runFolder)}/games`,
       { params },
+    );
+  }
+
+  /** The report a run printed (null when it has none). */
+  runReport(runFolder: string): Observable<RunReportAnswer> {
+    return this.http.get<RunReportAnswer>(
+      `/api/logs/${encodeURIComponent(runFolder)}/report`,
     );
   }
 

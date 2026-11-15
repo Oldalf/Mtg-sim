@@ -11,6 +11,7 @@ import {
   listRuns,
   readIndex,
   readRunInfo,
+  readRunReport,
   runFolderOf,
 } from '../../engine/game-log/game-log-files';
 import { describeGameResult } from '../../engine/game-log/game-log-run';
@@ -22,6 +23,7 @@ import type {
   LoggedRunSummary,
   LogsAnswer,
   RealLogsAnswer,
+  RunReportAnswer,
 } from '../api-types';
 import { RequestError } from './decks-routes';
 
@@ -103,6 +105,11 @@ export function answerGames(runName: string, filter: GamesFilter): GamesAnswer {
       result: describeGameResult(runInfo, row),
     }));
   return { total: matchingRows.length, rows };
+}
+
+/** The report the run printed; null for a run that has none (stopped, or from before reports were saved). */
+export function answerRunReport(runName: string): RunReportAnswer {
+  return readRunReport(findRunFolder(runName)) ?? null;
 }
 
 export function answerGame(runName: string, seedText: string): GameAnswer {

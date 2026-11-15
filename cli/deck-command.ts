@@ -111,14 +111,14 @@ export async function runDeckCommand(
       rowsPerList.push(
         (await simulateLogged(listFile, configWithSettings, 'diag')).diag!,
       );
-    printDiag(
-      buildDiagReport(
-        deck,
-        listFiles.map((listFile) => path.basename(listFile)),
-        rowsPerList,
-        games,
-      ),
+    const report = buildDiagReport(
+      deck,
+      listFiles.map((listFile) => path.basename(listFile)),
+      rowsPerList,
+      games,
     );
+    logSession.saveReport(report);
+    printDiag(report);
   } else if (args.rank) {
     await rank(deck, firstList, games, configWithSettings, workers);
   } else if (args.cutCards) {
@@ -139,25 +139,30 @@ export async function runDeckCommand(
       configWithSettings,
       '-changed',
     );
-    printCompare(
+    const report = buildKillTurnReport(
+      ['default', args.settings.join(' ')],
+      [defaultTable, settingsTable],
+      defaultConfig,
+      games,
+      deck.metrics,
+      deck.compareTurns,
+    );
+    logSession.saveReport(report);
+    printCompare(report);
+  } else if (listFiles.length === 1) {
+    const table = await killTable(firstList, configWithSettings);
+    const listName = path.relative(deck.dir, firstList) || firstList;
+    logSession.saveReport(
       buildKillTurnReport(
-        ['default', args.settings.join(' ')],
-        [defaultTable, settingsTable],
+        [listName],
+        [table],
         defaultConfig,
         games,
         deck.metrics,
         deck.compareTurns,
       ),
     );
-  } else if (listFiles.length === 1) {
-    const table = await killTable(firstList, configWithSettings);
-    printSingle(
-      path.relative(deck.dir, firstList) || firstList,
-      table,
-      defaultConfig,
-      games,
-      deck.metrics,
-    );
+    printSingle(listName, table, defaultConfig, games, deck.metrics);
   } else {
     const tables: Table[] = [];
     for (const listFile of listFiles) {
@@ -166,16 +171,16 @@ export async function runDeckCommand(
         `  done: ${path.basename(listFile)} (${((Date.now() - startTime) / 1000).toFixed(0)}s)`,
       );
     }
-    printCompare(
-      buildKillTurnReport(
-        listFiles,
-        tables,
-        defaultConfig,
-        games,
-        deck.metrics,
-        deck.compareTurns,
-      ),
+    const report = buildKillTurnReport(
+      listFiles,
+      tables,
+      defaultConfig,
+      games,
+      deck.metrics,
+      deck.compareTurns,
     );
+    logSession.saveReport(report);
+    printCompare(report);
   }
   logSession.printGamesWorthALook();
   console.log(`\n(${((Date.now() - startTime) / 1000).toFixed(0)}s)`);

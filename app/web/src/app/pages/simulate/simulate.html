@@ -178,7 +178,11 @@
     <app-run-progress [run]="run" (stop)="currentRun.stop()" />
     @if (goldfishRun(); as finishedRun) {
       @if (finishedRun.status !== 'running') {
-        <app-goldfish-result [run]="finishedRun" />
+        <app-goldfish-result
+          [report]="finishedRun.report"
+          [deck]="deckOf(finishedRun)"
+          [runFolders]="goldfishRunFolders(finishedRun)"
+        />
       }
     }
   </section>

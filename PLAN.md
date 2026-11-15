@@ -1,4 +1,4 @@
-# Plan: step 7, mana as it really is, then Pontus's ideas
+﻿# Plan: step 7, mana as it really is, then Pontus's ideas
 
 Written 2026-11-15 from `IDEAS.md` and a pod game Pontus watched. Tasks Z0 to B5 are done; their full text (the B1 design, results, what each found) is in git (`PLAN.md` at commit `e686967`). The plan of step 6 is at commit `330b641`.
 
@@ -54,11 +54,11 @@ C, D and E stand alone.
 
 From the B1 design (point 4), with Pontus's answer: both the text and the chip are wanted.
 
-- **"Paid with":** cast lines end with the sources that paid, taken from `GameCore.lastPayment` (e.g. `cast Syr Konrad, the Grim — paid with Island, Island (+2 High Tide), Swamp, Dimir Signet (fed by Island)`). The event gets a `paidWith: string[]` field, so a viewer can later highlight the paying cards. No log line per tap: a kill line of 20 spells would bury the log.
+- **"Paid with":** cast lines end with the sources that paid, taken from `GameCore.lastPayment` (e.g. `cast Syr Konrad, the Grim â€” paid with Island, Island (+2 High Tide), Swamp, Dimir Signet (fed by Island)`). The event gets a `paidWith: string[]` field, so a viewer can later highlight the paying cards. No log line per tap: a kill line of 20 spells would bury the log.
 - **The pool chip:** the event gets a `pool` field, but only when the pool isn't empty, so old logs stay as they are. The types go in `shared/` and are set the same way `playerCounters` is. The viewer shows it as a chip on the seat, the way energy is shown (`U3 B1`).
 - **Checks:** `ng build`, `ng test`, and look at it in the browser. Sim results must stay IDENTICAL (only log text changes).
 
-**Built (2026-11-15).** `GameEvent.paidWith` (`ManaPaid`: card, what it made) and `GameEvent.pool` (the acting player's floating mana as symbols, "UUB") in `shared/game-log-types.ts`. `GameCore` notes each committed payment in `paymentsForLog` while the log is on; the next line takes them. `restore` drops payments a snapshot undoes, because Gale's AI pays to try a plan and then rolls it back. `event.text` itself is unchanged: `describeEventText` (shared) adds " — paid with Island (U) x2, Swamp (B)" for the text log, the viewer's log and the caption. The board has `pool` (emptied at a turn start, set from each line of its player), shown as "pool U2 B1" in `describeBoard` and as a chip on the seat. A filter Signet's part is what it added net (fed by U, it shows "B"). Tests: `runPaymentLogTests` in `npm run pod -- --test`, and one in `game-steps.spec.ts`. Checked in the browser at desktop and 390 px.
+**Built (2026-11-15).** `GameEvent.paidWith` (`ManaPaid`: card, what it made) and `GameEvent.pool` (the acting player's floating mana as symbols, "UUB") in `shared/game-log-types.ts`. `GameCore` notes each committed payment in `paymentsForLog` while the log is on; the next line takes them. `restore` drops payments a snapshot undoes, because Gale's AI pays to try a plan and then rolls it back. `event.text` itself is unchanged: `describeEventText` (shared) adds " â€” paid with Island (U) x2, Swamp (B)" for the text log, the viewer's log and the caption. The board has `pool` (emptied at a turn start, set from each line of its player), shown as "pool U2 B1" in `describeBoard` and as a chip on the seat. A filter Signet's part is what it added net (fed by U, it shows "B"). Tests: `runPaymentLogTests` in `npm run pod -- --test`, and one in `game-steps.spec.ts`. Checked in the browser at desktop and 390 px.
 
 ---
 
@@ -88,8 +88,11 @@ Cards on the table are small. On hover (and on focus, for the keyboard) a card s
 
 The Games tab lists runs and their games, but not the result table a run printed (win rates, kill turns). Add a stats page per run: for a goldfish run the kill-turn table and chart of the Simulate page, for a pod run the pod report. First decide (and write here): store the report with the session logs when the run ends (simple, the run's numbers exactly; needs `GameIndex` / run info to carry it) or compute it from the logged games (works for old runs; must match what the run printed). Recommendation: store it, as the report already exists when the run ends. Then build it: the API, a page reusing the Simulate and Pod result components, and a link from the run's games. Done when `ng test`, `npm run app -- --test` and `npm run verify` pass and the browser shows a goldfish and a pod run's stats.
 
+**Built (2026-11-15).** Stored, not recomputed: the report is saved as `report.json` in each run folder of the run (`writeRunReport` / `readRunReport` in `game-log-files.ts`), by the app's `runs.ts` and by the command line (`LogSession.saveReport`). `GET /api/logs/<run>/report` answers it, or null for a stopped or older run (then the page shows no accordion). `PodResult` and `GoldfishResult` now take a `report` (plus `runFolder` / `deck`) instead of a run; the Pod and Simulate pages and the run page of the Games tab (accordion "Stats of the run" above "All runs") share them. Checked in the browser for a goldfish and a pod run.
+
 ---
 
 ## Not in this plan
 
 The ideas left from step 5 are in `ROADMAP.md` under "Ideas not decided". New memos from Pontus go at the end of `IDEAS.md`.
+

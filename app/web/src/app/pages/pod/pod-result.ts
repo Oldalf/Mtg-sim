@@ -1,6 +1,6 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
-import type { PodReport, RunState } from '../../../../../api-types';
+import type { PodReport, RunReport, RunState } from '../../../../../api-types';
 import { ResultsTable } from '../../shared/results-table/results-table';
 import { GamesWorthALook } from '../simulate/games-worth-a-look';
 import {
@@ -19,7 +19,17 @@ interface PodTables {
   wentOut: ReturnType<typeof wentOutTable>;
 }
 
-/** The result of a pod run: wins, wins by round, interaction, how the decks went out, and games worth a look. */
+/** The folder a pod run's games are in; a stopped run has no report, but its folder is finished. */
+export function podRunFolder(run: RunState): string | undefined {
+  const report = run.report;
+  const folderOfReport = report?.kind === 'pod' ? report.runFolder : undefined;
+  return folderOfReport ?? run.runFolders[0];
+}
+
+/**
+ * The tables of a pod run's report: wins, wins by round, interaction, how the decks went out. With a run folder it
+ * ends with the games worth a look. The Pod page and a run's page on the Games tab both show it.
+ */
 @Component({
   selector: 'app-pod-result',
   imports: [DecimalPipe, GamesWorthALook, ResultsTable],
@@ -93,12 +103,14 @@ interface PodTables {
   `,
 })
 export class PodResult {
-  /** A pod run that is done or stopped. */
-  readonly run = input.required<RunState>();
+  /** The report of a pod run; undefined for a stopped run, which has none. */
+  readonly report = input<RunReport>();
+  /** Set to list the games worth a look under the tables. */
+  readonly runFolder = input<string>();
 
   /** Undefined for a stopped run: it has no report. */
   protected readonly tables = computed<PodTables | undefined>(() => {
-    const report = this.run().report;
+    const report = this.report();
     if (report?.kind !== 'pod') return undefined;
     return {
       report,
@@ -107,13 +119,5 @@ export class PodResult {
       interaction: interactionTable(report),
       wentOut: wentOutTable(report),
     };
-  });
-
-  /** The report knows its folder; a stopped run has no report, but its folder is finished. */
-  protected readonly runFolder = computed(() => {
-    const report = this.run().report;
-    const folderOfReport =
-      report?.kind === 'pod' ? report.runFolder : undefined;
-    return folderOfReport ?? this.run().runFolders[0];
   });
 }

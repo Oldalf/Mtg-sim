@@ -5,6 +5,8 @@
  *     01-meren-decklist/         one folder per list in a comparison (02-meren-test, ...)
  *       run.json                 what was run, enough to play it again (RunInfo)
  *       index.json               one row per game: seed, result, tags, file, line (GameIndexRow)
+ *       report.json              the report the run printed (win rates, kill turns); a comparison saves the same
+ *                                report in each of its folders. Missing for a run that was stopped.
  *       games-000.jsonl.gz ...   one file per worker job, one game (GameLog) per line, gzipped
  *       tagged/fastest-seed-0412.txt   readable text of every tagged game
  *
@@ -17,6 +19,7 @@ import * as path from 'path';
 import * as zlib from 'zlib';
 import * as C from '../cards/cards';
 import { GameLog } from './game-log';
+import type { RunReport } from '../../app/api-types';
 import type { GameIndexRow, RunInfo } from '../../shared/run-types';
 
 export type { GameIndexRow, RunInfo };
@@ -24,6 +27,7 @@ export type { GameIndexRow, RunInfo };
 export const SESSION_LOGS_FOLDER = path.join(C.ROOT, 'session-logs');
 const RUN_INFO_FILE = 'run.json';
 const INDEX_FILE = 'index.json';
+const REPORT_FILE = 'report.json';
 const TAGGED_FOLDER = 'tagged';
 
 // ================================================================ writing a run
@@ -110,6 +114,15 @@ export function writeIndex(runFolder: string, rows: GameIndexRow[]): void {
   );
 }
 
+/** Saves the report of the run, so the page can show the numbers the run printed without playing again. */
+export function writeRunReport(runFolder: string, report: RunReport): void {
+  fs.writeFileSync(
+    path.join(runFolder, REPORT_FILE),
+    JSON.stringify(report),
+    'utf-8',
+  );
+}
+
 /** Saves the readable text of a tagged game. Returns the file's path. */
 export function writeTaggedGame(
   runFolder: string,
@@ -151,6 +164,13 @@ export function readIndex(runFolder: string): GameIndexRow[] {
   const file = path.join(runFolder, INDEX_FILE);
   if (!fs.existsSync(file)) return [];
   return JSON.parse(fs.readFileSync(file, 'utf-8')) as GameIndexRow[];
+}
+
+/** The report saved with a run; undefined for a run without one (stopped, or made before reports were saved). */
+export function readRunReport(runFolder: string): RunReport | undefined {
+  const file = path.join(runFolder, REPORT_FILE);
+  if (!fs.existsSync(file)) return undefined;
+  return JSON.parse(fs.readFileSync(file, 'utf-8')) as RunReport;
 }
 
 /** The log of one game of a run. */

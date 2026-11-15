@@ -271,6 +271,9 @@ export interface GamesAnswer {
   rows: GameListRow[];
 }
 
+/** GET /api/logs/<run>/report: what the run printed, saved with its games (null when it has none). */
+export type RunReportAnswer = RunReport | null;
+
 /** GET /api/logs/<run>/games/<seed> and GET /api/decks/<deck>/logs/<file> */
 export type GameAnswer = GameLog;
 

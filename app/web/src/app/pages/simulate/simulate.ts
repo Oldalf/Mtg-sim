@@ -38,7 +38,8 @@ import { CurrentRunService } from '../../core/current-run';
 import { HelpIcon } from '../../shared/help-icon/help-icon';
 import { RunProgress } from '../../shared/run-progress/run-progress';
 import { goldfishSettingHelp } from '../../shared/setting-help/setting-help';
-import { GoldfishResult } from './goldfish-result';
+import type { RunState } from '../../../../../api-types';
+import { GoldfishResult, goldfishRunFolders } from './goldfish-result';
 
 /** The most games the server plays in one run (app/server/run-requests.ts). */
 const MOST_GAMES = 50_000;
@@ -170,6 +171,12 @@ export class Simulate {
     );
   });
   protected readonly turnsSetting = TURNS_SETTING;
+
+  protected readonly goldfishRunFolders = goldfishRunFolders;
+
+  protected deckOf(run: RunState): string {
+    return run.request.mode === 'goldfish' ? run.request.deck : '';
+  }
 
   /** The page shows the last goldfish run; a pod run shows on the Pod page (but its progress shows here too). */
   protected readonly goldfishRun = computed(() => {
