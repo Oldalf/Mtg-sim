@@ -235,6 +235,11 @@ Forge and XMage are open-source full rules engines. Running a full rules engine 
 - **(b)** Should a failed kill line be a counted miss only, or should `--test` fail when a deck has any miss over 300 seeds? I recommend failing the test, because that is what catches bugs like A1's.
 - **(c)** Is the pool chip on the seat wanted in the viewer, or is the "paid with" text enough?
 
+**Pontus's answers (2026-11-15):**
+- (a) Yes, on the condition that Gale's run time stays about where it is. The 10–50× slowdown was the option this design turns down. Gale keeps its fast abstract search, and B3 must show the cost of playing kill lines; I expect under 2%. If B3 or B5 makes any deck clearly slower (more than about 5%), stop and show Pontus before committing.
+- (b) Yes: `--test` fails when a deck has a kill miss over 300 seeds.
+- (c) Both: the "paid with" text and the pool chip.
+
 ### B2... (written by B1)
 
 See the table under point 5. Each task's details are filled in here when it starts, from the design above.
