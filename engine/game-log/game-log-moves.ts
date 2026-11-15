@@ -11,7 +11,8 @@
  * are still written as moves (in no known order, and a card that moved twice shows as one move), and they are
  * listed in `unrecordedChanges` so that a test can point at the code that made them.
  *
- * Cards are told apart by name only. The recorder only reads the game.
+ * Cards are told apart by name, creature tokens by name and face (see CardMove.token): inside the recorder each is
+ * known by its log key, "Swamp" or "Vampire (2/2 black flying)". The recorder only reads the game.
  */
 import { CardDef } from '../cards/cards';
 import { CardMove } from './game-log';
@@ -20,7 +21,9 @@ import {
   BoardPermanent,
   PlayerBoard,
   applyMove,
+  describeLoggedCard,
 } from '../../shared/game-log-board';
+import type { TokenFace } from '../../shared/game-log-types';
 
 /** The zones of a game that the recorder reads. */
 export interface TableZones {
@@ -52,6 +55,26 @@ const UNKNOWN_ZONE: CardZone = 'exile';
 const PLUS_ONE_COUNTER = '+1 / +1';
 
 type CountByName = Map<string, number>;
+
+/** The name and face behind each log key of a creature token (a card's log key is its name). */
+const loggedTokenByKey = new Map<string, { name: string; face: TokenFace }>();
+
+/** How the recorder knows a card: its log name, and a creature token's face with it. */
+function logKeyOf(card: CardDef): string {
+  const face = card.tokenFace;
+  if (face === null) return card.logName;
+  const key = describeLoggedCard(card.logName, face);
+  if (!loggedTokenByKey.has(key))
+    loggedTokenByKey.set(key, { name: card.logName, face });
+  return key;
+}
+
+/** The log line for a log key and an action. */
+function cardMoveOf(player: number, key: string, action: string): CardMove {
+  const token = loggedTokenByKey.get(key);
+  if (token === undefined) return { player, card: key, action };
+  return { player, card: token.name, action, token: token.face };
+}
 
 /** What a player's table looks like at one moment, by card name. */
 interface TableState {
@@ -96,7 +119,7 @@ function addOne(counts: CountByName, name: string): void {
 
 function countNames(cards: CardDef[]): CountByName {
   const counts: CountByName = new Map();
-  for (const card of cards) addOne(counts, card.name);
+  for (const card of cards) addOne(counts, logKeyOf(card));
   return counts;
 }
 
@@ -114,10 +137,9 @@ function readTableState(zones: TableZones): TableState {
     permanents: new Map(),
   };
   for (const permanent of zones.battlefield) {
-    const name = permanent.card.name;
     addOne(
       permanent.token ? state.tokens : state.cardsInZone.battlefield,
-      name,
+      logKeyOf(permanent.card),
     );
     state.permanents.set(permanent, {
       isTapped: permanent.tapped,
@@ -163,10 +185,13 @@ export class MoveRecorder {
     if (zones)
       this.replayedBoard.battlefield = zones.battlefield.map(
         (permanent): BoardPermanent => ({
-          name: permanent.card.name,
+          name: permanent.card.logName,
           tapped: permanent.tapped,
           counters: permanent.counters,
           isToken: permanent.token,
+          ...(permanent.card.tokenFace
+            ? { token: permanent.card.tokenFace }
+            : {}),
         }),
       );
   }
@@ -211,39 +236,41 @@ export class MoveRecorder {
    * in shared/game-log-board.ts), and the number of tapped ones stays right.
    */
   notePermanentLeft(permanent: Permanent): void {
-    const card = permanent.card.name;
     if (this.lastState.permanents.get(permanent)?.isTapped)
       this.recordedMoves.push({
-        card,
+        card: logKeyOf(permanent.card),
         fromZone: 'battlefield',
         toZone: 'battlefield',
         otherAction: 'untapped',
       });
     this.lastState.permanents.delete(permanent);
-    this.noteCardLeft(card, 'battlefield', permanent.token);
+    this.noteCardLeft(permanent.card, 'battlefield', permanent.token);
   }
 
   /** A permanent went to another player's battlefield (a change of control). A token is written as gone, as it
    *  comes from nowhere on the other side. */
   notePermanentGivenAway(permanent: Permanent): void {
     this.notePermanentLeft(permanent);
-    if (!permanent.token) this.noteCardGivenAway(permanent.card.name);
+    if (!permanent.token) this.noteCardGivenAway(permanent.card);
   }
 
   /** A card on its way (it left a zone) went to another player: a stolen card that died goes to its owner. */
-  noteCardGivenAway(card: string): void {
+  noteCardGivenAway(cardDef: CardDef): void {
+    const card = logKeyOf(cardDef);
     const fromZone = this.takeCardOnItsWay(card);
     this.recordedMoves.push({ card, fromZone, toZone: OTHER_PLAYER_ZONE });
   }
 
   /** A card of ours (or a permanent we now control) came from another player into a zone of ours. */
-  noteCardFromOtherPlayer(card: string, toZone: CardZone): void {
+  noteCardFromOtherPlayer(cardDef: CardDef, toZone: CardZone): void {
+    const card = logKeyOf(cardDef);
     addToCount(this.lastState.cardsInZone[toZone], card, 1);
     this.recordedMoves.push({ card, fromZone: OTHER_PLAYER_ZONE, toZone });
   }
 
   /** The game took a card out of a zone. A token that leaves the battlefield is gone. */
-  noteCardLeft(card: string, fromZone: CardZone, isToken = false): void {
+  noteCardLeft(cardDef: CardDef, fromZone: CardZone, isToken = false): void {
+    const card = logKeyOf(cardDef);
     if (isToken) {
       addToCount(this.lastState.tokens, card, -1);
       this.recordedMoves.push({ card, fromZone, toZone: TOKEN_ZONE });
@@ -254,7 +281,8 @@ export class MoveRecorder {
   }
 
   /** The game put a card into a zone. A token comes from nowhere. */
-  noteCardArrived(card: string, toZone: CardZone, isToken = false): void {
+  noteCardArrived(cardDef: CardDef, toZone: CardZone, isToken = false): void {
+    const card = logKeyOf(cardDef);
     if (isToken) {
       addToCount(this.lastState.tokens, card, 1);
       this.recordedMoves.push({ card, fromZone: TOKEN_ZONE, toZone });
@@ -291,10 +319,12 @@ export class MoveRecorder {
       ...(settleCardsOnTheirWay ? this.settleCardsOnTheirWay() : []),
       ...permanentChanges(before, after),
     ];
-    const moves = actions.map(([card, action]) => ({ player, card, action }));
+    const moves = actions.map(([card, action]) =>
+      cardMoveOf(player, card, action),
+    );
     for (const move of moves) applyMove(this.replayedBoard, move);
     for (const [card, action] of this.correctionsForReplay(after))
-      moves.push({ player, card, action });
+      moves.push(cardMoveOf(player, card, action));
     return moves;
   }
 
@@ -306,7 +336,7 @@ export class MoveRecorder {
   private correctionsForReplay(after: TableState): CardAction[] {
     const wanted = new Map<string, { tapped: number; counters: number }>();
     for (const [permanent, state] of after.permanents) {
-      const name = permanent.card.name;
+      const name = logKeyOf(permanent.card);
       const total = wanted.get(name) ?? { tapped: 0, counters: 0 };
       total.tapped += state.isTapped ? 1 : 0;
       total.counters += state.counters;
@@ -315,7 +345,8 @@ export class MoveRecorder {
     const corrections: CardAction[] = [];
     for (const [name, target] of wanted) {
       const replayed = this.replayedBoard.battlefield.filter(
-        (permanent) => permanent.name === name,
+        (permanent) =>
+          describeLoggedCard(permanent.name, permanent.token) === name,
       );
       for (let attempt = 0; attempt < 40; attempt++) {
         const tappedNow = replayed.filter((permanent) => permanent.tapped);
@@ -329,7 +360,7 @@ export class MoveRecorder {
         else if (countersNow !== target.counters)
           action = counterActionFor(replayed, target.counters - countersNow);
         if (action === null) break;
-        applyMove(this.replayedBoard, { player: 0, card: name, action });
+        applyMove(this.replayedBoard, cardMoveOf(0, name, action));
         corrections.push([name, action]);
       }
     }
@@ -443,7 +474,7 @@ function untapsOfPermanentsThatLeft(
   const actions: CardAction[] = [];
   for (const [permanent, earlier] of before.permanents)
     if (earlier.isTapped && !after.permanents.has(permanent))
-      actions.push([permanent.card.name, 'untapped']);
+      actions.push([logKeyOf(permanent.card), 'untapped']);
   return actions;
 }
 
@@ -452,7 +483,7 @@ function untapsOfPermanentsThatLeft(
 function permanentChanges(before: TableState, after: TableState): CardAction[] {
   const actions: CardAction[] = [];
   for (const [permanent, now] of after.permanents) {
-    const name = permanent.card.name;
+    const name = logKeyOf(permanent.card);
     const earlier = before.permanents.get(permanent) ?? {
       isTapped: false,
       counters: 0,

@@ -1,6 +1,10 @@
 /** The cards of the Edgar Markov deck that have rules of their own, and the facts about them. */
 import * as C from '../../engine/cards/cards';
-import { CardDef, makeToken } from '../../engine/cards/cards';
+import {
+  CardDef,
+  makeArtifactToken,
+  makeToken,
+} from '../../engine/cards/cards';
 
 export const EDGAR = 'Edgar Markov';
 export const EVERETH = 'Evereth, Viceroy of Plunder';
@@ -10,21 +14,6 @@ export const BARON_BERTRAM = 'Baron Bertram Graywater';
 export const LEGIONS_LANDING = "Legion's Landing";
 export const SKULLCLAMP = 'Skullclamp';
 export const NINE_LIVES_FAMILIAR = 'Nine-Lives Familiar';
-
-function artifactToken(
-  name: string,
-  power: number | null = null,
-  toughness = 0,
-): CardDef {
-  const isCreature = power !== null;
-  return new CardDef(name, {
-    name,
-    type_line: `Token Artifact${isCreature ? ' Creature' : ''} — ${name}`,
-    token: true,
-    power: isCreature ? String(power) : null,
-    toughness: isCreature ? String(toughness) : null,
-  } as never);
-}
 
 export const TOKENS = {
   /** Edgar's eminence and Bloodline-less Vampire tokens: no lifelink. */
@@ -36,8 +25,8 @@ export const TOKENS = {
   spawn: makeToken('Eldrazi Spawn', 0, 1),
   shapeshifter: makeToken('Shapeshifter', 3, 2),
   army: makeToken('Zombie Army', 0, 0, 'black'),
-  servo: artifactToken('Servo', 1, 1),
-  treasure: artifactToken('Treasure'),
+  servo: makeArtifactToken('Servo', 1, 1),
+  treasure: makeArtifactToken('Treasure'),
 };
 
 /** Other Vampires you control get +1/+1. */

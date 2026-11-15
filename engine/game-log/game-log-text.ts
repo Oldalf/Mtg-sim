@@ -13,6 +13,7 @@ import { GameEvent, GameLog } from './game-log';
 import {
   TableBoards,
   describeBoard,
+  describeLoggedCard,
   describePlayerCounters,
 } from '../../shared/game-log-board';
 import {
@@ -89,7 +90,8 @@ function moveLines(gameLog: GameLog, event: GameEvent): string[] {
     const owner = isPodGame(gameLog)
       ? `${gameLog.players[move.player].name}; `
       : '';
-    return `${MOVE_LINE_START}${owner}${move.card}; ${move.action}`;
+    const card = describeLoggedCard(move.card, move.token);
+    return `${MOVE_LINE_START}${owner}${card}; ${move.action}`;
   });
 }
 

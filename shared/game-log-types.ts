@@ -20,6 +20,22 @@ export interface CardMove {
   card: string;
   /** "moved hand => battlefield" | "tapped" | "untapped" | "counter:+1 / +1=3" */
   action: string;
+  /** A creature token's face, on every line about it: tokens are known by their name and face together, so a
+   *  1/1 Vampire and a 2/2 flying Vampire stay apart. Left out for cards, other tokens (Treasure) and lines of a
+   *  real Archidekt log or an older log: those are known by name only. */
+  token?: TokenFace;
+}
+
+/** What a creature token looks like in the game (the game owns its stats, Scryfall only gives it a picture). */
+export interface TokenFace {
+  power: number;
+  toughness: number;
+  /** Colour words, lower case: ["black"], [] for colourless. */
+  colours: string[];
+  /** Lower case: ["flying", "lifelink"]. */
+  keywords: string[];
+  /** A marker for many identical tokens (Aesi's armies): how many it stands for. */
+  copies?: number;
 }
 
 export interface GameEvent {

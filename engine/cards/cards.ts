@@ -17,6 +17,7 @@ import {
   ROCKS,
 } from './card-facts';
 import { readLandFromText } from './land-text';
+import type { TokenFace } from '../../shared/game-log-types';
 
 /** Repo root: dist/sim.js lives one folder below it. */
 export const ROOT = path.resolve(__dirname, '..');
@@ -157,6 +158,11 @@ export class CardDef {
   readonly haste: boolean;
   /** A token's definition (made by makeToken), not a real card. */
   readonly isToken: boolean;
+  /** The name the game log uses: the card's name, or what a marker token stands for ("Illusion" for Aesi's
+   *  "Illusion army"). */
+  readonly logName: string;
+  /** A creature token's face for the game log; null for cards and tokens that are not creatures. */
+  readonly tokenFace: TokenFace | null;
   readonly isBlue: boolean;
   readonly oracle: string;
   readonly known: boolean;
@@ -172,7 +178,10 @@ export class CardDef {
   constructor(
     readonly name: string,
     data: CardData | undefined,
+    loggedAs: TokenLogging | null = null,
   ) {
+    this.logName = loggedAs?.name ?? name;
+    this.tokenFace = loggedAs?.face ?? null;
     const cardData = data ?? {};
     const typeLine = (cardData.type_line ?? '').toLowerCase();
     this.types = new Set(
@@ -228,25 +237,87 @@ export class CardDef {
   }
 }
 
-/** A token's definition, e.g. makeToken("Zombie", 2, 2, "black"). Same name = same definition. */
+/** How a token is written in the game log: its name there and its face. */
+interface TokenLogging {
+  name: string;
+  face: TokenFace | null;
+}
+
+/** A marker token logged as what it stands for: Aesi's "Illusion army" (999/999, so the sim knows a win is coming)
+ *  is logged as an Illusion 1/1 with 999 copies. Its colours and keywords are the marker's. */
+export interface MarkerLogging {
+  name: string;
+  power: number;
+  toughness: number;
+  copies: number;
+}
+
+/** "black green" -> ["black", "green"]. */
+const colourWords = (colour: string): string[] =>
+  colour.toLowerCase().split(/\s+/).filter(Boolean);
+
+/** A token's definition, e.g. makeToken("Zombie", 2, 2, "black"). Same name and stats = same definition. */
 export function makeToken(
   name: string,
   power: number,
   toughness: number,
   colour = '',
   keywords: string[] = [],
+  options: { loggedAs?: MarkerLogging } = {},
 ): CardDef {
   const key = `token:${name}:${power}/${toughness}:${keywords.join(',')}`;
   let card = CACHE.get(key);
   if (card === undefined) {
-    card = new CardDef(name, {
+    const marker = options.loggedAs;
+    const face: TokenFace = {
+      power: marker?.power ?? power,
+      toughness: marker?.toughness ?? toughness,
+      colours: colourWords(colour),
+      keywords: keywords.map((keyword) => keyword.toLowerCase()),
+      ...(marker ? { copies: marker.copies } : {}),
+    };
+    card = new CardDef(
       name,
-      type_line: `Token Creature — ${name} ${colour}`.trim(),
-      power: String(power),
-      toughness: String(toughness),
-      keywords,
-      token: true,
-    } as CardData);
+      {
+        name,
+        type_line: `Token Creature — ${name} ${colour}`.trim(),
+        power: String(power),
+        toughness: String(toughness),
+        keywords,
+        token: true,
+      } as CardData,
+      { name: marker?.name ?? name, face },
+    );
+    CACHE.set(key, card);
+  }
+  return card;
+}
+
+/** An artifact token: Treasure, Food, Clue, or with power and toughness an artifact creature (a Servo).
+ *  Colourless. Same name and stats = same definition. */
+export function makeArtifactToken(
+  name: string,
+  power: number | null = null,
+  toughness = 0,
+): CardDef {
+  const key = `artifact token:${name}:${power}/${toughness}`;
+  let card = CACHE.get(key);
+  if (card === undefined) {
+    const isCreature = power !== null;
+    const face: TokenFace | null = isCreature
+      ? { power, toughness, colours: [], keywords: [] }
+      : null;
+    card = new CardDef(
+      name,
+      {
+        name,
+        type_line: `Token Artifact${isCreature ? ' Creature' : ''} — ${name}`,
+        token: true,
+        power: isCreature ? String(power) : null,
+        toughness: isCreature ? String(toughness) : null,
+      } as CardData,
+      { name, face },
+    );
     CACHE.set(key, card);
   }
   return card;

@@ -63,6 +63,12 @@ export function hasBulkData(): boolean {
 }
 
 // ------------------------------------------------------------------ reading a bulk file
+/** The lines of the bulk cards file (tokens and all), one JSON card per line. */
+export function readBulkCardLines(): AsyncGenerator<string> {
+  requireBulkData();
+  return readBulkLines(CARDS_FILE);
+}
+
 /** The lines of a .jsonl.gz file, unzipped on the fly. */
 async function* readBulkLines(file: string): AsyncGenerator<string> {
   const fileStream = fs.createReadStream(file);

@@ -35,7 +35,7 @@ const HIGHLIGHT_KINDS: ReadonlySet<EventKind> = new Set([
 export function cardNamesAmong(parts: unknown[]): string[] {
   const names: string[] = [];
   for (const part of parts) {
-    if (part instanceof CardDef) names.push(part.name);
+    if (part instanceof CardDef) names.push(part.logName);
     else if (Array.isArray(part)) names.push(...cardNamesAmong(part));
   }
   return names;

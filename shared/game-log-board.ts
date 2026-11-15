@@ -1,6 +1,7 @@
 /**
  * The table at any point of a logged game, rebuilt from the card moves (the board itself is never stored).
- * Cards are names only, so this works for a simulated game and for a real Archidekt log alike.
+ * Cards are names only, so this works for a simulated game and for a real Archidekt log alike. A simulated game
+ * also gives a creature token's face (CardMove.token), so tokens with the same name and other stats stay apart.
  *
  *   boardAt(gameLog, eventIndex)   every player's board after that event
  *   TableBoards                    the same, stepping through the events one by one
@@ -11,6 +12,7 @@ import {
   type GameEvent,
   type GameLog,
   type PlayerCounters,
+  type TokenFace,
 } from './game-log-types';
 
 export interface BoardPermanent {
@@ -19,6 +21,34 @@ export interface BoardPermanent {
   /** +1/+1 counters. */
   counters: number;
   isToken: boolean;
+  /** A creature token's face, when the log gives one (see CardMove.token). */
+  token?: TokenFace;
+}
+
+/** "2/2 black flying", "1/1 blue flying x999". */
+export function describeTokenFace(face: TokenFace): string {
+  return [
+    `${face.power}/${face.toughness}`,
+    ...face.colours,
+    ...face.keywords,
+    ...(face.copies ? [`x${face.copies}`] : []),
+  ].join(' ');
+}
+
+/** A card as the log knows it: "Swamp", or a token with its face, "Vampire (2/2 black flying)". */
+export function describeLoggedCard(name: string, face?: TokenFace): string {
+  return face ? `${name} (${describeTokenFace(face)})` : name;
+}
+
+/** Is this permanent the one a line is about? A line with a face wants the same face; a line without one (a real
+ *  log, an older log) goes by the name only. */
+function isPermanentOfMove(permanent: BoardPermanent, move: CardMove): boolean {
+  if (permanent.name !== move.card) return false;
+  if (!move.token) return true;
+  return (
+    !!permanent.token &&
+    describeTokenFace(permanent.token) === describeTokenFace(move.token)
+  );
 }
 
 /** One player's side of the table. */
@@ -53,7 +83,7 @@ function removeFirst<T>(items: T[], matches: (item: T) => boolean): T | null {
 /** Takes a card out of a zone of the board. Returns the permanent if it left the battlefield. */
 function takeFromZone(
   board: PlayerBoard,
-  card: string,
+  move: CardMove,
   zone: string,
 ): BoardPermanent | null {
   if (zone === 'library') board.librarySize -= 1;
@@ -62,44 +92,52 @@ function takeFromZone(
     return (
       removeFirst(
         board.battlefield,
-        (permanent) => permanent.name === card && !permanent.tapped,
+        (permanent) => isPermanentOfMove(permanent, move) && !permanent.tapped,
       ) ??
-      removeFirst(board.battlefield, (permanent) => permanent.name === card)
+      removeFirst(board.battlefield, (permanent) =>
+        isPermanentOfMove(permanent, move),
+      )
     );
   else if (isNameListZone(zone))
-    removeFirst(board[zone], (name) => name === card);
+    removeFirst(board[zone], (name) => name === move.card);
   return null;
 }
 
 function putIntoZone(
   board: PlayerBoard,
-  card: string,
+  move: CardMove,
   zone: string,
   isToken: boolean,
 ): void {
   if (zone === 'library') board.librarySize += 1;
   else if (zone === 'battlefield')
-    board.battlefield.push({ name: card, tapped: false, counters: 0, isToken });
-  else if (isNameListZone(zone)) board[zone].push(card);
+    board.battlefield.push({
+      name: move.card,
+      tapped: false,
+      counters: 0,
+      isToken,
+      ...(move.token ? { token: move.token } : {}),
+    });
+  else if (isNameListZone(zone)) board[zone].push(move.card);
   // anything else (miscCards, opponentsCards): the card is off this player's table
 }
 
 /** Applies one line of Archidekt's simple format to a player's board. Lines it does not know change nothing. */
 export function applyMove(board: PlayerBoard, move: CardMove): void {
-  const { card, action } = move;
+  const { action } = move;
   const zoneChange = MOVE_ACTION.exec(action);
   if (zoneChange) {
     const [, fromZone, toZone] = zoneChange;
-    const leftBattlefield = takeFromZone(board, card, fromZone);
+    const leftBattlefield = takeFromZone(board, move, fromZone);
     const isToken =
       fromZone === TOKEN_ZONE || leftBattlefield?.isToken === true;
-    putIntoZone(board, card, toZone, isToken);
+    putIntoZone(board, move, toZone, isToken);
     return;
   }
   if (action === 'tapped' || action === 'untapped') {
     const isTapped = action === 'tapped';
     const permanent = board.battlefield.find(
-      (other) => other.name === card && other.tapped !== isTapped,
+      (other) => isPermanentOfMove(other, move) && other.tapped !== isTapped,
     );
     if (permanent) permanent.tapped = isTapped;
     return;
@@ -108,7 +146,7 @@ export function applyMove(board: PlayerBoard, move: CardMove): void {
   if (counterChange) {
     const counters = parseInt(counterChange[1], 10);
     const permanent = board.battlefield.find(
-      (other) => other.name === card && other.counters !== counters,
+      (other) => isPermanentOfMove(other, move) && other.counters !== counters,
     );
     if (permanent) permanent.counters = counters;
   }
@@ -154,12 +192,13 @@ export function boardAt(gameLog: GameLog, eventIndex: number): PlayerBoard[] {
 
 // ================================================================ as text
 
-/** "Swamp x3 (2 tapped)", "Insect token x2", "Grist, the Hunger Tide +2" */
+/** "Swamp x3 (2 tapped)", "Insect token x2", "Vampire 2/2 black flying token", "Grist, the Hunger Tide +2" */
 function describePermanents(permanents: BoardPermanent[]): string {
   const groups = new Map<string, BoardPermanent[]>();
   for (const permanent of permanents) {
     const label =
       permanent.name +
+      (permanent.token ? ` ${describeTokenFace(permanent.token)}` : '') +
       (permanent.isToken ? ' token' : '') +
       (permanent.counters
         ? ` ${permanent.counters > 0 ? '+' : ''}${permanent.counters}`

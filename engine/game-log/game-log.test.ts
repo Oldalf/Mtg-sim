@@ -89,7 +89,7 @@ function reportUnrecordedMoves(
 }
 
 /** Prints a count of things that should not be there, and the first few. Any of them fails the test. */
-function reportDifferences(
+export function reportDifferences(
   label: string,
   whatTheyAre: string,
   differences: string[],

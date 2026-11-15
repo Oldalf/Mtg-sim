@@ -52,7 +52,7 @@ export function readArchidektLog(file: string): GameLog {
 }
 
 /** The card moves of one player as lines of an Archidekt log. What happened before the first turn (the opening
- *  hand and mulligans) is turn 0, as in a real log. */
+ *  hand and mulligans) is turn 0, as in a real log. Archidekt has no place for a token's face: the name only. */
 export function archidektLines(gameLog: GameLog, player: number): string[] {
   const lines: string[] = [];
   let isBeforeFirstTurn = true;

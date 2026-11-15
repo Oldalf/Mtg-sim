@@ -32,7 +32,7 @@ Rules for every task:
 | 4 | C1 | Energy as a player counter, shown in the viewer (done) | Opus 5.5 |
 | 5 | C2 | Volatile Stormdrake takes a creature in a pod | Opus 5.5 |
 | 6 | D1 | Tokens: the design (who defines a token, its name in the log, its image) (done) | Opus 5.5, then Pontus |
-| 7 | D2 | Tokens: the shared artifact helper, the art data and the token's face in the log | Sonnet 5.5 |
+| 7 | D2 | Tokens: the shared artifact helper, the art data and the token's face in the log (done) | Sonnet 5.5 |
 | 8 | D3 | (folded into D2: the decks keep their own token stats) | - |
 | 9 | D4 | Tokens: art and stats in the viewer | Sonnet 5.5 |
 
@@ -181,6 +181,8 @@ Every token the decks make, and the art the rule in 2 picks (checked in the bulk
 ### D2. The engine and the log (Sonnet 5.5, after D1)
 
 Build D1's points 1 to 3 and 5: `makeArtifactToken` in the engine (samfrodo, edgar and codie use it in the same commit, so the three copies go), `data/token-art.json` from `npm run cards` with the art-picking function and a test for it (Edgar's three Vampires get three different entries, an unknown name gets none), `TokenFace` on `CardMove` with the recorder, `applyMove`, the text log and the Archidekt export, and Aesi's armies logged as x999. Real logs in `decks/*/logs/` must still replay (`--analyze`). Before: save the fixed-seed pod run. Done when every deck's `--regress check` is IDENTICAL, the pod output is unchanged, `npm run pod -- --test` passes and a log test has Edgar's three Vampires tapped and untapped without mixing them up. Ask eco or full power first.
+
+Done: `makeArtifactToken` in `engine/cards/cards.ts` (samfrodo, edgar, codie use it); `CardDef.logName` and `CardDef.tokenFace` (set by `makeToken` / `makeArtifactToken` for creature tokens; `makeToken(..., { loggedAs })` for Aesi's armies: `Illusion` / `Snake` 1/1 with `copies: 999`). `TokenFace` and `CardMove.token` in `shared/game-log-types.ts`. The recorder knows each card by a log key, `describeLoggedCard(name, face)` ("Vampire (2/2 black flying)"), so the moves, the replay corrections and `applyMove` (`isPermanentOfMove`: a line without a face goes by name) keep faces apart; `BoardPermanent.token` holds the face. The text log writes the key, Archidekt lines the name only. The board summary already tells faces apart ("Vampire 2/2 black flying token x2", colours included), so D4 only has to show it. `engine/cards/token-art.ts`: `writeTokenArt` (from `npm run cards -- update` / `refresh`, or any `npm run cards` when the file is missing) writes `data/token-art.json` (939 tokens, 132 kB, one per line); `pickTokenArt(name, face?)` ranks same colours, then most keywords in common, then fewest extra keywords (so a plain 1/1 black Vampire does not get a lifelink one), then same power/toughness, then the first; no face: the first of that name; unknown name: null. Tests: `runTokenTests` in `engine/game-log/game-log-tokens.test.ts` (in every deck's `--test`). Results: fixed-seed pod run identical before / after; Edgar's baseline re-recorded (its Skullclamp test prints a whole Permanent, now with `logName` and `tokenFace`; 600 games identical). For D4: art for a `CardMove` is `pickTokenArt(move.card, move.token)`; `GameEvent.cards` uses `logName` but carries no face.
 
 ### D3. (folded into D2)
 

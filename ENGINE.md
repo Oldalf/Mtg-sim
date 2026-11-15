@@ -12,6 +12,7 @@ The shared engine and how the project is run. Each deck keeps its own plan (`dec
   - `pay(..., commit = false)` taps lands and then undoes it (only `tapped` and the pool). Side effects in `tap()` (life loss, sacrifices) leak into every payment check: do them when `pay` commits.
   - A card's X is 0 in the card data. Backslashes get lost in heredocs and JS template strings written through the shell: check regexes after writing them.
   - Card data comes from Scryfall's bulk files (`engine/cards/scryfall.ts`, `npm run cards -- update`, run by hand when new sets are out). Cards a list needs are copied into `data/cards.json` automatically before a run.
+  - Tokens: the deck owns a token's stats (`makeToken`, `makeArtifactToken` for Treasure, Food, Clue and Servo), Scryfall only gives it art (`data/token-art.json`, `pickTokenArt`). The log writes a creature token's face (`CardMove.token`) next to its name, so tokens with the same name and other stats stay apart; a marker token is logged as what it stands for (`makeToken(..., { loggedAs })`, Aesi's armies as x999).
 
 ## Folders
 

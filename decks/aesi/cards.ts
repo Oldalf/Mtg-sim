@@ -105,8 +105,13 @@ export const SPIRITS = new Set([
 export const TOK = {
   illusion: makeToken('Illusion', 1, 1, 'blue', ['flying']),
   snake: makeToken('Snake', 1, 1, 'green'),
-  illusionArmy: makeToken('Illusion army', 999, 999, 'blue', ['flying']),
-  snakeArmy: makeToken('Snake army', 999, 999, 'green'),
+  /** Markers for endless 1/1s (so the sim knows a win is coming), logged as what they stand for. */
+  illusionArmy: makeToken('Illusion army', 999, 999, 'blue', ['flying'], {
+    loggedAs: { name: 'Illusion', power: 1, toughness: 1, copies: 999 },
+  }),
+  snakeArmy: makeToken('Snake army', 999, 999, 'green', [], {
+    loggedAs: { name: 'Snake', power: 1, toughness: 1, copies: 999 },
+  }),
 };
 /** A land Eternal Dominion takes from an opponent (any colour). */
 export const STOLEN_LAND = new CardDef('Stolen land', {

@@ -1,6 +1,10 @@
 /** The cards of the Sam & Frodo deck that have rules of their own, and the facts about them. */
 import * as C from '../../engine/cards/cards';
-import { CardDef, makeToken } from '../../engine/cards/cards';
+import {
+  CardDef,
+  makeArtifactToken,
+  makeToken,
+} from '../../engine/cards/cards';
 
 export const FRODO = 'Frodo, Adventurous Hobbit';
 export const SAM = 'Sam, Loyal Attendant';
@@ -8,30 +12,16 @@ export const GOLLUM = 'Gollum, Obsessed Stalker';
 /** Archidekt's Ring card: its counter = how many times the Ring has tempted us. */
 export const RING_TRACKER = 'The Ring // The Ring Tempts You';
 
-function artifactToken(
-  name: string,
-  creature = false,
-  power = 0,
-  toughness = 0,
-): CardDef {
-  return new CardDef(name, {
-    name,
-    type_line: `Token Artifact${creature ? ' Creature' : ''} — ${name}`,
-    token: true,
-    power: creature ? String(power) : null,
-    toughness: creature ? String(toughness) : null,
-  } as never);
-}
-export const FOOD = artifactToken('Food');
-export const TREASURE = artifactToken('Treasure');
-export const CLUE = artifactToken('Clue');
+export const FOOD = makeArtifactToken('Food');
+export const TREASURE = makeArtifactToken('Treasure');
+export const CLUE = makeArtifactToken('Clue');
 export const TOK = {
   halfling: makeToken('Halfling', 1, 1, 'white'),
   soldier: makeToken('Soldier', 1, 1, 'white', ['lifelink']),
   cat: makeToken('Cat', 1, 1, 'white'),
   goat: makeToken('Goat', 0, 1, 'white'),
   bird: makeToken('Bird', 3, 3, 'white', ['flying']),
-  servo: artifactToken('Servo', true, 1, 1),
+  servo: makeArtifactToken('Servo', 1, 1),
 };
 export const ART_TOKENS = new Set([FOOD, TREASURE, CLUE]);
 

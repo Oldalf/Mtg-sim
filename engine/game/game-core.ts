@@ -714,7 +714,7 @@ export abstract class GameCore<S = unknown> {
   /** Takes a card out of a zone (it must be there). Put it somewhere with putCard. */
   takeCard(card: CardDef, fromZone: CardListZone): void {
     removeOrThrow(this[fromZone], card);
-    this.moveRecorder?.noteCardLeft(card.name, LOG_ZONE[fromZone]);
+    this.moveRecorder?.noteCardLeft(card, LOG_ZONE[fromZone]);
   }
 
   /** Takes a card out of a zone if it is there. Returns whether it was. */
@@ -729,7 +729,7 @@ export abstract class GameCore<S = unknown> {
     const [card] = this[fromZone].splice(index, 1);
     if (card === undefined)
       throw new Error(`no card at position ${index} of ${fromZone}`);
-    this.moveRecorder?.noteCardLeft(card.name, LOG_ZONE[fromZone]);
+    this.moveRecorder?.noteCardLeft(card, LOG_ZONE[fromZone]);
     return card;
   }
 
@@ -738,7 +738,7 @@ export abstract class GameCore<S = unknown> {
     const cards = this[fromZone].splice(0);
     if (this.moveRecorder)
       for (const card of cards)
-        this.moveRecorder.noteCardLeft(card.name, LOG_ZONE[fromZone]);
+        this.moveRecorder.noteCardLeft(card, LOG_ZONE[fromZone]);
     return cards;
   }
 
@@ -747,7 +747,7 @@ export abstract class GameCore<S = unknown> {
   putCard(card: CardDef, toZone: CardListZone): void {
     if (this.sendToItsOwner(card, toZone)) return;
     this[toZone].push(card);
-    this.moveRecorder?.noteCardArrived(card.name, LOG_ZONE[toZone]);
+    this.moveRecorder?.noteCardArrived(card, LOG_ZONE[toZone]);
   }
 
   /** If this card left our battlefield and another player owns it, it goes to that player's zone. A copy of the
@@ -759,7 +759,7 @@ export abstract class GameCore<S = unknown> {
     if (index < 0) return false;
     const [{ owner }] = this.cardsGoingToTheirOwner.splice(index, 1);
     if (!this.inArena()) return false;
-    this.moveRecorder?.noteCardGivenAway(card.name);
+    this.moveRecorder?.noteCardGivenAway(card);
     owner.receiveOwnCard(card, toZone);
     return true;
   }
@@ -769,7 +769,7 @@ export abstract class GameCore<S = unknown> {
   receiveOwnCard(card: CardDef, toZone: CardListZone): void {
     const zone = this.commanderNames.includes(card.name) ? 'command' : toZone;
     this[zone].push(card);
-    this.moveRecorder?.noteCardFromOtherPlayer(card.name, LOG_ZONE[zone]);
+    this.moveRecorder?.noteCardFromOtherPlayer(card, LOG_ZONE[zone]);
   }
 
   /** Another player gains control of a permanent of ours (or one we control goes back to its owner). It keeps its
@@ -783,13 +783,13 @@ export abstract class GameCore<S = unknown> {
     newController.battlefield.push(permanent);
     if (permanent.token)
       newController.moveRecorder?.noteCardArrived(
-        permanent.card.name,
+        permanent.card,
         'battlefield',
         true,
       );
     else
       newController.moveRecorder?.noteCardFromOtherPlayer(
-        permanent.card.name,
+        permanent.card,
         'battlefield',
       );
   }
@@ -809,8 +809,7 @@ export abstract class GameCore<S = unknown> {
   takeTopCardsOfLibrary(count: number): CardDef[] {
     const cards = this.library.splice(0, count);
     if (this.moveRecorder)
-      for (const card of cards)
-        this.moveRecorder.noteCardLeft(card.name, 'library');
+      for (const card of cards) this.moveRecorder.noteCardLeft(card, 'library');
     return cards;
   }
 
@@ -819,14 +818,14 @@ export abstract class GameCore<S = unknown> {
     this.library.unshift(...cards);
     if (this.moveRecorder)
       for (const card of cards)
-        this.moveRecorder.noteCardArrived(card.name, 'library');
+        this.moveRecorder.noteCardArrived(card, 'library');
   }
 
   /** Puts a permanent onto the battlefield (a token comes from nowhere, a card from where it was taken). */
   putOntoBattlefield(permanent: Permanent): void {
     this.battlefield.push(permanent);
     this.moveRecorder?.noteCardArrived(
-      permanent.card.name,
+      permanent.card,
       'battlefield',
       permanent.token,
     );
