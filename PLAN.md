@@ -108,6 +108,9 @@ Write the design here, under this task, for Pontus to approve. It must answer:
 4. **The log.** Each tap is already a move ("tapped"); say whether mana in the pool is shown (a line, the caption, a chip on the seat like energy) and how a viewer reader sees which mana paid for what.
 5. **Results.** This changes results for every deck. Say which decks are touched most (Gale, Codie, Aesi's loops), how to compare before and after (same seeds, `-n 3000` per deck, the pod run), and how the change is split into tasks that each leave the code working (B2, B3...), with a model for each.
 
+6. **Kill lines are played, not declared** (Pontus, 2026-11-15). Today `checkKill` declares the win from the search's verdict and only logs the line (A1). Instead the game plays the line it found through the real engine: each spell cast and paid with `pay`, each land and rock tapped in the log, loops shown for a few rounds and then summed up ("repeats 37 times"). A step that cannot be paid, or an outcome short of a win, means no win, and the game logs it and counts it as a search miss (a bug to look at). Say how each kind of kill move gets its real-game step, what happens to "expected" results such as Konrad's chain (played with the real library, so it can fail), and what it costs in speed.
+7. **The rule book.** Use the Comprehensive Rules (Wizards' official rules text) as the reference: 500–514 (turn structure), 106.4 (the mana pool empties at the end of each step and phase), 601.2g–h (mana abilities are activated while paying a cost), 605 (mana abilities). Cite the rule numbers in `ENGINE.md` where the engine follows them, and say where it knowingly does not.
+
 Done when the design is written here and Pontus has said yes.
 
 ### B2... (written by B1)
