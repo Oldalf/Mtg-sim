@@ -6,7 +6,7 @@
 
 /**
  * mana: W / U / B / R / G (one colour) / A (either of the deck's colours) / C / F (filter: pay 1,
- *       get U+B) / UB, GU (both colours) / "" (none)
+ *       get U+B) / FGU (filter: pay 1, get G+U) / UB, GU (both colours) / "" (none)
  * etb:  untapped | tapped | catacomb (needs an Island/Swamp) | hollow (needs 2 basics)
  */
 export interface LandInfo {
@@ -35,6 +35,15 @@ export interface LandInfo {
   scry?: boolean;
 }
 
+/** Filter sources (pay 1, get two coloured mana): F = Dimir (Signet, Darkwater Catacombs), FGU = Simic (Overflowing
+ *  Basin). The value is the two colours made, the second one is what a generic payment feeds it last. */
+export const FILTER_COLOURS: Record<string, [string, string]> = {
+  F: ['U', 'B'],
+  FGU: ['G', 'U'],
+};
+export const isFilterKind = (kind: string | null): boolean =>
+  kind !== null && kind in FILTER_COLOURS;
+
 export const LANDS: Record<string, LandInfo> = {
   Island: { mana: 'U', island: true, basic: true },
   Swamp: { mana: 'B', swamp: true, basic: true },
@@ -43,6 +52,7 @@ export const LANDS: Record<string, LandInfo> = {
   Mountain: { mana: 'R', mountain: true, basic: true },
   'Command Tower': { mana: 'A' },
   'Darkwater Catacombs': { mana: 'F' },
+  'Overflowing Basin': { mana: 'FGU' },
   'Dimir Aqueduct': { mana: 'UB', etb: 'tapped', special: 'bounce' },
   'Drowned Catacomb': { mana: 'A', etb: 'catacomb' },
   'Evolving Wilds': { mana: '', special: 'wilds' },
@@ -143,6 +153,7 @@ export const COUNTERS = new Set([
   "Archmage's Charm",
   'Counterspell',
   'Dispel',
+  "It'll Quench Ya!",
   'Mana Sculpt',
   'Unwind',
   'Muddle the Mixture',

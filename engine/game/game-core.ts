@@ -109,13 +109,26 @@ const landInfoOf = (card: CardDef): LandInfo => (card.land ?? card.mdfcLand)!;
 
 /** Which mana source to tap first for what we're short of (a colour, H = hybrid, N = generic). */
 const RANK: Record<string, Record<string, number>> = {
-  U: { U: 0, UB: 1, A: 2, F: 3 },
+  U: { U: 0, UB: 1, A: 2, F: 3, FGU: 3 },
   B: { B: 0, UB: 1, A: 2, F: 3 },
   W: { W: 0, A: 2 },
   R: { R: 0, A: 2 },
-  G: { G: 0, A: 2 },
+  G: { G: 0, A: 2, FGU: 3 },
   H: { U: 0, B: 0, UB: 1, A: 2, F: 3 },
-  N: { S: 0, C2: 1, C: 2, B: 3, U: 4, G: 4, W: 4, R: 4, UB: 5, A: 6, F: 7 },
+  N: {
+    S: 0,
+    C2: 1,
+    C: 2,
+    B: 3,
+    U: 4,
+    G: 4,
+    W: 4,
+    R: 4,
+    UB: 5,
+    A: 6,
+    F: 7,
+    FGU: 7,
+  },
 };
 
 /** Ranks for source kinds not in RANK: a two-colour land ("G/W"), n colourless ("C3"), {G}{U} ("GU"). */
@@ -531,7 +544,8 @@ export abstract class GameCore<S = unknown> {
     const feed =
       this.pool.C +
       (short === 'U' ? 0 : this.pool.U) +
-      (short === 'B' ? 0 : this.pool.B);
+      (short === 'B' ? 0 : this.pool.B) +
+      (short === 'G' ? 0 : this.pool.G);
     for (const permanent of this.battlefield) {
       if (permanent.tapped) continue;
       const sourceKind = this.manaSourceKind(permanent);
@@ -548,7 +562,7 @@ export abstract class GameCore<S = unknown> {
         continue;
       }
       if (sourceKind === 'S' && !isInstantOrSorcery) continue;
-      if (sourceKind === 'F' && feed < 1) continue;
+      if (Facts.isFilterKind(sourceKind) && feed < 1) continue;
       let adjustedRank = this.rankAdjust(short, sourceKind, rank[sourceKind]);
       if (this.isPlayingKillLine)
         adjustedRank += this.killLineRankChange(permanent, short);
@@ -639,17 +653,20 @@ export abstract class GameCore<S = unknown> {
             : sourceKind[0];
       pool[colour as keyof ManaPool] += 1;
     } else if (sourceKind === 'S') pool.S += 1;
-    else if (sourceKind === 'F') {
+    else if (sourceKind !== null && Facts.isFilterKind(sourceKind)) {
       // it is fed a mana from the pool: colourless first, never the colour we are short of if another will do
+      const [firstColour, secondColour] = Facts.FILTER_COLOURS[sourceKind];
       const feedOrder =
-        short === 'B' ? (['C', 'U', 'B'] as const) : (['C', 'B', 'U'] as const);
+        short === secondColour
+          ? (['C', firstColour, secondColour] as const)
+          : (['C', secondColour, firstColour] as const);
       for (const manaType of feedOrder)
-        if (pool[manaType] > 0) {
-          pool[manaType] -= 1;
+        if (pool[manaType as keyof ManaPool] > 0) {
+          pool[manaType as keyof ManaPool] -= 1;
           break;
         }
-      pool.U += 1;
-      pool.B += 1;
+      pool[firstColour as keyof ManaPool] += 1;
+      pool[secondColour as keyof ManaPool] += 1;
     }
     if (permanent.land !== null) {
       if (this.highTidesThisTurn && this.islandTyped(permanent))
@@ -776,11 +793,20 @@ export abstract class GameCore<S = unknown> {
     short: string,
     isInstantOrSorcery: boolean,
   ): Permanent | null {
-    if (!['U', 'B', 'H', 'N'].includes(short)) return null;
-    const hasUntappedFilterSignet = this.battlefield.some(
-      (permanent) =>
-        !permanent.tapped && this.manaSourceKind(permanent) === 'F',
-    );
+    if (!['U', 'B', 'G', 'H', 'N'].includes(short)) return null;
+    const canMakeShort = (kind: string) =>
+      short === 'H' || short === 'N'
+        ? kind === 'F'
+        : Facts.FILTER_COLOURS[kind].includes(short);
+    const hasUntappedFilterSignet = this.battlefield.some((permanent) => {
+      const kind = this.manaSourceKind(permanent);
+      return (
+        !permanent.tapped &&
+        kind !== null &&
+        Facts.isFilterKind(kind) &&
+        canMakeShort(kind)
+      );
+    });
     return hasUntappedFilterSignet ? this.pick('N', isInstantOrSorcery) : null;
   }
 

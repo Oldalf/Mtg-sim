@@ -50,6 +50,7 @@ export const ANSWERS: Record<string, Answer> = {
   // ---- counterspells ("unless its controller pays" ones count as hard counters: a deck going for the win is tapped out)
   Counterspell: counter(),
   'Arcane Denial': counter(),
+  "It'll Quench Ya!": counter(),
   "Archmage's Charm": counter(),
   'Mana Sculpt': counter(),
   Rewind: counter(),

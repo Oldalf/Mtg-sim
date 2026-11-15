@@ -124,3 +124,7 @@ Average win turn by lands in the 7: 0 lands 11.3, 1 land 10.1, 2 lands 9.1, 3 la
 - **To check:** the low-ranked cards (Mirror-Mage, Savant, Patron of the Moon, Uyo, Endless Swarm, Graceful Adept): is the AI playing them well, or are they weak in a goldfish game? The old ranking predates the package.
 - More logs (the sim rarely wins via Uyo or Endless Swarm, so games that do would help), then further cut ideas.
 - Housekeeping (2026-11-14): the other swap test lists were removed; they are in git history before that date. `lists/` holds `proposed.txt` and the three `proposed_*.txt` alternatives.
+
+## Overflowing Basin instead of Yavimaya Coast (2026-11-15)
+
+Pontus forgot to buy Yavimaya Coast and has Overflowing Basin at home, so every Aesi list (`decklist.txt`, `lists/*.txt`) has the Basin where Yavimaya Coast was. The Basin is a filter land ({1}, {T}: add {G}{U}), which the engine had no rule for (it read it as a free two-colour land). It is now `FGU` in `engine/cards/card-facts.ts` (`FILTER_COLOURS`, shared with Dimir's `F`): it needs a mana in the pool to filter, so alone it makes nothing. Tests in `aesi.test.ts`. The `decklist.txt` baseline was re-recorded. Two old logging gaps came out with the new seeds and were fixed: a suspended Search for Tomorrow and a defeated Invasion of Zendikar were not in the log's zones. `SWAPS.txt` is history and still names Yavimaya Coast.

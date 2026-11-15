@@ -9640,5 +9640,31 @@
   "layout": "normal",
   "oracle_id": "bb95db4d-5017-4121-bf79-d68476602d8c",
   "scryfall_id": "dc798e6f-13c4-457c-b052-b7b65bc83cfe"
+ },
+ "Overflowing Basin": {
+  "name": "Overflowing Basin",
+  "full_name": "Overflowing Basin",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{1}, {T}: Add {G}{U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5ac8e01c-b0a7-4855-a122-1cd26b07c4a5",
+  "scryfall_id": "6357d665-2b28-4747-ab43-b90176d78d42"
+ },
+ "It'll Quench Ya!": {
+  "name": "It'll Quench Ya!",
+  "full_name": "It'll Quench Ya!",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant — Lesson",
+  "oracle": "Counter target spell unless its controller pays {2}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "cb184995-700f-4900-994a-4ce7fd12f942",
+  "scryfall_id": "47c25e41-f43c-4447-81b5-b9631448bd29"
  }
 }

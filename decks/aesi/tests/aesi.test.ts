@@ -585,6 +585,29 @@ export function runAesiTests(): boolean {
     landTapped('Temple of Mystery', ['Forest']),
     true,
   );
+  game = board([], [], undefined, ['Overflowing Basin']);
+  check(
+    'Overflowing Basin alone cannot pay {G} (it needs a mana to filter)',
+    game.canPay(Cost.parse('{G}')),
+    false,
+  );
+  game = board([], [], undefined, ['Overflowing Basin', 'Island']);
+  check(
+    'Overflowing Basin + Island pay {G}{U}',
+    game.canPay(Cost.parse('{G}{U}')),
+    true,
+  );
+  check(
+    '  ... and {G}{G} (the Island feeds it, the Basin makes G and U)',
+    game.canPay(Cost.parse('{G}{G}')),
+    false,
+  );
+  game = board([], [], undefined, ['Overflowing Basin', 'Forest']);
+  check(
+    'Overflowing Basin + Forest pay {G}{U}',
+    game.canPay(Cost.parse('{G}{U}')),
+    true,
+  );
   game = board([], [], undefined, ['Yavimaya Coast', 'Island']);
   game.pay(Cost.parse('{G}'));
   check('Yavimaya Coast: {G} costs 1 life', game.myLife, 39);

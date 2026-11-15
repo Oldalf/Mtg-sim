@@ -5,6 +5,7 @@
  * sources one by one: which to tap, and for a source of more than one colour which colour it makes. It stops at
  * the first way that pays, and gives up after a fixed number of tries.
  */
+import { FILTER_COLOURS, isFilterKind } from '../cards/card-facts';
 import { Cost } from '../cards/cards';
 import * as C from '../cards/cards';
 import type { GameCore } from './game-core';
@@ -37,7 +38,7 @@ function untappedSources(
     return kind !== null && (kind !== 'S' || isInstantOrSorcery);
   });
   const isFilter = (permanent: Permanent) =>
-    game.manaSourceKind(permanent) === 'F';
+    isFilterKind(game.manaSourceKind(permanent));
   return [
     ...sources.filter((permanent) => !isFilter(permanent)),
     ...sources.filter(isFilter),
@@ -54,7 +55,8 @@ function canMake(
   if (permanent.land?.pain) return C.landMakes(permanent.card, colour);
   if (kind === colour) return true;
   if (kind === 'A') return game.colors.includes(colour);
-  if (kind === 'UB' || kind === 'F') return colour === 'U' || colour === 'B';
+  if (kind === 'UB') return colour === 'U' || colour === 'B';
+  if (isFilterKind(kind)) return FILTER_COLOURS[kind].includes(colour);
   if (kind === 'GU') return colour === 'G' || colour === 'U';
   return kind.includes('/') && kind.includes(colour);
 }
@@ -83,7 +85,7 @@ export function couldOtherOrderHelp(
     short === 'H' ? ['U', 'B'] : COLOURS.filter((colour) => colour === short);
   return tapped.some(
     (source) =>
-      game.manaSourceKind(source) === 'F' ||
+      isFilterKind(game.manaSourceKind(source)) ||
       colours.some((colour) => canMake(game, source, colour)),
   );
 }
@@ -141,7 +143,7 @@ export function payBySearch(
       const source = sources[index];
       const kind = game.manaSourceKind(source) ?? '';
       const pool = game.pool;
-      if (kind === 'F' && pool.C + pool.U + pool.B < 1) continue; // nothing to feed it
+      if (isFilterKind(kind) && pool.C + pool.U + pool.B + pool.G < 1) continue; // nothing to feed it
       const hasChoice =
         kind === 'A' || kind.includes('/') || !!source.land?.pain;
       for (const short of hasChoice ? neededColours : ['N']) {

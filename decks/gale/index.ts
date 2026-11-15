@@ -32,7 +32,13 @@ export const deck = {
   // counters and real removal do nothing against goldfish opponents (also when listed outside "Counters")
   rankProtect: {
     sections: ['counters'],
-    cards: ['Spell Pierce', 'Muddle the Mixture', 'Rewind', 'Extended Absence'],
+    cards: [
+      'Spell Pierce',
+      "It'll Quench Ya!",
+      'Muddle the Mixture',
+      'Rewind',
+      'Extended Absence',
+    ],
   },
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,

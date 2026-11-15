@@ -428,8 +428,10 @@ export class AesiGame extends Game<AesiGame> {
       greenSources = 0;
     for (const permanent of this.landsOnBattlefield()) {
       const kind = this.manaSourceKind(permanent, true) ?? '';
-      if (kind === 'U' || kind === 'GU' || kind === 'A') blueSources++;
-      if (kind === 'G' || kind === 'GU' || kind === 'A') greenSources++;
+      if (kind === 'U' || kind === 'GU' || kind === 'FGU' || kind === 'A')
+        blueSources++;
+      if (kind === 'G' || kind === 'GU' || kind === 'FGU' || kind === 'A')
+        greenSources++;
     }
     if (blueSources === 0 && blueNeeded) return 'U';
     if (greenSources === 0 && greenNeeded) return 'G';
@@ -848,6 +850,7 @@ export class AesiGame extends Game<AesiGame> {
   suspendSearch(card: CardDef): boolean {
     if (!this.pay(Cost.parse('{G}'), true)) return false;
     this.takeCardIfThere(card, 'hand');
+    this.putCard(card, 'exile'); // suspended cards are in exile (the log needs it)
     this.suspended.push({ card: card, left: 2 });
     this.say('suspend Search for Tomorrow');
     return true;
@@ -856,6 +859,7 @@ export class AesiGame extends Game<AesiGame> {
     for (const entry of this.suspended.slice()) {
       if (--entry.left > 0) continue;
       removeIfPresent(this.suspended, entry);
+      this.takeCardIfThere(entry.card, 'exile');
       this.say('Search for Tomorrow comes out of suspend');
       this.resolve(entry.card);
       this.putCard(entry.card, 'graveyard');
@@ -1068,6 +1072,8 @@ export class AesiGame extends Game<AesiGame> {
   /** A defeated Siege is exiled and cast transformed: Awakened Skyclave enters as a land (a landfall trigger). */
   defeatSiege(siege: Permanent): void {
     this.takeFromBattlefieldIfThere(siege);
+    this.putCard(siege.card, 'exile'); // for the log: the Siege goes to exile first
+    this.takeCard(siege.card, 'exile');
     const skyclave = new Permanent(SKYCLAVE, SKYCLAVE.land);
     this.putOntoBattlefield(skyclave);
     this.say('Invasion of Zendikar defeated: cast Awakened Skyclave (a land)');

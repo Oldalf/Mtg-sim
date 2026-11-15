@@ -59,7 +59,7 @@ Land
 1x Temple of Mystery
 1x Terramorphic Expanse
 1x Vineglimmer Snarl
-1x Yavimaya Coast
+1x Overflowing Basin
 
 Landfall
 1x Elven Raft-Steerer

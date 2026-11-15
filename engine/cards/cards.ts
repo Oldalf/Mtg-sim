@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   ADVENTURE,
+  FILTER_COLOURS,
   KNOWN,
   LANDS,
   LandInfo,
@@ -388,7 +389,7 @@ export function landMakes(card: CardDef, colour: string): boolean {
   if (!land) return false;
   const mana = land.mana;
   if (mana === 'A' || mana === '') return mana === 'A' || !!land.special; // any colour / a fetch land
-  if (mana === 'F') return colour === 'U' || colour === 'B';
+  if (mana in FILTER_COLOURS) return FILTER_COLOURS[mana].includes(colour);
   return mana.split(/[/]|(?=[A-Z])/).includes(colour) || mana.includes(colour);
 }
 
