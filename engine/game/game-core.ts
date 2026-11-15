@@ -54,6 +54,12 @@ import {
   emptyPool,
 } from './game-types';
 import { playKillLineOnCopy } from './kill-line';
+import {
+  couldOtherOrderHelp,
+  couldPayAtAll,
+  manaAdded,
+  payBySearch,
+} from './payment-search';
 
 const COLOURS: readonly string[] = ['W', 'U', 'B', 'R', 'G'];
 const BASIC_OF: Record<string, string> = {
@@ -423,7 +429,7 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** What the pool is still short of to pay cost (null = enough). With mutate, pays it. */
-  private short(
+  short(
     cost: Cost,
     isInstantOrSorcery: boolean,
     mutate = false,
@@ -598,12 +604,8 @@ export abstract class GameCore<S = unknown> {
     else if (sourceKind === 'C2') pool.C += 2;
     else if (sourceKind !== null && /^C\d+$/.test(sourceKind))
       pool.C += parseInt(sourceKind.slice(1), 10);
-    else if (
-      sourceKind !== null &&
-      sourceKind.length === 3 &&
-      sourceKind[1] === '/'
-    ) {
-      // a two-colour land: the colour we're short of if it makes it, else its first colour
+    else if (sourceKind !== null && sourceKind.includes('/')) {
+      // a two- or three-colour land ("G/W", "W/U/B"): the colour we're short of if it makes it, else its first colour
       const colour =
         sourceKind.includes(short) && COLOURS.includes(short)
           ? short
@@ -648,39 +650,89 @@ export abstract class GameCore<S = unknown> {
       this.battlefield[i].tapped = snapshot[1][i];
   }
 
+  /** Pays a cost: taps sources one by one into the pool (rules 601.2g-h, 605), then pays from the pool. The greedy
+   *  order comes first (the best source for what we are short of); if it fails while the sources could pay at all,
+   *  payment-search.ts tries other orders and colours. commit = false only tests it (everything is undone). */
   pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
     // undo = untap what this payment tapped and restore the pool (cheaper than a snapshot of a big board)
     const poolBefore = { ...this.pool };
     const tapped: Permanent[] = [];
+    const made: string[] = [];
     const undo = () => {
       this.pool = poolBefore;
       for (const permanent of tapped) permanent.tapped = false;
+      tapped.length = 0;
+      made.length = 0;
+      this.painTaps = 0;
     };
     this.painTaps = 0;
+    const shortAtTheEnd = this.payGreedily(
+      cost,
+      isInstantOrSorcery,
+      tapped,
+      made,
+      commit,
+    );
+    let isPaid = shortAtTheEnd === null;
+    // Another order can only help when a source the greedy order tapped could have made the colour still missing
+    // (short of generic mana, it has tapped every source it could).
+    if (
+      !isPaid &&
+      shortAtTheEnd !== 'N' &&
+      couldOtherOrderHelp(this, tapped, shortAtTheEnd!)
+    ) {
+      undo();
+      this.pool = { ...poolBefore }; // the search changes the pool: keep poolBefore as it was
+      isPaid =
+        couldPayAtAll(this, cost, isInstantOrSorcery) &&
+        payBySearch(this, cost, isInstantOrSorcery, tapped, made);
+    }
+    if (!isPaid) {
+      undo();
+      return false;
+    }
+    this.short(cost, isInstantOrSorcery, true);
+    if (!commit) undo();
+    else {
+      this.spent += cost.manaValue;
+      if (this.painTaps) this.loseLife(this.painTaps);
+      this.lastPayment = tapped.map((source, i) => ({
+        source,
+        made: made[i],
+      }));
+    }
+    this.painTaps = 0;
+    return true;
+  }
+
+  /** The greedy order: tap the best source for what we are short of until the pool holds the cost. Returns null when
+   *  it does, else what it is still short of. What each source made is only noted for a payment that commits (the
+   *  log reads it). */
+  private payGreedily(
+    cost: Cost,
+    isInstantOrSorcery: boolean,
+    tapped: Permanent[],
+    made: string[],
+    commit: boolean,
+  ): string | null {
     for (;;) {
       const short = this.short(cost, isInstantOrSorcery);
-      if (short === null) {
-        this.short(cost, isInstantOrSorcery, true);
-        if (!commit) undo();
-        else {
-          this.spent += cost.manaValue;
-          if (this.painTaps) this.loseLife(this.painTaps);
-        }
-        this.painTaps = 0;
-        return true;
-      }
+      if (short === null) return null;
       const source =
         this.pick(short, isInstantOrSorcery) ??
         this.filterSignetFeeder(short, isInstantOrSorcery);
-      if (source === null) {
-        undo();
-        this.painTaps = 0;
-        return false;
-      }
-      this.tap(source, short);
+      if (source === null) return short;
+      if (commit) {
+        const poolBefore = { ...this.pool };
+        this.tap(source, short);
+        made.push(manaAdded(poolBefore, this.pool));
+      } else this.tap(source, short);
       tapped.push(source);
     }
   }
+
+  /** What the last committed payment tapped, and what each source added to the pool ("U", "UB"). */
+  lastPayment: { source: Permanent; made: string }[] = [];
 
   /** Nothing can make what we are short of, but an untapped filter Signet could (it turns {1} into {U}{B}) if a mana
    *  were in the pool to feed it: the source to tap for that mana (as for a generic cost), or null. */

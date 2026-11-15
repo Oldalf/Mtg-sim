@@ -26,8 +26,8 @@ Followed:
 - 514.1: discard down to seven cards at cleanup (`endTurn`).
 - 514.2: "until end of turn" effects end at cleanup (High Tide, Bubbling Muck and Energybending are per-turn flags, reset in `startTurn`).
 - 302.6: a creature with summoning sickness can't tap for mana.
-- 601.2g–h and 605: mana abilities are activated while paying a cost, and don't use the stack (`pay` taps sources into the pool, then pays from the pool).
-- 602.2: a Signet's {1} is a cost of activating it (it is only tapped when a mana is in the pool to feed it).
+- 601.2g–h and 605: mana abilities are activated while paying a cost, and don't use the stack (`pay` taps sources into the pool, then pays from the pool). The greedy order comes first (the best source for what the pool is short of); when it fails but the untapped sources could pay at all, `engine/game/payment-search.ts` tries other sources and colours (bounded, with the same undo). A committed payment leaves `lastPayment`: each source tapped and what it made.
+- 602.2: a Signet's {1} is a cost of activating it. A filter source (Dimir Signet, Darkwater Catacombs) is fed from the pool, never with the colour it should make; when nothing else pays, another source is tapped to feed it.
 - 117: priority, only as far as the pod's answer window goes.
 
 **Kill lines are played, not declared** (`engine/game/kill-line.ts`). When a deck's kill search finds a line, `checkKill` plays it on a copy of the game, step by step, through the deck's `playKillStep` (Gale: `decks/gale/kill-play.ts`; Codie does its solver's moves again and casts the finisher). Every cost is paid with `pay`, every card moves. The copy becomes the game only when the line wins there, and in a pod only when no one answers the win (`developWin`, `adoptKillLineCopy`). A line that cannot be played is no win: the log gets a `KILL MISS` line and `killMisses` counts it (the search counted something wrong; `--test` fails on any miss over 300 seeds). A line that only wins on average and falls short with the real cards is a `killChanceFails`. Both are in every deck's `--diag`. A run of the same step (a loop) is logged for 3 rounds, then summed up. Planner rollouts don't play lines: they keep the search's answer. A deck without `playsKillLines()` (no search, or Aesi, whose loops already play in the game) is unchanged. Gale's opponents are hit by the search's own rules (`KillSearchState`, through `applyOpponentStep`), so a goldfish opponent's creature cards milled stay the expected share, while our own library is the real cards.
@@ -46,7 +46,7 @@ Knowingly not followed:
 | Folder | Files | What it is |
 |---|---|---|
 | `engine/cards/` | `cards`, `card-facts`, `land-text`, `scryfall`, `card-images` | Card data and facts that hold in any deck |
-| `engine/game/` | `game-core`, `game`, `game-types`, `mulligan`, `answers`, `search`, `kill-line`, `kill-line.test`, `log-format` | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
+| `engine/game/` | `game-core`, `game`, `game-types`, `mulligan`, `answers`, `search`, `kill-line`, `kill-line.test`, `payment-search`, `log-format` | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
 | `engine/game-log/` | `game-log`, `game-log-moves`, `-text`, `-tags`, `-files`, `-run`, `-replay`, `-archidekt`, `logged-runs`, `game-log.test` | Logging a game and reading logs back |
 | `engine/pod/` | `pod`, `pod-arena`, `pod-table`, `pod-combat`, `pod-blocking`, `pod-interaction`, `pod-report`, `pod.test` | Decks playing each other |
 | `engine/run/` | `runner`, `worker-pool`, `worker-pool.test`, `power-save`, `setting-descriptions` | Running many games |

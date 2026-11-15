@@ -514,5 +514,32 @@ export function runCodieTests(): boolean {
   game = board(twelve, ['Reiterate', "Jeska's Will", 'Crackle with Power']);
   check('...without one it does not', findKillLine(game)?.backup, false);
 
+  // ---- paying: when the first order fails, another one is tried (engine/game/payment-search.ts)
+  game = board(["Raffine's Tower"], []);
+  game.tap(game.battlefield[0], 'B');
+  check(
+    "a three-colour land (Raffine's Tower) makes the colour asked for",
+    game.pool.B,
+    1,
+  );
+  game = board(["Raffine's Tower", "Spara's Headquarters"], []);
+  check(
+    "{U}{B} with Raffine's Tower (W/U/B) and Spara's Headquarters (G/W/U): Raffine's makes the black",
+    [
+      game.pay(C.Cost.parse('{U}{B}')),
+      game.lastPayment.map((part) => `${part.source.card.name}: ${part.made}`),
+    ],
+    [true, ["Raffine's Tower: B", "Spara's Headquarters: U"]],
+  );
+  game = board(["Raffine's Tower", "Spara's Headquarters"], []);
+  check(
+    '{B}{R} with the same two lands cannot be paid (nothing makes red)',
+    [
+      game.pay(C.Cost.parse('{B}{R}')),
+      game.battlefield.some((permanent) => permanent.tapped),
+    ],
+    [false, false],
+  );
+
   return allPassed;
 }

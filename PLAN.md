@@ -310,6 +310,8 @@ Build B1 point 2:
 - **`lastPayment`:** records what was tapped and what each source made.
 - **Speed:** measure every deck.
 
+**Done (2026-11-15), shown to Pontus and committed on his word.** `engine/game/payment-search.ts`: when the greedy order runs out of a colour and a source it tapped could have made that colour (`couldOtherOrderHelp`), and the untapped sources could pay at all (`couldPayAtAll`), `payBySearch` tries the sources in turn (which to tap, which colour a flexible source makes; filter sources last; at most 2,000 tries; same undo). `GameCore.lastPayment` holds what a committed payment tapped and what each source made (for B6). `preferredSources` not built: Gale's `avoidsSource` covers it and nothing else would use it. Found and fixed: a three-colour land ("W/U/B": Raffine's Tower, Spara's Headquarters, Ziatora's Proving Ground) was tapped for no mana. 3,000 games, same seeds: Codie win by T8 18.7% -> 25.7%, by T12 54.2% -> 62.7% (its three-colour lands now make mana), 18.7 s -> 23.4 s (+25%: more mana, more kill searches); Sam & Frodo and Edgar within noise (5 and 11 of 600 seeds differ), +2-3%; Gale, Meren, Aesi, Mike IDENTICAL. Pod run within noise. Tests in Codie's file. Baselines re-recorded. Pontus: stop here, B6 not yet.
+
 ### B6. "Paid with" and the pool chip (Sonnet 5.5)
 
 - **"Paid with":** cast lines end with the sources that paid, taken from `lastPayment` (e.g. `paid with Island, Swamp, Dimir Signet (fed by Island)`). The event gets a `paidWith` field.
