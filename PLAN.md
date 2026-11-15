@@ -31,10 +31,10 @@ Rules for every task:
 | 3 | B1 | Fastest and slowest tags that mean something (done) | Sonnet 5.5 |
 | 4 | C1 | Energy as a player counter, shown in the viewer (done) | Opus 5.5 |
 | 5 | C2 | Volatile Stormdrake takes a creature in a pod | Opus 5.5 |
-| 6 | D1 | Tokens: the design (who defines a token, its name in the log, its image) | Opus 5.5, then Pontus |
-| 7 | D2 | Tokens: the engine and the card data | Sonnet 5.5 |
-| 8 | D3 | Tokens: move every deck to it | Sonnet 5.5 (Haiku 5.5 per deck once the first deck is done) |
-| 9 | D4 | Tokens: images and stats in the viewer | Sonnet 5.5 |
+| 6 | D1 | Tokens: the design (who defines a token, its name in the log, its image) (done) | Opus 5.5, then Pontus |
+| 7 | D2 | Tokens: the shared artifact helper, the art data and the token's face in the log | Sonnet 5.5 |
+| 8 | D3 | (folded into D2: the decks keep their own token stats) | - |
+| 9 | D4 | Tokens: art and stats in the viewer | Sonnet 5.5 |
 
 Why this order: A and B are small and stand alone. C comes before D because C2 moves a permanent between two players' logs, and D changes how a token is named in the log; doing the log change once with the exchange already working is easier than the other way round. C2 and D4 can swap places if Pontus wants the tokens sooner.
 
@@ -143,20 +143,55 @@ Write the design here, under this task, for Pontus to approve. It must answer:
 
 Done when the design is written here and Pontus has said yes. A throwaway check that `all_parts` finds the right token for every token-making card in today's lists is worth doing first (a small script in the scratchpad, not committed).
 
-### D2. The engine and the card data (Sonnet 5.5, after D1)
+#### The design (decided with Pontus 2026-11-15)
 
-Build what D1 decided in `engine/cards/` (token lookup, the shared artifact-token helper replaces the three copies) and in `npm run cards` (tokens into `data/cards.json`), plus the log change in `engine/game-log/` and `shared/`. No deck changes yet besides what keeps them building. Done when every deck's `--regress check` is IDENTICAL, the pod output is unchanged, `npm run cards` adds the tokens for every list, and a test looks up a token by its maker and by its stats.
+Done: Pontus approved this design on 2026-11-15. Meren's Snake (deathtouch, see the table) went to `IDEAS.md` for the next plan.
 
-### D3. Every deck uses it (Sonnet 5.5; Haiku 5.5 per deck after the first)
+The big choice: **the game owns a token's stats, Scryfall only gives it a picture.** A creature token is shown as Scryfall's art for that kind of token (the `art_crop`: the artwork with no frame and no printed text) with our own frame on top: name, power/toughness and keywords as they are in the game. So variable sizes (Aesi's X/X Elemental), +1/+1 counters and Edgar's three Vampires all show right, and nothing a deck plays by changes. This replaces the `all_parts` lookup of the questions above: no deck needs to name the exact Scryfall token.
 
-One commit per deck, in this order: samfrodo (the most tokens), edgar, meren, aesi, mike, codie. Each deck's `makeToken` / `artifactToken` calls become the lookup of D2. The deck's `--regress check` must stay IDENTICAL unless D1 listed a deliberate fix for it; then only that deck differs and its PLAN.md says why. Ask eco or full power first.
+1. **Where a token's definition comes from: the deck, as today.** `makeToken(name, power, toughness, colour, keywords)` stays. The three artifact-token helpers (samfrodo, edgar, and codie's hand-written Treasure) become one engine helper, `makeArtifactToken(name, power?, toughness?)` in `engine/cards/cards.ts`, made the same way as `makeToken` (same name and stats = same `CardDef`). A token that is a copy of a real card (Twilight Diviner, Blue Sun's Zenith in a real log) is the card itself and shows the card's own image.
+2. **The art data: `data/token-art.json`**, written by `npm run cards` (on `update` and `refresh`, and when the file is missing) from every `layout: token` entry in the bulk file (939 today): `{ name, colours, keywords, power, toughness, scryfallId }`, about 100 kB, in git next to `data/cards.json` so the server needs no bulk file. All tokens go in, not only the ones the decks use, so a real Archidekt log with any token name finds art. Choosing art: among the entries with the token's name, the one with the same colours first, then the most keywords in common, then the same power/toughness, then the first. No match by name: no art (see 4). Hand-picked art (Pontus wants nicer art some day, as for the decklists) is a later step: a small `data/token-art-choices.json` (name and face to Scryfall id) read before the rule above. Not built now.
+3. **The log: the name stays, the face is added.** `CardMove` gets an optional `token?: TokenFace` with `{ power, toughness, colours, keywords, copies? }`, written on every line about that token (moved, tapped, untapped, counter), so that "Vampire 1/1 black" and "Vampire 2/2 black flying" are two different things to the recorder (`engine/game-log/game-log-moves.ts`) and to the replay (`applyMove` and `BoardPermanent` in `shared/game-log-board.ts`). The rule: a token is known by its name and its face together; a line with no face (a real log, an old log, a copy of a card) is known by its name only, as today. Why the face and not a Scryfall id: the art is picked when the game is shown, so a real log (name only) gets art the same way, and better art later improves old logs too. Archidekt's text has no place for it: `game-log-archidekt.ts` writes the name only; the sim's own text log (`game-log-text.ts`) writes it after the name, `Vampire (2/2 black flying)`.
+4. **What the viewer shows.**
+   - A creature token with art: the art with our frame (name, power/toughness with its +1/+1 counters, keywords, and `x999` for an army).
+   - A token with no power (Treasure, Food, Clue): Scryfall's normal card image, as for a card.
+   - A token with no art found (Meren's "Stolen creature" 5/5, the only one today): a text card with name, power/toughness and keywords. Nothing in its name marks it as made up.
+   - The board summary line tells faces apart: "Vampire 2/2 flying token x2".
+5. **The armies.** Aesi's "Illusion army" and "Snake army" (999/999 markers for endless 1/1s, so the sim knows a win is coming) keep their `CardDef` for the sim, but are logged as what they stand for: name `Illusion` / `Snake`, face 1/1 with `copies: 999`, shown as `x999` (Pontus's choice). A `makeToken` option for the face to log (`loggedAs`) does it. Not changed: a real Endless Swarm of 40 or more Snakes is one Snake with +1/+1 counters in the sim (half the count, for speed), and shows as that.
+6. **Results stay the same.** Only the log and the viewer change: every deck's `--regress check` is IDENTICAL and the fixed-seed pod output unchanged. Edgar's baseline prints a whole `Permanent` in one test: if `CardDef` gains a field it may need re-recording (only that line differs, as in C2).
 
-### D4. Images and stats in the viewer (Sonnet 5.5, after D3)
+Every token the decks make, and the art the rule in 2 picks (checked in the bulk file of 2026-11-15). For info only: the sim keeps the deck's stats.
 
-- The image route serves a token's picture by its Scryfall id (the cache in `data/scryfall/images/` works as for cards). Update the test in `app/server/cards-routes.test.ts` that expects a token to be 404.
-- The seat shows a token's image; on a token without one (the made-up stand-ins), a text card with name, power/toughness and keywords instead of just the name.
-- The board summary line (`shared/game-log-board.ts`, "Insect token x2") tells different tokens apart.
-- Check in the browser with a samfrodo goldfish game (Food, Clue, Halfling...) and an Edgar game (the three Vampires), at desktop and phone width.
+| Deck | Token (deck's stats) | Scryfall entries with the name | Art picked | Note |
+|---|---|---|---|---|
+| samfrodo | Halfling 1/1 W, Soldier 1/1 W lifelink, Cat 1/1 W, Goat 0/1 W, Bird 3/3 W flying, Servo 1/1, Food, Treasure, Clue | 1, 13, 8, 1, 13, 1, 1, 1, 1 | exact for all | |
+| edgar | Vampire 1/1 B, Vampire 1/1 W lifelink, Vampire 2/2 B flying | 8 | exact for each | the three now look different |
+| edgar | Eldrazi Spawn 0/1, Zombie Army 0/0 B, Servo 1/1, Treasure | 1 each | exact | Zombie Army is a real token, not a stand-in |
+| edgar | Shapeshifter 3/2 | 5 | 3/2 changeling | the deck has no changeling (no effect in the sim) |
+| aesi | Illusion 1/1 U flying, Snake 1/1 G | 8, 6 | exact | |
+| aesi | Elemental X/X G | 31 | 5/3 G | art only; size from the game |
+| aesi | Illusion army, Snake army | | as Illusion, Snake | logged as x999 (5) |
+| mike | Kraken 8/8 U, Faerie 1/1 U flying, Eldrazi Spawn 0/1 | 4, 3, 1 | exact | |
+| meren | Goat, Zombie 2/2 B, Insect 1/1 BG, Warrior 1/1 R, Beast 3/3 G | | exact | |
+| meren | Snake 1/1 B | 6 | 1/1 B deathtouch | Scryfall's black Snake has deathtouch; the deck's has not. Worth a look in `decks/meren/PLAN.md` (not part of this step) |
+| meren | Stolen creature 5/5 | 0 | none | text card |
+| engine | Beast 3/3 G, Manifest 2/2 (`game.ts`) | 10, 1 | exact | Manifest is a real token |
+| codie | Treasure | 1 | exact | |
+
+### D2. The engine and the log (Sonnet 5.5, after D1)
+
+Build D1's points 1 to 3 and 5: `makeArtifactToken` in the engine (samfrodo, edgar and codie use it in the same commit, so the three copies go), `data/token-art.json` from `npm run cards` with the art-picking function and a test for it (Edgar's three Vampires get three different entries, an unknown name gets none), `TokenFace` on `CardMove` with the recorder, `applyMove`, the text log and the Archidekt export, and Aesi's armies logged as x999. Real logs in `decks/*/logs/` must still replay (`--analyze`). Before: save the fixed-seed pod run. Done when every deck's `--regress check` is IDENTICAL, the pod output is unchanged, `npm run pod -- --test` passes and a log test has Edgar's three Vampires tapped and untapped without mixing them up. Ask eco or full power first.
+
+### D3. (folded into D2)
+
+With the stats staying in the decks there is nothing left to move deck by deck: the shared artifact helper and Aesi's armies are part of D2.
+
+### D4. Art and stats in the viewer (Sonnet 5.5, after D2)
+
+- A token image route on the server: from a token's name and face it picks the art (D2's function) and serves its `art_crop` (`downloadImage` takes the version; the cache in `data/scryfall/images/` keeps art crops apart from normal images). A token with no power gets the normal image. Update the test in `app/server/cards-routes.test.ts` that expects a token to be 404.
+- The seat shows a creature token as the art with our frame (D1 point 4); no art: the text card. Watch `player-seat.scss`'s 4 kB budget: the frame belongs in its own small component.
+- The board summary line (`describePermanents`) tells faces apart.
+- Check in the browser with a samfrodo goldfish game (Food, Clue, Halfling), an Edgar game (the three Vampires) and an Aesi game with an army, at desktop and phone width; and a real log (`decks/samfrodo/logs/`) still shows its tokens.
 - Done when `ng test`, `npm run app -- --test` and `npm run verify` pass.
 
 ---
