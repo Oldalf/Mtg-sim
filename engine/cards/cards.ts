@@ -356,10 +356,10 @@ export function get(name: string): CardDef {
   return card;
 }
 
-/** Is the card a creature of this type ("Demon", "Vampire")? A token is its name's type; a card reads its type
- *  line. (Edgar's isVampire predates this and does the same.) */
+/** Is the card a creature of this type ("Demon", "Vampire")? A token has the types in its name ("Zombie Druid");
+ *  a card reads its type line. (Edgar's isVampire predates this and does the same.) */
 export function hasCreatureType(card: CardDef, creatureType: string): boolean {
-  if (card.isToken) return card.name === creatureType;
+  if (card.isToken) return card.name.split(' ').includes(creatureType);
   const typeLine = cardDatabase()[card.name]?.type_line ?? '';
   return typeLine.includes(creatureType);
 }

@@ -210,6 +210,8 @@ One task per list, following `/add-deck`'s light path (A4).
 **B1 built (2026-11-15).** `decks/helga`, on `CreatureDeckGame` and the light path (A4 worked as written). Helga's mana and cast trigger, the Eldrazi cast triggers, the draw engines, Craterhoof; annihilator and the removal on enter are not modelled (see `decks/helga/PLAN.md`). Goldfish average win turn 10.99; against three goldfish in a pod 99.3%, round 11.29.
 
 **B2 built (2026-11-15).** `decks/ardyn`: Ardyn (haste, lifelink, Starscourge), Roaming Throne, the Swamp mana doublers and cost reducers, the drains and Exquisite Blood, Vilis, the tutors and reanimation. Goldfish average win turn 11.18 (see `decks/ardyn/PLAN.md` for what is not modelled).
+
+**B3 built (2026-11-15).** `decks/teval`: cards leaving the graveyard make Zombies (one trigger per event), self-mill, lands back from the graveyard and landfall, token and counter doubling, Muldrotha, Meren, Nyxbloom. `hasCreatureType` now reads a token's name word by word ("Zombie Druid" is a Zombie). Goldfish average win turn 9.91: the fastest of the three, and the AI plays it better than its owner.
 ---
 
 ## C. Game night

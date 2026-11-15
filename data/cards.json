@@ -8903,5 +8903,729 @@
   "layout": "normal",
   "oracle_id": "fd505c02-c59e-476d-8e88-35da862ddc23",
   "scryfall_id": "ce860ed4-a5bd-4347-9eab-dd716ea84db1"
+ },
+ "Doubling Season": {
+  "name": "Doubling Season",
+  "full_name": "Doubling Season",
+  "mana_cost": "{4}{G}",
+  "type_line": "Enchantment",
+  "oracle": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.\nIf an effect would put one or more counters on a permanent you control, it puts twice that many of those counters on that permanent instead.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "01546b7d-a233-4176-8843-d732074dc5b6",
+  "scryfall_id": "f2c4f80e-84a0-463b-82c3-5c6503809351"
+ },
+ "Gravecrawler": {
+  "name": "Gravecrawler",
+  "full_name": "Gravecrawler",
+  "mana_cost": "{B}",
+  "type_line": "Creature — Zombie",
+  "oracle": "This creature can't block.\nYou may cast this card from your graveyard as long as you control a Zombie.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "09ff28b1-b6c9-48e6-b12e-2f0e644f709f",
+  "scryfall_id": "6987d609-ba0f-42bf-9b61-bdfb943c03b5"
+ },
+ "Beastmaster Ascension": {
+  "name": "Beastmaster Ascension",
+  "full_name": "Beastmaster Ascension",
+  "mana_cost": "{2}{G}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever a creature you control attacks, you may put a quest counter on this enchantment.\nAs long as this enchantment has seven or more quest counters on it, creatures you control get +5/+5.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "11b5308d-5bc0-4782-875f-a28be36e665d",
+  "scryfall_id": "f404d133-fc1a-4751-ac72-554e6553e486"
+ },
+ "Ob Nixilis, the Fallen": {
+  "name": "Ob Nixilis, the Fallen",
+  "full_name": "Ob Nixilis, the Fallen",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Legendary Creature — Demon",
+  "oracle": "Landfall — Whenever a land you control enters, you may have target player lose 3 life. If you do, put three +1/+1 counters on Ob Nixilis.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Landfall"
+  ],
+  "layout": "normal",
+  "oracle_id": "154104b7-4125-4276-8bc7-9a6edfe48cb9",
+  "scryfall_id": "dc9d3ada-9d0d-489a-89b7-08f53f6601e1"
+ },
+ "Golgari Rot Farm": {
+  "name": "Golgari Rot Farm",
+  "full_name": "Golgari Rot Farm",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {B}{G}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1b301478-b14f-4ef8-94e6-9647d582eabe",
+  "scryfall_id": "42486edd-24b7-4299-84fa-50559917b2a8"
+ },
+ "Wonder": {
+  "name": "Wonder",
+  "full_name": "Wonder",
+  "mana_cost": "{3}{U}",
+  "type_line": "Creature — Incarnation",
+  "oracle": "Flying\nAs long as this card is in your graveyard and you control an Island, creatures you control have flying.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "232284f7-c623-4895-9ab9-8b1a39926830",
+  "scryfall_id": "567abd78-d4a3-4a33-9b5b-b5ca361059cc"
+ },
+ "Ripples of Undeath": {
+  "name": "Ripples of Undeath",
+  "full_name": "Ripples of Undeath",
+  "mana_cost": "{1}{B}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your first main phase, mill three cards. Then you may pay {1} and 3 life. If you do, put a card from among those cards into your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "2acf8e34-9215-4a72-a24f-09d3bdd0083a",
+  "scryfall_id": "a201d1bc-e3fe-4f59-bd48-3683996ac308"
+ },
+ "Rampaging Baloths": {
+  "name": "Rampaging Baloths",
+  "full_name": "Rampaging Baloths",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Creature — Beast",
+  "oracle": "Trample\nLandfall — Whenever a land you control enters, create a 4/4 green Beast creature token.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Trample",
+   "Landfall"
+  ],
+  "layout": "normal",
+  "oracle_id": "2d3e6549-6cc6-434f-a189-ba3b55e64c34",
+  "scryfall_id": "84aa18de-6acc-46cc-8e28-3046790a6751"
+ },
+ "Sidisi, Undead Vizier": {
+  "name": "Sidisi, Undead Vizier",
+  "full_name": "Sidisi, Undead Vizier",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Legendary Creature — Zombie Snake",
+  "oracle": "Deathtouch\nExploit (When this creature enters, you may sacrifice a creature.)\nWhen Sidisi exploits a creature, you may search your library for a card, put it into your hand, then shuffle.",
+  "power": "4",
+  "toughness": "6",
+  "keywords": [
+   "Exploit",
+   "Deathtouch"
+  ],
+  "layout": "normal",
+  "oracle_id": "3406db41-6b95-48fc-b58e-4476220fd34d",
+  "scryfall_id": "6ea5dbba-6114-4d97-9363-817ab9e896d3"
+ },
+ "Ancient Greenwarden": {
+  "name": "Ancient Greenwarden",
+  "full_name": "Ancient Greenwarden",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Creature — Elemental",
+  "oracle": "Reach (This creature can block creatures with flying.)\nYou may play lands from your graveyard.\nIf a land entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.",
+  "power": "5",
+  "toughness": "7",
+  "keywords": [
+   "Reach"
+  ],
+  "layout": "normal",
+  "oracle_id": "3bcf090c-e890-4a9f-a8aa-6079e4ec9947",
+  "scryfall_id": "89c97b40-ce0b-4b1d-87d2-2619e8950685"
+ },
+ "Sidisi, Brood Tyrant": {
+  "name": "Sidisi, Brood Tyrant",
+  "full_name": "Sidisi, Brood Tyrant",
+  "mana_cost": "{1}{B}{G}{U}",
+  "type_line": "Legendary Creature — Snake Shaman",
+  "oracle": "Whenever Sidisi enters or attacks, mill three cards.\nWhenever one or more creature cards are put into your graveyard from your library, create a 2/2 black Zombie creature token.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "3fad7072-21e3-446e-a28f-615038c8bfea",
+  "scryfall_id": "6b8e44d4-db67-4bf4-97c0-ffe6a0eb2954"
+ },
+ "Multani, Yavimaya's Avatar": {
+  "name": "Multani, Yavimaya's Avatar",
+  "full_name": "Multani, Yavimaya's Avatar",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Legendary Creature — Elemental Avatar",
+  "oracle": "Reach, trample\nMultani gets +1/+1 for each land you control and each land card in your graveyard.\n{1}{G}, Return two lands you control to their owner's hand: Return this card from your graveyard to your hand.",
+  "power": "0",
+  "toughness": "0",
+  "keywords": [
+   "Reach",
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "4b8bf64b-4800-45ff-81c6-2857f34999b5",
+  "scryfall_id": "c37a0136-1c40-4cd1-8787-a25c377c1741"
+ },
+ "Whip of Erebos": {
+  "name": "Whip of Erebos",
+  "full_name": "Whip of Erebos",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Legendary Enchantment Artifact",
+  "oracle": "Creatures you control have lifelink.\n{2}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield, exile it instead of putting it anywhere else. Activate only as a sorcery.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "53987a39-c18c-4c13-b1ea-fd1b2a369f9e",
+  "scryfall_id": "b738612f-4e78-4b19-9392-6c074956d6e4"
+ },
+ "Lost Monarch of Ifnir": {
+  "name": "Lost Monarch of Ifnir",
+  "full_name": "Lost Monarch of Ifnir",
+  "mana_cost": "{3}{B}",
+  "type_line": "Creature — Zombie Noble",
+  "oracle": "Afflict 3 (Whenever this creature becomes blocked, defending player loses 3 life.)\nOther Zombies you control have afflict 3.\nAt the beginning of your second main phase, if a player was dealt combat damage by a Zombie this turn, mill three cards, then you may return a creature card from your graveyard to your hand.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "Afflict",
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "626a979f-bed7-4cb1-9ab7-c3f2bbe37781",
+  "scryfall_id": "cae37ab0-9d60-45e9-98cb-e7427e508bc5"
+ },
+ "Phyrexian Reclamation": {
+  "name": "Phyrexian Reclamation",
+  "full_name": "Phyrexian Reclamation",
+  "mana_cost": "{B}",
+  "type_line": "Enchantment",
+  "oracle": "{1}{B}, Pay 2 life: Return target creature card from your graveyard to your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "647ca69e-cc01-4b2b-b376-bee2a98331e8",
+  "scryfall_id": "10c09b68-1d92-42da-8d4d-0d60453a6aa7"
+ },
+ "Endless Ranks of the Dead": {
+  "name": "Endless Ranks of the Dead",
+  "full_name": "Endless Ranks of the Dead",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your upkeep, create X 2/2 black Zombie creature tokens, where X is half the number of Zombies you control, rounded down.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "69d4ecac-4735-4667-bfc1-c8800b436d08",
+  "scryfall_id": "155ae16c-f32b-421d-a92a-bf13d9f32891"
+ },
+ "Tormod, the Desecrator": {
+  "name": "Tormod, the Desecrator",
+  "full_name": "Tormod, the Desecrator",
+  "mana_cost": "{3}{B}",
+  "type_line": "Legendary Creature — Zombie Wizard",
+  "oracle": "Whenever one or more cards leave your graveyard, create a tapped 2/2 black Zombie creature token.\nPartner (You can have two commanders if both have partner.)",
+  "power": "4",
+  "toughness": "2",
+  "keywords": [
+   "Partner"
+  ],
+  "layout": "normal",
+  "oracle_id": "6dc0150d-7145-41e2-bd3d-2564d9d32301",
+  "scryfall_id": "89903d5e-241f-477e-a336-2abe0232c04a"
+ },
+ "Teval's Judgment": {
+  "name": "Teval's Judgment",
+  "full_name": "Teval's Judgment",
+  "mana_cost": "{2}{B}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever one or more cards leave your graveyard, choose one that hasn't been chosen this turn —\n• Draw a card.\n• Create a Treasure token.\n• Create a 2/2 black Zombie Druid creature token.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Treasure"
+  ],
+  "layout": "normal",
+  "oracle_id": "71fc2393-f55c-4b06-897c-fb7d4199b5f5",
+  "scryfall_id": "40ed0cef-8ff6-4169-a9f3-7dd5cf56b79f"
+ },
+ "Finale of Revelation": {
+  "name": "Finale of Revelation",
+  "full_name": "Finale of Revelation",
+  "mana_cost": "{X}{U}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Draw X cards. If X is 10 or more, instead shuffle your graveyard into your library, draw X cards, untap up to five lands, and you have no maximum hand size for the rest of the game.\nExile Finale of Revelation.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "755bd5d8-67f1-4f24-a4e8-d98edf2f2e03",
+  "scryfall_id": "0a77e063-e8f6-4cb2-954e-74cf41ce73da"
+ },
+ "Undergrowth Stadium": {
+  "name": "Undergrowth Stadium",
+  "full_name": "Undergrowth Stadium",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {G}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7c69f718-acc8-4851-8e5d-0cbaaa86192c",
+  "scryfall_id": "f25aa8aa-e2f7-4634-8a96-2082e76c6503"
+ },
+ "Day's Undoing": {
+  "name": "Day's Undoing",
+  "full_name": "Day's Undoing",
+  "mana_cost": "{2}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Each player shuffles their hand and graveyard into their library, then draws seven cards. If it's your turn, end the turn. (Exile all spells and abilities from the stack, including this card. Discard down to your maximum hand size. Damage wears off, and \"this turn\" and \"until end of turn\" effects end.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "810a6cf5-e9f4-48e1-8e06-3e0af85633ce",
+  "scryfall_id": "ac13a82d-43f5-4b96-bf5f-18e33fae921b"
+ },
+ "Parallel Lives": {
+  "name": "Parallel Lives",
+  "full_name": "Parallel Lives",
+  "mana_cost": "{3}{G}",
+  "type_line": "Enchantment",
+  "oracle": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "84dc94b2-95fb-4d53-aaa2-191cb645639f",
+  "scryfall_id": "01033dae-fec1-41f2-b7f2-cc6a43331790"
+ },
+ "Nyxbloom Ancient": {
+  "name": "Nyxbloom Ancient",
+  "full_name": "Nyxbloom Ancient",
+  "mana_cost": "{4}{G}{G}{G}",
+  "type_line": "Enchantment Creature — Elemental",
+  "oracle": "Trample\nIf you tap a permanent for mana, it produces three times as much of that mana instead.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "8b610f8f-c8dd-4eeb-bc6e-3bc706d5f63e",
+  "scryfall_id": "a391da36-0b40-46ea-b771-50d2b920207e"
+ },
+ "Will of the Sultai": {
+  "name": "Will of the Sultai",
+  "full_name": "Will of the Sultai",
+  "mana_cost": "{4}{G}",
+  "type_line": "Sorcery",
+  "oracle": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Target player mills three cards. Return all land cards from your graveyard to the battlefield tapped.\n• Put X +1/+1 counters on target creature, where X is the number of lands you control. It gains trample until end of turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "951a0e34-e610-477f-b441-6680df55a29b",
+  "scryfall_id": "37155f69-1d72-4fcb-80b3-548b7d78f9ec"
+ },
+ "Lumra, Bellow of the Woods": {
+  "name": "Lumra, Bellow of the Woods",
+  "full_name": "Lumra, Bellow of the Woods",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Legendary Creature — Elemental Bear",
+  "oracle": "Reach, vigilance\nLumra's power and toughness are each equal to the number of lands you control.\nWhen Lumra enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped.",
+  "power": "*",
+  "toughness": "*",
+  "keywords": [
+   "Reach",
+   "Vigilance",
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "97a84e9d-bfc4-4ca2-b1e8-908dba56ccdb",
+  "scryfall_id": "ae4f3aaf-3960-48cd-b34b-32e4ae5ae088"
+ },
+ "Takenuma, Abandoned Mire": {
+  "name": "Takenuma, Abandoned Mire",
+  "full_name": "Takenuma, Abandoned Mire",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "{T}: Add {B}.\nChannel — {3}{B}, Discard this card: Mill three cards, then return a creature or planeswalker card from your graveyard to your hand. This ability costs {1} less to activate for each legendary creature you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Mill",
+   "Channel"
+  ],
+  "layout": "normal",
+  "oracle_id": "ac2dd694-d2f1-4025-8400-12332bdc882a",
+  "scryfall_id": "499037cc-a577-41cb-8ca2-5e117945634f"
+ },
+ "Haunted Mire": {
+  "name": "Haunted Mire",
+  "full_name": "Haunted Mire",
+  "mana_cost": "",
+  "type_line": "Land — Swamp Forest",
+  "oracle": "({T}: Add {B} or {G}.)\nThis land enters tapped.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b0b58a03-462c-4964-97c7-42bc777ec23e",
+  "scryfall_id": "3e041aef-5771-4a3f-af07-e85a66c48979"
+ },
+ "Foreboding Landscape": {
+  "name": "Foreboding Landscape",
+  "full_name": "Foreboding Landscape",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{T}, Sacrifice this land: Search your library for a basic Swamp, Forest, or Island card, put it onto the battlefield tapped, then shuffle.\nCycling {B}{G}{U} ({B}{G}{U}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal",
+  "oracle_id": "bcfe1653-e602-4d38-abe7-bfcc7f203f9d",
+  "scryfall_id": "cf53f97c-dd4c-44bd-93ba-faa6d64c985a"
+ },
+ "Morphic Pool": {
+  "name": "Morphic Pool",
+  "full_name": "Morphic Pool",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you have two or more opponents.\n{T}: Add {U} or {B}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "bd004c9d-771e-4e63-a97d-a2259c096af8",
+  "scryfall_id": "5667b84e-38d1-4583-80ec-2c4584a81ee8"
+ },
+ "Boseiju, Who Endures": {
+  "name": "Boseiju, Who Endures",
+  "full_name": "Boseiju, Who Endures",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Channel"
+  ],
+  "layout": "normal",
+  "oracle_id": "bf1341dd-41a3-49f6-87ec-63170dde4324",
+  "scryfall_id": "2135ac5a-187b-4dc9-8f82-34e8d1603416"
+ },
+ "Contaminated Aquifer": {
+  "name": "Contaminated Aquifer",
+  "full_name": "Contaminated Aquifer",
+  "mana_cost": "",
+  "type_line": "Land — Island Swamp",
+  "oracle": "({T}: Add {U} or {B}.)\nThis land enters tapped.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c27b771d-b5ec-459a-a101-f078cb8d0184",
+  "scryfall_id": "9fad6994-1280-4a8e-a2f5-34b4ed6ef6f5"
+ },
+ "Drownyard Temple": {
+  "name": "Drownyard Temple",
+  "full_name": "Drownyard Temple",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{3}: Return this card from your graveyard to the battlefield tapped.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c30f9be4-c274-4ad0-b5d7-7d3421aa4277",
+  "scryfall_id": "dbc8512a-9f6c-40d4-8049-14505e260746"
+ },
+ "Midnight Clock": {
+  "name": "Midnight Clock",
+  "full_name": "Midnight Clock",
+  "mana_cost": "{2}{U}",
+  "type_line": "Artifact",
+  "oracle": "{T}: Add {U}.\n{2}{U}: Put an hour counter on this artifact.\nAt the beginning of each upkeep, put an hour counter on this artifact.\nWhen the twelfth hour counter is put on this artifact, shuffle your hand and graveyard into your library, then draw seven cards. Exile this artifact.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c68faebc-b2cd-461b-b93e-e1fcd4816810",
+  "scryfall_id": "0b3c33b7-5b15-4b61-bfd6-1ffa823eb28a"
+ },
+ "The Scarab God": {
+  "name": "The Scarab God",
+  "full_name": "The Scarab God",
+  "mana_cost": "{3}{U}{B}",
+  "type_line": "Legendary Creature — God",
+  "oracle": "At the beginning of your upkeep, each opponent loses X life and you scry X, where X is the number of Zombies you control.\n{2}{U}{B}: Exile target creature card from a graveyard. Create a token that's a copy of it, except it's a 4/4 black Zombie.\nWhen The Scarab God dies, return it to its owner's hand at the beginning of the next end step.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Scry"
+  ],
+  "layout": "normal",
+  "oracle_id": "c75e55f2-fd6c-4816-9d96-21eeb8369aff",
+  "scryfall_id": "f4f414ef-84a2-4694-9e98-51bee4576c84"
+ },
+ "Teval, the Balanced Scale": {
+  "name": "Teval, the Balanced Scale",
+  "full_name": "Teval, the Balanced Scale",
+  "mana_cost": "{1}{B}{G}{U}",
+  "type_line": "Legendary Creature — Spirit Dragon",
+  "oracle": "Flying\nWhenever Teval attacks, mill three cards. Then you may return a land card from your graveyard to the battlefield tapped.\nWhenever one or more cards leave your graveyard, create a 2/2 black Zombie Druid creature token.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "Flying",
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "c8cbf0ec-ec98-4cb3-8068-60e92bbd740d",
+  "scryfall_id": "b5d1955a-9ff0-4f8b-9af8-341371957299"
+ },
+ "Rejuvenating Springs": {
+  "name": "Rejuvenating Springs",
+  "full_name": "Rejuvenating Springs",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you have two or more opponents.\n{T}: Add {G} or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d1620449-930a-4895-a143-fd2a0a3c8b17",
+  "scryfall_id": "c4565a7b-a0ed-4a7f-ad48-7745c56d141b"
+ },
+ "Damnation": {
+  "name": "Damnation",
+  "full_name": "Damnation",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Destroy all creatures. They can't be regenerated.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d57a8f0b-7989-4db5-8756-6f2690097252",
+  "scryfall_id": "d3c0aac5-b9f1-4446-bfea-3e1dd1cf1f2f"
+ },
+ "Cyclonic Rift": {
+  "name": "Cyclonic Rift",
+  "full_name": "Cyclonic Rift",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant",
+  "oracle": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Overload"
+  ],
+  "layout": "normal",
+  "oracle_id": "d75b9c82-1b49-4c3e-a1b5-aeef57d6644b",
+  "scryfall_id": "dfb7c4b9-f2f4-4d4e-baf2-86551c8150fe"
+ },
+ "Six": {
+  "name": "Six",
+  "full_name": "Six",
+  "mana_cost": "{2}{G}",
+  "type_line": "Legendary Creature — Treefolk",
+  "oracle": "Reach\nWhenever Six attacks, mill three cards. You may put a land card from among them into your hand.\nDuring your turn, nonland permanent cards in your graveyard have retrace. (You may cast permanent cards from your graveyard by discarding a land card in addition to paying their other costs.)",
+  "power": "2",
+  "toughness": "4",
+  "keywords": [
+   "Reach",
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "dbcbdf37-c40f-4068-b4a7-a849cab1056c",
+  "scryfall_id": "f9246b68-580f-4f53-883d-7900880e4b0d"
+ },
+ "Dreamroot Cascade": {
+  "name": "Dreamroot Cascade",
+  "full_name": "Dreamroot Cascade",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control two or more other lands.\n{T}: Add {G} or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "dd8538e6-cd5f-4a88-aff5-eb5e76ce8ddb",
+  "scryfall_id": "ef662b92-5a7f-48c9-bcc1-14b55e091aef"
+ },
+ "Colossal Grave-Reaver": {
+  "name": "Colossal Grave-Reaver",
+  "full_name": "Colossal Grave-Reaver",
+  "mana_cost": "{6}{B}{G}",
+  "type_line": "Creature — Dragon",
+  "oracle": "Flying\nWhenever this creature enters or attacks, mill three cards.\nWhenever one or more creature cards are put into your graveyard from your library, put one of them onto the battlefield.",
+  "power": "7",
+  "toughness": "6",
+  "keywords": [
+   "Flying",
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "df8e0d1b-b47c-4807-9c9b-84dcec835254",
+  "scryfall_id": "7c3f7d76-528a-490a-852a-071adcd7bd55"
+ },
+ "Underrealm Lich": {
+  "name": "Underrealm Lich",
+  "full_name": "Underrealm Lich",
+  "mana_cost": "{3}{B}{G}",
+  "type_line": "Creature — Zombie Elf Shaman",
+  "oracle": "If you would draw a card, instead look at the top three cards of your library, then put one into your hand and the rest into your graveyard.\nPay 4 life: This creature gains indestructible until end of turn. Tap it.",
+  "power": "4",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e1bce9c3-300c-4a9d-abe0-a1f02d3a1105",
+  "scryfall_id": "30c94b1b-35be-4c98-b279-80d95b28201e"
+ },
+ "Muldrotha, the Gravetide": {
+  "name": "Muldrotha, the Gravetide",
+  "full_name": "Muldrotha, the Gravetide",
+  "mana_cost": "{3}{B}{G}{U}",
+  "type_line": "Legendary Creature — Elemental Avatar",
+  "oracle": "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard. (If a card has multiple permanent types, choose one as you play it.)",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e4625704-1d52-44e4-804f-2f45644d76ac",
+  "scryfall_id": "705b4d97-2f50-47f7-9053-d748f4337553"
+ },
+ "Otawara, Soaring City": {
+  "name": "Otawara, Soaring City",
+  "full_name": "Otawara, Soaring City",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Channel"
+  ],
+  "layout": "normal",
+  "oracle_id": "e9b6a394-691c-425a-9307-76d8edc7375e",
+  "scryfall_id": "486d7edc-d983-41f0-8b78-c99aecd72996"
+ },
+ "Wilhelt, the Rotcleaver": {
+  "name": "Wilhelt, the Rotcleaver",
+  "full_name": "Wilhelt, the Rotcleaver",
+  "mana_cost": "{2}{U}{B}",
+  "type_line": "Legendary Creature — Zombie Warrior",
+  "oracle": "Whenever another Zombie you control dies, if it didn't have decayed, create a 2/2 black Zombie creature token with decayed. (It can't block. When it attacks, sacrifice it at end of combat.)\nAt the beginning of your end step, you may sacrifice a Zombie. If you do, draw a card.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "eada96a1-4964-4ad0-b0e3-2df08d6ae188",
+  "scryfall_id": "2501a911-d072-436d-ae3b-a5164e3b30aa"
+ },
+ "Conduit of Worlds": {
+  "name": "Conduit of Worlds",
+  "full_name": "Conduit of Worlds",
+  "mana_cost": "{2}{G}{G}",
+  "type_line": "Artifact",
+  "oracle": "You may play lands from your graveyard.\n{T}: Choose target nonland permanent card in your graveyard. If you haven't cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn. Activate only as a sorcery.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ed14be15-8f8d-4fe3-a147-f5da8ed873bf",
+  "scryfall_id": "8380eb8d-d1c3-4f96-b3b9-54845188c1d1"
+ },
+ "Oversold Cemetery": {
+  "name": "Oversold Cemetery",
+  "full_name": "Oversold Cemetery",
+  "mana_cost": "{1}{B}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your upkeep, if you have four or more creature cards in your graveyard, you may return target creature card from your graveyard to your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ed4cd3a1-688b-4c05-948d-39d3336e00c0",
+  "scryfall_id": "06b7312a-c775-4fa8-ba62-c84ff38459e8"
+ },
+ "Lier, Disciple of the Drowned": {
+  "name": "Lier, Disciple of the Drowned",
+  "full_name": "Lier, Disciple of the Drowned",
+  "mana_cost": "{3}{U}{U}",
+  "type_line": "Legendary Creature — Human Wizard",
+  "oracle": "Spells can't be countered.\nEach instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost.",
+  "power": "3",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "f224db3d-cdd2-43f2-b625-4b861efa6449",
+  "scryfall_id": "b8b70585-e0ea-4cb4-9360-a8ab47626696"
+ },
+ "Hedge Shredder": {
+  "name": "Hedge Shredder",
+  "full_name": "Hedge Shredder",
+  "mana_cost": "{2}{G}{G}",
+  "type_line": "Artifact — Vehicle",
+  "oracle": "Whenever this Vehicle attacks, you may mill two cards.\nWhenever one or more land cards are put into your graveyard from your library, put them onto the battlefield tapped.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Crew",
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "f22665cd-4710-48df-83c1-3c9081097cb5",
+  "scryfall_id": "39e83502-2ffd-4169-94e3-116701323ed5"
+ },
+ "Opulent Palace": {
+  "name": "Opulent Palace",
+  "full_name": "Opulent Palace",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\n{T}: Add {B}, {G}, or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "f9e7e855-1e3b-42d3-91b0-64ba8b5b8982",
+  "scryfall_id": "f0001153-dbcb-44e5-99be-2c186c9b10b0"
+ },
+ "Millikin": {
+  "name": "Millikin",
+  "full_name": "Millikin",
+  "mana_cost": "{2}",
+  "type_line": "Artifact Creature — Construct",
+  "oracle": "{T}, Mill a card: Add {C}. (Activate only as an instant. To mill a card, put the top card of your library into your graveyard.)",
+  "power": "0",
+  "toughness": "1",
+  "keywords": [
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "fa4dffda-6f04-4d0b-829d-28a1a5794dee",
+  "scryfall_id": "c2073453-4108-4039-a8c2-0f94dd7bf237"
  }
 }
