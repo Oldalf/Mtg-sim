@@ -4,6 +4,13 @@ import * as C from '../../engine/cards/cards';
 export const GALE = 'Gale, Waterdeep Prodigy';
 export const SCION = 'Scion of Halaster';
 
+/** Unearth and its dearer cousin Zombify: a sorcery that returns a creature card from the graveyard. */
+export const isUnearthLike = (cardName: string) =>
+  cardName === 'Unearth' || cardName === 'Zombify';
+/** The highest mana value the spell can bring back. */
+export const unearthMaxManaValue = (cardName: string) =>
+  cardName === 'Unearth' ? 3 : Infinity;
+
 /** Combo permanents */
 export const COMBO_PERMS = new Set([
   'Duskmantle Guildmage',
@@ -26,6 +33,7 @@ export const COMBO_SPELLS = new Set([
   'Frantic Search',
   'Snap',
   'Unearth',
+  'Zombify',
   'Energybending',
   'Prologue to Phyresis',
   'Expansion Algorithm', // poison: 1 counter, then proliferate X times

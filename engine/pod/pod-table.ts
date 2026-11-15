@@ -10,7 +10,7 @@
  * an off-turn event the table refreshes those arrays; afterwards it applies what changed to the real players.
  */
 import * as C from '../cards/cards';
-import { Config } from '../game/game-types';
+import { Config, Permanent } from '../game/game-types';
 import { Game } from '../game/game';
 import {
   EventKind,
@@ -92,6 +92,8 @@ export class PodTable {
   readonly commanderDamage = new Map<string, number>();
   /** Players who took 21 combat damage from one commander. */
   readonly commanderKilled = new Set<number>();
+  /** Goaded creatures and the players who goaded them (rule 701.15). A goad lasts until the goader's next turn. */
+  readonly goaders = new Map<Permanent, Set<number>>();
 
   /** The player whose turn it is (-1 between turns). */
   currentPlayer = -1;
@@ -373,8 +375,50 @@ export class PodTable {
     this.isAlive[player] = false;
     this.outOrder.push(player);
     this.outReason[player] = reason;
+    this.endGoadsBy(player);
     this.endControlOfPlayerWhoLeft(player);
     this.sayAs(player, `is out (${reason})`, 'out');
+  }
+
+  // ================================================================ forced attacks and goad
+
+  /** `goader` goads this creature: until the goader's next turn it attacks each combat, someone else if able. */
+  goad(goader: number, creature: Permanent): void {
+    const goaders = this.goaders.get(creature) ?? new Set<number>();
+    goaders.add(goader);
+    this.goaders.set(creature, goaders);
+  }
+
+  /** The goads this player made end (its turn starts, or it left the game). */
+  private endGoadsBy(player: number): void {
+    for (const [creature, goaders] of this.goaders) {
+      goaders.delete(player);
+      if (goaders.size === 0) this.goaders.delete(creature);
+    }
+  }
+
+  /** Must this creature attack each combat if able: its own text, a card such as Thantis on any battlefield, or goad? */
+  mustAttack(creature: Permanent): boolean {
+    return (
+      C.attacksEachCombat(creature.card) ||
+      this.goaders.has(creature) ||
+      this.games.some(
+        (game, player) =>
+          this.isAlive[player] &&
+          game.battlefield.some((permanent) =>
+            C.makesAllCreaturesAttack(permanent.card),
+          ),
+      )
+    );
+  }
+
+  /** The opponents (as `player`'s slots) that goaded this creature of `player`'s. */
+  goaderSlots(player: number, creature: Permanent): number[] {
+    const goaders = this.goaders.get(creature);
+    if (!goaders) return [];
+    return [...goaders]
+      .map((goader) => this.opponentsOf[player].indexOf(goader))
+      .filter((slot) => slot >= 0);
   }
 
   /** A player who leaves the game takes its cards with it, and what it took from others goes back to their owners
@@ -521,6 +565,7 @@ export class PodTable {
     game.pendingCrackback = 0; // no goldfish crackback in a pod: the other decks attack for real
     this.fogActive = false;
     this.creaturesThatBlocked = new Set();
+    this.endGoadsBy(player);
     for (let other = 0; other < this.playerCount; other++)
       this.threats[other] = this.isAlive[other]
         ? this.games[other].threat()

@@ -215,6 +215,12 @@ export interface Arena {
   counter(game: Game<unknown>, card: CardDef): boolean;
   /** How much we'd rather attack opponent `slot` (the pod's threat rule, step 4). */
   prefer(game: Game<unknown>, slot: number): number;
+  /** Must this creature of ours attack this combat if able ("attacks each combat if able", Thantis, goad)? */
+  mustAttack(game: Game<unknown>, creature: Permanent): boolean;
+  /** The opponents (slots) that goaded this creature of ours. */
+  goaderSlots(game: Game<unknown>, creature: Permanent): number[];
+  /** Goad each creature opponent `slot` controls, until our next turn (Geode Rager). */
+  goadCreatures(game: Game<unknown>, slot: number): void;
   /** We found a kill without counter backup: go for it now (the deck's pod policy)? */
   go(game: Game<unknown>): boolean;
   /** Windfall: each opponent discards its hand and draws as many as the biggest hand discarded (at least `mine`). Returns that number. */

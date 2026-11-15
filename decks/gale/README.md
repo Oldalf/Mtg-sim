@@ -6,7 +6,7 @@ Dimir spellslinger combo. Run with `npm run sim -- gale ...` from the project ro
 
 | File | What it is |
 |---|---|
-| `decklist.txt` | The list as first given (the adopted list is `lists/proposed.txt`, see PLAN.md). |
+| `decklist.txt` | The physical deck Pontus has at home (see PLAN.md). `lists/original.txt` is the list as first given; the adopted list is `lists/proposed.txt`. |
 | `lists/` | `proposed.txt`, the adopted list (see PLAN.md). The older test lists were removed; they are in git history. |
 | `logs/` | Archidekt playtest logs of real games, for `--analyze`. |
 | `game.ts` | `GaleGame`: its state, the engine hooks, Scion's draw, the Mindskinner's attack, and what the AI values (`cardValue`, `instantOrSorceryDevValue`, `positionValue`). |

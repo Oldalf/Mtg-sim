@@ -24,7 +24,9 @@ import {
   PACKAGES,
   PERM_SCORE,
   SCION,
+  isUnearthLike,
   permScore,
+  unearthMaxManaValue,
 } from './roles';
 import {
   GaleKillStep,
@@ -268,7 +270,7 @@ export class GaleGame extends Game<KillSearchState> {
     mode: string | null = null,
   ): void {
     // Gale's own Unearth, not the engine's: it picks by the kill line's roles and triggers Syr Konrad
-    if (card.name === 'Unearth') resolveUnearth(this);
+    if (isUnearthLike(card.name)) resolveUnearth(this, card.name);
     else super.resolve(card, fromGraveyard, mode);
   }
   override resolveOther(
@@ -444,11 +446,11 @@ export class GaleGame extends Game<KillSearchState> {
       return value;
     }
     if (Facts.TUTORS.has(name)) return 72;
-    if (name === 'Unearth')
+    if (isUnearthLike(name))
       return this.graveyard.some(
         (candidate) =>
           candidate.isCreature &&
-          candidate.manaValue <= 3 &&
+          candidate.manaValue <= unearthMaxManaValue(name) &&
           candidate.name in PERM_SCORE,
       )
         ? 60

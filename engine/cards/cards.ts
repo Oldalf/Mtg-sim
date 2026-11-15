@@ -364,6 +364,24 @@ export function hasCreatureType(card: CardDef, creatureType: string): boolean {
   return typeLine.includes(creatureType);
 }
 
+/** Does the card say it attacks each combat if able ("This creature attacks...", "Ruric Thar attacks...")? */
+export function attacksEachCombat(card: CardDef): boolean {
+  return card.oracle.split('\n').some((line) => {
+    const match = /^(.+) attacks each combat if able\.$/.exec(line);
+    return (
+      match !== null &&
+      (match[1] === 'This creature' || card.name.startsWith(match[1]))
+    );
+  });
+}
+
+/** Does the card make every creature attack each combat if able (Thantis, the Warweaver)? */
+export function makesAllCreaturesAttack(card: CardDef): boolean {
+  return /^All creatures (?:[^.\n]* and )?attack each combat if able\./m.test(
+    card.oracle,
+  );
+}
+
 /** Does a land card make this colour? Fetch lands count for every colour (they find a basic), "A" lands make all. */
 export function landMakes(card: CardDef, colour: string): boolean {
   const land = card.land ?? card.mdfcLand;

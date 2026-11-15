@@ -8,6 +8,7 @@ import * as Pod from '../engine/pod/pod';
 import { buildPodReport, printPod } from '../engine/pod/pod-report';
 import { runPodTests } from '../engine/pod/pod.test';
 import { runControlExchangeTests } from '../engine/pod/pod-exchange.test';
+import { runForcedAttackTests } from '../engine/pod/pod-forced-attacks.test';
 import {
   runPodExactMoveTests,
   runPodLogTests,
@@ -59,13 +60,15 @@ export async function runPodCommand(
     const areCountersLogged = runPlayerCounterTests(decks);
     const arePaymentsLogged = runPaymentLogTests(decks);
     const isExchangeRight = runControlExchangeTests(decks);
+    const areForcedAttacksRight = runForcedAttackTests(decks);
     process.exit(
       podTestsPassed &&
         isLogHarmless &&
         areMovesRecorded &&
         areCountersLogged &&
         arePaymentsLogged &&
-        isExchangeRight
+        isExchangeRight &&
+        areForcedAttacksRight
         ? 0
         : 1,
     );

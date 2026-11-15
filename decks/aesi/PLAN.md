@@ -87,7 +87,7 @@ Four other mixes of the fetch spells tested the same within noise, so the cheap 
 
 ## Pontus's list (2026-11-15)
 
-Pontus's own swaps (`SUGGESTED_SWAPS.txt`), built on `lists/proposed.txt`: Invasion of Zendikar instead of Wood Elves, Flooded Grove instead of Botanical Sanctum, and Natural Affinity instead of Seismic Sense (`lists/suggested_affinity.txt`) or Seismic Sense kept (`lists/suggested_seismic.txt`, now `decklist.txt`).
+Pontus's own swaps (once `SUGGESTED_SWAPS.txt`, removed 2026-11-15), built on `lists/proposed.txt`: Invasion of Zendikar instead of Wood Elves, Flooded Grove instead of Botanical Sanctum, and Natural Affinity instead of Seismic Sense (`lists/suggested_affinity.txt`) or Seismic Sense kept (`lists/suggested_seismic.txt`, now `decklist.txt`).
 
 - **Invasion of Zendikar** (a Siege, defense 3): two basics tapped as it enters. Flyers attack it first (smallest first) unless an all-in kills the table; Pontus: an opponent defends it only when that's free, and Aesi has many flyers. Defeated, it is cast as Awakened Skyclave (a 4/4 vigilance, haste creature land, any colour; no flying): it enters as a land, a landfall trigger. Returned to hand it is Invasion of Zendikar again. Not attacked in a pod.
 - **Flooded Grove** is read from its text as a land that makes G or U. Wrong only when it is the only land (turn 1): it then makes only {C}.

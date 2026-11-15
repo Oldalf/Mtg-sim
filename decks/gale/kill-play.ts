@@ -308,6 +308,7 @@ function resolveKillSpell(
       resolveSingularityRupture(game);
       break;
     case 'Unearth':
+    case 'Zombify':
       return unearthCreature(game, variant);
     case 'Turnabout':
       game.untapLands(game.landsOnBattlefield().length);

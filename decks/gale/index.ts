@@ -18,9 +18,16 @@ export const deck = {
   defaultList: 'decklist.txt',
   tests: runKillTests,
   regress: {
-    lists: ['decklist.txt', 'lists/proposed.txt'],
-    // this log was played with the proposed list
-    logLists: { 'game6_t9_duskmantle_singularity.txt': 'lists/proposed.txt' },
+    lists: ['decklist.txt', 'lists/original.txt', 'lists/proposed.txt'],
+    // the logs were played with the original list (games 1-5) and the proposed list (game 6)
+    logLists: {
+      'game1_t7_mindskinner.txt': 'lists/original.txt',
+      'game2_t6_duskmantle_maddening.txt': 'lists/original.txt',
+      'game3_t6_mindskinner.txt': 'lists/original.txt',
+      'game4_t7_konrad_mindcrank_maddening.txt': 'lists/original.txt',
+      'game5_t6_duskmantle_maddening.txt': 'lists/original.txt',
+      'game6_t9_duskmantle_singularity.txt': 'lists/proposed.txt',
+    },
   },
   // counters and real removal do nothing against goldfish opponents (also when listed outside "Counters")
   rankProtect: {

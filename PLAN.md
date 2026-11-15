@@ -39,7 +39,7 @@ Rules for every task:
 - A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change.
 - When a task is done, add one line under it here: what was built and anything the next task must know.
 
-**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss (step 7, B3b). Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line. Two more BAD lines are known and accepted: `codie --regress check` (the Cultivate fix, baseline kept on purpose, see A2) and the app test (`aesi/SUGGESTED_SWAPS.txt`, task Z1).
+**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss (step 7, B3b). Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line. One more BAD line is known and accepted: `codie --regress check` (the Cultivate fix, baseline kept on purpose, see A2).
 
 ## Order
 
@@ -57,7 +57,7 @@ Rules for every task:
 | 9 | B3 | Teval (done) | Sonnet 5.5 |
 | 10 | C1 | The game-night pod, a report (done) | Sonnet 5.5 |
 | | | **After game night** | |
-| 11 | M2 | Forced attacks and goad in pod combat | Opus 5.5 |
+| 11 | M2 | Forced attacks and goad in pod combat (done) | Opus 5.5 |
 | 12 | M3 | Triggers on another player's spell | Sonnet 5.5 |
 | 13 | M4 | Blink | Opus 5.5 |
 | 14 | M5 | Dungeons, venture and the initiative | Opus 5.5 |
@@ -176,6 +176,8 @@ For Thantis ("each creature attacks each combat if able") and, later, Pontus's a
 
 Both go on the pod's attacker choice (`engine/pod/pod-combat.ts`), so every deck's creatures obey them without the deck knowing. A forced attacker's controller still picks the defender (by the threat rule) within what is allowed. Tests: a goaded creature with two possible defenders never attacks the goader; with only the goader left, it attacks the goader; a "must attack" creature attacks even when the deck's own rule would hold it back.
 
+**Built (2026-11-15).** Must attack is read from the card text (`attacksEachCombat`: "This creature / Ruric Thar attacks each combat if able"; `makesAllCreaturesAttack`: Thantis's "All creatures attack each combat if able", on any living player's battlefield). Goad is pod state (`PodTable.goaders`, `goad`), ended at the goader's next turn or when it leaves; a deck goads through `arena.goadCreatures(game, slot)` (Geode Rager; Kardur can use it too). `Game.arenaCombat` keeps a goaded creature off its goaders while someone else can be attacked, never keeps a forced creature home as a guard, and adds a forced creature the plan left home to a group it may join (or the opponent the threat rule picks). After the deck's combat, `attackWithForcedCreatures` sends the forced creatures the deck's own combat didn't (Gale's mana creatures, a deck that doesn't attack): a second attack, so blockers that already blocked can't block again and attack triggers fire again. Planner copies don't foresee forced attacks. Tests: `engine/pod/pod-forced-attacks.test.ts` (in `npm run pod -- --test`). The decks in `verify`'s pod run have no forced attackers; Helga's Ulamog's Crusher now attacks each combat in a pod, so her pod numbers change (the game-night run above was before this).
+
 ### M3. Triggers on another player's spell (Sonnet 5.5)
 
 Taurean Mauler ("whenever an opponent casts a spell, you may put a +1/+1 counter"; its size matters in a pod, Pontus 2026-11-15), Rhystic Study, and the like. The pod tells each game when another player casts a spell (a hook such as `onOpponentCast(card)`); in a goldfish game the opponents cast nothing, so nothing changes there.
@@ -239,7 +241,7 @@ Games end in round 9.3 on average. Teval is the deck to watch: its Zombie board 
 ### Z1. Check and fix (Sonnet 5.5)
 
 - D1's card pop-up was checked only at desktop width: check it at 390 px and with touch (tap opens, a second tap or a tap elsewhere closes).
-- The app test fails on "no primer or swap notes among the lists": `aesi/SUGGESTED_SWAPS.txt` (added with Aesi's list) is read as a decklist. Fix the test or the file's place.
+- (Done 2026-11-15) The app test failed on "no primer or swap notes among the lists": `aesi/SUGGESTED_SWAPS.txt` was read as a decklist. Pontus had it removed; its swaps are `lists/suggested_affinity.txt` and `decklist.txt`.
 
 ---
 

@@ -1,4 +1,4 @@
-GALE: swaps from decklist.txt (your original list) to lists/proposed.txt (the adopted list, 2026-11-04)
+GALE: swaps from lists/original.txt (your original list) to lists/proposed.txt (the adopted list, 2026-11-04)
 Result in the simulator: kill by turn 7 / 8 went from 31.9 / 55.7% to 51.4 / 75.3%.
 Full list to copy: lists/proposed.txt
 

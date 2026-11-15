@@ -2,7 +2,7 @@
 
 Dimir spellslinger mill combo (Gale, Waterdeep Prodigy + Scion of Halaster). Wins in one big turn by milling all three opponents. Run it with `npm run sim -- gale` (see the root README). How the deck plays, win lines and tutor targets for the table: `PRIMER.txt`. What the simulator models and its settings: `README.md`. This file keeps the AI's rules, why the list looks as it does, and what is still open (it used to be the root `PLAN.md`).
 
-**Lists:** `decklist.txt` is the list as first given. **`lists/proposed.txt` is the adopted list** (Pontus, 2026-11-04). The other test lists from the rounds below were removed on 2026-11-14 (they are in git history); `logs/` holds Pontus's real games.
+**Lists:** `decklist.txt` is the physical deck Pontus has at home (since 2026-11-15): `lists/proposed.txt` minus Drain Power, Unearth, Muddle the Mixture and Thunderclap Drake (not owned yet), replaced by Zombify (played as Unearth for now) and Reliquary Tower, Archmage's Charm and Secrets of the Dead from the original (the last two are the Secret Lair Gale print, easy to find). `lists/original.txt` is the list as first given. Keep `decklist.txt` equal to what is on the table. **`lists/proposed.txt` is the adopted list** (Pontus, 2026-11-04). The other test lists from the rounds below were removed on 2026-11-14 (they are in git history); `logs/` holds Pontus's real games.
 
 ## Simulation rules
 
@@ -25,9 +25,11 @@ Dimir spellslinger mill combo (Gale, Waterdeep Prodigy + Scion of Halaster). Win
 
 ## Current state
 
-**The adopted list** (`lists/proposed.txt`), 4,000 games: kill by turn 6 / 7 / 8 **19.9 / 51.4 / 75.3%**, with counter backup by turn 8 **57.4%**, average kill turn 7.0. The original `decklist.txt` was 10.2 / 31.9 / 55.7% (3,000 games, counter backup by turn 8: 36.0%).
+**The adopted list** (`lists/proposed.txt`), 4,000 games: kill by turn 6 / 7 / 8 **19.9 / 51.4 / 75.3%**, with counter backup by turn 8 **57.4%**, average kill turn 7.0. The original `lists/original.txt` was 10.2 / 31.9 / 55.7% (3,000 games, counter backup by turn 8: 36.0%).
 
-**Changes vs `decklist.txt`:** + Prologue to Phyresis, Expansion Algorithm, Turnabout, Muddle the Mixture, Spell Pierce, Pieces of the Puzzle, Energy Tap, Drain Power, 3 Island; − Jidoor, Cut Your Losses, Traumatize, Secrets of the Dead, Academy Wall, Emet-Selch, Archmage Emeritus, Archmage's Charm, Case of the Ransacked Lab, Baleful Strix, Reliquary Tower. 37 lands + Waterlogged Teachings. The step before the rituals is in git history (before 2026-11-14).
+**Changes vs `lists/original.txt`:** + Prologue to Phyresis, Expansion Algorithm, Turnabout, Muddle the Mixture, Spell Pierce, Pieces of the Puzzle, Energy Tap, Drain Power, 3 Island; − Jidoor, Cut Your Losses, Traumatize, Secrets of the Dead, Academy Wall, Emet-Selch, Archmage Emeritus, Archmage's Charm, Case of the Ransacked Lab, Baleful Strix, Reliquary Tower. 37 lands + Waterlogged Teachings. The step before the rituals is in git history (before 2026-11-14).
+
+**The home list** (`decklist.txt`, 2026-11-15), 4,000 games, same seeds, after the engine changes of step 8: kill by turn 6 / 7 / 8 **13.0 / 38.9 / 65.0%**, with counter backup by turn 8 **49.8%**, average kill turn 7.16. On the same run `lists/original.txt` was 9.5 / 31.5 / 55.7% (backup by turn 8 36.4%, average 7.23) and `lists/proposed.txt` 16.5 / 45.8 / 70.9% (53.2%, 7.07). Zombify is modelled as a dearer Unearth (`unearthMaxManaValue` in `roles.ts`: any creature, but 4 mana); Pontus plays it where Unearth would go. The regress baseline for `decklist.txt` was re-recorded; the six logs are checked against the list they were played with (`logLists` in `index.ts`).
 
 **What the tests showed** (3,000 games per list, noise about ±2.6 points; goldfish only):
 - **The 4 engines are dead weight.** Cutting Secrets of the Dead, Academy Wall, Emet-Selch and Archmage Emeritus together for Islands: +6 points by turn 7 / 8. None of them beats an Island alone (Wizards of Thay too, but its flash value isn't modelled).

@@ -271,6 +271,7 @@ export interface ReanimationSpell {
 export const REANIMATION_SPELLS: Record<string, ReanimationSpell> = {
   Persist: { count: 1, nonlegendary: true, minusOneCounter: true },
   Unearth: { count: 1, maxManaValue: 3 },
+  Zombify: { count: 1 },
   Victimize: { count: 2, tapped: true }, // the sacrifice is paid when it is cast
   Reanimate: { count: 1, loseLifeEqualToManaValue: true },
   'Dread Return': { count: 1 },

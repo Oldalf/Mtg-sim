@@ -1,5 +1,5 @@
 /** What the spells only Gale's deck uses do when they resolve (the engine handles the rest). */
-import { GALE, permScore } from './roles';
+import { GALE, permScore, unearthMaxManaValue } from './roles';
 import { OPPONENT_EVENT } from './kill-state';
 import { chooseGiftsPile, chooseTutorTarget } from './tutoring';
 import type { GaleGame } from './game';
@@ -68,10 +68,11 @@ function resolveWindfall(game: GaleGame): void {
   );
 }
 
-/** Return the best creature with mana value 3 or less from the graveyard to the battlefield. */
-export function resolveUnearth(game: GaleGame): void {
+/** Return the best creature the spell allows (Unearth: mana value 3 or less) from the graveyard to the battlefield. */
+export function resolveUnearth(game: GaleGame, spellName: string): void {
   const options = game.graveyard.filter(
-    (card) => card.isCreature && card.manaValue <= 3,
+    (card) =>
+      card.isCreature && card.manaValue <= unearthMaxManaValue(spellName),
   );
   if (!options.length) return;
   const creature = firstMax(options, (card) => permScore(card.name, 30));

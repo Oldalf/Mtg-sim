@@ -2264,6 +2264,7 @@ export abstract class GameCore<S = unknown> {
     this.logCardMovesSoFar();
     this.enterStep('combat');
     this.combat();
+    this.attackWithForcedCreatures();
     this.logCardMovesSoFar();
     if (this.areOpponentsBeaten()) {
       if (this.unprotectedKillTurn === null)
@@ -2569,6 +2570,8 @@ export abstract class GameCore<S = unknown> {
   }
   /** A pod, after our second main phase: cast creatures as blockers if needed. */
   podDefence(): void {}
+  /** After our combat: creatures that must attack and weren't sent attack now (a pod; goldfish games have none). */
+  attackWithForcedCreatures(): void {}
   /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage. */
   arenaCombat(
     _pool: Permanent[],

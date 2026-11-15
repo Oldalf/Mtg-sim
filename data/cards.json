@@ -9627,5 +9627,18 @@
   "layout": "normal",
   "oracle_id": "fa4dffda-6f04-4d0b-829d-28a1a5794dee",
   "scryfall_id": "c2073453-4108-4039-a8c2-0f94dd7bf237"
+ },
+ "Zombify": {
+  "name": "Zombify",
+  "full_name": "Zombify",
+  "mana_cost": "{3}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Return target creature card from your graveyard to the battlefield.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "bb95db4d-5017-4121-bf79-d68476602d8c",
+  "scryfall_id": "dc798e6f-13c4-457c-b052-b7b65bc83cfe"
  }
 }

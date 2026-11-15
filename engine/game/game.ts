@@ -117,6 +117,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     powerOf?: (permanent: Permanent) => number,
     toughnessOf?: (permanent: Permanent) => number,
   ): { damage: number; connected: Permanent[] } {
+    for (const attacker of attackers) this.attackersThisTurn.add(attacker);
     const fightResult = this.arena!.fight(
       this,
       slot,
@@ -262,7 +263,82 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return stay;
   }
 
-  /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage. */
+  /** The creatures that attacked this turn (vigilance ones stay untapped, so tapped doesn't tell). */
+  attackersThisTurn = new Set<Permanent>();
+
+  /** Must this creature attack this combat if able ("attacks each combat if able", Thantis, goad)? */
+  mustAttack(creature: Permanent): boolean {
+    return this.arena!.mustAttack(this, creature);
+  }
+
+  /** May this creature attack opponent `slot`? A goaded creature attacks a player who goaded it only when it can
+   *  attack no one else (rule 701.15b). */
+  mayAttackOpponent(creature: Permanent, slot: number): boolean {
+    const goaderSlots = this.arena!.goaderSlots(this, creature);
+    if (!goaderSlots.includes(slot)) return true;
+    return !this.life.some(
+      (_, otherSlot) =>
+        this.isOpponentAlive(otherSlot) && !goaderSlots.includes(otherSlot),
+    );
+  }
+
+  /** The creatures of the pool that may attack opponent `slot`. */
+  private allowedAttackers(pool: Permanent[], slot: number): Permanent[] {
+    return pool.filter((creature) => this.mayAttackOpponent(creature, slot));
+  }
+
+  /** A forced attacker the plan left home joins a group attacking an opponent it may attack, or starts one at the
+   *  opponent its controller would pick (the threat rule). */
+  private addForcedAttackers(
+    groups: { slot: number; attackers: Permanent[] }[],
+    pool: Permanent[],
+    powerOf?: (permanent: Permanent) => number,
+    toughnessOf?: (permanent: Permanent) => number,
+  ): void {
+    for (const creature of pool) {
+      if (!this.mustAttack(creature)) continue;
+      if (groups.some((group) => group.attackers.includes(creature))) continue;
+      const group = groups.find((existing) =>
+        this.mayAttackOpponent(creature, existing.slot),
+      );
+      if (group) {
+        group.attackers.push(creature);
+        continue;
+      }
+      let bestSlot = -1,
+        bestScore = 0;
+      for (let slot = 0; slot < this.life.length; slot++) {
+        if (!this.isOpponentAlive(slot)) continue;
+        if (!this.mayAttackOpponent(creature, slot)) continue;
+        const score =
+          this.planAttack(slot, [creature], powerOf, toughnessOf).score +
+          this.arena!.prefer(this, slot);
+        if (bestSlot < 0 || score > bestScore) {
+          bestSlot = slot;
+          bestScore = score;
+        }
+      }
+      if (bestSlot >= 0) groups.push({ slot: bestSlot, attackers: [creature] });
+    }
+  }
+
+  /** After our combat: creatures that must attack and weren't sent attack now (the deck's own combat left them home). */
+  override attackWithForcedCreatures(): void {
+    if (this.inArena()) {
+      const forced = this.creatures().filter(
+        (creature) =>
+          !creature.tapped &&
+          (!creature.sick || creature.card.haste) &&
+          !this.attackersThisTurn.has(creature) &&
+          this.mustAttack(creature),
+      );
+      if (forced.length) this.arenaCombat(forced);
+    }
+    this.attackersThisTurn.clear();
+  }
+
+  /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage.
+   *  Creatures that must attack always go, and a goaded one avoids its goaders if it can. */
   override arenaCombat(
     pool: Permanent[],
     powerOf?: (permanent: Permanent) => number,
@@ -276,12 +352,18 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       damage: number;
     } | null = null;
     const stay = this.homeGuard(pool, power);
+    for (const guard of stay) if (this.mustAttack(guard)) stay.delete(guard);
     for (const candidates of stay.size
       ? [pool, pool.filter((permanent) => !stay.has(permanent))]
       : [pool]) {
       for (let i = 0; i < this.life.length; i++) {
         if (!this.isOpponentAlive(i)) continue;
-        const plan = this.planAttack(i, candidates, powerOf, toughnessOf);
+        const plan = this.planAttack(
+          i,
+          this.allowedAttackers(candidates, i),
+          powerOf,
+          toughnessOf,
+        );
         // the whole team only for a kill; otherwise the guards stay home
         if (candidates === pool && stay.size && plan.score < 1000) continue;
         if (!plan.attackers.length || plan.score <= 0) continue;
@@ -291,13 +373,17 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       }
       if (best) break;
     }
-    if (!best) return;
+    if (!best && !pool.some((creature) => this.mustAttack(creature))) return;
     // the creatures that weren't sent may attack other opponents (the guards stay home)
-    const groups = [best];
+    const groups: { slot: number; attackers: Permanent[] }[] = best
+      ? [best]
+      : [];
+    const plannedAttackers = best ? best.attackers : [];
+    const keepsGuardsHome = best === null || best.score < 1000;
     let rest = pool.filter(
       (permanent) =>
-        !best!.attackers.includes(permanent) &&
-        !(stay.has(permanent) && best!.score < 1000),
+        !plannedAttackers.includes(permanent) &&
+        !(stay.has(permanent) && keepsGuardsHome),
     );
     while (rest.length && groups.length < 3) {
       let next: {
@@ -309,7 +395,12 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       for (let i = 0; i < this.life.length; i++) {
         if (!this.isOpponentAlive(i) || groups.some((x) => x.slot === i))
           continue;
-        const plan = this.planAttack(i, rest, powerOf, toughnessOf);
+        const plan = this.planAttack(
+          i,
+          this.allowedAttackers(rest, i),
+          powerOf,
+          toughnessOf,
+        );
         if (!plan.attackers.length || plan.score <= 0) continue;
         const score = plan.score + this.arena!.prefer(this, i);
         if (next === null || score > next.score)
@@ -319,6 +410,8 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       groups.push(next);
       rest = rest.filter((permanent) => !next!.attackers.includes(permanent));
     }
+    this.addForcedAttackers(groups, pool, powerOf, toughnessOf);
+    if (!groups.length) return;
     this.attacked = true;
     const sent = groups.flatMap((x) => x.attackers);
     for (const permanent of sent)

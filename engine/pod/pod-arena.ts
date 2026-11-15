@@ -37,6 +37,20 @@ export function buildArena(table: PodTable): Arena {
     counter: (game, spell) =>
       table.runOffTurn(() => counterSpell(table, game, spell)),
     prefer: (game, slot) => attackPreference(table, game, slot),
+    mustAttack: (_game, creature) => table.mustAttack(creature),
+    goaderSlots: (game, creature) =>
+      table.goaderSlots(table.playerOf(game), creature),
+    goadCreatures: (game, slot) => {
+      const goader = table.playerOf(game);
+      const opponent = table.opponentsOf[goader][slot];
+      for (const creature of table.games[opponent].creatures())
+        table.goad(goader, creature);
+      table.sayAs(
+        goader,
+        `goads ${table.playerName(opponent)}'s creatures`,
+        'note',
+      );
+    },
     go: (game) => shouldGoForKill(table, game),
     wheel: (game, cardsInOwnHand) =>
       table.runOffTurn(() =>

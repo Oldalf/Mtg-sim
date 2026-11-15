@@ -11,7 +11,7 @@
  * an empty library or 10+ poison counters.
  */
 import * as C from '../../engine/cards/cards';
-import { COMBO_SPELLS } from './roles';
+import { COMBO_SPELLS, isUnearthLike } from './roles';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { KillStep } from '../../engine/game/game-types';
 
@@ -576,7 +576,7 @@ export class KillSearchState {
   resolveSpell(name: string, variant: string): void {
     if (this.resolveMillSpell(name, variant)) return;
     if (this.resolveManaSpell(name)) return;
-    if (name === 'Unearth') {
+    if (isUnearthLike(name)) {
       if (variant === 'The Mindskinner') this.hasMindskinner = true;
       else if (variant === 'Duskmantle Guildmage') this.hasGuildmage = true;
       if (this.graveyardCreatures.includes(variant))
@@ -805,7 +805,7 @@ export class KillSearchState {
           [`X${xValue}`, card.cost.plus(new Cost(xValue))] as [string, Cost],
       );
     }
-    if (name === 'Unearth') {
+    if (isUnearthLike(name)) {
       return uniqSorted(this.graveyardCreatures)
         .filter(
           (name) =>
