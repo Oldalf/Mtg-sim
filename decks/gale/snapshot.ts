@@ -2,7 +2,7 @@ import * as C from '../../engine/cards/cards';
 import * as Facts from '../../engine/cards/card-facts';
 import { GALE } from './roles';
 import { FODDER_EXCLUDE, KillSearchState } from './kill-state';
-import type { LandClass } from './kill-state';
+import { SearchMana } from '../../engine/game/search-mana';
 import type { GaleGame } from './game';
 
 // ---------------------------------------------------------------- the kill search's snapshot
@@ -26,7 +26,7 @@ export function buildKillSearchState(
   return state;
 }
 
-/** The mana already made (rocks, floating mana), the High Tide / Muck counts and the untapped lands by kind. */
+/** The mana sources (SearchMana reads the game) and the land drop next turn. */
 function addManaAndLands(
   game: GaleGame,
   state: KillSearchState,
@@ -34,76 +34,10 @@ function addManaAndLands(
   add: string[],
   remove: string[],
 ): void {
-  const pool = { U: 0, B: 0, A: 0, C: 0, S: 0 };
-  if (!nextTurn) {
-    pool.U += game.pool.U;
-    pool.B += game.pool.B;
-    pool.C += game.pool.C;
-    pool.S += game.pool.S;
-  }
-  const isEnergybent = game.isEnergybendingActive && !nextTurn;
-  const landClasses: LandClass[] = [];
-  const allLands: number[] = [];
-  const untappedLands: number[] = [];
-  const countLand = (landClass: LandClass, isUntapped: boolean): void => {
-    let index = landClasses.findIndex(
-      (existing) =>
-        existing.kind === landClass.kind &&
-        existing.isIsland === landClass.isIsland &&
-        existing.isSwamp === landClass.isSwamp &&
-        existing.isLand === landClass.isLand,
-    );
-    if (index < 0) {
-      index = landClasses.length;
-      landClasses.push(landClass);
-      allLands.push(0);
-      untappedLands.push(0);
-    }
-    allLands[index] += 1;
-    if (isUntapped) untappedLands[index] += 1;
-  };
-  for (const permanent of game.battlefield) {
-    const kind = game.manaSourceKind(permanent, nextTurn);
-    if (kind === null) continue;
-    const isUntapped = nextTurn || !permanent.tapped;
-    if (permanent.land !== null) {
-      countLand(
-        {
-          kind,
-          isIsland: !!permanent.land.island,
-          isSwamp: !!permanent.land.swamp,
-          isLand: true,
-        },
-        isUntapped,
-      );
-    } else if (kind === 'S') {
-      if (isUntapped) pool.S += 1; // only pays for instants and sorceries
-    } else {
-      // a rock or a mana creature: it stays untapped until a payment needs it (a filter Signet is fed a mana then)
-      countLand(
-        { kind, isIsland: false, isSwamp: false, isLand: false },
-        isUntapped,
-      );
-    }
-  }
-  // next turn a land from hand makes one more mana
-  if (
-    nextTurn &&
-    handAfterChanges(game, add, remove).some(
-      (name) => C.get(name).land !== null,
-    )
-  )
-    countLand(
-      { kind: 'A', isIsland: false, isSwamp: false, isLand: true },
-      true,
-    );
-  state.pool = pool;
-  state.highTides = nextTurn ? 0 : game.highTidesThisTurn;
-  state.bubblingMucks = nextTurn ? 0 : game.muck;
-  state.isEnergybent = isEnergybent;
-  state.landClasses = landClasses;
-  state.allLands = allLands;
-  state.untappedLands = untappedLands;
+  const hasLandInHand = handAfterChanges(game, add, remove).some(
+    (name) => C.get(name).land !== null,
+  );
+  state.mana = SearchMana.fromGame(game, nextTurn, hasLandInHand);
 }
 
 /** The hand's card names, with the cards in `remove` taken out and the cards in `add` put in. */

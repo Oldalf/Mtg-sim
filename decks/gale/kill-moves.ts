@@ -14,8 +14,8 @@ import { CardDef, Cost } from '../../engine/cards/cards';
 
 /** Gives a new state the step that led to it, for the kill line. */
 function labelled(state: KillSearchState, step: GaleKillStep): KillSearchState {
-  step.payments = state.payments; // (the next step starts with none)
-  state.payments = [];
+  step.payments = state.mana.payments; // (the next step starts with none)
+  state.mana.payments = [];
   // a labelled snapshot is never changed afterwards: its children get their own copies of these lists
   state.killLine = [
     state.killLine,

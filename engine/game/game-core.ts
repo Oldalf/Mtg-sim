@@ -55,6 +55,7 @@ import {
   emptyPool,
 } from './game-types';
 import { playKillLineOnCopy } from './kill-line';
+import { PaymentRecord, UNTAP, isSourceOfClass } from './search-mana';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import {
   deathTriggerOfCommonCard,
@@ -794,11 +795,30 @@ export abstract class GameCore<S = unknown> {
     }
   }
 
-  /** A deck that has planned this payment (a kill line the search paid for) names the sources to tap first, in order.
+  /** A search that planned this payment (a kill line it paid for) names the sources to tap first, in order.
    *  Only the greedy order uses them; what is still short is paid the usual way. */
-  sourcesPlannedFor(_cost: Cost): Permanent[] {
-    return [];
+  sourcesPlannedFor(cost: Cost): Permanent[] {
+    const index = this.plannedPayments.findIndex(
+      (payment) => payment.cost === `${cost}`,
+    );
+    if (index < 0) return [];
+    const [payment] = this.plannedPayments.splice(index, 1);
+    const sources: Permanent[] = [];
+    for (const landClass of payment.taps) {
+      const source = this.battlefield.find(
+        (permanent) =>
+          !permanent.tapped &&
+          !sources.includes(permanent) &&
+          isSourceOfClass(this, permanent, landClass),
+      );
+      if (source) sources.push(source);
+    }
+    return sources;
   }
+
+  /** What a search planned for the step being played: the sources it tapped for each cost, in order, and the lands
+   *  an untap effect untapped (engine/game/search-mana.ts). A deck sets it for a step and clears it after. */
+  plannedPayments: PaymentRecord[] = [];
 
   /** What the last committed payment tapped, and what each source added to the pool ("U", "UB"). */
   lastPayment: { source: Permanent; made: string }[] = [];
@@ -1351,7 +1371,28 @@ export abstract class GameCore<S = unknown> {
   /** The lands an untap effect untaps, from the tapped ones best first. A deck that planned the untap (a kill line the
    *  search found) may name others. */
   landsToUntap(tappedLandsBestFirst: Permanent[], count: number): Permanent[] {
-    return tappedLandsBestFirst.slice(0, count);
+    const index = this.plannedPayments.findIndex(
+      (payment) => payment.cost === UNTAP,
+    );
+    if (index < 0) return tappedLandsBestFirst.slice(0, count);
+    const [payment] = this.plannedPayments.splice(index, 1);
+    const chosen: Permanent[] = [];
+    for (const landClass of payment.taps) {
+      const land = tappedLandsBestFirst.find(
+        (permanent) =>
+          !chosen.includes(permanent) &&
+          isSourceOfClass(this, permanent, landClass),
+      );
+      if (land) chosen.push(land);
+    }
+    // anything the plan didn't cover (the real game has other tapped lands) is untapped the usual way
+    for (const land of tappedLandsBestFirst)
+      if (
+        chosen.length < Math.min(count, payment.taps.length) &&
+        !chosen.includes(land)
+      )
+        chosen.push(land);
+    return chosen;
   }
 
   enter(
