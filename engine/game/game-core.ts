@@ -2022,6 +2022,7 @@ export abstract class GameCore<S = unknown> {
     if (this.turn >= (this.config.max_turn as number) + 1)
       return valueAtTurnEnd;
     this.startTurn();
+    this.opponentUpkeep();
     this.enterStep('upkeep');
     this.upkeep();
     this.enterStep('draw');
@@ -2217,6 +2218,7 @@ export abstract class GameCore<S = unknown> {
   takeTurn(): boolean {
     this.startTurn();
     this.sayEvent('turn-start');
+    if (this.turn > 1 && !this.inArena()) this.opponentUpkeep();
     this.enterStep('upkeep');
     this.upkeep();
     this.enterStep('draw');
@@ -2367,6 +2369,9 @@ export abstract class GameCore<S = unknown> {
   endStep(): void {}
   /** At the beginning of our upkeep (before the draw). */
   upkeep(): void {}
+  /** At the beginning of another player's upkeep (for "each upkeep" triggers). Goldfish opponents take their turns
+   *  between ours; a pod calls this for real turns. */
+  opponentUpkeep(): void {}
 
   // ================================================================ goldfish combat for creature decks
   /** Can this creature attack now? (A deck may keep some home, e.g. Spore Frog.) */

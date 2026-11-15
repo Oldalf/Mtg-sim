@@ -11,7 +11,7 @@ export const TOKENS = {
   insect: makeToken('Insect', 1, 1, 'black green'),
   warrior: makeToken('Warrior', 1, 1, 'red'),
   beast: makeToken('Beast', 3, 3, 'green'),
-  snake: makeToken('Snake', 1, 1, 'black'),
+  snake: makeToken('Snake', 1, 1, 'black', ['deathtouch']),
   // a creature taken from an opponent's graveyard (Breach, Puppeteer Clique, Sepulchral Primordial)
   stolen: makeToken('Stolen creature', 5, 5),
 };

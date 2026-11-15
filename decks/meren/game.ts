@@ -398,18 +398,26 @@ export class MerenGame extends GameWithoutKillSearch {
       this.draw(1);
       this.loseLife(1);
     }
-    // Ophiomancer: a deathtouch Snake at each of our upkeeps if we have none
-    if (
-      this.isOnBattlefield('Ophiomancer') &&
-      !this.battlefield.some((permanent) => permanent.card === TOKENS.snake)
-    )
-      this.createTokens(TOKENS.snake);
+    this.makeOphiomancerSnake();
     for (const researcher of this.battlefield.filter(
       (permanent) => permanent.card.name === 'Grave Researcher',
     )) {
       this.scry(1, true);
       if (this.creaturesInGraveyard() >= 3) this.prepared.add(researcher);
     }
+  }
+
+  override opponentUpkeep(): void {
+    this.makeOphiomancerSnake();
+  }
+
+  /** Ophiomancer: at the beginning of each upkeep, a deathtouch Snake if we control none. */
+  private makeOphiomancerSnake(): void {
+    if (
+      this.isOnBattlefield('Ophiomancer') &&
+      !this.battlefield.some((permanent) => permanent.card === TOKENS.snake)
+    )
+      this.createTokens(TOKENS.snake);
   }
 
   override endStep(): void {

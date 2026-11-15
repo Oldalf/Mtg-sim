@@ -89,6 +89,11 @@ function playTurn(table: PodTable, player: number): PodGame | null {
     return null;
   }
 
+  // "each upkeep" triggers of the other decks (e.g. Ophiomancer)
+  table.runOffTurn(() => {
+    for (const [other, otherGame] of table.games.entries())
+      if (other !== player && table.isAlive[other]) otherGame.opponentUpkeep();
+  });
   table.prepareTurn(player);
   const waitsBefore = game.podWaits;
   table.startTurnLog(player);

@@ -79,6 +79,8 @@ All within noise: a Swamp does about as well as each of them, so none speeds up 
 - Removal (Heartless Act, Infernal Grasp) is never cast, since goldfish opponents have no creatures.
 - The log analyzer's per-turn kill check doesn't apply to this deck (no kill search, no life totals in the log); the AI replay with your draws is the useful part.
 
+- Ophiomancer's Snake is a 1/1 black Snake with deathtouch (as on Scryfall), made at the beginning of **each** upkeep, ours and the opponents', if we control no Snakes (2026-11-15). The engine hook is `opponentUpkeep()`: goldfish calls it before our upkeep, a pod calls it at every other deck's turn start. Goldfish results are IDENTICAL (0 of 600 seeds differ); only the tests changed, so the baseline was re-recorded.
+
 ## Next ideas
 
 - Test replacements for the weakest slots (more ramp or graveyard filling), with `npm run sim -- meren decklist.txt lists/test.txt -n 5000`.

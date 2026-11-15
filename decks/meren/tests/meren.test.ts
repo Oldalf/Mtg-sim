@@ -161,6 +161,27 @@ export function runMerenTests(): boolean {
     false,
   );
 
+  // Ophiomancer: a deathtouch Snake at each upkeep (ours and the opponents'), only if we have none
+  game = board(['Ophiomancer']);
+  game.opponentUpkeep();
+  const snakes = game.battlefield.filter(
+    (permanent) => permanent.card.name === 'Snake',
+  );
+  check('Ophiomancer: a Snake at an opponent upkeep', snakes.length, 1);
+  check(
+    '... with deathtouch',
+    snakes[0]?.card.keywords.has('deathtouch'),
+    true,
+  );
+  game.upkeep();
+  game.opponentUpkeep();
+  check(
+    '... and no second Snake while we have one',
+    game.battlefield.filter((permanent) => permanent.card.name === 'Snake')
+      .length,
+    1,
+  );
+
   // win: 100 damage in total or 2 opponents dead
   game = board();
   game.damageOpponent(0, 40);

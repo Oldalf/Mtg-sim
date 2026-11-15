@@ -68,6 +68,8 @@ From the B1 design (point 4), with Pontus's answer: both the text and the chip a
 
 Meren's Snake token (`decks/meren/cards.ts`: `makeToken('Snake', 1, 1, 'black')`) has no deathtouch, but Scryfall's only black 1/1 Snake token has it (found in step 6's D1). Find the card in Meren's lists that makes it and read its Scryfall text (`all_parts` in the bulk data names the exact token). Tell Pontus what the card makes. If it has deathtouch, add it (`makeToken(..., ['deathtouch'])`): Meren's results may change (blocks in a pod, crackback in goldfish), so show before and after and re-record. Update `decks/meren/PLAN.md`.
 
+**Built (2026-11-15).** The card is Ophiomancer ("At the beginning of each upkeep, if you control no Snakes, create a 1/1 black Snake creature token with deathtouch"). The token has deathtouch, and it now comes at every upkeep, not only ours: `GameCore.opponentUpkeep()` (goldfish: before our upkeep from turn 2; pod: at each other deck's turn start in `pod.ts`). Meren goldfish results IDENTICAL (0 of 600 seeds differ), pod run unchanged; Meren baseline re-recorded for the new test lines. `npm run verify -- --full`: only Gale's kill-line test and the app test fail, and they fail without this change too.
+
 ---
 
 ## D. The viewer
