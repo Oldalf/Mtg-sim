@@ -61,13 +61,14 @@ Rules for every task:
 | 12 | M3 | Triggers on another player's spell (done) | Sonnet 5.5 |
 | 13 | M4 | Blink (done) | Opus 5.5 |
 | 14 | M5 | Dungeons, venture and the initiative (done) | Opus 5.5 |
-| 15 | B4 | Thantis | Sonnet 5.5 |
-| 16 | B5 | DnD | Opus 5.5 |
-| 17 | B6 | Azula | Opus 5.5, after P |
-| 18 | Z1 | Step 7's loose ends | Sonnet 5.5 |
-| 19 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
-| 20 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
-| 21 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
+| 15 | M6 | Treasure in the engine | Opus 5.5 |
+| 16 | B4 | Thantis | Sonnet 5.5 |
+| 17 | B5 | DnD | Opus 5.5 |
+| 18 | B6 | Azula | Opus 5.5, after P |
+| 19 | Z1 | Step 7's loose ends | Sonnet 5.5 |
+| 20 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
+| 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
+| 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
 
 **If time runs short before game night:** A2 moves only what Helga, Ardyn and Teval need, A3 waits, and a deck can go to the pod with fewer card rules, as long as its `PLAN.md` says what it does not model (C1 then says it next to its numbers).
 
@@ -200,7 +201,17 @@ For DnD. Rules 309 (dungeons) and 725 (the initiative):
 - The rooms as data (one table per dungeon, the room effects as small functions), the dungeon a player is in and the room they are in as game state, shown in the log ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin").
 - Which dungeon and which path to pick: a simple rule first (Lost Mine for DnD, as Pontus says the owner plays; the path that gives cards or tokens), written in the deck, not the engine.
 
-**Built (2026-11-16).** `engine/game/dungeons.ts`: the four dungeons as data (Lost Mine of Phandelver, Dungeon of the Mad Mage, Tomb of Annihilation, Undercity; each room's text, where it leads, a value for the default path, its effect), `ventureIntoDungeon(game, intoUndercity)`, a completed dungeon (`completedDungeons`), and the log line ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin"). Room abilities trigger again with Hama Pashar, or Dungeon Delver with our commander out. Game state: `dungeonPosition`, `completedDungeons`, `hasInitiative`. Hooks for the deck: `chooseDungeon` (default Lost Mine) and `chooseDungeonRoom` (default: the room worth the most: cards and tokens first). The initiative: `takeInitiative()` ventures into Undercity, its holder ventures again at the upkeep (`upkeepTriggersOfTheGame`, with rebound), combat damage to the holder takes it (`pod-combat.ts`), one holder in a pod (`PodTable.takeInitiative`), and the pod's attack choice adds 6 to the holder (`attackPreference`). Card text: "When ... enters, venture into the dungeon" and "... you take the initiative" are read from the oracle (`venturesOnEnter`, `takesInitiativeOnEnter`) in the common enter trigger. Not modelled: rooms that only hit an opponent's creature (Twisted Caverns, Fungi Cavern, Arena's goad), the initiative passing on when its holder leaves the game, Runestone Caverns is counted as drawing the two cards. Treasure tokens from rooms are made, but the engine doesn't tap Treasures yet (Codie, Edgar, Gale and Sam & Frodo each do it themselves: rule of three, a job for B5 or E2). Tests: `engine/game/dungeons.test.ts` (in `npm run pod -- --test`). Every deck IDENTICAL.
+**Built (2026-11-16).** `engine/game/dungeons.ts`: the four dungeons as data (Lost Mine of Phandelver, Dungeon of the Mad Mage, Tomb of Annihilation, Undercity; each room's text, where it leads, a value for the default path, its effect), `ventureIntoDungeon(game, intoUndercity)`, a completed dungeon (`completedDungeons`), and the log line ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin"). Room abilities trigger again with Hama Pashar, or Dungeon Delver with our commander out. Game state: `dungeonPosition`, `completedDungeons`, `hasInitiative`. Hooks for the deck: `chooseDungeon` (default Lost Mine) and `chooseDungeonRoom` (default: the room worth the most: cards and tokens first). The initiative: `takeInitiative()` ventures into Undercity, its holder ventures again at the upkeep (`upkeepTriggersOfTheGame`, with rebound), combat damage to the holder takes it (`pod-combat.ts`), one holder in a pod (`PodTable.takeInitiative`), and the pod's attack choice adds 6 to the holder (`attackPreference`). Card text: "When ... enters, venture into the dungeon" and "... you take the initiative" are read from the oracle (`venturesOnEnter`, `takesInitiativeOnEnter`) in the common enter trigger. Not modelled: rooms that only hit an opponent's creature (Twisted Caverns, Fungi Cavern, Arena's goad), the initiative passing on when its holder leaves the game, Runestone Caverns is counted as drawing the two cards. Treasure tokens from rooms are made, but the engine doesn't tap Treasures yet (Codie, Edgar, Gale and Sam & Frodo each do it themselves: rule of three, task M6). Tests: `engine/game/dungeons.test.ts` (in `npm run pod -- --test`). Every deck IDENTICAL.
+
+### M6. Treasure in the engine (Opus 5.5)
+
+Pontus, 2026-11-16: the next step, before Thantis. Treasure tokens are made by the engine now (M5's dungeon rooms) but only decks can tap them: Codie, Edgar, Gale and Sam & Frodo each write it themselves (rule of three).
+
+- **The rule, once:** a Treasure token is a mana source of any colour (`manaSourceKind` gives 'A'), and tapping it for mana sacrifices it. The sacrifice happens when a payment commits (`pay` with commit), not when a payment is only tested, and it goes through the battlefield functions so the log shows it. One `TREASURE` token card for all (`engine/game/dungeons.ts` has one; move it to `engine/cards/` where the other shared tokens are).
+- **When to spend them:** a Treasure is spent last, when lands and rocks are not enough (Edgar's rule: `mayUseExpendableMana`, `pay` tries without first). That goes into the engine too; Eldrazi Spawn (Edgar) fits the same "expendable mana" idea.
+- **The decks:** Codie (`purgeTreasures`), Edgar (`TOKENS.treasure`, the expendable-mana `pay`), Gale (An Offer You Can't Refuse's Treasures, `TREASURE` in `kill-play.ts`; and `SearchMana`'s `pool.A += 2` for them), Sam & Frodo (`TREASURE` with Food and Clue, `sacrificeValue`) drop their own code and use the engine's. Sam & Frodo also sacrifices Treasures for value (artifacts leaving): keep that the deck's choice.
+- **Tests:** a Treasure pays any colour and is gone after a committed payment, a tested payment keeps it, lands are tapped before a Treasure, the log shows the sacrifice.
+- **Done when:** `npm run verify` ends VERIFY OK. A deck whose results change (Codie or Edgar may tap in another order): show Pontus the numbers before and after, then re-record.
 
 ## B. The friends' decks (after A4; the M tasks a deck needs come first)
 
