@@ -1,4 +1,5 @@
-AESI: swaps from decklist.txt (your original list) to lists/proposed.txt
+AESI: swaps from lists/original_decklist.txt (your original list) to lists/proposed.txt
+(Superseded 2026-11-15: your own swaps, SUGGESTED_SWAPS.txt with Seismic Sense kept, are now decklist.txt.)
 Status: you said it "looks good" (2026-11-07), but these are still open: Many Journeys out or kept, Search for Tomorrow vs Nature's Lore / Three Visits, and which duals you already own.
 Result in the simulator: win by turn 10 went from 81.8% to 86.1%, slow starts from 12.7% to 9.7%.
 Full list to copy: lists/proposed.txt (100 cards, 39 lands)

@@ -63,7 +63,7 @@ Pontus: the deck should be consistently playable, not a useless spectator. `npm 
 
 ## Current state
 
-`lists/proposed.txt` (100 cards, 39 lands, about 4.8 € of new cards) against `decklist.txt`:
+`lists/proposed.txt` (100 cards, 39 lands, about 4.8 € of new cards) against the original list (`decklist.txt` then, now `lists/original_decklist.txt`):
 - **Out:** Explore, Growth Spiral, Into the Wilds, Azusa's Many Journeys (cards that are sad without lands in hand; Pontus: a land-only hand is as bad as a spell-only one).
 - **In:** Search for Tomorrow 0.16 €, Wood Elves 0.06 €, Skyshroud Claim 1.36 € (land-fetch spells that never miss); Elven Raft-Steerer 0.11 € (a second untapper); six duals instead of 3 Islands + 3 Forests: Command Tower 0.20 €, Vineglimmer Snarl 0.22 €, Hinterland Harbor 0.35 €, Yavimaya Coast 0.52 €, Botanical Sanctum 1.64 €, Temple of Mystery 0.14 €. Prices vary by printing.
 - Nature's Lore (about 2.90 €) and Three Visits (about 4.89 €) play like Search for Tomorrow's land and tested the same. Pontus: Nature's Lore "works, not the most fun".
@@ -87,7 +87,7 @@ Four other mixes of the fetch spells tested the same within noise, so the cheap 
 
 ## Pontus's list (2026-11-15)
 
-Pontus's own swaps (`SUGGESTED_SWAPS.txt`), built on `lists/proposed.txt`: Invasion of Zendikar instead of Wood Elves, Flooded Grove instead of Botanical Sanctum, and Natural Affinity instead of Seismic Sense (`lists/suggested_affinity.txt`) or Seismic Sense kept (`lists/suggested_seismic.txt`).
+Pontus's own swaps (`SUGGESTED_SWAPS.txt`), built on `lists/proposed.txt`: Invasion of Zendikar instead of Wood Elves, Flooded Grove instead of Botanical Sanctum, and Natural Affinity instead of Seismic Sense (`lists/suggested_affinity.txt`) or Seismic Sense kept (`lists/suggested_seismic.txt`, now `decklist.txt`).
 
 - **Invasion of Zendikar** (a Siege, defense 3): two basics tapped as it enters. Flyers attack it first (smallest first) unless an all-in kills the table; Pontus: an opponent defends it only when that's free, and Aesi has many flyers. Defeated, it is cast as Awakened Skyclave (a 4/4 vigilance, haste creature land, any colour; no flying): it enters as a land, a landfall trigger. Returned to hand it is Invasion of Zendikar again. Not attacked in a pod.
 - **Flooded Grove** is read from its text as a land that makes G or U. Wrong only when it is the only land (turn 1): it then makes only {C}.
@@ -119,7 +119,7 @@ Average win turn by lands in the 7: 0 lands 11.3, 1 land 10.1, 2 lands 9.1, 3 la
 
 ## Open
 
-- **Pontus decides:** make `lists/proposed.txt` the default `decklist.txt` (then re-record the regress baseline); Many Journeys out or kept; Search for Tomorrow or Nature's Lore / Three Visits; which duals he already owns.
+- Settled 2026-11-15: Pontus's own list is the default `decklist.txt` (regress baseline re-recorded); Many Journeys, Wood Elves and Botanical Sanctum are out, Search for Tomorrow is in.
 - **Not modelled yet:** Haru-Onna returning when a Spirit is cast without Omniscience; Familiar's adapt ability; PuPu UFO's Town ability; Likeness of the Seeker's untap.
 - **To check:** the low-ranked cards (Mirror-Mage, Savant, Patron of the Moon, Uyo, Endless Swarm, Graceful Adept): is the AI playing them well, or are they weak in a goldfish game? The old ranking predates the package.
 - More logs (the sim rarely wins via Uyo or Endless Swarm, so games that do would help), then further cut ideas.
