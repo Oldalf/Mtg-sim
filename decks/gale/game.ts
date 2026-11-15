@@ -32,7 +32,7 @@ import {
   OPPONENT_EVENT,
   Op,
 } from './kill-state';
-import { playGaleKillStep } from './kill-play';
+import { TREASURE, playGaleKillStep } from './kill-play';
 import { finisherReachable, search } from './kills';
 import { chooseTutorTarget } from './tutoring';
 import { buildCandidates, castWithGaleRecast } from './candidates';
@@ -50,6 +50,10 @@ import {
 import { Game } from '../../engine/game/game';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
+
+/** The engine's ranks of a black and a blue source for a generic cost (RANK.N in game-core.ts): black is tapped first. */
+const RANK_OF_BLACK_FOR_GENERIC = 3;
+const RANK_OF_BLUE_FOR_GENERIC = 4;
 
 export class GaleGame extends Game<KillSearchState> {
   override mulliganRule(): MulliganRule | null {
@@ -309,6 +313,44 @@ export class GaleGame extends Game<KillSearchState> {
   }
   override playKillStep(step: KillStep): string | null {
     return playGaleKillStep(this, step as GaleKillStep);
+  }
+  /** A kill line that fails is tried again with other tapping orders: Islands / Swamps kept for a High Tide / Muck
+   *  or not (orders 0 and 2 keep them), and black or blue lands first for generic costs (orders 2 and 3: blue). */
+  override killLineTappingOrders(): number {
+    return 4;
+  }
+  override rankAdjust(short: string, kind: string, rank: number): number {
+    if (!this.isPlayingKillLine || this.killLineTappingOrder < 2) return rank;
+    if (short === 'N' && kind === 'U') return RANK_OF_BLACK_FOR_GENERIC;
+    if (short === 'N' && kind === 'B') return RANK_OF_BLUE_FOR_GENERIC;
+    return rank;
+  }
+  /** While a kill line with a High Tide (Bubbling Muck) still to resolve is played, Islands (Swamps) are tapped last:
+   *  the search counts on them getting the bonus. */
+  override avoidsSource(permanent: Permanent): boolean {
+    if (
+      !this.isPlayingKillLine ||
+      this.killLineTappingOrder % 2 === 1 ||
+      permanent.land === null
+    )
+      return false;
+    const needs = this.cardsTheKillLineNeeds;
+    return (
+      (this.highTidesThisTurn === 0 &&
+        needs.has('High Tide') &&
+        this.islandTyped(permanent)) ||
+      (this.muck === 0 &&
+        needs.has('Bubbling Muck') &&
+        this.swampTyped(permanent))
+    );
+  }
+  /** An Offer You Can't Refuse's Treasures, made during a kill line: a mana of any colour each. */
+  override manaSourceKind(
+    permanent: Permanent,
+    ignoreSick = false,
+  ): string | null {
+    if (permanent.card === TREASURE) return 'A';
+    return super.manaSourceKind(permanent, ignoreSick);
   }
 
   // ---------------------------------------------------------------- what the AI wants

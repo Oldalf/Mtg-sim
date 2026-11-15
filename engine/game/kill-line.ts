@@ -12,25 +12,42 @@ import { KILL_STEP_NEXT_TURN, KillStep } from './game-types';
 
 /** A run of the same step (a loop: Konrad's mill, a Guildmage activation) is logged for this many rounds, then summed up. */
 const ROUNDS_SHOWN = 3;
+/** After the deck's own tapping orders, a failed line is tried with this many orders that shuffle the sources'
+ *  ranks a little (GameCore.killLineRankShuffle): a payment puzzle (tap the dual land now so an untap gets it back)
+ *  that no fixed rule finds. */
+const SHUFFLED_TAPPING_ORDERS = 12;
 
 /** Plays the line on a copy of the game. Returns the copy if the line wins, or null if it fails (then the miss is
- *  logged on the game and counted). `isChanceLine`: the search said the line only wins on average. */
+ *  logged on the game and counted). `isChanceLine`: the search said the line only wins on average.
+ *  The order lands and rocks are tapped in matters, so a line that fails is played again with each other tapping
+ *  order the deck has (killLineTappingOrders); the first that wins is kept. */
 export function playKillLineOnCopy<G extends GameCore<unknown>>(
   game: G,
   line: KillStep[],
   isChanceLine: boolean,
 ): G | null {
-  const copy = game.clone();
-  // this copy becomes the game if the line wins, so its moves are recorded
-  copy.moveRecorder =
-    game.moveRecorder?.copy(game.battlefield, copy.battlefield) ?? null;
-  copy.say('--- the kill line, played:');
-  copy.isPlayingKillLine = true;
-  copy.cardsTheKillLineNeeds = new Set(namesInLine(line));
-  const failure = playSteps(copy, line);
-  copy.isPlayingKillLine = false;
-  copy.cardsTheKillLineNeeds = new Set();
-  if (failure === null) return copy;
+  let firstTry: { copy: G; failure: KillLineFailure } | null = null;
+  const orderCount = game.killLineTappingOrders() + SHUFFLED_TAPPING_ORDERS;
+  for (let order = 0; order < orderCount; order++) {
+    const copy = game.clone();
+    // this copy becomes the game if the line wins, so its moves are recorded
+    copy.moveRecorder =
+      game.moveRecorder?.copy(game.battlefield, copy.battlefield) ?? null;
+    copy.say('--- the kill line, played:');
+    copy.isPlayingKillLine = true;
+    copy.killLineTappingOrder = order;
+    copy.cardsTheKillLineNeeds = new Set(namesInLine(line));
+    const failure = playSteps(copy, line);
+    copy.isPlayingKillLine = false;
+    copy.killLineTappingOrder = 0;
+    copy.cardsTheKillLineNeeds = new Set();
+    if (failure === null) return copy;
+    firstTry ??= { copy, failure };
+  }
+  const { copy, failure } = firstTry!;
+  // the copy is thrown away: its lines are kept as text, to show how far the line got
+  for (const event of copy.log.slice(game.log.length))
+    game.say(`  (tried) ${event.text}`);
   if (failure.stepNumber === null && isChanceLine) {
     game.killChanceFails++;
     game.sayHighlight(
@@ -70,7 +87,11 @@ function playSteps(
     if (isQuiet) copy.verbose = false;
     const reason = copy.playKillStep(step);
     copy.verbose = wasVerbose;
-    if (reason !== null) return { stepNumber: index + 1, reason };
+    if (reason !== null)
+      return {
+        stepNumber: index + 1,
+        reason: `${reason} (${describeMana(copy)})`,
+      };
     const isLastOfRun = !isSameStep(line[index + 1], step);
     if (isQuiet && isLastOfRun)
       copy.say(`... ${step.text}: repeats ${round - ROUNDS_SHOWN} more times`);
@@ -78,6 +99,21 @@ function playSteps(
   return copy.areOpponentsBeaten()
     ? null
     : { stepNumber: null, reason: 'opponents not beaten' };
+}
+
+/** The mana a game has left: its pool and its untapped sources (for a miss's log line). */
+function describeMana(game: GameCore<unknown>): string {
+  const pool = Object.entries(game.pool)
+    .filter(([, amount]) => amount > 0)
+    .map(([colour, amount]) => `${amount}${colour}`)
+    .join(' ');
+  const sources = game.battlefield
+    .filter(
+      (permanent) =>
+        !permanent.tapped && game.manaSourceKind(permanent) !== null,
+    )
+    .map((permanent) => permanent.card.name);
+  return `pool ${pool || 'empty'}; untapped: ${sources.join(', ') || 'none'}`;
 }
 
 /** The cards a line names (a deck's steps may name more in fields of their own: every string field counts). */

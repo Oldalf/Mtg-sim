@@ -721,9 +721,13 @@ export class KillSearchState {
   /** High Tide ({U}) / Muck ({B}) resolve after spendMana took their mana from the pool. Who paid decides the
    *  bonus: mana from outside our lands of that colour if there is any (the pool stays as it is), else
    *  any-colour mana from outside our lands (it leaves the pool and the land mana spendMana took goes back),
-   *  else an Island / Swamp, which then misses the bonus. */
+   *  else an Island / Swamp, which then misses the bonus.
+   *  Then the Islands / Swamps that get it: the pool holds every untapped land's mana as if tapped, and the steps
+   *  before spent some of it, so only as many are still untapped as the mana left of their colour (or any colour)
+   *  can stand for, each with the bonuses that already resolved. */
   payBonusSpell(landsWithBonus: 'islandsForHighTide' | 'swampsForMuck'): void {
     const isHighTide = landsWithBonus === 'islandsForHighTide';
+    const colour = isHighTide ? 'U' : 'B';
     if (isHighTide && this.blueFromOutsideLands > 0)
       this.blueFromOutsideLands -= 1;
     else if (!isHighTide && this.blackFromOutsideLands > 0)
@@ -731,15 +735,17 @@ export class KillSearchState {
     else if (this.anyColourFromOutsideLands > 0 && this.pool.A > 0) {
       this.anyColourFromOutsideLands -= 1;
       this.pool.A -= 1;
-      this.pool[isHighTide ? 'U' : 'B'] += 1;
-    } else if (this[landsWithBonus] > 0) {
-      this[landsWithBonus] -= 1;
-      this.landCount -= 1;
-    }
+      this.pool[colour] += 1;
+    } else if (this[landsWithBonus] > 0) this.landCount -= 1;
+    const bonusesSoFar = isHighTide ? this.highTides : this.bubblingMucks;
+    this[landsWithBonus] = Math.min(
+      this[landsWithBonus],
+      Math.floor((this.pool[colour] + this.pool.A) / (1 + bonusesSoFar)),
+    );
   }
 
   /** Untap k of our lands (already tapped) and tap them again, best lands first. Base mana: Islands
-   *  give U, other lands either colour; each High Tide adds U per Island, each Muck adds B per Swamp. */
+   *  give U, Swamps B, other lands either colour; each High Tide adds U per Island, each Muck adds B per Swamp. */
   untapLands(count: number): void {
     const [dual, islandOnly, swampOnly, other] = this.landMix;
     const highTides = this.highTides,
@@ -751,12 +757,15 @@ export class KillSearchState {
       [1, other, false, false],
     ];
     kinds.sort((first, second) => second[0] - first[0]); // stable, like Python's sort
-    for (const [, available, isl, isSwamp] of kinds) {
+    for (const [, available, isIsland, isSwamp] of kinds) {
       const toUntap = Math.min(available, count);
       if (toUntap <= 0) continue;
       count -= toUntap;
-      if (isl) this.pool.U += toUntap * (1 + highTides);
+      // its own mana: an Island blue, a Swamp black, a land that is both (or neither) either colour
+      if (isIsland && !isSwamp) this.pool.U += toUntap;
+      else if (isSwamp && !isIsland) this.pool.B += toUntap;
       else this.pool.A += toUntap;
+      if (isIsland) this.pool.U += toUntap * highTides;
       if (isSwamp) this.pool.B += toUntap * mucks;
     }
   }

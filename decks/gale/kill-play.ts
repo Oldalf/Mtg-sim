@@ -17,6 +17,9 @@ import {
 import { GaleAbility, GaleKillStep, OPPONENT_EVENT } from './kill-state';
 import type { GaleGame } from './game';
 
+/** A Treasure token (An Offer You Can't Refuse): GaleGame.manaSourceKind makes it a mana of any colour. */
+export const TREASURE = C.makeArtifactToken('Treasure');
+
 const JIDOOR = 'Jidoor, Aristocratic Capital';
 const GUILDMAGE = 'Duskmantle Guildmage';
 const KONRAD = 'Syr Konrad, the Grim';
@@ -256,10 +259,9 @@ function castAndCounterOwnSpell(
     if (failure !== null) return failure;
   }
   game.putCards([target, counter], 'graveyard');
-  if (counter.name === "An Offer You Can't Refuse") {
-    game.pool.U += 1; // two Treasures, used this turn
-    game.pool.B += 1;
-  } else if (counter.name === 'Unwind') game.untapLands(3);
+  if (counter.name === "An Offer You Can't Refuse")
+    game.createTokens(TREASURE, 2);
+  else if (counter.name === 'Unwind') game.untapLands(3);
   else if (counter.name === 'Rewind') game.untapLands(4);
   return null;
 }

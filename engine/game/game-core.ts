@@ -468,18 +468,42 @@ export abstract class GameCore<S = unknown> {
     return rank;
   }
 
+  /** While a kill line is played with one of the shuffled tapping orders (kill-line.ts, after the deck's own): a
+   *  fixed small change (0 to 4) to a source's rank, the same for the same order, source and need. */
+  private killLineRankShuffle(permanent: Permanent, short: string): number {
+    const shuffledOrder =
+      this.killLineTappingOrder - this.killLineTappingOrders() + 1;
+    if (!this.isPlayingKillLine || shuffledOrder <= 0) return 0;
+    const sourceIndex = this.battlefield.indexOf(permanent);
+    const hash =
+      (shuffledOrder * 7919 + sourceIndex * 104729 + short.charCodeAt(0) * 31) %
+      1000;
+    return hash / 250;
+  }
+
+  /** A deck may keep a source for later: it is tapped only when no other source will do. */
+  avoidsSource(_permanent: Permanent): boolean {
+    return false;
+  }
+
   private pick(short: string, isInstantOrSorcery: boolean): Permanent | null {
     const rank = RANK[short];
     let best: Permanent | null = null,
       bestRank = 99;
-    const feed = this.pool.U + this.pool.B + this.pool.C;
+    // what can feed a filter source: not the colour we are short of (it would only trade it for itself)
+    const feed =
+      this.pool.C +
+      (short === 'U' ? 0 : this.pool.U) +
+      (short === 'B' ? 0 : this.pool.B);
     for (const permanent of this.battlefield) {
       if (permanent.tapped) continue;
       const sourceKind = this.manaSourceKind(permanent);
       if (sourceKind === null) continue;
       if (!(sourceKind in rank)) {
-        const fallbackRank = extraRank(short, sourceKind);
+        let fallbackRank = extraRank(short, sourceKind);
         if (fallbackRank === null) continue;
+        if (this.avoidsSource(permanent)) fallbackRank += 10;
+        fallbackRank += this.killLineRankShuffle(permanent, short);
         if (fallbackRank < bestRank) {
           best = permanent;
           bestRank = fallbackRank;
@@ -489,6 +513,8 @@ export abstract class GameCore<S = unknown> {
       if (sourceKind === 'S' && !isInstantOrSorcery) continue;
       if (sourceKind === 'F' && feed < 1) continue;
       let adjustedRank = this.rankAdjust(short, sourceKind, rank[sourceKind]);
+      if (this.avoidsSource(permanent)) adjustedRank += 10;
+      adjustedRank += this.killLineRankShuffle(permanent, short);
       if (
         this.highTidesThisTurn &&
         this.islandTyped(permanent) &&
@@ -581,7 +607,10 @@ export abstract class GameCore<S = unknown> {
       pool[colour as keyof ManaPool] += 1;
     } else if (sourceKind === 'S') pool.S += 1;
     else if (sourceKind === 'F') {
-      for (const manaType of ['C', 'B', 'U'] as const)
+      // it is fed a mana from the pool: colourless first, never the colour we are short of if another will do
+      const feedOrder =
+        short === 'B' ? (['C', 'U', 'B'] as const) : (['C', 'B', 'U'] as const);
+      for (const manaType of feedOrder)
         if (pool[manaType] > 0) {
           pool[manaType] -= 1;
           break;
@@ -634,7 +663,9 @@ export abstract class GameCore<S = unknown> {
         this.painTaps = 0;
         return true;
       }
-      const source = this.pick(short, isInstantOrSorcery);
+      const source =
+        this.pick(short, isInstantOrSorcery) ??
+        this.filterSignetFeeder(short, isInstantOrSorcery);
       if (source === null) {
         undo();
         this.painTaps = 0;
@@ -643,6 +674,20 @@ export abstract class GameCore<S = unknown> {
       this.tap(source, short);
       tapped.push(source);
     }
+  }
+
+  /** Nothing can make what we are short of, but an untapped filter Signet could (it turns {1} into {U}{B}) if a mana
+   *  were in the pool to feed it: the source to tap for that mana (as for a generic cost), or null. */
+  private filterSignetFeeder(
+    short: string,
+    isInstantOrSorcery: boolean,
+  ): Permanent | null {
+    if (!['U', 'B', 'H', 'N'].includes(short)) return null;
+    const hasUntappedFilterSignet = this.battlefield.some(
+      (permanent) =>
+        !permanent.tapped && this.manaSourceKind(permanent) === 'F',
+    );
+    return hasUntappedFilterSignet ? this.pick('N', isInstantOrSorcery) : null;
   }
 
   canPay(cost: Cost, isInstantOrSorcery = false): boolean {
@@ -1147,9 +1192,19 @@ export abstract class GameCore<S = unknown> {
     const tapped = this.battlefield.filter(
       (permanent) => permanent.land !== null && permanent.tapped,
     );
+    // the lands that make the most first (High Tide's and Bubbling Muck's bonus), then one that makes two colours
+    const manaMade = (permanent: Permanent) =>
+      1 +
+      (this.islandTyped(permanent) ? this.highTidesThisTurn : 0) +
+      (this.swampTyped(permanent) ? this.muck : 0);
+    const makesTwoColours = (permanent: Permanent) => {
+      const kind = this.manaSourceKind(permanent) ?? '';
+      return (
+        kind === 'A' || kind === 'UB' || kind === 'GU' || kind.includes('/')
+      );
+    };
     const key = (permanent: Permanent) =>
-      (!(this.highTidesThisTurn && this.islandTyped(permanent)) ? 2 : 0) +
-      (permanent.land!.mana !== 'UB' ? 1 : 0);
+      -2 * manaMade(permanent) + (makesTwoColours(permanent) ? 0 : 1);
     tapped.sort((first, second) => key(first) - key(second));
     for (const otherPermanent of tapped.slice(0, count))
       otherPermanent.tapped = false;
@@ -2400,6 +2455,13 @@ export abstract class GameCore<S = unknown> {
   killChanceFails = 0;
   /** True while a found kill line is played (kill-line.ts): a deck may then choose the way its search chose. */
   isPlayingKillLine = false;
+  /** While a kill line is played: which of the deck's tapping orders is tried (0 = the first). */
+  killLineTappingOrder = 0;
+  /** How many tapping orders a failed kill line is tried with (a deck reads killLineTappingOrder in avoidsSource
+   *  and rankAdjust). */
+  killLineTappingOrders(): number {
+    return 1;
+  }
   /** While a kill line is played: the cards it names. A discard (Frantic Search draws and discards) keeps them. */
   cardsTheKillLineNeeds = new Set<string>();
   /** Does this deck play its kill lines for real (playKillStep)? Otherwise the search's answer is the win. */
