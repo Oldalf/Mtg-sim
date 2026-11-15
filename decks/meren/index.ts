@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { MerenGame } from './game';
+import { runMerenTests } from './tests/meren.test';
 import { DiagRow } from '../../engine/run/runner';
 import {
   percentOf,
@@ -34,6 +35,8 @@ export const deck = {
   name: 'meren',
   dir: path.join(ROOT, 'decks', 'meren'),
   defaultList: 'decklist.txt',
+  tests: runMerenTests,
+  regress: { lists: ['decklist.txt'] },
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,
   // a pod: every other player must be dead (the goldfish rule was two dead or 100 damage)

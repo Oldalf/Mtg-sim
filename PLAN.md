@@ -114,11 +114,20 @@ What stays in each deck: its win check, its combo or kill search (Gale, Aesi's l
 
 What Helga, Ardyn and Teval must still write themselves: Helga's counters and mana ability, the Eldrazi cast triggers and annihilator, Craterhoof. Ardyn himself, the Demons' enter triggers, Exquisite Blood, Roaming Throne (M1). Teval's mill and Zombie triggers, Doubling Season and Parallel Lives, Rise of the Dark Realms, The Scarab God.
 
-**Recommendation for game night:** A2 moves 1 to 4 (four commits, 5 if time allows); 6 to 8 wait for Thantis. After A2 the engine would know about 18 of Helga's, 12 of Ardyn's and 15 of Teval's nonland cards; the rest are mostly creatures the deck gives a `VALUE` and, for the ones that matter, a trigger.
+**Recommendation for game night:** A2 moves 1 to 4 (four commits, 5 if time allows); 6 to 8 wait for Thantis.
+
+**Pontus picked (2026-11-15):** 2, 3 and 4, and 5 if time allows. 1 stays in the decks: a deck decides what to do, the engine tells it what it can do (the direction in `ROADMAP.md`). After A2 the engine would know about 18 of Helga's, 12 of Ardyn's and 15 of Teval's nonland cards; the rest are mostly creatures the deck gives a `VALUE` and, for the ones that matter, a trigger.
 
 ### A2. Move the shared card rules into the engine (Opus 5.5 for the shape, Sonnet 5.5 for the moves, after P)
 
-What Pontus picked from A1, one topic per commit. Each card rule moves to `engine/` (`card-facts.ts` for the data, a new topic file in `engine/game/` for the behaviour: `game-core.ts` is already 2,628 lines and must not grow). Each deck that had it uses the engine's version. Every deck stays IDENTICAL (goldfish `--regress check` and the fixed-seed pod run); a difference means the move is wrong, or the deck's version had a deck-specific twist that must stay in the deck.
+What Pontus picked from A1. Each card rule moves to `engine/` (`card-facts.ts` for the data, a new topic file in `engine/game/` for the behaviour: `game-core.ts` is already 2,628 lines and must not grow). Each deck that had it uses the engine's version. Every deck stays IDENTICAL (goldfish `--regress check` and the fixed-seed pod run); a difference means the move is wrong, or the deck's version had a deck-specific twist that must stay in the deck.
+
+**Built (2026-11-15).** Three engine files, each a card fact table in `card-facts.ts` plus the code that plays it; the choice stays with the deck through a hook:
+- `engine/game/land-search.ts`: `LAND_SEARCH` (Codie's table, moved), `resolveLandSearch` from `GameCore.resolve`, `fetchLand`; the deck picks with `chooseLandToFetch` (default: a land of the colour we have fewest lands for). Codie uses it with its own chooser. Aesi and Sam & Frodo keep their own versions for now (their fetch triggers landfall at another moment; moving them is its own IDENTICAL check).
+- `engine/game/reanimation.ts`: `REANIMATION_SPELLS` (Persist, Unearth, Victimize, Reanimate, Dread Return, Exhume, Animate Dead, Necromancy, Rise of the Dark Realms; our graveyard only), `GameCore.reanimate` and `bestCreatureInGraveyard` (moved from Meren); the deck picks with `reanimationValue`. Gale keeps its own Unearth (it picks by its kill roles and triggers Syr Konrad).
+- `engine/game/common-permanents.ts`: Solemn Simulacrum, Wood Elves, Eternal and Timeless Witness, Phyrexian Arena, run from the engine's default `onEnter` / `onDies` / `upkeep`; Meren and Edgar call them from their own hooks at the same place as before (`returnToHandValue` picks the Witness's card).
+- Every deck IDENTICAL and the pod run unchanged, except **Codie: its Cultivate fetched one land, not two** (its table said `landCount: 1`). Same seeds, 3,000 games: win by turn 12 62.7% before and after, average turn 8.99 -> 8.94. Codie's baseline needs re-recording once Pontus has seen this.
+- Item 5 (black tutors) not done.
 
 ### A3. Register a deck in one place (Sonnet 5.5)
 
@@ -129,6 +138,8 @@ Today a deck is named in five places in two files: `DECKS`, `TESTS` and `REGRESS
 - `verify.mjs` asks the simulator for the deck names (a small command such as `node dist/sim.js --list-decks --json`) instead of keeping its own arrays. `POD_DECKS` stays a fixed list in `verify.mjs`: it is the pod baseline and changes only on purpose.
 - Pod-only decks: `--test` yes, no goldfish baseline (`--regress`), not in the fixed-seed pod run unless Pontus asks.
 - Update `/add-deck` section 4 to the one place. Results IDENTICAL.
+
+**Built (2026-11-15).** `Deck.tests` and `Deck.regress` on each deck's `deck` object; `decks/index.ts` has only `DECKS`; `sim.ts` reads them from the deck and has `--list-decks` (JSON: the decks with a baseline, and all); `verify.mjs` builds first, then asks it. `/add-deck` section 4, `README.md` and `ENGINE.md` say so.
 
 ### A4. The light path for a pod-only deck (Opus 5.5)
 

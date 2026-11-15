@@ -48,11 +48,12 @@ import { runPodCommand } from './cli/pod-command';
 import { runLogsCommand } from './cli/logs-command';
 import { runAppCommand } from './app/server/app-command';
 import { addMissingCards } from './engine/cards/scryfall';
-import { DECKS, REGRESS, TESTS } from './decks/index';
+import { DECKS } from './decks/index';
 
 async function main(): Promise<void> {
   const [command, ...appArguments] = process.argv.slice(2);
   if (command === 'app') return runAppCommand(appArguments);
+  if (command === '--list-decks') return listDecks();
   const args = parseArgs(process.argv.slice(2), Object.keys(DECKS));
   if (args.deck === 'pod') return runPodCommand(args, DECKS);
   if (args.deck === 'cards') return runCardsCommand(args);
@@ -76,6 +77,19 @@ async function main(): Promise<void> {
   await runDeckCommand(args, deck, listFiles);
 }
 
+/** For scripts/verify.mjs: the decks with a regress baseline, and every deck (each has --test). */
+function listDecks(): void {
+  const decks = Object.values(DECKS);
+  console.log(
+    JSON.stringify({
+      withBaseline: decks
+        .filter((deck) => deck.regress)
+        .map((deck) => deck.name),
+      all: decks.map((deck) => deck.name),
+    }),
+  );
+}
+
 /** The commands that are not a simulation report: tests, regress, the log analyzer.
  *  Returns true if one of them was asked for (and has run). */
 async function runSpecialCommand(
@@ -92,8 +106,7 @@ async function runSpecialCommand(
     const areTokensRight = runTokenTests();
     const areKillLinesPlayable = runKillMissTests(deck);
     // a deck without tests of its own (the goldfish) only gets the log checks above
-    const deckTests = TESTS[deck.name];
-    const deckTestsPassed = deckTests ? deckTests() : true;
+    const deckTestsPassed = deck.tests ? deck.tests() : true;
     const logTestsPassed =
       isLogHarmless &&
       areMovesRecorded &&
@@ -106,9 +119,11 @@ async function runSpecialCommand(
     );
   }
   if (args.regress) {
+    if (!deck.regress)
+      throw new Error(`${deck.name} has no regress baseline (a pod-only deck)`);
     const identical = await regress(
       deck,
-      REGRESS[deck.name],
+      { ...deck.regress, tests: deck.tests ?? (() => true) },
       args.regress,
       args.workers,
     );

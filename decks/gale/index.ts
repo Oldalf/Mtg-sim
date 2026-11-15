@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { GaleGame } from './game';
+import { runKillTests } from './tests/kills.test';
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);
@@ -15,6 +16,12 @@ export const deck = {
   name: 'gale',
   dir: path.join(ROOT, 'decks', 'gale'),
   defaultList: 'decklist.txt',
+  tests: runKillTests,
+  regress: {
+    lists: ['decklist.txt', 'lists/proposed.txt'],
+    // this log was played with the proposed list
+    logLists: { 'game6_t9_duskmantle_singularity.txt': 'lists/proposed.txt' },
+  },
   // counters and real removal do nothing against goldfish opponents (also when listed outside "Counters")
   rankProtect: {
     sections: ['counters'],

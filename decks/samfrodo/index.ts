@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { SamFrodoGame } from './game';
+import { runSamFrodoTests } from './tests/samfrodo.test';
 import { DiagRow } from '../../engine/run/runner';
 import {
   percentOf,
@@ -26,6 +27,8 @@ export const deck = {
   name: 'samfrodo',
   dir: path.join(ROOT, 'decks', 'samfrodo'),
   defaultList: 'decklist.txt',
+  tests: runSamFrodoTests,
+  regress: { lists: ['decklist.txt'] },
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,
   podCfg: (players: number) => ({ win_dead: players - 1 }),

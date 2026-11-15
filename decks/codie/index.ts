@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ROOT } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { CodieGame } from './game';
+import { runCodieTests } from './tests/codie.test';
 import { DiagRow } from '../../engine/run/runner';
 import { percentOf, winByTurnMetrics } from '../../engine/tools/diag-metrics';
 
@@ -13,6 +14,8 @@ export const deck = {
   name: 'codie',
   dir: path.join(ROOT, 'decks', 'codie'),
   defaultList: 'decklist.txt',
+  tests: runCodieTests,
+  regress: { lists: ['decklist.txt'] },
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,
   Game: CodieGame,

@@ -28,16 +28,7 @@ const PROJECT_FOLDER = path.resolve(
 );
 const BUNDLE = path.join('dist', 'sim.js');
 const POD_BASELINE_FILE = path.join('regress_baseline', 'pod.txt');
-const DECKS_WITH_BASELINE = [
-  'gale',
-  'meren',
-  'samfrodo',
-  'aesi',
-  'mike',
-  'codie',
-  'edgar',
-];
-const DECKS_WITH_TESTS = [...DECKS_WITH_BASELINE, 'goldfish'];
+/** The decks in the fixed-seed pod run (its report is regress_baseline/pod.txt: change it only on purpose). */
 const POD_DECKS = ['gale', 'meren', 'samfrodo', 'aesi', 'edgar'];
 const POD_ARGUMENTS = ['pod', ...POD_DECKS, '-n', '200', '--no-log'];
 /** Files and folders outside the deck folders that can change the results of every deck. */
@@ -186,6 +177,26 @@ function checkPage() {
   report('page: ng test', pageTests.exitCode === 0, pageTests);
 }
 
+/** The deck names from the simulator itself (decks/index.ts): those with a regress baseline, and all of them. */
+function listDecks() {
+  const listing = runSimulator(['--list-decks']);
+  if (listing.exitCode !== 0) {
+    report('list the decks (node dist/sim.js --list-decks)', false, listing);
+    process.exit(1);
+  }
+  return JSON.parse(listing.output.trim().split(/\r?\n/).pop());
+}
+
+// the build comes first: the deck names come from it
+const build = run('npm', ['run', '-s', 'build']);
+report('build', build.exitCode === 0, build);
+if (build.exitCode !== 0) {
+  console.log('\nVERIFY BAD (the build failed)');
+  process.exit(1);
+}
+const { withBaseline: DECKS_WITH_BASELINE, all: DECKS_WITH_TESTS } =
+  listDecks();
+
 const changedFiles = filesChangedSinceMain();
 const { decksToRegress, needsPodRun } = chooseSlowChecks(changedFiles);
 const runsPageChecks = needsPageChecks(changedFiles);
@@ -213,43 +224,38 @@ report(
   formatCheck,
 );
 
-const build = run('npm', ['run', '-s', 'build']);
-report('build', build.exitCode === 0, build);
-
-if (build.exitCode === 0) {
-  for (const deck of decksToRegress) {
-    const regress = runSimulator([
-      deck,
-      '--regress',
-      'check',
-      ...powerSaveOptions,
-    ]);
-    const isIdentical =
-      regress.output.includes('IDENTICAL') &&
-      !regress.output.includes('DIFFERENT');
-    report(`${deck}: --regress check is IDENTICAL`, isIdentical, regress);
-  }
-  for (const deck of DECKS_WITH_TESTS) {
-    const tests = runSimulator([deck, '--test']);
-    const hasBadLine = /^BAD/m.test(tests.output);
-    report(`${deck}: --test`, tests.exitCode === 0 && !hasBadLine, tests);
-  }
-  const podTests = runSimulator(['pod', '--test']);
-  report(
-    'pod: --test',
-    podTests.exitCode === 0 && !/^BAD/m.test(podTests.output),
-    podTests,
-  );
-
-  const appTests = runSimulator(['app', '--test']);
-  report(
-    'app: --test',
-    appTests.exitCode === 0 && !/^BAD/m.test(appTests.output),
-    appTests,
-  );
-
-  if (needsPodRun) checkPodRun();
+for (const deck of decksToRegress) {
+  const regress = runSimulator([
+    deck,
+    '--regress',
+    'check',
+    ...powerSaveOptions,
+  ]);
+  const isIdentical =
+    regress.output.includes('IDENTICAL') &&
+    !regress.output.includes('DIFFERENT');
+  report(`${deck}: --regress check is IDENTICAL`, isIdentical, regress);
 }
+for (const deck of DECKS_WITH_TESTS) {
+  const tests = runSimulator([deck, '--test']);
+  const hasBadLine = /^BAD/m.test(tests.output);
+  report(`${deck}: --test`, tests.exitCode === 0 && !hasBadLine, tests);
+}
+const podTests = runSimulator(['pod', '--test']);
+report(
+  'pod: --test',
+  podTests.exitCode === 0 && !/^BAD/m.test(podTests.output),
+  podTests,
+);
+
+const appTests = runSimulator(['app', '--test']);
+report(
+  'app: --test',
+  appTests.exitCode === 0 && !/^BAD/m.test(appTests.output),
+  appTests,
+);
+
+if (needsPodRun) checkPodRun();
 
 if (runsPageChecks) checkPage();
 

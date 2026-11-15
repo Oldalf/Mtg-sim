@@ -10,6 +10,7 @@ import { Config } from '../game/game-types';
 import { Game } from '../game/game';
 import { goldfishGameLog } from '../game-log/game-log';
 import type { KillTurns } from '../../shared/run-types';
+import type { RegressSpec } from '../tools/regress';
 import {
   GameIndexRow,
   gamesFileName,
@@ -56,6 +57,10 @@ export interface Deck {
   /** The deck handles drawing from its own empty library itself (Mike: Laboratory Maniac / Living Conundrum). */
   ownsDecking?: boolean;
   config: Config;
+  /** The deck's own tests (`--test`): true when all pass. */
+  tests?: () => boolean;
+  /** What `--regress` records (lists relative to the deck folder). A pod-only deck has none. */
+  regress?: Omit<RegressSpec, 'tests'>;
   /** What the deck's own settings mean, for the app (shared settings: engine/run/setting-descriptions.ts). */
   settingDescriptions?: Record<string, string>;
   Game: new (

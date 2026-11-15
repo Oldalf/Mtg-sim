@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ROOT } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { MikeGame } from './game';
+import { runMikeTests } from './tests/mike.test';
 import { LOG_TRACKERS } from './cards';
 import { DiagRow } from '../../engine/run/runner';
 import {
@@ -19,6 +20,8 @@ export const deck = {
   name: 'mike',
   dir: path.join(ROOT, 'decks', 'mike'),
   defaultList: 'decklist.txt',
+  tests: runMikeTests,
+  regress: { lists: ['decklist.txt'] },
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,
   ownsDecking: true,

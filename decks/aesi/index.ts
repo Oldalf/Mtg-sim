@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { AesiGame } from './game';
+import { runAesiTests } from './tests/aesi.test';
 import { DiagRow } from '../../engine/run/runner';
 import {
   percentOf,
@@ -26,6 +27,8 @@ export const deck = {
   name: 'aesi',
   dir: path.join(ROOT, 'decks', 'aesi'),
   defaultList: 'decklist.txt',
+  tests: runAesiTests,
+  regress: { lists: ['decklist.txt'] },
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,
   Game: AesiGame,

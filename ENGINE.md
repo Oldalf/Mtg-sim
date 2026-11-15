@@ -4,7 +4,7 @@ The shared engine and how the project is run. Each deck keeps its own plan (`dec
 
 ## Rules for changing the engine
 
-- **Safety net:** after any change run `npm run verify` (it runs everything below for every deck and must end with VERIFY OK; `-- --eco` for power-save mode). What it runs: `npm run sim -- <deck> --regress check` for every deck with a baseline (`DECKS_WITH_BASELINE` in `scripts/verify.mjs`). It replays 600 seeds, the log analyses and the tests and must print IDENTICAL. If a change is meant to alter a deck, check that only that deck differs, then `--regress record` for it. A new test also shows up as DIFFERENT: check that only the tests differ, then re-record.
+- **Safety net:** after any change run `npm run verify` (it runs everything below for every deck and must end with VERIFY OK; `-- --eco` for power-save mode). What it runs: `npm run sim -- <deck> --regress check` for every deck with a baseline (a deck with `regress` on its `deck` object; `verify` gets the names from `node dist/sim.js --list-decks`). It replays 600 seeds, the log analyses and the tests and must print IDENTICAL. If a change is meant to alter a deck, check that only that deck differs, then `--regress record` for it. A new test also shows up as DIFFERENT: check that only the tests differ, then re-record.
 - **Speed-ups** must be IDENTICAL. Behaviour changes must stay within noise on 2,000+ games, or be the intended change.
 - **Noise:** about ±2.6 points at 3,000 games for a percentage. A different list order deals different hands, so lists are not paired: the same cards in another order differed by 2.4 points at 4,000 games and under 1 at 16,000. Use 16,000 games for decisions.
 - **Pitfalls found the hard way:**

@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { EdgarGame } from './game';
+import { runEdgarTests } from './tests/edgar.test';
 import { DiagRow } from '../../engine/run/runner';
 import {
   percentOf,
@@ -68,6 +69,8 @@ export const deck = {
   name: 'edgar',
   dir: path.join(ROOT, 'decks', 'edgar'),
   defaultList: 'decklist.txt',
+  tests: runEdgarTests,
+  regress: { lists: ['decklist.txt'] },
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,
   // a pod: every other player must be dead
