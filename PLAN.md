@@ -220,6 +220,18 @@ One task per list, following `/add-deck`'s light path (A4).
 
 `npm run pod -- meren edgar helga ardyn teval -n 1000` (ask Pontus eco or full power). Write a short report for Pontus, in this plan and as plain text he can read on his phone: each deck's win rate, average win turn, how it wins, who goes out first, and next to each friend's deck what is not modelled. Point out anything that looks too strong or too weak for the table, and which deck the others should watch. Teval's numbers come from an AI that plays it well; its owner does not, so say so.
 
+**Run (2026-11-15, 1,000 games, eco, `session-logs/01-pod-meren-edgar-helga-ardyn-teval`).** An even pod is 20%, noise about ±3 points.
+
+| Deck | Wins | Avg round | Out first | Not modelled that matters |
+|---|---|---|---|---|
+| Teval | 31.4% | 9.17 | 9.6% | the owner's misplays (the AI plays it well), Muldrotha's lands, Underrealm Lich |
+| Meren | 23.5% | 9.36 | 24.8% | |
+| Ardyn | 22.7% | 9.31 | 17.5% | menace, Cabal Coffers / Nykthos mana, his removal creatures |
+| Helga | 12.0% | 9.77 | 16.5% | annihilator, the Eldrazi's and Terastodon's removal |
+| Edgar | 10.3% | 9.02 | 31.6% | |
+
+Games end in round 9.3 on average. Teval is the deck to watch: its Zombie board grows with every card leaving its graveyard, and it is the least often out first. Edgar goes out first most (a small, early board that the others attack). Helga is likely underrated: annihilator is not modelled yet. Seat 5 hurts Meren (13.3% against about 27% elsewhere).
+
 ---
 
 ## Z. Step 7's loose ends
