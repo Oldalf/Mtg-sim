@@ -55,6 +55,12 @@ The plan and its notes per task are in git (`PLAN.md` at commit `330b641`).
 
 The plan is in `PLAN.md`: a wrong Gale win (a filter Signet counted as free mana by the kill search), then mana tapped in order into a floating pool that empties between the steps of a turn, then Meren's Snake, cards that grow on hover in the viewer, and a stats page per run in the Games tab.
 
+## 8. Gale's kill search taps lands and counts mana for real (planned, after step 7)
+
+Pontus, 2026-11-15: do this after step 7's other tasks. Step 7's B3 plays every kill line for real, and 9 of 300 Gale seeds still have a kill miss (`KILL_MISS_SEEDS_SHOWN=100 npm run sim -- gale --test` lists them; until then Gale's `--test`, and so `npm run verify`, fails on them). The cause: `KillSearchState` keeps all its mana in one pool, lands and rocks and rituals together, as if every land were already tapped. So it can't tell which lands are still untapped when a High Tide or Bubbling Muck resolves or an untap spell comes (seed 199: Gale recasts Dark Ritual before the Muck resolves, so a Swamp is tapped for it and loses the bonus).
+
+The idea: the search keeps its untapped lands as counts by kind (Islands, Swamps, Island-Swamps, others, filter lands) and its rocks apart, and taps them as a payment needs them, the way the real game's `pay` does, with floating mana as the pool. High Tide and Muck then count the lands really untapped, untaps put back real lands, and `payBonusSpell` and the `...FromOutsideLands` counters go away. Opus 5.5, with a design first (`PLAN.md` B3b part 2 has the details), the speed measured (Gale's search is most of its 25 s; it must stay fast) and Pontus's yes. Done when Gale's `--test` has no kill miss.
+
 ## Ideas not decided (Pontus picks)
 
 Left from the planning of step 5. Each names the model it would need.

@@ -34,7 +34,7 @@ Rules for every task:
 | 4a | B2 | Steps and the pool: the pool empties at each step | Sonnet 5.5 |
 | 4b | B3 | Kill lines played for real (engine + Gale), kill misses counted | Opus 5.5 |
 | 4c | B4 | Kill lines played for real for Codie and Aesi | Sonnet 5.5 |
-| 4c' | B3b | Gale's kill search without misses (after B3) | Opus 5.5 |
+| 4c' | B3b | Gale's kill search without misses (after B3): paused at 9 misses, the rest is `ROADMAP.md` step 8 | Opus 5.5 |
 | 4d | B5 | `pay`: a better tapping order when the first try fails | Opus 5.5 |
 | 4e | B6 | The log's "paid with" text and the viewer's pool chip | Sonnet 5.5 |
 | 5 | C1 | Meren's Snake: deathtouch or not | Sonnet 5.5, after P |
@@ -291,6 +291,8 @@ Pontus, 2026-11-15: fix Gale's problems so its played kill lines don't miss. Sta
 **Part 1 (2026-11-15), committed with 9 of 300 seeds still missing, on Pontus's word.** Misses 53 -> 9 seeds. Search: `payBonusSpell` gives High Tide's / Muck's bonus only to the Islands / Swamps the mana left can still stand for; `untapLands` gives a Swamp black, not any colour. Engine `pay`: a filter source (Dimir Signet, Darkwater Catacombs) is fed by another source when nothing else pays (`filterSignetFeeder`), and never eats the colour it should add; `untapLands` untaps what makes the most first (High Tide and Muck bonuses), then a two-colour land; `avoidsSource` hook. Gale: Islands / Swamps kept back while a High Tide / Muck is still to come, An Offer You Can't Refuse makes real Treasures (`TREASURE`, any colour). Kill lines: a failed line is tried again with the deck's tapping orders (`killLineTappingOrders`, Gale 4) and 12 shuffled ones (`killLineRankShuffle`); a miss's log line shows the pool and the untapped sources, and the steps it got through ("(tried)"). Results, 3,000 games: Gale win by T8 56.1% (B3: 47.4%, before B3: 57.6%), with backup 36.7% (31.8%, 37.3%); Codie 5 of 600 seeds differ (better untaps), within noise; other decks IDENTICAL. Speed: Gale 30.0 s (before B3 26.2 s: +14%, Pontus told). Left: seeds 125, 144, 186, 199, 232, 244, 254, 263, 272 (e.g. 244: the line needs the Catacombs fed by a Swamp so Arcane Signet can pay High Tide), and the speed.
 
 **Part 2 (2026-11-15).** `pick` calls the kill-line hooks only while a line is played (IDENTICAL; Gale 27.7 s, 25.0 s before B3 on the same machine and run: +10%, the rest is the stricter search finding fewer false kills and searching to the end of its budget). Tried and reverted: spending mana from outside our lands first in `spendMana` (counters down) made 11 seeds miss instead of 9. **What the last 9 need:** the search's pool mixes land mana with rock and ritual mana, so it can't tell which lands are still untapped when a High Tide / Muck resolves or an untap comes (seed 199: Gale recasts Dark Ritual before the Muck resolves, so a Swamp is tapped for it). The fix is a search that keeps its lands apart from floating mana (untapped Islands, Swamps, duals and others as counts, floating mana as the pool), a bigger change to `KillSearchState` with a speed cost to measure.
+
+**Paused (Pontus, 2026-11-15):** move on with step 7; the land counting goes to `ROADMAP.md` step 8. Until then `gale --test` fails on the 9 seeds, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line.
 
 ### B4. Codie and Aesi (Sonnet 5.5)
 
