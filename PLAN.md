@@ -39,7 +39,7 @@ Rules for every task:
 - A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change.
 - When a task is done, add one line under it here: what was built and anything the next task must know.
 
-**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss (step 7, B3b). Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line.
+**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss (step 7, B3b). Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line. Two more BAD lines are known and accepted: `codie --regress check` (the Cultivate fix, baseline kept on purpose, see A2) and the app test (`aesi/SUGGESTED_SWAPS.txt`, task Z1).
 
 ## Order
 
@@ -47,15 +47,15 @@ Rules for every task:
 |---|---|---|---|
 | | | **Before game night** | |
 | 1 | P0 | The lists, the commanders and the pod (done) | Pontus |
-| 2 | A1 | What decks write for themselves that the engine should own | Opus 5.5 |
-| 3 | A2 | Move the shared card rules into the engine | Opus 5.5 / Sonnet 5.5 |
-| 4 | A3 | Register a deck in one place | Sonnet 5.5 |
-| 5 | A4 | A pod-only deck: the light path in `/add-deck` | Opus 5.5 |
-| 6 | M1 | Doubled enter triggers (Roaming Throne) | Opus 5.5 |
-| 7 | B1 | Helga | Sonnet 5.5 |
-| 8 | B2 | Ardyn | Sonnet 5.5 |
-| 9 | B3 | Teval | Sonnet 5.5 |
-| 10 | C1 | The game-night pod, a report | Sonnet 5.5 |
+| 2 | A1 | What decks write for themselves that the engine should own (done) | Opus 5.5 |
+| 3 | A2 | Move the shared card rules into the engine (done) | Opus 5.5 / Sonnet 5.5 |
+| 4 | A3 | Register a deck in one place (done) | Sonnet 5.5 |
+| 5 | A4 | A pod-only deck: the light path in `/add-deck` (done) | Opus 5.5 |
+| 6 | M1 | Doubled enter triggers (Roaming Throne) (done) | Opus 5.5 |
+| 7 | B1 | Helga (done) | Sonnet 5.5 |
+| 8 | B2 | Ardyn (done) | Sonnet 5.5 |
+| 9 | B3 | Teval (done) | Sonnet 5.5 |
+| 10 | C1 | The game-night pod, a report (done) | Sonnet 5.5 |
 | | | **After game night** | |
 | 11 | M2 | Forced attacks and goad in pod combat | Opus 5.5 |
 | 12 | M3 | Triggers on another player's spell | Sonnet 5.5 |
@@ -126,8 +126,8 @@ What Pontus picked from A1. Each card rule moves to `engine/` (`card-facts.ts` f
 - `engine/game/land-search.ts`: `LAND_SEARCH` (Codie's table, moved), `resolveLandSearch` from `GameCore.resolve`, `fetchLand`; the deck picks with `chooseLandToFetch` (default: a land of the colour we have fewest lands for). Codie uses it with its own chooser. Aesi and Sam & Frodo keep their own versions for now (their fetch triggers landfall at another moment; moving them is its own IDENTICAL check).
 - `engine/game/reanimation.ts`: `REANIMATION_SPELLS` (Persist, Unearth, Victimize, Reanimate, Dread Return, Exhume, Animate Dead, Necromancy, Rise of the Dark Realms; our graveyard only), `GameCore.reanimate` and `bestCreatureInGraveyard` (moved from Meren); the deck picks with `reanimationValue`. Gale keeps its own Unearth (it picks by its kill roles and triggers Syr Konrad).
 - `engine/game/common-permanents.ts`: Solemn Simulacrum, Wood Elves, Eternal and Timeless Witness, Phyrexian Arena, run from the engine's default `onEnter` / `onDies` / `upkeep`; Meren and Edgar call them from their own hooks at the same place as before (`returnToHandValue` picks the Witness's card).
-- Every deck IDENTICAL and the pod run unchanged, except **Codie: its Cultivate fetched one land, not two** (its table said `landCount: 1`). Same seeds, 3,000 games: win by turn 12 62.7% before and after, average turn 8.99 -> 8.94. Codie's baseline needs re-recording once Pontus has seen this.
-- Item 5 (black tutors) not done.
+- Every deck IDENTICAL and the pod run unchanged, except **Codie: its Cultivate fetched one land, not two** (its table said `landCount: 1`). Same seeds, 3,000 games: win by turn 12 62.7% before and after, average turn 8.99 -> 8.94. Pontus (2026-11-15): keep Codie's old baseline for now (Codie isn't in this pod), so `codie --regress check` stays DIFFERENT until it is re-recorded.
+- Left for after game night: item 5 (black tutors: Codie and Teval each resolve Demonic and Vampiric Tutor themselves now, so a third deck moves them to the engine); Aesi's and Sam & Frodo's land search onto the engine's; the old creature decks (Edgar, Meren, Sam & Frodo) onto `CreatureDeckGame`. Each must be IDENTICAL.
 
 ### A3. Register a deck in one place (Sonnet 5.5)
 
@@ -239,7 +239,7 @@ Games end in round 9.3 on average. Teval is the deck to watch: its Zombie board 
 ### Z1. Check and fix (Sonnet 5.5)
 
 - D1's card pop-up was checked only at desktop width: check it at 390 px and with touch (tap opens, a second tap or a tap elsewhere closes).
-- C1's note says `npm run verify -- --full` also failed an app test (it failed before C1 too). Find which and fix it, or write here why it fails.
+- The app test fails on "no primer or swap notes among the lists": `aesi/SUGGESTED_SWAPS.txt` (added with Aesi's list) is read as a decklist. Fix the test or the file's place.
 
 ---
 
