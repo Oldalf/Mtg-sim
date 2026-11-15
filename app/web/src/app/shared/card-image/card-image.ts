@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { ApiService } from '../../core/api';
+import { CardZoom } from '../card-zoom/card-zoom';
 import { colourOfCard } from './card-colour';
 
 /**
@@ -42,6 +43,7 @@ import { colourOfCard } from './card-colour';
     }
   `,
   styleUrl: './card-image.scss',
+  hostDirectives: [CardZoom],
   host: { '[class.is-tapped]': 'isTapped()' },
 })
 export class CardImage {

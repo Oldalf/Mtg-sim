@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { ApiService } from '../../core/api';
+import { CardZoom } from '../card-zoom/card-zoom';
 import type { TokenFace } from '../../../../../../shared/game-log-types';
 
 /**
@@ -46,6 +47,7 @@ import type { TokenFace } from '../../../../../../shared/game-log-types';
     </div>
   `,
   styleUrl: './token-card.scss',
+  hostDirectives: [CardZoom],
   host: { '[class.is-tapped]': 'isTapped()' },
 })
 export class TokenCard {

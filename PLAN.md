@@ -42,8 +42,8 @@ Rules for every task:
 | # | Task | What | Model |
 |---|---|---|---|
 | 1 | B6 | The log's "paid with" text and the viewer's pool chip | Sonnet 5.5 |
-| 2 | C1 | Meren's Snake: deathtouch or not | Sonnet 5.5, after P |
-| 3 | D1 | The viewer: a card grows on hover | Sonnet 5.5 |
+| 2 | D1 | The viewer: a card grows on hover | Sonnet 5.5 |
+| 3 | C1 | Meren's Snake: deathtouch or not | Sonnet 5.5, after P |
 | 4 | E1 | The Games tab: a run's stats page | Opus 5.5 (design), Sonnet 5.5 (build) |
 
 C, D and E stand alone.
@@ -75,6 +75,8 @@ Meren's Snake token (`decks/meren/cards.ts`: `makeToken('Snake', 1, 1, 'black')`
 ### D1. A card grows on hover (Sonnet 5.5)
 
 Cards on the table are small. On hover (and on focus, for the keyboard) a card shows larger, as a pop-up next to the pointer, at the size of a real card image (about 250 px wide), for permanents, lands, the caption's cards and the zone popovers. A token card (`app-token-card`) grows too. It must not cover the card itself or make the page scroll; on a phone a tap opens it and a second tap or a tap elsewhere closes it. Mind `player-seat.scss`'s 4 kB budget: the pop-up belongs in its own component (or in `app-card-image` / `app-token-card`). Check in the browser at desktop and phone width; `ng test` and `npm run verify` pass.
+
+**Built (2026-11-15).** `CardZoom` (`app/web/src/app/shared/card-zoom/`) is a host directive on `app-card-image` and `app-token-card`: on mouse hover (120 ms delay), keyboard focus (`:focus-visible`) or a tap it shows a copy of the card, 262 px wide, as a manual popover in the top layer (no parent clips it, `pointer-events: none`). `placeZoomedCard` puts it right of the card, else left, else above/below (phone), inside the window. A touch tap toggles it; a tap elsewhere or Escape closes it. Checked in the browser at desktop width; phone width and touch not yet checked.
 
 ---
 
