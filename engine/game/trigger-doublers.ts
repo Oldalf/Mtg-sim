@@ -1,6 +1,7 @@
 /**
  * Effects that make triggered abilities trigger an additional time (rules 603.2d-e).
  * Panharmonicon: an artifact or creature entering makes our enter triggers trigger again.
+ * Starfield Vocalist: any permanent entering does.
  * Roaming Throne: each triggered ability of another creature of the chosen type triggers again
  * (the deck says which type: GameCore.roamingThroneType).
  * The engine counts; the deck runs its trigger that many times.
@@ -31,5 +32,9 @@ export function enterTriggerCount(
     ? game.battlefield.filter((other) => other.card.name === 'Panharmonicon')
         .length
     : 0;
-  return triggerCount(game, permanent) + panharmonicons;
+  // Starfield Vocalist: any permanent entering
+  const vocalists = game.battlefield.filter(
+    (other) => other.card.name === 'Starfield Vocalist',
+  ).length;
+  return triggerCount(game, permanent) + panharmonicons + vocalists;
 }

@@ -59,7 +59,7 @@ Rules for every task:
 | | | **After game night** | |
 | 11 | M2 | Forced attacks and goad in pod combat (done) | Opus 5.5 |
 | 12 | M3 | Triggers on another player's spell (done) | Sonnet 5.5 |
-| 13 | M4 | Blink | Opus 5.5 |
+| 13 | M4 | Blink (done) | Opus 5.5 |
 | 14 | M5 | Dungeons, venture and the initiative | Opus 5.5 |
 | 15 | B4 | Thantis | Sonnet 5.5 |
 | 16 | B5 | DnD | Opus 5.5 |
@@ -188,6 +188,8 @@ Taurean Mauler ("whenever an opponent casts a spell, you may put a +1/+1 counter
 ### M4. Blink (Opus 5.5)
 
 For DnD (Ephemerate, Ghostly Flicker, Brago, Thassa, Displacer Beast...). A blinked permanent leaves and comes back as a new object: leave and enter triggers fire again, counters and attached auras are lost, a token blinked away is gone, and the log shows both moves.
+
+**Built (2026-11-15).** `engine/game/blink.ts`: `blink(game, permanent, options)` takes it off the battlefield, into exile, and back through `enter` as a new `Permanent` (counters, marks, the tap and goad gone, summoning sick; the deck's `onEnter` runs again), or for a token, gone. A card blinked "until the next end step" waits in `GameCore.cardsReturningAtEndStep` and comes back at the start of our `endTurn` (tapped if the spell says so). A permanent another player owns is not blinked. New hooks: `GameCore.onLeave(permanent)` (a permanent of ours left the battlefield: called by `dies`, `blink` and the pod's removal), `GameCore.blinkValue(permanent)` (how much the deck wants it blinked; default: a nontoken creature's mana value, a token never). Card facts: `BLINK_SPELLS` (Ephemerate, Daydream, Ghostly Flicker, Morningtide's Light, Lae'zel's Acrobatics with its d20), resolved by `resolve`. Rebound is an engine rule (`castInstantOrSorcery` exiles the card, `castReboundCards` casts it free at our next upkeep). Starfield Vocalist doubles enter triggers (`enterTriggerCount`). Tests: `engine/game/blink.test.ts` (in `npm run pod -- --test`). Every deck IDENTICAL. Left for B5 (DnD's own card rules on these pieces): the blink permanents (Thassa's end step, Brago's combat damage, Oji's second spell, Airbender Ascension, Niko's Shards), the leave triggers (Momo, Genku), All Aboard (Skycoach Conductor's prepared spell), a blink in an opponent's turn returning at that player's end step (now: ours).
 
 ### M5. Dungeons, venture and the initiative (Opus 5.5)
 

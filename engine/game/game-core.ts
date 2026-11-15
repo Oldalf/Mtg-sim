@@ -55,6 +55,7 @@ import {
   emptyPool,
 } from './game-types';
 import { playKillLineOnCopy } from './kill-line';
+import { BlinkedCard, resolveBlinkSpell, returnBlinkedCards } from './blink';
 import { PaymentRecord, UNTAP, isSourceOfClass } from './search-mana';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import {
@@ -174,6 +175,10 @@ export abstract class GameCore<S = unknown> {
   hand: CardDef[] = [];
   graveyard: CardDef[] = [];
   exile: CardDef[] = [];
+  /** Cards blinked "until the next end step", waiting in exile (blink.ts). */
+  cardsReturningAtEndStep: BlinkedCard[] = [];
+  /** Cards exiled by rebound, cast again at our next upkeep. */
+  reboundCards: CardDef[] = [];
   battlefield: Permanent[] = [];
   /** Cards another player owns that left our battlefield and are on their way to a zone (see putCard). */
   cardsGoingToTheirOwner: { card: CardDef; owner: GameCore<unknown> }[] = [];
@@ -1150,6 +1155,7 @@ export abstract class GameCore<S = unknown> {
     if (this.resolveManaOrTutor(card, mode)) return;
     if (resolveLandSearch(this, card)) return;
     if (resolveReanimationSpell(this, card)) return;
+    if (resolveBlinkSpell(this, card)) return;
     this.resolveOther(card, fromGraveyard, mode);
   }
 
@@ -1479,6 +1485,7 @@ export abstract class GameCore<S = unknown> {
     this.takeFromBattlefield(permanent);
     if (!permanent.token) this.toGraveyard(permanent.card);
     this.onDies(permanent);
+    this.onLeave(permanent);
   }
 
   sacrifice(permanent: Permanent): void {
@@ -1600,8 +1607,29 @@ export abstract class GameCore<S = unknown> {
       return true;
     }
     this.resolve(card, fromGraveyard, mode);
-    this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
+    if (!fromGraveyard && card.keywords.has('rebound')) {
+      // rebound: exiled as it resolves, cast again for free at our next upkeep
+      this.putCard(card, 'exile');
+      this.reboundCards = [...this.reboundCards, card];
+    } else this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
     return true;
+  }
+
+  /** Rebound: at our upkeep, the cards exiled with rebound are cast again for free, then go to the graveyard. */
+  castReboundCards(): void {
+    const rebounding = this.reboundCards;
+    if (!rebounding.length) return;
+    this.reboundCards = [];
+    for (const card of rebounding) {
+      if (!this.exile.includes(card)) continue;
+      this.takeCard(card, 'exile');
+      this.sayEvent('cast', 'cast', card, '(rebound, free)');
+      this.spellsCast += 1;
+      this.onCastInstantOrSorcery(false);
+      this.podAnnounceCast(card);
+      this.resolve(card);
+      this.putCard(card, 'graveyard');
+    }
   }
 
   onCastInstantOrSorcery(fromGraveyard: boolean): void {
@@ -2151,6 +2179,7 @@ export abstract class GameCore<S = unknown> {
     this.opponentUpkeep();
     this.enterStep('upkeep');
     this.upkeep();
+    this.castReboundCards();
     this.enterStep('draw');
     this.draw(1);
     this.enterStep('main1');
@@ -2324,6 +2353,7 @@ export abstract class GameCore<S = unknown> {
   onEnterStep(_step: TurnStep): void {}
 
   endTurn(): void {
+    returnBlinkedCards(this);
     this.endStep();
     if (this.isCast >= 4 && this.isOnBattlefield('Case of the Ransacked Lab'))
       this.caseSolved = true;
@@ -2347,6 +2377,7 @@ export abstract class GameCore<S = unknown> {
     if (this.turn > 1 && !this.inArena()) this.opponentUpkeep();
     this.enterStep('upkeep');
     this.upkeep();
+    this.castReboundCards();
     this.enterStep('draw');
     if (!(this.turn === 1 && this.onPlay)) this.draw(1);
     this.logCardMovesSoFar();
@@ -2484,6 +2515,15 @@ export abstract class GameCore<S = unknown> {
   /** Something entered the battlefield (ETB triggers, "whenever a creature enters"). */
   onEnter(permanent: Permanent, _from: Zone): void {
     enterTriggerOfCommonCard(this, permanent);
+  }
+  /** A permanent of ours left the battlefield: it died, was blinked, or an opponent removed it ("leaves the
+   *  battlefield" triggers). It's already off the battlefield. */
+  onLeave(_permanent: Permanent): void {}
+  /** How much we want this permanent blinked (its enter trigger again). Only one above 0 is chosen by a blink
+   *  spell that picks; a token is never worth it (it would be gone). Decks override it for their own cards. */
+  blinkValue(permanent: Permanent): number {
+    if (permanent.token) return -1;
+    return permanent.card.isCreature ? permanent.card.manaValue : 0;
   }
   /** A creature died (death triggers). It's already off the battlefield (and in the graveyard if a card). */
   onDies(permanent: Permanent): void {

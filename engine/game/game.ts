@@ -694,16 +694,19 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     if (this.isCommander(permanent)) {
       this.takeFromBattlefield(permanent);
       this.putCard(permanent.card, 'command');
+      this.onLeave(permanent);
     } else if (how === 'destroy' || how === 'sacrifice') {
       if (permanent.card.isCreature) this.dies(permanent);
       else {
         this.takeFromBattlefield(permanent);
         if (!permanent.token) this.putCard(permanent.card, 'graveyard');
+        this.onLeave(permanent);
       }
     } else {
       this.takeFromBattlefield(permanent);
       if (!permanent.token)
         this.putCard(permanent.card, how === 'bounce' ? 'hand' : 'exile');
+      this.onLeave(permanent);
     }
   }
   /** Tap n of our untapped mana sources (mana spent on something that was answered). */
