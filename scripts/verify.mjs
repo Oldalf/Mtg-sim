@@ -4,6 +4,7 @@
  *   npm run verify                 the checks the change needs, at full power
  *   npm run verify -- --eco        the simulations in power-save mode (slower, same results)
  *   npm run verify -- --full       every check, whatever changed
+ *   npm run verify -- --jobs N     how many checks run at once (default 4, 2 with --eco)
  *   npm run verify -- --record-pod save the pod report as the new baseline (after a change that is meant to alter it)
  *
  * The checks: the type-check, the formatting, and for every deck `--regress check` (must print IDENTICAL) and
@@ -17,7 +18,8 @@
  * and tests (`ng build`, `ng test` in app/web/) run when the page, app/api-types.ts or shared/ changed. Each check
  * prints how long it took.
  */
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import * as os from 'node:os';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,6 +50,19 @@ const powerSaveOptions = options.includes('--eco') ? ['--eco'] : [];
 const isRecordingPod = options.includes('--record-pod');
 const isFullRun = options.includes('--full');
 const verifyStartTime = Date.now();
+/** How many checks run at once: --jobs N, else 4 (2 with --eco), never more than the cores. */
+const jobsOption = options.indexOf('--jobs');
+const checksAtOnce = Math.max(
+  1,
+  Math.min(
+    os.cpus().length,
+    jobsOption >= 0
+      ? Number(options[jobsOption + 1])
+      : options.includes('--eco')
+        ? 2
+        : 4,
+  ),
+);
 
 /** Runs a command in the project folder. Returns its exit code, everything it printed and how long it took. */
 function run(command, commandArguments) {
@@ -65,8 +80,31 @@ function run(command, commandArguments) {
   };
 }
 
+/** Like run, but several can go at once. */
+function runAsync(command, commandArguments) {
+  const startTime = Date.now();
+  return new Promise((resolve) => {
+    const child = spawn(command, commandArguments, {
+      cwd: PROJECT_FOLDER,
+      shell: process.platform === 'win32',
+    });
+    let output = '';
+    child.stdout.on('data', (chunk) => (output += chunk));
+    child.stderr.on('data', (chunk) => (output += chunk));
+    child.on('close', (exitCode) =>
+      resolve({
+        exitCode: exitCode ?? 1,
+        output,
+        seconds: Math.round((Date.now() - startTime) / 1000),
+      }),
+    );
+  });
+}
+
 const runSimulator = (simulatorArguments) =>
   run('node', ['--enable-source-maps', BUNDLE, ...simulatorArguments]);
+const runSimulatorAsync = (simulatorArguments) =>
+  runAsync('node', ['--enable-source-maps', BUNDLE, ...simulatorArguments]);
 
 let failedChecks = 0;
 /** Prints one line for a check with the seconds it took, and what it printed if it failed. */
@@ -79,6 +117,23 @@ function report(label, isGood, commandRun) {
     const lastLines = output.trim().split(/\r?\n/).slice(-15);
     for (const line of lastLines) console.log(`      ${line}`);
   }
+}
+
+/** Runs the checks `maxAtOnce` at a time, then reports them in the order they were listed.
+ *  A check is an async function returning the reports of its result: [{ label, isGood, commandRun }]. */
+async function runChecks(checks, maxAtOnce) {
+  const results = new Array(checks.length);
+  let nextCheck = 0;
+  const worker = async () => {
+    while (nextCheck < checks.length) {
+      const index = nextCheck++;
+      results[index] = await checks[index]();
+    }
+  };
+  await Promise.all(Array.from({ length: maxAtOnce }, worker));
+  for (const reports of results)
+    for (const { label, isGood, commandRun } of reports)
+      report(label, isGood, commandRun);
 }
 
 /** The files changed since this branch left main, with forward slashes; null when git cannot tell. */
@@ -132,23 +187,40 @@ function podReportOf(output) {
     .trim();
 }
 
-function checkPodRun() {
-  const podRun = runSimulator([...POD_ARGUMENTS, ...powerSaveOptions]);
+async function checkPodRun() {
+  const podRun = await runSimulatorAsync([
+    ...POD_ARGUMENTS,
+    ...powerSaveOptions,
+  ]);
   const podReport = podReportOf(podRun.output);
   const baselineFile = path.join(PROJECT_FOLDER, POD_BASELINE_FILE);
   if (isRecordingPod) {
     fs.writeFileSync(baselineFile, podReport + '\n', 'utf-8');
-    console.log(`recorded the pod report to ${POD_BASELINE_FILE}`);
-  } else if (!fs.existsSync(baselineFile)) {
-    report(`pod: no baseline yet (npm run verify -- --record-pod)`, false);
-  } else {
-    const savedReport = fs.readFileSync(baselineFile, 'utf-8').trim();
-    report(
-      `pod: 200 games with fixed seeds give the saved report (${POD_BASELINE_FILE})`,
-      podRun.exitCode === 0 && podReport === savedReport.replace(/\r\n/g, '\n'),
-      podRun,
-    );
+    return [
+      {
+        label: `recorded the pod report to ${POD_BASELINE_FILE}`,
+        isGood: true,
+        commandRun: podRun,
+      },
+    ];
   }
+  if (!fs.existsSync(baselineFile))
+    return [
+      {
+        label: `pod: no baseline yet (npm run verify -- --record-pod)`,
+        isGood: false,
+      },
+    ];
+  const savedReport = fs.readFileSync(baselineFile, 'utf-8').trim();
+  return [
+    {
+      label: `pod: 200 games with fixed seeds give the saved report (${POD_BASELINE_FILE})`,
+      isGood:
+        podRun.exitCode === 0 &&
+        podReport === savedReport.replace(/\r\n/g, '\n'),
+      commandRun: podRun,
+    },
+  ];
 }
 
 /** Files the app's page builds from: the page itself and the shapes and code it shares with the Node side. */
@@ -162,10 +234,16 @@ function needsPageChecks(changedFiles) {
   );
 }
 
-function checkPage() {
-  const pageBuild = run('npm', ['--prefix', 'app/web', 'run', '-s', 'build']);
-  report('page: ng build', pageBuild.exitCode === 0, pageBuild);
-  const pageTests = run('npm', [
+/** The build, then the tests: one after the other, as the tests may use what the build made. */
+async function checkPage() {
+  const pageBuild = await runAsync('npm', [
+    '--prefix',
+    'app/web',
+    'run',
+    '-s',
+    'build',
+  ]);
+  const pageTests = await runAsync('npm', [
     '--prefix',
     'app/web',
     'run',
@@ -174,7 +252,18 @@ function checkPage() {
     '--',
     '--watch=false',
   ]);
-  report('page: ng test', pageTests.exitCode === 0, pageTests);
+  return [
+    {
+      label: 'page: ng build',
+      isGood: pageBuild.exitCode === 0,
+      commandRun: pageBuild,
+    },
+    {
+      label: 'page: ng test',
+      isGood: pageTests.exitCode === 0,
+      commandRun: pageTests,
+    },
+  ];
 }
 
 /** The deck names from the simulator itself (decks/index.ts): those with a regress baseline, and all of them. */
@@ -214,50 +303,62 @@ if (skippedDecks.length || !needsPodRun || !runsPageChecks)
       '\n',
   );
 
-const typeCheck = run('npm', ['run', '-s', 'check']);
-report('type-check (npm run check)', typeCheck.exitCode === 0, typeCheck);
+/** One check that is a single command: its label, the command, and what makes it good. */
+const commandCheck = (label, startCommand, isGoodOutput) => async () => {
+  const commandRun = await startCommand();
+  return [{ label, isGood: isGoodOutput(commandRun), commandRun }];
+};
+const hasNoBadLine = (commandRun) =>
+  commandRun.exitCode === 0 && !/^BAD/m.test(commandRun.output);
 
-const formatCheck = run('npm', ['run', '-s', 'format:check']);
-report(
-  'formatting (npm run format:check; fix with npm run format)',
-  formatCheck.exitCode === 0,
-  formatCheck,
-);
+const checks = [
+  commandCheck(
+    'type-check (npm run check)',
+    () => runAsync('npm', ['run', '-s', 'check']),
+    (commandRun) => commandRun.exitCode === 0,
+  ),
+  commandCheck(
+    'formatting (npm run format:check; fix with npm run format)',
+    () => runAsync('npm', ['run', '-s', 'format:check']),
+    (commandRun) => commandRun.exitCode === 0,
+  ),
+  ...decksToRegress.map((deck) =>
+    commandCheck(
+      `${deck}: --regress check is IDENTICAL`,
+      () =>
+        runSimulatorAsync([deck, '--regress', 'check', ...powerSaveOptions]),
+      (commandRun) =>
+        commandRun.output.includes('IDENTICAL') &&
+        !commandRun.output.includes('DIFFERENT'),
+    ),
+  ),
+  ...DECKS_WITH_TESTS.map((deck) =>
+    commandCheck(
+      `${deck}: --test`,
+      () => runSimulatorAsync([deck, '--test']),
+      hasNoBadLine,
+    ),
+  ),
+  commandCheck(
+    'pod: --test',
+    () => runSimulatorAsync(['pod', '--test']),
+    hasNoBadLine,
+  ),
+  commandCheck(
+    'app: --test',
+    () => runSimulatorAsync(['app', '--test']),
+    hasNoBadLine,
+  ),
+];
+if (needsPodRun) checks.push(checkPodRun);
+if (runsPageChecks) checks.push(checkPage);
 
-for (const deck of decksToRegress) {
-  const regress = runSimulator([
-    deck,
-    '--regress',
-    'check',
-    ...powerSaveOptions,
-  ]);
-  const isIdentical =
-    regress.output.includes('IDENTICAL') &&
-    !regress.output.includes('DIFFERENT');
-  report(`${deck}: --regress check is IDENTICAL`, isIdentical, regress);
-}
-for (const deck of DECKS_WITH_TESTS) {
-  const tests = runSimulator([deck, '--test']);
-  const hasBadLine = /^BAD/m.test(tests.output);
-  report(`${deck}: --test`, tests.exitCode === 0 && !hasBadLine, tests);
-}
-const podTests = runSimulator(['pod', '--test']);
-report(
-  'pod: --test',
-  podTests.exitCode === 0 && !/^BAD/m.test(podTests.output),
-  podTests,
-);
+// The slowest checks start first, so the last ones to finish are short.
+const slowFirst = (check) =>
+  check === checkPodRun || check === checkPage ? 0 : 1;
+checks.sort((first, second) => slowFirst(first) - slowFirst(second));
 
-const appTests = runSimulator(['app', '--test']);
-report(
-  'app: --test',
-  appTests.exitCode === 0 && !/^BAD/m.test(appTests.output),
-  appTests,
-);
-
-if (needsPodRun) checkPodRun();
-
-if (runsPageChecks) checkPage();
+await runChecks(checks, checksAtOnce);
 
 const totalSeconds = Math.round((Date.now() - verifyStartTime) / 1000);
 console.log(

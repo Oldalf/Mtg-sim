@@ -39,7 +39,7 @@ Rules for every task:
 - A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change.
 - When a task is done, add one line under it here: what was built and anything the next task must know.
 
-**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss (step 7, B3b). Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line. One more BAD line is known and accepted: `codie --regress check` (the Cultivate fix, baseline kept on purpose, see A2).
+**Gale's known kill misses.** 9 of 300 Gale seeds still have a kill miss (step 7, B3b). Until task E1 `gale --test` fails on them, so `npm run verify` ends VERIFY BAD with that one line: a task is fine when it is the only BAD line. Codie's baseline was re-recorded (2026-11-15) after the Cultivate fix (see A2). `npm run verify` runs its checks in parallel (`--jobs N`, 4 by default, 2 with `--eco`).
 
 ## Order
 
