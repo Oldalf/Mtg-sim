@@ -30,6 +30,9 @@ export const CASE = 'Case of the Locked Hothouse';
 export const SAGA = "Azusa's Many Journeys";
 export const BEANSTALK = 'Beanstalk Giant';
 export const KHALNI = 'Khalni Heart Expedition';
+/** A Siege (defense 3): two basics tapped as it enters; defeated, it is cast as Awakened Skyclave. */
+export const INVASION = 'Invasion of Zendikar';
+export const SIEGE_DEFENSE = 3;
 // candidates for the list (Pontus, 2026-11-05)
 export const REVOLT = "Nature's Revolt";
 export const AFFINITY = 'Natural Affinity';
@@ -119,6 +122,16 @@ export const STOLEN_LAND = new CardDef('Stolen land', {
   type_line: 'Land',
   oracle: '{T}: Add one mana of any color.',
 } as never);
+/** Invasion of Zendikar's back face: a 4/4 vigilance, haste creature that is also a land. If it leaves the
+ *  battlefield it is Invasion of Zendikar again (AesiGame.putCard). */
+export const SKYCLAVE = new CardDef('Awakened Skyclave', {
+  name: 'Awakened Skyclave',
+  type_line: 'Creature — Elemental Land',
+  oracle: '{T}: Add one mana of any color.',
+  power: '4',
+  toughness: '4',
+  keywords: ['Vigilance', 'Haste'],
+} as never);
 
 /** How much we want each card on the battlefield (casting order, discards, the planner's score). */
 export const VALUE: Record<string, number> = {
@@ -177,6 +190,7 @@ export const VALUE: Record<string, number> = {
   Cultivate: 76,
   "Nissa's Pilgrimage": 74,
   'Explosive Vegetation': 76,
+  [INVASION]: 76,
   'Circuitous Route': 74,
   'Reach the Horizon': 74,
   'Grow from the Ashes': 72,
@@ -209,6 +223,7 @@ export const RAMP = new Set([
   'Grow from the Ashes',
   'Entish Restoration',
   'Harrow',
+  INVASION,
   'Sakura-Tribe Elder',
   'Sol Ring',
   'Khalni Heart Expedition',

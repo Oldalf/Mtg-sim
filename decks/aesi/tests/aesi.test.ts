@@ -21,6 +21,8 @@ import {
   BSZ,
   SWARM,
   CHAMBER,
+  INVASION,
+  SKYCLAVE,
   TOK,
 } from '../cards';
 
@@ -388,6 +390,47 @@ export function runAesiTests(): boolean {
     '  ... vs 9 life: yes',
     game.candidates(false).some((option) => option.score === 98),
     true,
+  );
+
+  // ---- Invasion of Zendikar (a Siege, defense 3)
+  game = board([AESI], [INVASION]);
+  game.castPerm(C.get(INVASION));
+  check(
+    'Invasion of Zendikar: two basics tapped, defense 3',
+    [
+      game.landsOnBattlefield().length,
+      game.landsOnBattlefield().filter((permanent) => permanent.tapped).length,
+      game.findPermanent(INVASION)?.counters,
+    ],
+    [10, 6, 3], // 8 lands, 4 tapped to pay, 2 more tapped
+  );
+  // the flyers attack it, smallest first, until its defense is gone: Skyclave enters as a land, Aesi draws
+  game = board([AESI, INVASION, MELOKU]);
+  game.findPermanent(INVASION)!.counters = 3;
+  game.enter(TOK.illusion, 'token', { token: true }).sick = false;
+  game.enter(TOK.illusion, 'token', { token: true }).sick = false;
+  const handBefore = game.hand.length;
+  game.combat();
+  check(
+    '  ... two Illusions + Meloku (4 power) attack it: defeated, Skyclave is a land, Aesi draws',
+    [
+      game.isOnBattlefield(INVASION),
+      game
+        .landsOnBattlefield()
+        .some((permanent) => permanent.card === SKYCLAVE),
+      game.hand.length - handBefore,
+      game.life,
+    ],
+    [false, true, 1, [40, 40, 40]],
+  );
+  // a moonfolk returning Skyclave puts Invasion of Zendikar in hand (a battle again, not a land)
+  const skyclave = game.findPermanent('Awakened Skyclave')!;
+  game.takeFromBattlefieldIfThere(skyclave);
+  game.putCard(skyclave.card, 'hand');
+  check(
+    '  ... returned to hand it is Invasion of Zendikar',
+    game.hand.at(-1)?.name,
+    INVASION,
   );
 
   // ---- land tutors and utility lands

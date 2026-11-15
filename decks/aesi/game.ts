@@ -34,6 +34,7 @@ import {
   FETCHES_TWO,
   HARU,
   HOLD,
+  INVASION,
   KHALNI,
   KIRI,
   KODAMA,
@@ -49,6 +50,8 @@ import {
   RETREAT,
   REVOLT,
   SAGA,
+  SIEGE_DEFENSE,
+  SKYCLAVE,
   SPIRITS,
   STOLEN_LAND,
   SWARM,
@@ -63,9 +66,11 @@ import type { Loops } from './loops';
 import { buildCandidates, chooseLandTutorTarget } from './candidates';
 import { castFromTopOfLibrary } from './actions';
 import { resolveAesiSpell } from './spells';
+import * as C from '../../engine/cards/cards';
 import { CardDef, Cost, makeToken } from '../../engine/cards/cards';
 import {
   Candidate,
+  CardListZone,
   KillSearcher,
   LogBoardView,
   Permanent,
@@ -335,6 +340,7 @@ export class AesiGame extends Game<AesiGame> {
     // (a fast land comes back tapped once there are three lands)
     return (
       card.land !== null &&
+      card !== SKYCLAVE && // returned to hand it is a battle, not a land
       card.land.etb !== 'tapped' &&
       card.land.special !== 'wilds' &&
       card.land.special !== 'chamber' &&
@@ -667,6 +673,7 @@ export class AesiGame extends Game<AesiGame> {
       (card) =>
         card.manaValue <= manaValue &&
         (card.land !== null ||
+          card.name === INVASION || // a battle
           card.types.has('creature') ||
           card.types.has('artifact') ||
           card.types.has('enchantment')),
@@ -699,6 +706,11 @@ export class AesiGame extends Game<AesiGame> {
     else if (name === DRUID || name === SAGA) permanent.counters = 1;
     if (name === SAGA) this.dropsBonus += 1; // chapter I: an additional land this turn
     if (name === REVOLT) this.revolt = true;
+    if (name === INVASION && !permanent.token) {
+      permanent.counters = SIEGE_DEFENSE; // (a battle: its defense counters)
+      this.fetchBasic({ tapped: true });
+      this.fetchBasic({ tapped: true });
+    }
     if (!this.kodamaBusy && permanent.land === null && name !== KODAMA)
       this.kodamaTrigger(permanent.card.manaValue);
   }
@@ -883,6 +895,11 @@ export class AesiGame extends Game<AesiGame> {
     }
   }
 
+  /** Awakened Skyclave off the battlefield is the Invasion of Zendikar card again. */
+  override putCard(card: CardDef, toZone: CardListZone): void {
+    super.putCard(card === SKYCLAVE ? C.get(INVASION) : card, toZone);
+  }
+
   putStolenLand(): void {
     const permanent = new Permanent(STOLEN_LAND, STOLEN_LAND.land);
     permanent.sick = false;
@@ -1001,13 +1018,17 @@ export class AesiGame extends Game<AesiGame> {
       .reduce((total, value) => total + value, 0);
     let attackers = flyers,
       damage = flyerDamage;
-    if (attackPowers.length && this.winsWith(flyerDamage + groundDamage)) {
+    const isAllIn =
+      attackPowers.length > 0 && this.winsWith(flyerDamage + groundDamage);
+    if (isAllIn) {
       attackers = [...flyers, ...ground, ...landAttackers];
       damage = flyerDamage + groundDamage;
     }
     if (damage <= 0) return;
     this.attacked = true;
     for (const attacker of attackers) attacker.tapped = true;
+    const siege = this.findPermanent(INVASION);
+    if (siege && !isAllIn) damage -= this.attackSiege(siege, flyers);
     let left = damage;
     while (left > 0) {
       const target = this.chooseTargetOpponent();
@@ -1021,6 +1042,36 @@ export class AesiGame extends Game<AesiGame> {
         `${damage} damage, ${this.describeOpponentLife()}`,
     );
     this.checkKill();
+  }
+  /** Flyers attack Invasion of Zendikar first, the smallest ones until its defense is gone (the opponent
+   *  protecting it can't block flyers in a goldfish game). Returns the power sent at it. */
+  attackSiege(siege: Permanent, flyers: Permanent[]): number {
+    const smallestFirst = flyers
+      .filter((permanent) => permanent.card !== TOK.illusionArmy)
+      .sort(
+        (permanent, otherPermanent) =>
+          this.power(permanent) - this.power(otherPermanent),
+      );
+    let powerSent = 0;
+    for (const flyer of smallestFirst) {
+      if (powerSent >= siege.counters) break;
+      powerSent += this.power(flyer);
+    }
+    if (powerSent === 0) return 0;
+    siege.counters -= powerSent;
+    this.say(
+      `attack Invasion of Zendikar with ${powerSent} power (defense ${Math.max(0, siege.counters)} left)`,
+    );
+    if (siege.counters <= 0) this.defeatSiege(siege);
+    return powerSent;
+  }
+  /** A defeated Siege is exiled and cast transformed: Awakened Skyclave enters as a land (a landfall trigger). */
+  defeatSiege(siege: Permanent): void {
+    this.takeFromBattlefieldIfThere(siege);
+    const skyclave = new Permanent(SKYCLAVE, SKYCLAVE.land);
+    this.putOntoBattlefield(skyclave);
+    this.say('Invasion of Zendikar defeated: cast Awakened Skyclave (a land)');
+    this.onLandEnter(skyclave, false);
   }
   loops(): Loops {
     return findLoops(this);

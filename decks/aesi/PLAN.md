@@ -3,7 +3,7 @@
 Simic "reverse landfall" (based on DefCatMtg's list), bracket 3, built to be fun to play and fair to play against. Aesi draws a card for every land; moonfolk return lands to hand so they can be played again; extra land drops and "put a land onto the battlefield" creatures turn that into a stream of landfall triggers. Phase 3 of the root `ROADMAP.md`.
 
 - Run: `npm run sim -- aesi` (more in the root README). Tests: `npm run sim -- aesi --test` (58 rules checks). Replay a real game: `--analyze logs/<file>.txt`.
-- **Lists:** `decklist.txt` is the list as Pontus first gave it. `lists/proposed.txt` (named `package.txt` until 2026-11-14) is the new list built on 2026-11-06 that he looked at on 2026-11-07 ("looks good"; see "Current state" and "Open"). The three `lists/proposed_*.txt` files are the alternatives from the swap tests (see the table in "Current state").
+- **Lists:** `decklist.txt` is Pontus's real deck since 2026-11-15 (his swaps keeping Seismic Sense; see "Pontus's list"). `lists/original_decklist.txt` is the list as Pontus first gave it. `lists/proposed.txt` (named `package.txt` until 2026-11-14) is the new list built on 2026-11-06 that he looked at on 2026-11-07 ("looks good"; see "Current state" and "Open"). The three `lists/proposed_*.txt` files are the alternatives from the swap tests (see the table in "Current state").
 - **Pontus's preferences:** consistent, fun and fair rather than fast; no mana rocks (land theme); at most 39 lands; not more engine pieces; interaction and protection cards stay; cards that are sad without lands in hand go.
 
 ## How the deck wins (Pontus)
@@ -84,6 +84,28 @@ Four other mixes of the fetch spells tested the same within noise, so the cheap 
 - **Raft-Steerer and Tatyova** win faster (+2.5 / +3.7 by turn 10, replacing Into the Wilds) but cost 3–5 mana, so they don't reduce slow starts. Raft-Steerer was added as a second untapper (the combos are found more reliably). Tatyova was left out (a second engine).
 - **Utility lands** (Guildless Commons, Myriad Landscape, Fabled Passage) for basics are free: about the same or slightly better. **Land tutors** (Sylvan Scrying, Expedition Map, Crop Rotation) cost about a basic's worth: most loops start with Kodama + Meloku or the Onnas.
 - **Excluded by Pontus:** mana rocks (they don't fit the land theme), more engine pieces, land lock as a plan.
+
+## Pontus's list (2026-11-15)
+
+Pontus's own swaps (`SUGGESTED_SWAPS.txt`), built on `lists/proposed.txt`: Invasion of Zendikar instead of Wood Elves, Flooded Grove instead of Botanical Sanctum, and Natural Affinity instead of Seismic Sense (`lists/suggested_affinity.txt`) or Seismic Sense kept (`lists/suggested_seismic.txt`).
+
+- **Invasion of Zendikar** (a Siege, defense 3): two basics tapped as it enters. Flyers attack it first (smallest first) unless an all-in kills the table; Pontus: an opponent defends it only when that's free, and Aesi has many flyers. Defeated, it is cast as Awakened Skyclave (a 4/4 vigilance, haste creature land, any colour; no flying): it enters as a land, a landfall trigger. Returned to hand it is Invasion of Zendikar again. Not attacked in a pod.
+- **Flooded Grove** is read from its text as a land that makes G or U. Wrong only when it is the only land (turn 1): it then makes only {C}.
+- **Natural Affinity** as Pontus plays it: lands as creatures make a land lock with a repeatable bounce (`land_lock_win`), and the lands attack only when that is lethal (we have no land recursion).
+
+| 16,000 games | decklist (original) | proposed | Affinity | Seismic Sense kept |
+|---|---|---|---|---|
+| Win by turn 10 / 12 | 85.5 / 97.4% | 89.1 / 98.5% | 89.0 / 98.5% | **90.5 / 98.8%** |
+| Slow start | 8.2% | **6.4%** | 6.9% | 6.5% |
+| No Aesi by turn 5 / 6 / 7 | 29.2 / 12.9 / 6.7% | 25.9 / 10.1 / 4.5% | 25.5 / 10.2 / 4.5% | **25.1 / 9.9 / 4.3%** |
+| Lands on turn 5 | 7.36 | 7.58 | 7.65 | 7.66 |
+| Slow tail (90th-percentile win turn) | 11 | 11 | 11 | **10** |
+
+(The original's numbers differ from the "Current state" table above: that table predates the mulligan rule and later engine fixes.)
+
+- The three new lists tie within noise (±2 points); the Seismic Sense version is ahead on most measures. Invasion of Zendikar plays as well as Wood Elves.
+- **Natural Affinity's lock never decided a game:** the Affinity list with `land_lock_win=0` scored the same (89.0% by turn 10). A repeatable bounce of every land needs Omniscience + both Onnas or endless mana + Mirror-Mage, and those boards already win the same turn. Its value is against real opponents (another way to win when Blue Sun's Zenith is countered), which a goldfish game can't show.
+- **Decision (Pontus):** the Seismic Sense version is his real deck now and the new `decklist.txt`; the old one is `lists/original_decklist.txt`.
 
 ## Pontus's game 1 (`logs/game1_t10_bsz_mill.txt`)
 
