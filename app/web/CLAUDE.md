@@ -39,6 +39,12 @@ The page of the app (roadmap step 4): an Angular 22 project with Angular Materia
 - The arrow keys: Up and Down step lines, Left and Right step turns (not lines).
 - The caption keeps a fixed height (its card row has a min-height of one card, its text at most two lines) so the table does not jump while autoplay runs.
 
+## Learned while building token art (step 6)
+
+- A creature token with a face (`BoardPermanent.token`) is `app-token-card`: Scryfall's art crop (`ApiService.tokenArtUrl`) in our own frame, with the game's stats. Its width is the seat's `--card-width`, so the seat's full style budget is not touched. Its text is sized in `cqw` of the card, so it scales with the seat.
+- The seat's badges (x2, counters, token) sit at a card's bottom right: put anything that must stay readable at the top.
+- Any other token (Treasure, a real log's token) is a plain `app-card-image`: the server falls back to the token's whole Scryfall card by name.
+
 ## Angular skills
 
 The official Angular agent skills are in `.claude/skills/` (`angular-developer`, `angular-new-app`; reinstall or update with `npx skills update` here). Follow `angular-developer` for anything Angular: it points to a reference file per topic (signals, httpResource, Signal Forms, routing, testing). Angular's CLI MCP server is set up in `.mcp.json`.

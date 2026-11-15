@@ -34,7 +34,7 @@ Rules for every task:
 | 6 | D1 | Tokens: the design (who defines a token, its name in the log, its image) (done) | Opus 5.5, then Pontus |
 | 7 | D2 | Tokens: the shared artifact helper, the art data and the token's face in the log (done) | Sonnet 5.5 |
 | 8 | D3 | (folded into D2: the decks keep their own token stats) | - |
-| 9 | D4 | Tokens: art and stats in the viewer | Sonnet 5.5 |
+| 9 | D4 | Tokens: art and stats in the viewer (done) | Sonnet 5.5 |
 
 Why this order: A and B are small and stand alone. C comes before D because C2 moves a permanent between two players' logs, and D changes how a token is named in the log; doing the log change once with the exchange already working is easier than the other way round. C2 and D4 can swap places if Pontus wants the tokens sooner.
 
@@ -195,6 +195,8 @@ With the stats staying in the decks there is nothing left to move deck by deck: 
 - The board summary line (`describePermanents`) tells faces apart.
 - Check in the browser with a samfrodo goldfish game (Food, Clue, Halfling), an Edgar game (the three Vampires) and an Aesi game with an army, at desktop and phone width; and a real log (`decks/samfrodo/logs/`) still shows its tokens.
 - Done when `ng test`, `npm run app -- --test` and `npm run verify` pass.
+
+Done: `GET /api/tokens/<name>/art?power=&toughness=&colours=&keywords=` (`findTokenArtFile`, `readTokenFace` in `app/server/cards-routes.ts`) serves the art crop `pickTokenArt` chooses; `downloadImage` / `imageFileOf` / `hasImage` take a version, an art crop is cached as `<id>.art_crop.jpg`. The card image route falls back to a token's whole Scryfall card by name when the name has no card data, so Treasure, Food, Clue, a real log's tokens and a caption's token show their token card everywhere with no page change. The seat shows a permanent with a face as `app-token-card` (`shared/token-card/`): art in our frame, name and power/toughness (counters added) at the top, because the seat's badges cover the bottom right, keywords and `x999` at the bottom; no art: the same frame with a placeholder. It takes its width from the seat's `--card-width`, so `player-seat.scss` did not grow. `stackPermanents` stacks by face too (spec in `game-steps.spec.ts`). The server test checks the token routes with made-up image files on disk (no network). Browser check (desktop and a 390 px iframe, no sideways scroll): Edgar (1/1 black and white lifelink Vampires, Servo; no Bloodline Keeper flyer came up in 20 games), samfrodo (Halfling, Soldier, Bird in frames; Food, Clue, Treasure as token cards), Aesi (Illusion army: `x999 Flying`) and the real samfrodo log (Food, Treasure, Soldier as token cards, The Ring a text card as before). The first look at a new token's art waits for Scryfall, as for a card.
 
 ---
 

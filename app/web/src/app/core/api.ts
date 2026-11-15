@@ -16,6 +16,7 @@ import type {
   RunRequest,
   StartRunAnswer,
 } from '../../../../api-types';
+import type { TokenFace } from '../../../../../shared/game-log-types';
 
 /** Which games of a run to list (GET /api/logs/<run>/games). Left out = no filter. */
 export interface GamesFilter {
@@ -108,6 +109,19 @@ export class ApiService {
   cardImageUrl(cardName: string, print?: string): string {
     const url = `/api/cards/${encodeURIComponent(cardName)}/image`;
     return print ? `${url}?print=${encodeURIComponent(print)}` : url;
+  }
+
+  /** A creature token's art (the artwork alone, for the page's own frame), picked by the server from its face. */
+  tokenArtUrl(tokenName: string, face: TokenFace): string {
+    const query = new HttpParams({
+      fromObject: {
+        power: face.power,
+        toughness: face.toughness,
+        colours: face.colours.join(','),
+        keywords: face.keywords.join(','),
+      },
+    });
+    return `/api/tokens/${encodeURIComponent(tokenName)}/art?${query.toString()}`;
   }
 
   /** The type line and mana cost of each named card that has card data (tokens and unknown names are left out). */

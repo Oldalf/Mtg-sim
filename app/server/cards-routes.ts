@@ -1,7 +1,8 @@
 /**
  * The card calls (PLAN.md task 7): one card's image, served from data/scryfall/images/ and fetched from Scryfall
  * the first time, the update of all the images the decklists need (the app's refresh button), and the facts of the
- * cards of a game (task 13: a game log has card names only).
+ * cards of a game (task 13: a game log has card names only). A token has no card data: its picture comes from
+ * data/token-art.json (step 6, D4): the whole token card for a name, the art crop for a creature token's face.
  */
 import type {
   CardFactsAnswer,
@@ -10,6 +11,7 @@ import type {
 } from '../api-types';
 import * as C from '../../engine/cards/cards';
 import {
+  ImageVersion,
   downloadImage,
   hasImage,
   imageFileOf,
@@ -17,6 +19,8 @@ import {
   scryfallIdOf,
   updateImages,
 } from '../../engine/cards/card-images';
+import { pickTokenArt } from '../../engine/cards/token-art';
+import type { TokenFace } from '../../shared/game-log-types';
 import { RequestError } from './decks-routes';
 
 /** An image that failed to fetch is not asked for again for a while (a page asks once per card it shows). */
@@ -26,41 +30,83 @@ const failedAt = new Map<string, number>();
 const fetchesInProgress = new Map<string, Promise<void>>();
 
 /**
- * The image file of a card. `print` is the Scryfall id of a specific print; without it the print in data/cards.json.
- * Throws a 404 for a token, a card without data or a failed fetch (the page then shows its text card).
+ * The image file of a card. `print` is the Scryfall id of a specific print; without it the print in data/cards.json,
+ * or for a token (no card data) the whole token card of that name. Throws a 404 for an unknown name or a failed
+ * fetch (the page then shows its text card).
  */
 export async function findCardImageFile(
   cardName: string,
   print: string | null,
 ): Promise<string> {
-  const scryfallId = print ?? scryfallIdOf(cardName);
+  const scryfallId =
+    print ?? scryfallIdOf(cardName) ?? pickTokenArt(cardName)?.scryfallId;
+  return findImageFile(scryfallId, 'normal', cardName);
+}
+
+/**
+ * The art of a creature token as the game has it (its name and face): the art crop, which the page puts in its own
+ * frame. Throws a 404 when Scryfall has no token of that name (the page then shows its text card).
+ */
+export async function findTokenArtFile(
+  tokenName: string,
+  face: TokenFace,
+): Promise<string> {
+  const scryfallId = pickTokenArt(tokenName, face)?.scryfallId;
+  return findImageFile(scryfallId, 'art_crop', tokenName);
+}
+
+async function findImageFile(
+  scryfallId: string | undefined,
+  version: ImageVersion,
+  cardName: string,
+): Promise<string> {
   if (!scryfallId || !isScryfallId(scryfallId))
     throw new RequestError(404, `no image for ${cardName}`);
-  if (!hasImage(scryfallId)) await fetchImageOnce(scryfallId, cardName);
-  return imageFileOf(scryfallId);
+  if (!hasImage(scryfallId, version))
+    await fetchImageOnce(scryfallId, version, cardName);
+  return imageFileOf(scryfallId, version);
 }
 
 async function fetchImageOnce(
   scryfallId: string,
+  version: ImageVersion,
   cardName: string,
 ): Promise<void> {
-  const lastFailure = failedAt.get(scryfallId);
+  const imageKey = `${scryfallId} ${version}`;
+  const lastFailure = failedAt.get(imageKey);
   if (lastFailure && Date.now() - lastFailure < RETRY_AFTER_FAILURE_MS)
     throw new RequestError(404, `no image for ${cardName} (fetch failed)`);
-  let fetchInProgress = fetchesInProgress.get(scryfallId);
+  let fetchInProgress = fetchesInProgress.get(imageKey);
   if (!fetchInProgress) {
-    fetchInProgress = downloadImage(scryfallId).finally(() =>
-      fetchesInProgress.delete(scryfallId),
+    fetchInProgress = downloadImage(scryfallId, version).finally(() =>
+      fetchesInProgress.delete(imageKey),
     );
-    fetchesInProgress.set(scryfallId, fetchInProgress);
+    fetchesInProgress.set(imageKey, fetchInProgress);
   }
   try {
     await fetchInProgress;
-    failedAt.delete(scryfallId);
+    failedAt.delete(imageKey);
   } catch {
-    failedAt.set(scryfallId, Date.now());
+    failedAt.set(imageKey, Date.now());
     throw new RequestError(404, `no image for ${cardName} (fetch failed)`);
   }
+}
+
+/** A token's face from the query of a token art call: ?power=2&toughness=2&colours=black&keywords=flying,lifelink
+ *  (lists comma-separated, left out for none). A power or toughness that is not a whole number is a 400. */
+export function readTokenFace(query: URLSearchParams): TokenFace {
+  const power = Number(query.get('power') ?? 'missing');
+  const toughness = Number(query.get('toughness') ?? 'missing');
+  if (!Number.isInteger(power) || !Number.isInteger(toughness))
+    throw new RequestError(400, 'a token face needs a power and a toughness');
+  const listOf = (key: string) =>
+    (query.get(key) ?? '').split(',').filter((word) => word !== '');
+  return {
+    power,
+    toughness,
+    colours: listOf('colours'),
+    keywords: listOf('keywords'),
+  };
 }
 
 // ------------------------------------------------------------------ card facts

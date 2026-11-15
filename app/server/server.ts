@@ -10,6 +10,8 @@ import {
   answerCardFacts,
   answerImageUpdate,
   findCardImageFile,
+  findTokenArtFile,
+  readTokenFace,
   startImageUpdate,
 } from './cards-routes';
 import { answerDecklist, answerDecks, RequestError } from './decks-routes';
@@ -259,6 +261,8 @@ function sendPageFile(
 
 /** GET /api/cards/<name>/image[?print=<scryfall id>]: a file, not JSON, so it is not in the route table. */
 const CARD_IMAGE_PATH = /^\/api\/cards\/([^/]+)\/image$/;
+/** GET /api/tokens/<name>/art?power=..&toughness=..&colours=..&keywords=..: a creature token's art crop. */
+const TOKEN_ART_PATH = /^\/api\/tokens\/([^/]+)\/art$/;
 
 async function sendCardImage(
   response: http.ServerResponse,
@@ -266,6 +270,22 @@ async function sendCardImage(
   print: string | null,
 ): Promise<void> {
   const file = await findCardImageFile(decodeURIComponent(encodedName), print);
+  sendImageFile(response, file);
+}
+
+async function sendTokenArt(
+  response: http.ServerResponse,
+  encodedName: string,
+  query: URLSearchParams,
+): Promise<void> {
+  const file = await findTokenArtFile(
+    decodeURIComponent(encodedName),
+    readTokenFace(query),
+  );
+  sendImageFile(response, file);
+}
+
+function sendImageFile(response: http.ServerResponse, file: string): void {
   response.writeHead(200, {
     'Content-Type': 'image/jpeg',
     'Cache-Control': 'public, max-age=86400',
@@ -290,6 +310,11 @@ async function handleRequest(
         imageCall[1],
         url.searchParams.get('print'),
       );
+      return;
+    }
+    const tokenArtCall = TOKEN_ART_PATH.exec(url.pathname);
+    if (tokenArtCall && request.method === 'GET') {
+      await sendTokenArt(response, tokenArtCall[1], url.searchParams);
       return;
     }
     sendJson(response, await answerApiCall(request, url));

@@ -4,6 +4,7 @@ import type {
   EventKind,
   GameEvent,
   GameLog,
+  TokenFace,
 } from '../../../../../../shared/game-log-types';
 import {
   autoplayDelay,
@@ -193,6 +194,44 @@ describe('game steps', () => {
     const galeField = splitBattlefield(galeBoard, isLand);
     expect(galeField.lands[0].permanent.tapped).toBe(true);
     expect(galeBoard.librarySize).toBe(98);
+  });
+
+  it('stacks tokens by name and face, so different Vampires stay apart', () => {
+    const smallVampire: TokenFace = {
+      power: 1,
+      toughness: 1,
+      colours: ['black'],
+      keywords: [],
+    };
+    const flyingVampire: TokenFace = {
+      power: 2,
+      toughness: 2,
+      colours: ['black'],
+      keywords: ['flying'],
+    };
+    const tokenEnters = (token: TokenFace): CardMove => ({
+      player: 0,
+      card: 'Vampire',
+      action: 'moved miscCards => battlefield',
+      token,
+    });
+    const game: GameLog = {
+      ...POD_GAME,
+      events: [
+        makeEvent(1, 0, 'cast', 'make Vampires', [
+          tokenEnters(smallVampire),
+          tokenEnters(flyingVampire),
+          tokenEnters(smallVampire),
+        ]),
+      ],
+    };
+    const field = splitBattlefield(boardAt(game, 0)[0], () => false);
+    expect(
+      field.others.map((stack) => [stack.permanent.token, stack.count]),
+    ).toEqual([
+      [smallVampire, 2],
+      [flyingVampire, 1],
+    ]);
   });
 });
 

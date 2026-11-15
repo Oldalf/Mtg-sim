@@ -6,6 +6,7 @@ import {
   type LogPlayer,
 } from '../../../../../../shared/game-log-types';
 import { CardImage } from '../../shared/card-image/card-image';
+import { TokenCard } from '../../shared/token-card/token-card';
 import { splitBattlefield } from './game-steps';
 import { countLands, permanentGrid } from './table-layout';
 
@@ -25,7 +26,7 @@ interface CountedZone {
  */
 @Component({
   selector: 'app-player-seat',
-  imports: [CardImage],
+  imports: [CardImage, TokenCard],
   templateUrl: './player-seat.html',
   styleUrl: './player-seat.scss',
   host: {

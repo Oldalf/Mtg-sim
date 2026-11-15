@@ -34,12 +34,21 @@
         [class.is-tapped]="stack.permanent.tapped"
         [class.is-changed]="changedCards().includes(stack.permanent.name)"
       >
-        <app-card-image
-          [name]="stack.permanent.name"
-          [typeLine]="cardFacts()[stack.permanent.name]?.typeLine"
-          [manaCost]="cardFacts()[stack.permanent.name]?.manaCost"
-          [isTapped]="stack.permanent.tapped"
-        />
+        @if (stack.permanent.token; as face) {
+          <app-token-card
+            [name]="stack.permanent.name"
+            [face]="face"
+            [counters]="stack.permanent.counters"
+            [isTapped]="stack.permanent.tapped"
+          />
+        } @else {
+          <app-card-image
+            [name]="stack.permanent.name"
+            [typeLine]="cardFacts()[stack.permanent.name]?.typeLine"
+            [manaCost]="cardFacts()[stack.permanent.name]?.manaCost"
+            [isTapped]="stack.permanent.tapped"
+          />
+        }
         <span class="badges">
           @if (stack.count > 1) {
             <span class="badge">x{{ stack.count }}</span>

@@ -1,6 +1,6 @@
 /**
  * Card images from Scryfall, stored on disk in data/scryfall/images/<scryfall id>.jpg (not in git, like the bulk
- * data). `npm run cards -- images` and the app's refresh button download the ones that are missing; the app also
+ * data). A token's art crop (the artwork alone, no frame) is kept apart as <scryfall id>.art_crop.jpg. `npm run cards -- images` and the app's refresh button download the ones that are missing; the app also
  * fetches a single missing image when a page asks for it.
  *
  * Scryfall's rules for automated use: a pause of 50-100 ms between requests, a plain client name and an Accept
@@ -22,12 +22,22 @@ export function isScryfallId(text: string): boolean {
   return SCRYFALL_ID_PATTERN.test(text);
 }
 
-export function imageFileOf(scryfallId: string): string {
-  return path.join(IMAGES_FOLDER, `${scryfallId}.jpg`);
+/** Scryfall's image versions we use: the whole card, or the artwork alone (for a token's own frame). */
+export type ImageVersion = 'normal' | 'art_crop';
+
+export function imageFileOf(
+  scryfallId: string,
+  version: ImageVersion = 'normal',
+): string {
+  const versionPart = version === 'normal' ? '' : `.${version}`;
+  return path.join(IMAGES_FOLDER, `${scryfallId}${versionPart}.jpg`);
 }
 
-export function hasImage(scryfallId: string): boolean {
-  return fs.existsSync(imageFileOf(scryfallId));
+export function hasImage(
+  scryfallId: string,
+  version: ImageVersion = 'normal',
+): boolean {
+  return fs.existsSync(imageFileOf(scryfallId, version));
 }
 
 /** The Scryfall id of the print this card is shown with; undefined for a token or a card without data. */
@@ -50,12 +60,15 @@ async function waitForTurn(): Promise<void> {
 }
 
 /** Downloads one image and saves it. Throws when Scryfall or the network fails. */
-export async function downloadImage(scryfallId: string): Promise<void> {
+export async function downloadImage(
+  scryfallId: string,
+  version: ImageVersion = 'normal',
+): Promise<void> {
   if (!isScryfallId(scryfallId))
     throw new Error(`not a Scryfall id: ${scryfallId}`);
   await waitForTurn();
   const response = await fetch(
-    `https://api.scryfall.com/cards/${scryfallId}?format=image&version=normal`,
+    `https://api.scryfall.com/cards/${scryfallId}?format=image&version=${version}`,
     { headers: REQUEST_HEADERS },
   );
   if (!response.ok)
@@ -63,9 +76,9 @@ export async function downloadImage(scryfallId: string): Promise<void> {
   const bytes = Buffer.from(await response.arrayBuffer());
   fs.mkdirSync(IMAGES_FOLDER, { recursive: true });
   // written under another name first, so a half-written file is never served
-  const temporaryFile = imageFileOf(scryfallId) + '.part';
+  const temporaryFile = imageFileOf(scryfallId, version) + '.part';
   fs.writeFileSync(temporaryFile, bytes);
-  fs.renameSync(temporaryFile, imageFileOf(scryfallId));
+  fs.renameSync(temporaryFile, imageFileOf(scryfallId, version));
 }
 
 export interface ImageUpdateProgress {

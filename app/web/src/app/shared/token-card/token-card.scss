@@ -1,0 +1,121 @@
+// A card's shape (63 x 88 mm). The text is sized from the card's own width (cqw), so it scales with the seat. The
+// width is the seat's --card-width (player-seat.scss has no room left for a rule of its own).
+:host {
+  display: inline-block;
+  flex: none;
+  width: var(--card-width, 146px);
+  aspect-ratio: 63 / 88;
+  container-type: inline-size;
+  transition: rotate 150ms;
+}
+
+:host(.is-tapped) {
+  rotate: 90deg;
+}
+
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 3cqw;
+  overflow: hidden;
+  --card-colour: #c9c5ca;
+  border: 3cqw solid var(--card-colour);
+  border-radius: 4.5% / 3.4%;
+  background-color: color-mix(
+    in srgb,
+    var(--card-colour) 30%,
+    var(--mat-sys-surface-container-high)
+  );
+  font-size: 9cqw;
+  line-height: 1.2;
+}
+
+// the colours of the text cards (card-image.scss), gold for more than one colour
+.frame[data-colour='white'] {
+  --card-colour: #f3eed0;
+}
+.frame[data-colour='blue'] {
+  --card-colour: #4aa3d8;
+}
+.frame[data-colour='black'] {
+  --card-colour: #6b5f6b;
+}
+.frame[data-colour='red'] {
+  --card-colour: #e0643f;
+}
+.frame[data-colour='green'] {
+  --card-colour: #4f9d69;
+}
+.frame[data-colour='gold'] {
+  --card-colour: #d9b44a;
+}
+
+.name-line,
+.bottom-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 3cqw;
+  white-space: nowrap;
+}
+
+// keywords and copies at the bottom left, clear of the seat's badges; the line keeps its height when empty
+.bottom-line {
+  justify-content: flex-start;
+  min-height: 1.2em;
+}
+
+.name,
+.keywords {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.name {
+  font-weight: 500;
+}
+
+.copies {
+  color: var(--mat-sys-primary);
+  font-weight: 600;
+}
+
+.art {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  border-radius: 2cqw;
+  background: var(--mat-sys-surface-container-lowest);
+  overflow: hidden;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.placeholder-icon {
+  width: 40%;
+  height: auto;
+  font-size: 30cqw;
+  opacity: 0.35;
+}
+
+.keywords {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 8cqw;
+  text-transform: capitalize;
+}
+
+.power-toughness {
+  padding: 0 3cqw;
+  border-radius: 2cqw;
+  background: var(--mat-sys-surface-container-highest);
+  font-weight: 600;
+}

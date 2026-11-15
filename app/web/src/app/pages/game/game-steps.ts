@@ -3,9 +3,10 @@
  * highlight, turn) goes. A position in the game is an event's index in GameLog.events; the board shown is the
  * board after that event.
  */
-import type {
-  BoardPermanent,
-  PlayerBoard,
+import {
+  describeTokenFace,
+  type BoardPermanent,
+  type PlayerBoard,
 } from '../../../../../../shared/game-log-board';
 import {
   isPodGame,
@@ -253,6 +254,7 @@ export function stackPermanents(
       permanent.tapped,
       permanent.counters,
       permanent.isToken,
+      permanent.token ? describeTokenFace(permanent.token) : '',
     ].join('|');
     const stack = stacks.get(key);
     if (stack) stack.count++;

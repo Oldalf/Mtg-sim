@@ -1,13 +1,18 @@
 /**
  * Checks of the card image calls (PLAN.md task 7) through a real server on a free port: a known card's image is
  * fetched from Scryfall the first time and served from disk the second time (with the network switched off), a
- * token and an unknown card are 404, and a failed fetch is 404 and is not tried again at once. Needs the network
- * once, for the one image (it is kept on disk like every other).
+ * token gets its Scryfall token card or art crop, an unknown card is 404, and a failed fetch is 404 and is not tried
+ * again at once. Needs the network once, for the one image (it is kept on disk like every other).
  */
 import * as fs from 'fs';
 import type { AddressInfo } from 'net';
 import type { CardFactsAnswer } from '../api-types';
-import { imageFileOf, scryfallIdOf } from '../../engine/cards/card-images';
+import {
+  IMAGES_FOLDER,
+  imageFileOf,
+  scryfallIdOf,
+} from '../../engine/cards/card-images';
+import { pickTokenArt } from '../../engine/cards/token-art';
 import { startServer } from './server';
 
 const KNOWN_CARD = 'Sol Ring';
@@ -37,6 +42,81 @@ function postCardFacts(port: number, body: unknown): Promise<Response> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+}
+
+/** Runs a check with a made-up image on disk for each file that is not there yet, so no network is needed; the
+ *  made-up files are removed afterwards and real ones are left alone. */
+async function withImagesOnDisk(
+  files: string[],
+  runCheck: () => Promise<boolean>,
+): Promise<boolean> {
+  const madeUpFiles = files.filter((file) => !fs.existsSync(file));
+  fs.mkdirSync(IMAGES_FOLDER, { recursive: true });
+  for (const file of madeUpFiles)
+    fs.writeFileSync(file, Buffer.from([...JPEG_START, 0]));
+  try {
+    return await runCheck();
+  } finally {
+    for (const file of madeUpFiles) fs.rmSync(file, { force: true });
+  }
+}
+
+/** A token has no card data: its name gives the whole token card, its face the art crop of the fitting token. */
+async function checkTokenImages(port: number): Promise<boolean> {
+  const treasureId = pickTokenArt('Treasure')?.scryfallId ?? '';
+  const flyingVampire = {
+    power: 2,
+    toughness: 2,
+    colours: ['black'],
+    keywords: ['flying'],
+  };
+  const flyingVampireId =
+    pickTokenArt('Vampire', flyingVampire)?.scryfallId ?? '';
+  const treasureFile = imageFileOf(treasureId);
+  const vampireArtFile = imageFileOf(flyingVampireId, 'art_crop');
+  return withImagesOnDisk([treasureFile, vampireArtFile], async () => {
+    const treasure = await getImage(port, 'Treasure');
+    let allPassed = check(
+      'a token by name is its whole token card',
+      treasure.status === 200 &&
+        treasure.bytes.equals(fs.readFileSync(treasureFile)),
+    );
+    const vampireArt = await getTokenArt(
+      port,
+      'Vampire',
+      '?power=2&toughness=2&colours=black&keywords=flying',
+    );
+    allPassed &&= check(
+      'a creature token with a face is the art crop of the fitting token',
+      vampireArt.status === 200 &&
+        vampireArt.bytes.equals(fs.readFileSync(vampireArtFile)),
+    );
+    const noArt = await getTokenArt(
+      port,
+      'Stolen creature',
+      '?power=5&toughness=5',
+    );
+    allPassed &&= check(
+      'a token Scryfall does not have is 404',
+      noArt.status === 404,
+    );
+    const noFace = await getTokenArt(port, 'Vampire', '?power=two');
+    allPassed &&= check(
+      'token art without a face is 400',
+      noFace.status === 400,
+    );
+    return allPassed;
+  });
+}
+
+async function getTokenArt(port: number, tokenName: string, query: string) {
+  const response = await realFetch(
+    `http://127.0.0.1:${port}/api/tokens/${encodeURIComponent(tokenName)}/art${query}`,
+  );
+  return {
+    status: response.status,
+    bytes: Buffer.from(await response.arrayBuffer()),
+  };
 }
 
 export async function runCardsRoutesTests(): Promise<boolean> {
@@ -74,8 +154,7 @@ export async function runCardsRoutesTests(): Promise<boolean> {
         secondBytes.equals(first.bytes),
     );
 
-    const token = await getImage(port, 'Treasure');
-    allPassed &&= check('a token is 404', token.status === 404);
+    allPassed &&= await checkTokenImages(port);
     const unknown = await getImage(port, 'No Such Card Anywhere');
     allPassed &&= check('an unknown card is 404', unknown.status === 404);
 
