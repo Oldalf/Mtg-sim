@@ -75,19 +75,22 @@ export function uniqSorted(list: string[]): string[] {
 
 export class KillSearchState {
   // ht / muck: how many High Tides / Bubbling Mucks resolved this turn (each adds +1 per Island / Swamp).
-  // htCount / swCount / lands: untapped Island-typed / Swamp-typed / all lands (already in the pool).
-  // mix: [dual, island-only, swamp-only, other] over ALL our lands, used when Frantic Search / Snap /
+  // islandsForHighTide / swampsForMuck / landCount: untapped Island-typed / Swamp-typed / all lands (already in the pool).
+  // landMix: [dual, island-only, swamp-only, other] over ALL our lands, used when Frantic Search / Snap /
   // Unwind / Turnabout untap lands that were tapped earlier.
-  // free: coloured mana from outside our lands (rocks, floating mana, Dark Ritual). High Tide / Bubbling
-  // Muck are paid from it if possible; otherwise an Island / Swamp taps for them and misses the bonus.
-  // freeC: the same for colourless mana (Sol Ring), used first for Energybending's {2}.
+  // blue / black / anyColour FromOutsideLands: the pool's mana from outside our lands (rocks, floating mana,
+  // Dark Ritual), by what it can pay. High Tide / Bubbling Muck are paid from it if it makes their colour;
+  // otherwise an Island / Swamp taps for them and misses the bonus.
+  // colourlessFromOutsideLands: the same for colourless mana (Sol Ring), used first for Energybending's {2}.
   pool: Pool = { U: 0, B: 0, A: 0, C: 0, S: 0 };
   islandsForHighTide = 0;
   swampsForMuck = 0;
   highTides = 0;
   bubblingMucks = 0;
   landMix: number[] = [0, 0, 0, 0];
-  coloursFromOutsideLands = 0;
+  blueFromOutsideLands = 0;
+  blackFromOutsideLands = 0;
+  anyColourFromOutsideLands = 0;
   colourlessFromOutsideLands = 0;
   hand: string[] = [];
   graveyardSpells: string[] = [];
@@ -148,7 +151,9 @@ export class KillSearchState {
     state.highTides = this.highTides;
     state.bubblingMucks = this.bubblingMucks;
     state.landMix = this.landMix; // replaced, never changed in place
-    state.coloursFromOutsideLands = this.coloursFromOutsideLands;
+    state.blueFromOutsideLands = this.blueFromOutsideLands;
+    state.blackFromOutsideLands = this.blackFromOutsideLands;
+    state.anyColourFromOutsideLands = this.anyColourFromOutsideLands;
     state.colourlessFromOutsideLands = this.colourlessFromOutsideLands;
     state.hand = this.hand;
     state.graveyardSpells = this.graveyardSpells;
@@ -217,7 +222,7 @@ export class KillSearchState {
     const pool = this.pool;
     return (
       `${pool.U},${pool.B},${pool.A},${pool.C},${pool.S},${this.highTides},${this.bubblingMucks},${this.islandsForHighTide},${this.swampsForMuck},` +
-      `${this.landMix},${this.coloursFromOutsideLands},${this.colourlessFromOutsideLands}|${this.hand}|${this.graveyardSpells}|${this.graveyardCreatures}|` +
+      `${this.landMix},${this.blueFromOutsideLands},${this.blackFromOutsideLands},${this.anyColourFromOutsideLands},${this.colourlessFromOutsideLands}|${this.hand}|${this.graveyardSpells}|${this.graveyardCreatures}|` +
       `${+this.hasGuildmage}${this.guildmageActivations}${+this.hasMindcrank}${+this.hasKonrad}${+this.hasMindskinner}${+this.mindskinnerCanAttack}${+this.hasMonument}` +
       `${+this.monumentCanExhaust}${+this.emetSelchUsed}${+this.opponentLostLife},${this.sacrificeFodder}|${this.opponentLife}|${this.opponentLibrary}|${this.opponentPoison}|${this.energyTapTargets}`
     );
@@ -619,7 +624,7 @@ export class KillSearchState {
       const manaMade =
         this.graveyardNonSpellCount + this.graveyardSpells.length >= 7 ? 5 : 3; // threshold: seven or more cards in the graveyard
       this.pool.B += manaMade;
-      this.coloursFromOutsideLands += manaMade;
+      this.blackFromOutsideLands += manaMade;
     } else if (name === 'Drain Power') {
       this.pool.C += this.opponentLandCount; // (a second cast via Gale targets another opponent)
       this.colourlessFromOutsideLands += this.opponentLandCount;
@@ -632,14 +637,14 @@ export class KillSearchState {
       }
     } else if (name === 'Dark Ritual') {
       this.pool.B += 3;
-      this.coloursFromOutsideLands += 3;
+      this.blackFromOutsideLands += 3;
     } else if (name === 'High Tide') {
       // every copy stacks: +1 U for each Island not yet tapped
-      this.paidByLand('islandsForHighTide');
+      this.payBonusSpell('islandsForHighTide');
       this.pool.U += this.islandsForHighTide;
       this.highTides += 1;
     } else if (name === 'Bubbling Muck') {
-      this.paidByLand('swampsForMuck');
+      this.payBonusSpell('swampsForMuck');
       this.pool.B += this.swampsForMuck;
       this.bubblingMucks += 1;
     } else if (name === 'Energybending') {
@@ -651,8 +656,11 @@ export class KillSearchState {
       for (let payment = 0; payment < genericCost; payment++) {
         if (this.colourlessFromOutsideLands > 0)
           this.colourlessFromOutsideLands -= 1;
-        else if (this.coloursFromOutsideLands > 0)
-          this.coloursFromOutsideLands -= 1;
+        else if (this.anyColourFromOutsideLands > 0)
+          this.anyColourFromOutsideLands -= 1;
+        else if (this.blueFromOutsideLands > 0) this.blueFromOutsideLands -= 1;
+        else if (this.blackFromOutsideLands > 0)
+          this.blackFromOutsideLands -= 1;
         else paid += 1;
       }
       paid = Math.min(paid, this.landCount);
@@ -682,12 +690,22 @@ export class KillSearchState {
     return true;
   }
 
-  /** High Tide / Muck cost one coloured mana. Use mana from outside our lands if there is any;
-   *  otherwise one Island / Swamp was tapped to pay, so it no longer counts for the bonus. */
-  paidByLand(attr: 'islandsForHighTide' | 'swampsForMuck'): void {
-    if (this.coloursFromOutsideLands > 0) this.coloursFromOutsideLands -= 1;
-    else if (this[attr] > 0) {
-      this[attr] -= 1;
+  /** High Tide ({U}) / Muck ({B}) resolve after spendMana took their mana from the pool. Who paid decides the
+   *  bonus: mana from outside our lands of that colour if there is any (the pool stays as it is), else
+   *  any-colour mana from outside our lands (it leaves the pool and the land mana spendMana took goes back),
+   *  else an Island / Swamp, which then misses the bonus. */
+  payBonusSpell(landsWithBonus: 'islandsForHighTide' | 'swampsForMuck'): void {
+    const isHighTide = landsWithBonus === 'islandsForHighTide';
+    if (isHighTide && this.blueFromOutsideLands > 0)
+      this.blueFromOutsideLands -= 1;
+    else if (!isHighTide && this.blackFromOutsideLands > 0)
+      this.blackFromOutsideLands -= 1;
+    else if (this.anyColourFromOutsideLands > 0 && this.pool.A > 0) {
+      this.anyColourFromOutsideLands -= 1;
+      this.pool.A -= 1;
+      this.pool[isHighTide ? 'U' : 'B'] += 1;
+    } else if (this[landsWithBonus] > 0) {
+      this[landsWithBonus] -= 1;
       this.landCount -= 1;
     }
   }

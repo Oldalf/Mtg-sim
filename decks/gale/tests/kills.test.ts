@@ -291,6 +291,33 @@ export function runKillTests(): boolean {
     game,
     1,
   );
+  // Pontus's pod game (seed 206, turn 4): High Tide, then Konrad ({3}{B}{B}) and unkicked Cacophony ({1}{U}).
+  // 3 Islands + Swamp + a rock: if the rock pays High Tide, 6 U + 1 B; if an Island does, 6 mana with 2 B.
+  // Never 7 with BB: no kill, with a filter Signet or a plain one. (The line only kills at libraries <= 45.)
+  for (const rockName of ['Dimir Signet', 'Arcane Signet']) {
+    game = board({
+      battlefieldNames: [rockName, 'Mindcrank'],
+      hand: [
+        'High Tide',
+        'Syr Konrad, the Grim',
+        'Maddening Cacophony',
+        'Mocking Sprite',
+        'Swamp',
+      ],
+      lands: [...islands(3), 'Swamp'],
+    });
+    game.opponentLibrarySizes = [40, 40, 40];
+    check(`${rockName}: High Tide, Konrad, Cacophony -> no`, game, 0);
+  }
+  check(
+    'Arcane Signet pays High Tide, 4 Islands keep the bonus: 8 + 1 = 9 for Guildmage + kicked Cacophony',
+    board({
+      battlefieldNames: ['Arcane Signet', ...GUILDMAGE_ONLY],
+      hand: ['High Tide', 'Maddening Cacophony'],
+      lands: [...islands(4), 'Swamp'],
+    }),
+    1,
+  );
   // Konrad chains are checked with real shuffles: about 68% / 100% / 45% in a separate random-deal check (the old Python tool, since removed)
   const KONRAD_AND_MINDCRANK = ['Syr Konrad, the Grim', 'Mindcrank'];
   game = board({

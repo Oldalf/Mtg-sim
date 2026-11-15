@@ -46,8 +46,10 @@ function addManaAndLands(
   let islandsForHighTide = 0;
   let swampsForMuck = 0;
   let lands = 0;
-  let free = nextTurn ? 0 : game.pool.U + game.pool.B;
-  let freeColourless = nextTurn ? 0 : game.pool.C;
+  let blueFromOutsideLands = nextTurn ? 0 : game.pool.U;
+  let blackFromOutsideLands = nextTurn ? 0 : game.pool.B;
+  let anyColourFromOutsideLands = 0;
+  let colourlessFromOutsideLands = nextTurn ? 0 : game.pool.C;
   const landMix = [0, 0, 0, 0]; // dual, island-only, swamp-only, other: all lands, tapped or not
   for (const permanent of game.battlefield) {
     if (permanent.land !== null) {
@@ -64,10 +66,13 @@ function addManaAndLands(
       pool.U += 1;
       pool.B += 1;
     } else if (kind === 'C2') pool.C += 2;
-    if (permanent.land === null && ['U', 'B', 'A', 'F', 'UB'].includes(kind))
-      free += kind === 'UB' ? 2 : 1;
-    else if (permanent.land === null && (kind === 'C' || kind === 'C2'))
-      freeColourless += kind === 'C2' ? 2 : 1;
+    if (permanent.land === null) {
+      if (kind === 'U' || kind === 'UB') blueFromOutsideLands += 1;
+      if (kind === 'B' || kind === 'UB') blackFromOutsideLands += 1;
+      if (kind === 'A' || kind === 'F') anyColourFromOutsideLands += 1;
+      if (kind === 'C') colourlessFromOutsideLands += 1;
+      if (kind === 'C2') colourlessFromOutsideLands += 2;
+    }
     if (permanent.land !== null) {
       lands += 1;
       if (permanent.land.island || isEnergybendingActive) {
@@ -98,8 +103,10 @@ function addManaAndLands(
   state.bubblingMucks = mucks;
   state.landCount = lands;
   state.landMix = landMix;
-  state.coloursFromOutsideLands = free;
-  state.colourlessFromOutsideLands = freeColourless;
+  state.blueFromOutsideLands = blueFromOutsideLands;
+  state.blackFromOutsideLands = blackFromOutsideLands;
+  state.anyColourFromOutsideLands = anyColourFromOutsideLands;
+  state.colourlessFromOutsideLands = colourlessFromOutsideLands;
 }
 
 /** The hand's card names, with the cards in `remove` taken out and the cards in `add` put in. */

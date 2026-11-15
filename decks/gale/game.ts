@@ -85,7 +85,7 @@ export class GaleGame extends Game<KillSearchState> {
     amount: number,
   ): void {
     state.pool.A += amount;
-    state.coloursFromOutsideLands += amount;
+    state.anyColourFromOutsideLands += amount;
   }
   override addLandToKillSearchState(state: KillSearchState): void {
     state.pool.A += 1;

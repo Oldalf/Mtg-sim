@@ -29,7 +29,7 @@ Rules for every task:
 |---|---|---|---|
 | 0 | Z0 | `npm run verify` for step 6's D4 (skipped on 2026-11-15) | Haiku 5.5 |
 | 1 | A1 | Gale's High Tide kill with a Dimir Signet: a test that shows it, and why | Opus 5.5 |
-| 2 | A2 | Fix the kill search's filter Signets (after P: before or instead of B) | Opus 5.5 |
+| 2 | A2 | Fix the kill search's High Tide double count (after P: before or instead of B) | Opus 5.5 |
 | 3 | B1 | Real mana: the design (tapping in order, a floating pool, the steps of a turn) | Opus 5.5, then Pontus |
 | 4 | B2... | Real mana: the build, in tasks B1 writes | B1 says |
 | 5 | C1 | Meren's Snake: deathtouch or not | Sonnet 5.5, after P |
@@ -69,9 +69,26 @@ So the line is not there. The likely cause (found while writing this plan, not y
 2. Find why the search finds the line. Start from the snapshot above; check the Signet's colour too (it makes {U}{B}, not "any"). Then check why the game itself let the line through: the cast of Konrad must pay through `pay`; if `pay` found the mana, there is a second bug in the engine's payment; if the kill line was executed without paying, say so.
 3. Write what you found under this task and stop: A2 or B fixes it.
 
-### A2. Fix the kill search's filter Signets (Opus 5.5, after P)
+**Found (2026-11-15).**
 
-Pontus decides whether A2 comes before B (a small fix now, so Gale's numbers are right while B is designed) or B replaces it. If A2: the snapshot and `KillSearchState` treat a filter Signet as "pay one mana in, get {U}{B} out" (the mana fed in is a land's, so an Island that feeds it before High Tide loses its bonus). The A1 test passes. Gale's results change on purpose: show Pontus a fixed-seed goldfish run (`-n 3000`) and the pod run before and after, then re-record the baselines. Check every other mana source the snapshot counts as "free" the same way (Talismans, Sol Ring, Treasures, rituals).
+- **The tests.** Two cases in `decks/gale/tests/kills.test.ts`: the position with a Dimir Signet, and the same with an Arcane Signet. Both fail today (`got 1, expected 0`). The search finds Pontus's exact line (High Tide, Konrad, unkicked Cacophony, libraries emptied) when the opponents' libraries are 45 or less. At 50 or more the Konrad/Mindcrank chain does not empty them, so the tests use 40. The pod game itself could not be replayed: `--trace 1 --seed 206` with the same six decks plays a different game under every policy, so its library sizes are unknown.
+- **The cause is not the filter Signet.** An Arcane Signet (one mana of any colour, nothing fed in) makes the same wrong kill. A Sol Ring does not, because its mana is colourless. The bug is that High Tide's payment is counted twice:
+  - `paidByLand` (`decks/gale/kill-state.ts`) sees mana from outside the lands (`coloursFromOutsideLands`, the rock) and says the rock paid High Tide, so all 3 Islands keep their bonus. But it only lowers the counter. It does not take that mana out of the pool.
+  - `spendMana` then pays High Tide's {U} from `pool.U`, which is an Island's mana.
+  - The rock's mana is still in the pool as `A` (any colour) and pays Konrad's second {B}. After High Tide the search has U 5, B 1, A 1: 7 mana with BB.
+  - The real board has 7 mana with one B (the rock pays High Tide) or 6 with BB (an Island pays). Konrad and Cacophony need 7 with BB.
+- **The filter Signet's colour.** Counting the filter Signet as "any" is a smaller inaccuracy, and it does not change this position. With the double count fixed, "any" gives the same best as feeding it a land: 6 U + 1 B, or 6 with BB.
+- **The same pattern elsewhere.** `paidByLand` also pays Bubbling Muck (Swamps) this way. Energybending's {2} lowers the same two counters while `spendMana` pays from the pool, so it should be checked too.
+- **The engine's payment is right.** Paying the same spells through `game.pay` refuses Konrad.
+- **The game never pays a kill line.** `checkKill` (`engine/game/game-core.ts`, around line 655) takes the search's verdict, declares the win, and only logs the line's steps (`lastKillLine`). So the log's "cast" steps were never paid, and any miscount in a kill search becomes a win. This is the case for B1 question 3: a test that replays each found kill line through `pay` would have caught this one.
+
+Committed together with A2, so `main` never has failing tests.
+
+### A2. Fix the kill search's High Tide double count (Opus 5.5, after P)
+
+Pontus decides whether A2 comes before B (a small fix now, so Gale's numbers are right while B is designed) or B replaces it. If A2: fix the double count A1 found. When `paidByLand` lets mana from outside the lands pay High Tide or Muck, that mana must also leave the pool (and Energybending's {2} the same way). The filter Signet as "any" can stay, unless a test shows a position where its fixed {U}{B} matters. The A1 tests pass.
+
+**Done (2026-11-15).** `KillSearchState` now splits the outside mana into `blueFromOutsideLands`, `blackFromOutsideLands`, `anyColourFromOutsideLands` (and `colourlessFromOutsideLands` as before), and `payBonusSpell` (was `paidByLand`) pays High Tide / Muck from outside mana of its colour, else from any-colour mana (which then leaves the pool), else from a land. A Dark Ritual's {B} no longer pays High Tide. A positive test checks that a rock paying High Tide still leaves every Island its bonus. Results (same seeds): Gale goldfish `-n 3000` win by T8 58.0% -> 57.7%, with counter backup 37.9% -> 37.1%; the verify pod run (gale meren samfrodo aesi edgar, 200 games) only moves Gale's avg turn 7.26 -> 7.33. `regress_baseline/gale.json` and `pod.txt` re-recorded; `npm run verify` was skipped on Pontus's word. Still not exact: the outside-mana counters do not go down when that mana is spent on other spells, and the game still never pays a kill line (see B1). Gale's results change on purpose: show Pontus a fixed-seed goldfish run (`-n 3000`) and the pod run before and after, then re-record the baselines. Check every other mana source the snapshot counts as "free" the same way (Talismans, Sol Ring, Treasures, rituals).
 
 ---
 

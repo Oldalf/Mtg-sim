@@ -492,7 +492,7 @@ function selfCounterMoves(state: KillSearchState): KillSearchState[] {
           }
           if (counterName === "An Offer You Can't Refuse") {
             next.pool.A += 2;
-            next.coloursFromOutsideLands += 2;
+            next.anyColourFromOutsideLands += 2;
           } else if (counterName === 'Unwind') next.untapLands(3);
           else if (counterName === 'Rewind') next.untapLands(4);
           next.graveyardSpells = addSorted(
