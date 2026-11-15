@@ -534,6 +534,17 @@ export function attackPreference(
   const player = table.playerOf(game);
   const target = table.opponentsOf[player][slot];
   const jitter = table.random.random() * 2; // breaks ties between equal targets
+  // the initiative's holder is worth attacking: combat damage to them takes it
+  const initiativeBonus = table.games[target].hasInitiative ? 6 : 0;
+  return threatPreference(table, player, target, jitter) + initiativeBonus;
+}
+
+function threatPreference(
+  table: PodTable,
+  player: number,
+  target: number,
+  jitter: number,
+): number {
   switch (table.settings.threatMode) {
     case 'leader': {
       const biggestThreat = Math.max(

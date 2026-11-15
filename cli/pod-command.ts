@@ -9,6 +9,7 @@ import { buildPodReport, printPod } from '../engine/pod/pod-report';
 import { runPodTests } from '../engine/pod/pod.test';
 import { runControlExchangeTests } from '../engine/pod/pod-exchange.test';
 import { runForcedAttackTests } from '../engine/pod/pod-forced-attacks.test';
+import { runDungeonTests } from '../engine/game/dungeons.test';
 import { runBlinkTests } from '../engine/game/blink.test';
 import { runSearchManaTests } from '../engine/game/search-mana.test';
 import { runOpponentCastTests } from '../engine/pod/pod-opponent-cast.test';
@@ -67,6 +68,7 @@ export async function runPodCommand(
     const areOpponentCastTriggersRight = runOpponentCastTests(decks);
     const isSearchManaRight = runSearchManaTests();
     const isBlinkRight = runBlinkTests(decks);
+    const areDungeonsRight = runDungeonTests(decks);
     process.exit(
       podTestsPassed &&
         isLogHarmless &&
@@ -77,7 +79,8 @@ export async function runPodCommand(
         areForcedAttacksRight &&
         areOpponentCastTriggersRight &&
         isSearchManaRight &&
-        isBlinkRight
+        isBlinkRight &&
+        areDungeonsRight
         ? 0
         : 1,
     );

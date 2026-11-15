@@ -213,6 +213,8 @@ export interface Arena {
   answerWin(game: Game<unknown>): boolean;
   /** We cast this spell (paid, on the stack): does an opponent counter it? */
   counter(game: Game<unknown>, card: CardDef): boolean;
+  /** We take the initiative: every other player loses it. */
+  takeInitiative(game: Game<unknown>): void;
   /** We cast this spell: each living opponent's "whenever an opponent casts a spell" cards trigger. */
   announceCast(game: Game<unknown>, card: CardDef): void;
   /** How much we'd rather attack opponent `slot` (the pod's threat rule, step 4). */

@@ -7,12 +7,26 @@ import type { GameCore } from './game-core';
 import { Permanent } from './game-types';
 import { fetchLand } from './land-search';
 import { firstMax } from '../util/lists';
+import {
+  takesInitiativeOnEnter,
+  ventureIntoDungeon,
+  venturesOnEnter,
+} from './dungeons';
 
 /** The enter trigger of a common card. Returns false if the permanent has none here. */
 export function enterTriggerOfCommonCard(
   game: GameCore,
   permanent: Permanent,
 ): boolean {
+  // what the card's text says (any card): venture, take the initiative
+  if (venturesOnEnter(permanent.card)) {
+    ventureIntoDungeon(game);
+    return true;
+  }
+  if (takesInitiativeOnEnter(permanent.card)) {
+    game.takeInitiative();
+    return true;
+  }
   switch (permanent.card.name) {
     case 'Solemn Simulacrum':
       fetchLand(game, 'basic', true);

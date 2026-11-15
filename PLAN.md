@@ -60,7 +60,7 @@ Rules for every task:
 | 11 | M2 | Forced attacks and goad in pod combat (done) | Opus 5.5 |
 | 12 | M3 | Triggers on another player's spell (done) | Sonnet 5.5 |
 | 13 | M4 | Blink (done) | Opus 5.5 |
-| 14 | M5 | Dungeons, venture and the initiative | Opus 5.5 |
+| 14 | M5 | Dungeons, venture and the initiative (done) | Opus 5.5 |
 | 15 | B4 | Thantis | Sonnet 5.5 |
 | 16 | B5 | DnD | Opus 5.5 |
 | 17 | B6 | Azula | Opus 5.5, after P |
@@ -199,6 +199,8 @@ For DnD. Rules 309 (dungeons) and 725 (the initiative):
 - **The initiative:** taking it ventures into the Undercity (only there). The holder ventures again at their upkeep. A player who deals combat damage to the holder takes it. It is a pod-wide thing: one player has it at a time, and the others want to take it, so the pod's attack choice must value it.
 - The rooms as data (one table per dungeon, the room effects as small functions), the dungeon a player is in and the room they are in as game state, shown in the log ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin").
 - Which dungeon and which path to pick: a simple rule first (Lost Mine for DnD, as Pontus says the owner plays; the path that gives cards or tokens), written in the deck, not the engine.
+
+**Built (2026-11-16).** `engine/game/dungeons.ts`: the four dungeons as data (Lost Mine of Phandelver, Dungeon of the Mad Mage, Tomb of Annihilation, Undercity; each room's text, where it leads, a value for the default path, its effect), `ventureIntoDungeon(game, intoUndercity)`, a completed dungeon (`completedDungeons`), and the log line ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin"). Room abilities trigger again with Hama Pashar, or Dungeon Delver with our commander out. Game state: `dungeonPosition`, `completedDungeons`, `hasInitiative`. Hooks for the deck: `chooseDungeon` (default Lost Mine) and `chooseDungeonRoom` (default: the room worth the most: cards and tokens first). The initiative: `takeInitiative()` ventures into Undercity, its holder ventures again at the upkeep (`upkeepTriggersOfTheGame`, with rebound), combat damage to the holder takes it (`pod-combat.ts`), one holder in a pod (`PodTable.takeInitiative`), and the pod's attack choice adds 6 to the holder (`attackPreference`). Card text: "When ... enters, venture into the dungeon" and "... you take the initiative" are read from the oracle (`venturesOnEnter`, `takesInitiativeOnEnter`) in the common enter trigger. Not modelled: rooms that only hit an opponent's creature (Twisted Caverns, Fungi Cavern, Arena's goad), the initiative passing on when its holder leaves the game, Runestone Caverns is counted as drawing the two cards. Treasure tokens from rooms are made, but the engine doesn't tap Treasures yet (Codie, Edgar, Gale and Sam & Frodo each do it themselves: rule of three, a job for B5 or E2). Tests: `engine/game/dungeons.test.ts` (in `npm run pod -- --test`). Every deck IDENTICAL.
 
 ## B. The friends' decks (after A4; the M tasks a deck needs come first)
 

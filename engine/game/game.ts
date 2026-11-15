@@ -45,6 +45,9 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   override podCounters(card: CardDef): boolean {
     return this.inArena() && this.arena!.counter(this, card);
   }
+  override podTakeInitiative(): void {
+    if (this.inArena()) this.arena!.takeInitiative(this);
+  }
   override podAnnounceCast(card: CardDef): void {
     if (this.inArena()) this.arena!.announceCast(this, card);
   }

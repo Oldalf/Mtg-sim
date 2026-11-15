@@ -382,6 +382,13 @@ export class PodTable {
 
   // ================================================================ forced attacks and goad
 
+  /** This player takes the initiative: only one player has it at a time. */
+  takeInitiative(player: number): void {
+    this.games.forEach(
+      (game, other) => (game.hasInitiative = other === player),
+    );
+  }
+
   /** `goader` goads this creature: until the goader's next turn it attacks each combat, someone else if able. */
   goad(goader: number, creature: Permanent): void {
     const goaders = this.goaders.get(creature) ?? new Set<number>();

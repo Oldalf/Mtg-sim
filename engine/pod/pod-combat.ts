@@ -163,6 +163,8 @@ export function fightOpponent(
         );
   if (isKill && damage < defenderLife)
     table.commanderKilled.add(defenderPlayer);
+  // combat damage to the initiative's holder takes it
+  if (damage > 0 && defender.hasInitiative) attackingGame.takeInitiative();
   return { rows, damage: damage, kills: isKill };
 }
 

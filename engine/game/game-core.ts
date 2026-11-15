@@ -56,6 +56,13 @@ import {
 } from './game-types';
 import { playKillLineOnCopy } from './kill-line';
 import { BlinkedCard, resolveBlinkSpell, returnBlinkedCards } from './blink';
+import {
+  Dungeon,
+  DungeonPosition,
+  DungeonRoom,
+  bestRoom,
+  ventureIntoDungeon,
+} from './dungeons';
 import { PaymentRecord, UNTAP, isSourceOfClass } from './search-mana';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import {
@@ -179,6 +186,11 @@ export abstract class GameCore<S = unknown> {
   cardsReturningAtEndStep: BlinkedCard[] = [];
   /** Cards exiled by rebound, cast again at our next upkeep. */
   reboundCards: CardDef[] = [];
+  /** The dungeon and room we are in (dungeons.ts); null when in none. */
+  dungeonPosition: DungeonPosition | null = null;
+  completedDungeons = 0;
+  /** Do we have the initiative? (In a pod the table keeps one holder.) */
+  hasInitiative = false;
   battlefield: Permanent[] = [];
   /** Cards another player owns that left our battlefield and are on their way to a zone (see putCard). */
   cardsGoingToTheirOwner: { card: CardDef; owner: GameCore<unknown> }[] = [];
@@ -1615,6 +1627,21 @@ export abstract class GameCore<S = unknown> {
     return true;
   }
 
+  /** The upkeep triggers the game itself has: rebound, and the initiative (its holder ventures into Undercity). */
+  upkeepTriggersOfTheGame(): void {
+    this.castReboundCards();
+    if (this.hasInitiative) ventureIntoDungeon(this, true);
+  }
+
+  /** We take the initiative (an enter trigger, or combat damage to its holder): it is ours alone, and we venture
+   *  into Undercity. */
+  takeInitiative(): void {
+    this.podTakeInitiative();
+    this.hasInitiative = true;
+    this.say('takes the initiative');
+    ventureIntoDungeon(this, true);
+  }
+
   /** Rebound: at our upkeep, the cards exiled with rebound are cast again for free, then go to the graveyard. */
   castReboundCards(): void {
     const rebounding = this.reboundCards;
@@ -2179,7 +2206,7 @@ export abstract class GameCore<S = unknown> {
     this.opponentUpkeep();
     this.enterStep('upkeep');
     this.upkeep();
-    this.castReboundCards();
+    this.upkeepTriggersOfTheGame();
     this.enterStep('draw');
     this.draw(1);
     this.enterStep('main1');
@@ -2377,7 +2404,7 @@ export abstract class GameCore<S = unknown> {
     if (this.turn > 1 && !this.inArena()) this.opponentUpkeep();
     this.enterStep('upkeep');
     this.upkeep();
-    this.castReboundCards();
+    this.upkeepTriggersOfTheGame();
     this.enterStep('draw');
     if (!(this.turn === 1 && this.onPlay)) this.draw(1);
     this.logCardMovesSoFar();
@@ -2519,6 +2546,14 @@ export abstract class GameCore<S = unknown> {
   /** A permanent of ours left the battlefield: it died, was blinked, or an opponent removed it ("leaves the
    *  battlefield" triggers). It's already off the battlefield. */
   onLeave(_permanent: Permanent): void {}
+  /** Which dungeon "venture into the dungeon" enters when we are in none. */
+  chooseDungeon(_dungeons: Dungeon[]): string {
+    return 'Lost Mine of Phandelver';
+  }
+  /** Which room to move to (the rooms the current one leads to). Default: the one worth the most. */
+  chooseDungeonRoom(rooms: DungeonRoom[]): DungeonRoom {
+    return bestRoom(rooms);
+  }
   /** How much we want this permanent blinked (its enter trigger again). Only one above 0 is chosen by a blink
    *  spell that picks; a token is never worth it (it would be gone). Decks override it for their own cards. */
   blinkValue(permanent: Permanent): number {
@@ -2692,6 +2727,8 @@ export abstract class GameCore<S = unknown> {
   podCounters(_card: CardDef): boolean {
     return false;
   }
+  /** We take the initiative: in a pod, every other player loses it. */
+  podTakeInitiative(): void {}
   /** We cast this spell: tell the opponents, so their "whenever an opponent casts a spell" cards trigger (before
    *  any counterspell, as the trigger goes on the stack above the spell). */
   podAnnounceCast(_card: CardDef): void {}
