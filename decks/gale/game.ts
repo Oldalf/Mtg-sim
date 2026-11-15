@@ -37,7 +37,7 @@ import { finisherReachable, search } from './kills';
 import { chooseTutorTarget } from './tutoring';
 import { buildCandidates, castWithGaleRecast } from './candidates';
 import { buildKillSearchState } from './snapshot';
-import { resolveGaleSpell } from './spells';
+import { resolveGaleSpell, resolveUnearth } from './spells';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -261,6 +261,15 @@ export class GaleGame extends Game<KillSearchState> {
     this.guildmageActivations = 0;
     this.emetSelchUsed = false;
     this.konradActivations = 0;
+  }
+  override resolve(
+    card: CardDef,
+    fromGraveyard = false,
+    mode: string | null = null,
+  ): void {
+    // Gale's own Unearth, not the engine's: it picks by the kill line's roles and triggers Syr Konrad
+    if (card.name === 'Unearth') resolveUnearth(this);
+    else super.resolve(card, fromGraveyard, mode);
   }
   override resolveOther(
     card: CardDef,

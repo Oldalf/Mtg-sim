@@ -39,6 +39,7 @@ import {
 } from './cards';
 import { buildCandidates } from './candidates';
 import {
+  chooseCodieLand,
   chooseTutorTarget,
   fetchCardFromLibrary,
   resolveCodieSpell,
@@ -238,6 +239,9 @@ export class CodieGame extends Game<CodieGame> {
   ): void {
     if (!resolveCodieSpell(this, card))
       super.resolve(card, fromGraveyard, mode);
+  }
+  override chooseLandToFetch(candidates: CardDef[], toHand: boolean): CardDef {
+    return chooseCodieLand(this, candidates, toHand);
   }
   isStillAlive(): boolean {
     return !this.died;

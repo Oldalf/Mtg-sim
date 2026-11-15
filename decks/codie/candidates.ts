@@ -3,7 +3,6 @@ import {
   BRASS_BOUNTY,
   CODIE,
   DEMONIC_TUTOR,
-  FETCH,
   FINISHERS,
   MANA_GEYSER,
   HOLD,
@@ -14,6 +13,7 @@ import {
   LIM_DUL_VAULT,
   JESKAS_WILL,
 } from './cards';
+import { LAND_SEARCH } from '../../engine/cards/card-facts';
 import {
   activateCodie,
   exileFromHand,
@@ -103,7 +103,7 @@ function addSpiritGuideCandidates(game: CodieGame, add: AddCandidate): void {
         card.land === null &&
         !HOLD.has(card.name) &&
         card !== guide &&
-        (FETCH[card.name] ||
+        (isLandRamp(card.name) ||
           card.name === 'Manamorphose' ||
           card.name === DEMONIC_TUTOR) &&
         card.manaValue === manaAvailable + 1,
@@ -135,6 +135,12 @@ function addVaultCandidate(game: CodieGame, add: AddCandidate): void {
     );
 }
 
+/** A spell that puts lands onto the battlefield (Sylvan Scrying, which finds one for the hand, is a card draw here). */
+function isLandRamp(name: string): boolean {
+  const search = LAND_SEARCH[name];
+  return !!search && !search.toHand;
+}
+
 /** One card in hand: land fetchers, cantrips, tutors and Windfall; the cards only the solver uses are skipped. */
 function addCardInHandCandidate(
   game: CodieGame,
@@ -145,7 +151,7 @@ function addCardInHandCandidate(
   const cost = game.effectiveCost(card);
   const score = game.developmentValue(card);
   const cast = () => game.castInstantOrSorcery(card);
-  const fetcher = FETCH[name];
+  const fetcher = isLandRamp(name) ? LAND_SEARCH[name] : null;
   if (fetcher) {
     const landsOnBattlefield = game.landsOnBattlefield().length;
     if (!game.library.some((candidate) => candidate.land !== null)) return;

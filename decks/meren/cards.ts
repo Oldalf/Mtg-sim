@@ -104,15 +104,7 @@ export const EDICT_ETB = new Set([
   'Accursed Marauder',
   'Fleshbag Marauder',
 ]);
-export const LAND_ETB = new Set([
-  'Simulacrum Shaper',
-  'Solemn Simulacrum',
-  'Wood Elves',
-]);
-export const DRAW_ON_DEATH = new Set([
-  'Simulacrum Shaper',
-  'Solemn Simulacrum',
-]);
+// Solemn Simulacrum, Wood Elves and the Witnesses are engine cards (engine/game/common-permanents.ts)
 export const HOLD = new Set(['Heartless Act', 'Infernal Grasp']); // removal: no targets in a goldfish game
 
 // every card this file has rules for (the rest of the list is lands and engine card facts)

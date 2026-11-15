@@ -41,6 +41,7 @@ import {
 } from '../../engine/game/game-types';
 import { Answer } from '../../engine/game/answers';
 import { GameWithoutKillSearch } from '../../engine/game/game';
+import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { firstMax } from '../../engine/util/lists';
 import { MULLIGAN } from './mulligan';
@@ -390,10 +391,7 @@ export class EdgarGame extends GameWithoutKillSearch {
     }
     this.pendingCrackback = 0;
     this.fogUsed = false;
-    if (this.isOnBattlefield('Phyrexian Arena')) {
-      this.draw(1);
-      this.loseLife(1);
-    }
+    upkeepOfCommonCards(this);
     if (this.isOnBattlefield('Dreadhorde Invasion')) this.amassZombies();
     if (this.isOnBattlefield('Keen Duelist')) this.revealWithKeenDuelist();
     if (this.isOnBattlefield('Black Market Connections'))

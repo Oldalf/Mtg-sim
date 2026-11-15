@@ -6,7 +6,6 @@ import {
   CRACKLE_WITH_POWER,
   DEMONIC_TUTOR,
   EXSANGUINATE,
-  FETCH,
   FINISHERS,
   MANA_GEYSER,
   HOLD,
@@ -29,31 +28,10 @@ import { firstMax } from '../../engine/util/lists';
 
 export function resolveCodieSpell(game: CodieGame, spell: CardDef): boolean {
   return (
-    resolveLandFetcher(game, spell) ||
     resolveManaSpell(game, spell) ||
     resolveCardSelection(game, spell) ||
     resolveTutor(game, spell)
   );
-}
-
-/** Spells that search for lands (see FETCH). */
-function resolveLandFetcher(game: CodieGame, spell: CardDef): boolean {
-  const fetcher = FETCH[spell.name];
-  if (fetcher) {
-    for (let i = 0; i < (fetcher.landsToSacrifice ?? 0); i++)
-      sacrificeLand(game);
-    for (let i = 0; i < fetcher.landCount; i++) {
-      if (fetcher.secondLandToHand && i === 1)
-        fetchLand(game, fetcher.kind, true, true);
-      else fetchLand(game, fetcher.kind, fetcher.tapped);
-    }
-    return true;
-  }
-  if (spell.name === 'Sylvan Scrying') {
-    fetchLand(game, 'any', false, true);
-    return true;
-  }
-  return false;
 }
 
 /** Rituals, Treasure makers and Manamorphose. */
@@ -171,26 +149,13 @@ function resolveTutor(game: CodieGame, spell: CardDef): boolean {
 }
 
 /** Put a land from the library onto the battlefield (or into the hand). Returns the land or null. */
-export function fetchLand(
+/** Which land a land-search spell takes: one of a colour we are short of, a nonbasic before a basic, never a
+ *  land that hurts us (Glacial Chasm, Maze of Ith, Volatile Fault). */
+export function chooseCodieLand(
   game: CodieGame,
-  kind: 'basic' | 'forest' | 'types' | 'any',
-  tapped: boolean,
-  toHand = false,
-): CardDef | null {
-  const isWantedKind = (card: CardDef) => {
-    const landInfo = card.land;
-    if (!landInfo) return false;
-    if (kind === 'basic') return !!landInfo.basic;
-    if (kind === 'forest') return !!landInfo.forest;
-    if (kind === 'types')
-      return !!(
-        landInfo.plains ||
-        landInfo.island ||
-        landInfo.swamp ||
-        landInfo.mountain
-      );
-    return true;
-  };
+  candidates: CardDef[],
+  toHand: boolean,
+): CardDef {
   const have = new Set(
     game.landsOnBattlefield().map((permanent) => permanent.card.name),
   );
@@ -209,21 +174,7 @@ export function fetchLand(
     if (card.name === 'Field of the Dead' && !toHand) score -= 3;
     return score;
   };
-  const candidates = game.library.filter(isWantedKind);
-  if (!candidates.length) return null;
-  const pick = firstMax(candidates, score);
-  game.takeCardIfThere(pick, 'library');
-  game.shuffle();
-  if (toHand) game.putCard(pick, 'hand');
-  else {
-    const entersTapped =
-      tapped || game.entersTapped(pick) || pick.land!.etb === 'tapped';
-    const land = new Permanent(pick, pick.land, entersTapped);
-    land.sick = false;
-    game.putOntoBattlefield(land);
-    game.onLandEnter(land, false);
-  }
-  return pick;
+  return firstMax(candidates, score);
 }
 
 /** Colours we are short of for the cards in hand (red for Reiterate, black for the finishers, ...). */
@@ -242,16 +193,6 @@ export function coloursWeAreShortOf(game: CodieGame): string[] {
   ] as [string, number][])
     if (have(colour) < neededCount) want.push(colour);
   return want;
-}
-
-export function sacrificeLand(game: CodieGame): void {
-  const permanent =
-    game
-      .landsOnBattlefield()
-      .filter((basicLand) => basicLand.land?.basic)
-      .sort((first, second) => +second.tapped - +first.tapped)[0] ??
-    game.landsOnBattlefield()[0];
-  if (permanent) game.takeFromBattlefieldIfThere(permanent);
 }
 
 export function putCardsBackOnLibrary(game: CodieGame, count: number): void {

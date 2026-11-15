@@ -33,6 +33,7 @@ import {
   Zone,
 } from '../../engine/game/game-types';
 import { GameWithoutKillSearch } from '../../engine/game/game';
+import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
 import { firstMax, sortDesc } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -283,28 +284,28 @@ export class MerenGame extends GameWithoutKillSearch {
     this.putOntoBattlefield(basicLand);
   }
 
-  /** The best creature card in the graveyard for some purpose. */
-  bestCreatureInGraveyard(
-    isWanted: (card: CardDef) => boolean = () => true,
-  ): CardDef | null {
-    const cards = this.graveyard.filter(
-      (card) => card.isCreature && isWanted(card),
-    );
-    return cards.length
-      ? firstMax(cards, (card) => this.battlefieldValue(card))
-      : null;
+  /** The basic land we'd fetch: a Forest when we have no more Forests than Swamps, else a Swamp. */
+  override chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
+    const want =
+      this.landsOnBattlefield().filter(
+        (permanent) => permanent.land!.mana === 'G',
+      ).length <=
+      this.landsOnBattlefield().filter(
+        (permanent) => permanent.land!.mana === 'B',
+      ).length
+        ? 'Forest'
+        : 'Swamp';
+    return candidates.find((card) => card.name === want) ?? candidates[0];
   }
 
-  /** Put a creature card from our graveyard onto the battlefield. */
-  reanimate(
-    card: CardDef,
-    options: { tapped?: boolean; counters?: number } = {},
-  ): Permanent {
-    this.takeCardIfThere(card, 'graveyard');
-    const permanent = this.enter(card, 'graveyard', { tapped: options.tapped });
-    if (options.counters) permanent.counters += options.counters;
-    this.say('  reanimate', card);
-    return permanent;
+  /** Eternal Witness: the card we want most, a noncreature first (Meren brings creatures back anyway). */
+  override returnToHandValue(card: CardDef): number {
+    return this.cardValue(card) + (card.isCreature ? 0 : 10);
+  }
+
+  /** The creature we'd most like back from the graveyard: the one worth most on the battlefield. */
+  override reanimationValue(card: CardDef): number {
+    return this.battlefieldValue(card);
   }
 
   /** Our creatures in the order we'd sacrifice them (cheapest loss first). */
@@ -394,10 +395,7 @@ export class MerenGame extends GameWithoutKillSearch {
     }
     this.pendingCrackback = 0;
     this.fogUsed = false;
-    if (this.isOnBattlefield('Phyrexian Arena')) {
-      this.draw(1);
-      this.loseLife(1);
-    }
+    upkeepOfCommonCards(this);
     this.makeOphiomancerSnake();
     for (const researcher of this.battlefield.filter(
       (permanent) => permanent.card.name === 'Grave Researcher',
@@ -630,22 +628,6 @@ export class MerenGame extends GameWithoutKillSearch {
       for (const otherCard of top)
         if (otherCard === kept) this.putCard(otherCard, 'hand');
         else this.toGraveyard(otherCard, true);
-    } else if (name === 'Persist') {
-      const anotherCard = this.bestCreatureInGraveyard(
-        (candidate) => !candidate.types.has('legendary'),
-      );
-      if (anotherCard) this.reanimate(anotherCard, { counters: -1 });
-    } else if (name === 'Unearth') {
-      const creature = this.bestCreatureInGraveyard(
-        (candidate) => candidate.manaValue <= 3,
-      );
-      if (creature) this.reanimate(creature);
-    } else if (name === 'Victimize') {
-      // (the sacrifice was paid when casting)
-      for (let copyNumber = 0; copyNumber < 2; copyNumber++) {
-        const creature = this.bestCreatureInGraveyard();
-        if (creature) this.reanimate(creature, { tapped: true });
-      }
     } else if (name === 'Songs of the Damned')
       this.pool.B += this.creaturesInGraveyard();
     else if (name === 'Deadly Brew') {

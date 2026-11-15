@@ -207,7 +207,92 @@ export const DRAW_SPELLS: Record<string, number> = {
   'Mission Briefing': 1.5, // surveil 2, then recast an instant/sorcery from the graveyard
 };
 
+/** Which lands a land-search spell may find: basic = a basic land, forest = a Forest card, types = a land with a
+ *  basic land type other than Forest (Farseek), any = any land. */
+export type LandKind = 'basic' | 'forest' | 'types' | 'any';
+/** What a land-search spell does (engine/game/land-search.ts plays it; the deck picks the lands). */
+export interface LandSearchSpell {
+  landCount: number;
+  /** The lands enter tapped. */
+  tapped: boolean;
+  kind: LandKind;
+  /** Lands we sacrifice first (Cycle of Renewal, Planar Engineering). */
+  landsToSacrifice?: number;
+  /** Cultivate: the second land goes to the hand. */
+  secondLandToHand?: boolean;
+  /** Every land goes to the hand (Sylvan Scrying). */
+  toHand?: boolean;
+}
+export const LAND_SEARCH: Record<string, LandSearchSpell> = {
+  'Rampant Growth': { landCount: 1, tapped: true, kind: 'basic' },
+  'Shared Roots': { landCount: 1, tapped: true, kind: 'basic' },
+  Farseek: { landCount: 1, tapped: true, kind: 'types' },
+  "Nature's Lore": { landCount: 1, tapped: false, kind: 'forest' },
+  'Three Visits': { landCount: 1, tapped: false, kind: 'forest' },
+  Cultivate: {
+    landCount: 2,
+    tapped: true,
+    kind: 'basic',
+    secondLandToHand: true,
+  },
+  'Explosive Vegetation': { landCount: 2, tapped: true, kind: 'basic' },
+  'Grow from the Ashes': { landCount: 1, tapped: false, kind: 'basic' },
+  'Cycle of Renewal': {
+    landCount: 2,
+    tapped: true,
+    kind: 'basic',
+    landsToSacrifice: 1,
+  },
+  'Planar Engineering': {
+    landCount: 4,
+    tapped: true,
+    kind: 'basic',
+    landsToSacrifice: 2,
+  },
+  'Hour of Promise': { landCount: 2, tapped: true, kind: 'any' },
+  'Sylvan Scrying': { landCount: 1, tapped: false, kind: 'any', toHand: true },
+};
+
+/** What a reanimation spell does (engine/game/reanimation.ts plays it; the deck picks the creatures). Only our own
+ *  graveyard: a pod game can't reach another player's. */
+export interface ReanimationSpell {
+  /** How many creatures, or all of them (Rise of the Dark Realms). */
+  count: number | 'all';
+  maxManaValue?: number;
+  nonlegendary?: boolean;
+  tapped?: boolean;
+  /** Persist: the creature comes back with a -1/-1 counter. */
+  minusOneCounter?: boolean;
+  /** Reanimate: we lose life equal to its mana value. */
+  loseLifeEqualToManaValue?: boolean;
+  /** An Aura (Animate Dead, Necromancy): it reanimates when it enters, as a permanent. */
+  isAura?: boolean;
+}
+export const REANIMATION_SPELLS: Record<string, ReanimationSpell> = {
+  Persist: { count: 1, nonlegendary: true, minusOneCounter: true },
+  Unearth: { count: 1, maxManaValue: 3 },
+  Victimize: { count: 2, tapped: true }, // the sacrifice is paid when it is cast
+  Reanimate: { count: 1, loseLifeEqualToManaValue: true },
+  'Dread Return': { count: 1 },
+  Exhume: { count: 1 },
+  'Animate Dead': { count: 1, isAura: true },
+  Necromancy: { count: 1, isAura: true },
+  'Rise of the Dark Realms': { count: 'all' },
+};
+
+/** Permanents the engine gives their enter, death or upkeep rules (engine/game/common-permanents.ts). */
+export const COMMON_PERMANENTS = [
+  'Solemn Simulacrum',
+  'Wood Elves',
+  'Eternal Witness',
+  'Timeless Witness',
+  'Phyrexian Arena',
+];
+
 export const KNOWN = new Set<string>([
+  ...COMMON_PERMANENTS,
+  ...Object.keys(LAND_SEARCH),
+  ...Object.keys(REANIMATION_SPELLS),
   ...Object.keys(LANDS),
   ...Object.keys(MDFC_LAND_BACK),
   ...Object.keys(ROCKS),

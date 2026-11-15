@@ -25,9 +25,6 @@ export function resolveGaleSpell(
     case 'Windfall':
       resolveWindfall(game);
       break;
-    case 'Unearth':
-      resolveUnearth(game);
-      break;
     case 'Gifts Ungiven':
       resolveGiftsUngiven(game);
       break;
@@ -72,7 +69,7 @@ function resolveWindfall(game: GaleGame): void {
 }
 
 /** Return the best creature with mana value 3 or less from the graveyard to the battlefield. */
-function resolveUnearth(game: GaleGame): void {
+export function resolveUnearth(game: GaleGame): void {
   const options = game.graveyard.filter(
     (card) => card.isCreature && card.manaValue <= 3,
   );

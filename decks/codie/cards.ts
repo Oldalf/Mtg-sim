@@ -90,44 +90,6 @@ export const HOLD = new Set([
   'Crop Rotation',
 ]);
 
-/** Land-fetching spells: [cost, what]. what: basic = a basic land; forest = a Forest card; types = a land with a basic land type. */
-export const FETCH: Record<
-  string,
-  {
-    landCount: number;
-    tapped: boolean;
-    kind: 'basic' | 'forest' | 'types' | 'any';
-    landsToSacrifice?: number;
-    secondLandToHand?: boolean;
-  }
-> = {
-  'Rampant Growth': { landCount: 1, tapped: true, kind: 'basic' },
-  'Shared Roots': { landCount: 1, tapped: true, kind: 'basic' },
-  Farseek: { landCount: 1, tapped: true, kind: 'types' },
-  "Nature's Lore": { landCount: 1, tapped: false, kind: 'forest' },
-  'Three Visits': { landCount: 1, tapped: false, kind: 'forest' },
-  Cultivate: {
-    landCount: 1,
-    tapped: true,
-    kind: 'basic',
-    secondLandToHand: true,
-  },
-  'Explosive Vegetation': { landCount: 2, tapped: true, kind: 'basic' },
-  'Grow from the Ashes': { landCount: 1, tapped: false, kind: 'basic' },
-  'Cycle of Renewal': {
-    landCount: 2,
-    tapped: true,
-    kind: 'basic',
-    landsToSacrifice: 1,
-  },
-  'Planar Engineering': {
-    landCount: 4,
-    tapped: true,
-    kind: 'basic',
-    landsToSacrifice: 2,
-  },
-  'Hour of Promise': { landCount: 2, tapped: true, kind: 'any' },
-};
 /** How much we want to cast each spell during development. */
 export const VALUE: Record<string, number> = {
   "Nature's Lore": 88,

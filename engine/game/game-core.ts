@@ -56,6 +56,13 @@ import {
 } from './game-types';
 import { playKillLineOnCopy } from './kill-line';
 import {
+  deathTriggerOfCommonCard,
+  enterTriggerOfCommonCard,
+  upkeepOfCommonCards,
+} from './common-permanents';
+import { resolveLandSearch } from './land-search';
+import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
+import {
   couldOtherOrderHelp,
   couldPayAtAll,
   manaAdded,
@@ -1079,6 +1086,8 @@ export abstract class GameCore<S = unknown> {
   ): void {
     if (this.resolveCardSelection(card, fromGraveyard)) return;
     if (this.resolveManaOrTutor(card, mode)) return;
+    if (resolveLandSearch(this, card)) return;
+    if (resolveReanimationSpell(this, card)) return;
     this.resolveOther(card, fromGraveyard, mode);
   }
 
@@ -1309,8 +1318,33 @@ export abstract class GameCore<S = unknown> {
     if (card.name === 'Baleful Strix') this.draw(1);
     const untap = Facts.UNTAP_ON_ETB[card.name];
     if (untap) this.untapLands(untap);
+    reanimateAsAuraEnters(this, card);
     this.onEnter(permanent, from);
     return permanent;
+  }
+
+  /** Put a creature card from our graveyard onto the battlefield. */
+  reanimate(
+    card: CardDef,
+    options: { tapped?: boolean; counters?: number } = {},
+  ): Permanent {
+    this.takeCardIfThere(card, 'graveyard');
+    const permanent = this.enter(card, 'graveyard', { tapped: options.tapped });
+    if (options.counters) permanent.counters += options.counters;
+    this.say('  reanimate', card);
+    return permanent;
+  }
+
+  /** The creature card in our graveyard we'd most like back (by reanimationValue). */
+  bestCreatureInGraveyard(
+    isWanted: (card: CardDef) => boolean = () => true,
+  ): CardDef | null {
+    const cards = this.graveyard.filter(
+      (card) => card.isCreature && isWanted(card),
+    );
+    return cards.length
+      ? firstMax(cards, (card) => this.reanimationValue(card))
+      : null;
   }
 
   /** Create n tokens (each one "enters" and triggers onEnter). */
@@ -2355,9 +2389,13 @@ export abstract class GameCore<S = unknown> {
   /** Attack (the default goldfish deals no combat damage). */
   combat(): void {}
   /** Something entered the battlefield (ETB triggers, "whenever a creature enters"). */
-  onEnter(permanent: Permanent, _from: Zone): void {}
+  onEnter(permanent: Permanent, _from: Zone): void {
+    enterTriggerOfCommonCard(this, permanent);
+  }
   /** A creature died (death triggers). It's already off the battlefield (and in the graveyard if a card). */
-  onDies(permanent: Permanent): void {}
+  onDies(permanent: Permanent): void {
+    deathTriggerOfCommonCard(this, permanent);
+  }
   /** Extra power / toughness from static effects (e.g. +1/+1 per creature card in the graveyard). */
   powerBonus(permanent: Permanent): number {
     return 0;
@@ -2368,7 +2406,9 @@ export abstract class GameCore<S = unknown> {
   /** At the beginning of our end step (before cleanup). */
   endStep(): void {}
   /** At the beginning of our upkeep (before the draw). */
-  upkeep(): void {}
+  upkeep(): void {
+    upkeepOfCommonCards(this);
+  }
   /** At the beginning of another player's upkeep (for "each upkeep" triggers). Goldfish opponents take their turns
    *  between ours; a pod calls this for real turns. */
   opponentUpkeep(): void {}
@@ -2581,6 +2621,31 @@ export abstract class GameCore<S = unknown> {
   onToGraveyard(_card: CardDef): void {}
   /** Replacement effects on a draw (e.g. look at the top cards first). */
   beforeDraw(): void {}
+  /** Which land a land-search spell takes from these (engine/game/land-search.ts). By default the one that makes
+   *  the deck's colour we have the fewest lands for. */
+  chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
+    const landsMaking = (colour: string) =>
+      this.landsOnBattlefield().filter((permanent) =>
+        C.landMakes(permanent.card, colour),
+      ).length;
+    const fewest = Math.min(...this.colors.map(landsMaking));
+    const shortColours = this.colors.filter(
+      (colour) => landsMaking(colour) === fewest,
+    );
+    return firstMax(
+      candidates,
+      (card) =>
+        shortColours.filter((colour) => C.landMakes(card, colour)).length,
+    );
+  }
+  /** How much we want this card back from the graveyard to the hand (Eternal Witness). */
+  returnToHandValue(card: CardDef): number {
+    return this.cardValue(card);
+  }
+  /** How much we want this creature back from the graveyard (reanimation spells). */
+  reanimationValue(card: CardDef): number {
+    return this.cardValue(card);
+  }
   /** Effects of cards the engine doesn't know. */
   resolveOther(
     _card: CardDef,

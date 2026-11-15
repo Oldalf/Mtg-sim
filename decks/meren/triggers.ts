@@ -1,16 +1,13 @@
 /** What happens when a permanent enters the battlefield or dies: the triggers of Meren's creatures. */
-import {
-  DRAW_ON_DEATH,
-  EDICT_ETB,
-  GRAY_MERCHANT,
-  LAND_ETB,
-  MEREN,
-  TOKENS,
-} from './cards';
+import { EDICT_ETB, GRAY_MERCHANT, MEREN, TOKENS } from './cards';
 import type { MerenGame } from './game';
 import { Permanent, Zone } from '../../engine/game/game-types';
 import { firstMax } from '../../engine/util/lists';
 import { SHRIEKMAW } from '../../engine/game/answers';
+import {
+  deathTriggerOfCommonCard,
+  enterTriggerOfCommonCard,
+} from '../../engine/game/common-permanents';
 
 // ================================================================ entering the battlefield
 export function onPermanentEntered(
@@ -116,17 +113,10 @@ function resolveCardAdvantageOnEnter(
     for (const card of top)
       if (card === land) game.putCard(card, 'hand');
       else game.toGraveyard(card, true);
-  } else if (LAND_ETB.has(name)) {
+  } else if (name === 'Simulacrum Shaper') {
     game.fetchBasic();
-  } else if (name === 'Eternal Witness' || name === 'Timeless Witness') {
-    if (game.graveyard.length) {
-      const best = firstMax(
-        game.graveyard,
-        (card) => game.cardValue(card) + (card.isCreature ? 0 : 10),
-      );
-      game.takeCardIfThere(best, 'graveyard');
-      game.putCard(best, 'hand');
-    }
+  } else if (enterTriggerOfCommonCard(game, permanent)) {
+    // Solemn Simulacrum, Wood Elves, the Witnesses: the engine's rules
   } else if (name === 'Gravedigger') {
     const best = game.bestCreatureInGraveyard(() => true);
     if (best) {
@@ -250,8 +240,10 @@ function triggerCreatureDeathPayoffs(
 /** What the creature itself does when it dies (draw, drain, reanimate, put creatures onto the battlefield). */
 function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
-  if (DRAW_ON_DEATH.has(name)) {
+  if (name === 'Simulacrum Shaper') {
     game.draw(1);
+  } else if (deathTriggerOfCommonCard(game, permanent)) {
+    // Solemn Simulacrum: the engine's rule
   } else if (name === 'Vindictive Lich') {
     const target = game.chooseTargetOpponent();
     if (target !== null) game.damageOpponent(target, 5);
