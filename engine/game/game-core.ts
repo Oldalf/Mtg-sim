@@ -1419,6 +1419,9 @@ export abstract class GameCore<S = unknown> {
         }
         return true;
       }
+      case 'Rain of Filth':
+        this.sacrificeAllLandsForMana();
+        return true;
       case 'High Tide':
         this.highTidesThisTurn += 1;
         return true;
@@ -1446,6 +1449,15 @@ export abstract class GameCore<S = unknown> {
         return true;
       default:
         return false;
+    }
+  }
+
+  /** Rain of Filth: tap each untapped land for its mana, then sacrifice every land for {B}. */
+  private sacrificeAllLandsForMana(): void {
+    for (const land of this.landsOnBattlefield()) {
+      if (!land.tapped) this.tap(land, 'B');
+      this.sacrifice(land);
+      this.pool.B += 1;
     }
   }
 

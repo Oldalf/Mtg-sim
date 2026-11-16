@@ -452,6 +452,24 @@ export class SearchMana {
     this.payments = [...this.payments, { cost: UNTAP, taps: untapped }];
   }
 
+  /** Rain of Filth: tap every untapped land for its mana, then sacrifice every land for {B}. The lands are gone for
+   *  the rest of the turn, so an untap spell cast after this finds nothing to untap. */
+  sacrificeAllLands(): void {
+    let landCount = 0;
+    for (let index = 0; index < this.landClasses.length; index++) {
+      if (!this.landClasses[index].isLand) continue;
+      while (this.untappedLands[index] > 0) {
+        this.untappedLands[index] -= 1;
+        this.tapLand(this.landClasses[index]);
+      }
+      landCount += this.allLands[index];
+    }
+    this.pool.B += landCount;
+    this.allLands = this.allLands.map((count, index) =>
+      this.landClasses[index].isLand ? 0 : count,
+    );
+  }
+
   /** The pool if every untapped land were tapped now (how much mana we could have: for scoring and the log). */
   manaWithAllLandsTapped(): Pool {
     const everything = this.copy();

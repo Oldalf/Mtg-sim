@@ -39,6 +39,7 @@ export const COMBO_SPELLS = new Set([
   'Expansion Algorithm', // poison: 1 counter, then proliferate X times
   'Turnabout', // untap all your lands (kill turn only)
   'Cabal Ritual',
+  'Rain of Filth', // taps every land, then sacrifices them all for {B} each (kill turn only)
   'Energy Tap',
   'Drain Power',
 ]); // rituals
@@ -60,6 +61,7 @@ export const COMBO_SORC = new Set([
   'Extended Absence',
   'Expansion Algorithm',
   'Turnabout',
+  'Rain of Filth',
 ]);
 
 C.registerKnown([...COMBO_PERMS, ...COMBO_SPELLS, ...ENGINES, GALE, SCION]);

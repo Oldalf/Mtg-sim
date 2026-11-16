@@ -639,6 +639,8 @@ export class KillSearchState {
         this.mana.pool.C += this.energyTapTargets[0];
         this.energyTapTargets = this.energyTapTargets.slice(1);
       }
+    } else if (name === 'Rain of Filth') {
+      this.mana.sacrificeAllLands();
     } else if (name === 'Dark Ritual') {
       this.mana.pool.B += 3;
     } else if (name === 'High Tide') {

@@ -500,6 +500,25 @@ export function runKillTests(): boolean {
     }),
     1,
   );
+  // Rain of Filth: every land taps and is then sacrificed for {B}: N lands make 2N - 1 (Guildmage + kicked Cacophony = 9)
+  check(
+    'Rain of Filth with 6 lands: 6 + 6 - 1 = 11',
+    board({
+      battlefieldNames: ['Duskmantle Guildmage'],
+      hand: ['Rain of Filth', 'Maddening Cacophony'],
+      lands: [...islands(4), ...swamps(2)],
+    }),
+    1,
+  );
+  check(
+    'Rain of Filth with 4 lands: 4 + 4 - 1 = 7 -> no',
+    board({
+      battlefieldNames: ['Duskmantle Guildmage'],
+      hand: ['Rain of Filth', 'Maddening Cacophony'],
+      lands: [...islands(2), ...swamps(2)],
+    }),
+    0,
+  );
   allPassed = runPlayedKillTests() && allPassed;
   console.log(allPassed ? 'ALL OK' : 'SOME FAILED');
   return allPassed;

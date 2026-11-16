@@ -12143,5 +12143,18 @@
   "layout": "normal",
   "oracle_id": "cc65ac73-5bef-4ecb-ad8e-39199084c027",
   "scryfall_id": "5296e353-2efc-4d72-a877-7957eff630b9"
+ },
+ "Rain of Filth": {
+  "name": "Rain of Filth",
+  "full_name": "Rain of Filth",
+  "mana_cost": "{B}",
+  "type_line": "Instant",
+  "oracle": "Until end of turn, lands you control gain \"Sacrifice this land: Add {B}.\"",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "aa77980d-0434-40f0-990f-1c8c50610174",
+  "scryfall_id": "1cf07d5a-6618-48e2-a9f0-669b75bb6e85"
  }
 }
