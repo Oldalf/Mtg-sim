@@ -921,12 +921,15 @@ export class AesiGame extends Game<AesiGame> {
     if (this.turn <= 6) {
       this.landsEnd[this.turn] = this.landsOnBattlefield().length;
     }
-    const max =
-      this.isOnBattlefield('Reliquary Tower') ||
-      this.isOnBattlefield('Graceful Adept')
-        ? 999
-        : 7;
-    if (this.hand.length > max) this.discard(this.hand.length - max);
+    if (this.hand.length > 7 && !this.hasNoMaximumHandSize())
+      this.discard(this.hand.length - 7);
+  }
+
+  /** Graceful Adept: no maximum hand size (Reliquary Tower is in the engine's check). */
+  override hasNoMaximumHandSize(): boolean {
+    return (
+      this.isOnBattlefield('Graceful Adept') || super.hasNoMaximumHandSize()
+    );
   }
   override endStep(): void {
     const permanent = this.findPermanent(CASE);

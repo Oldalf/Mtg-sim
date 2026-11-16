@@ -807,5 +807,13 @@ export function runAesiTests(): boolean {
     [true, false],
   );
 
+  // the end of turn: nine cards in hand go down to seven unless Graceful Adept is out
+  game = board([], repeatName('Island', 9));
+  game.endTurn();
+  check('no Graceful Adept: discard to seven', game.hand.length, 7);
+  game = board(['Graceful Adept'], repeatName('Island', 9));
+  game.endTurn();
+  check('Graceful Adept: no discard to seven', game.hand.length, 9);
+
   return allPassed;
 }

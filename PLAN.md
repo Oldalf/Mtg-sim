@@ -36,7 +36,7 @@ Rules for every task:
 | 5 | G5 | **Done.** A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
 | 6 | G6 | **Done.** Initiative and dungeon rooms that were left out | Sonnet 5.5 |
 | 7 | G7 | **Done.** Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
-| 8 | G8 | Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
+| 8 | G8 | **Done.** Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
 | 9 | G9 | Black tutors move to the engine | Sonnet 5.5 |
 | 10 | G10 | Aesi's and Sam & Frodo's land search use the engine's | Sonnet 5.5 |
 | 11 | G11 | Edgar, Meren and Sam & Frodo move onto `CreatureDeckGame` | Opus 5.5 (the first), Sonnet 5.5 (the others) |
@@ -169,6 +169,8 @@ Pod run (500 games, same seeds; Thantis plays Rhystic Study and Taurean Mauler, 
 1. Aesi's `endTurn()` (`decks/aesi/game.ts`) skips the discard to seven with its own check (Reliquary Tower, Graceful Adept). Replace that check with an override of `hasNoMaximumHandSize()` (Graceful Adept, then `super`) and call the engine's check. Aesi's `--regress check` must be IDENTICAL.
 2. Teval plays Finale of Revelation: with X of 10 or more it gives no maximum hand size for the rest of the game. Read how Teval casts it (`decks/teval`). If it can reach X of 10 or more, set a flag when it resolves (as Azula does with `hasSeaGateRestorationResolved`) and return it from Teval's `hasNoMaximumHandSize()`. If Teval never casts it for 10 or more, write that under this task and change nothing.
 3. A test for each (`decks/aesi` and `decks/teval` tests).
+
+Done 2026-11-16, eco mode. Aesi: `endTurn()` calls the engine's check and `hasNoMaximumHandSize()` adds Graceful Adept (the engine's check also covers Reliquary Tower, Thought Vessel and Decanter; Aesi plays none of the last two). Test in `decks/aesi/tests/aesi.test.ts`; baseline re-recorded for the two new test lines, games IDENTICAL. Teval: Finale of Revelation is on its `HOLD` list (`decks/teval/cards.ts`), never cast in a goldfish game, and no code path casts it in a pod, so it never reaches X of 10. Nothing changed for Teval. `npm run verify -- --eco`: VERIFY OK.
 
 ## G9. Black tutors move to the engine (Sonnet 5.5)
 
