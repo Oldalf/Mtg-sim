@@ -20,7 +20,13 @@ import { TREASURE } from '../../engine/cards/tokens';
 import {
   BLOODLINE_KEEPER,
   EDGAR,
+  ELDRAZI_MONUMENT,
   EVERETH,
+  BONTUS_MONUMENT,
+  HERALDS_HORN,
+  OKETRAS_MONUMENT,
+  SORIN,
+  TWILIGHT_PROPHET,
   LEGIONS_LANDING,
   PITILESS_PONTIFF,
   TOKENS,
@@ -252,19 +258,37 @@ export class EdgarGame extends CreatureDeckGame {
     return bonus;
   }
 
+  /** Eldrazi Monument: +1/+1 for each creature of ours. */
+  monumentBonus(permanent: Permanent): number {
+    return permanent.card.isCreature && this.isOnBattlefield(ELDRAZI_MONUMENT)
+      ? 1
+      : 0;
+  }
+
   override powerBonus(permanent: Permanent): number {
     const lordOfLineage =
       permanent.card.name === BLOODLINE_KEEPER && permanent.transformed;
-    return this.vampireAnthem(permanent) + (lordOfLineage ? 2 : 0);
+    return (
+      this.vampireAnthem(permanent) +
+      this.monumentBonus(permanent) +
+      (lordOfLineage ? 2 : 0)
+    );
   }
   override toughnessBonus(permanent: Permanent): number {
     const lordOfLineage =
       permanent.card.name === BLOODLINE_KEEPER && permanent.transformed;
-    return this.vampireAnthem(permanent) + (lordOfLineage ? 2 : 0);
+    return (
+      this.vampireAnthem(permanent) +
+      this.monumentBonus(permanent) +
+      (lordOfLineage ? 2 : 0)
+    );
   }
 
   override evasive(permanent: Permanent): boolean {
-    return permanent.card.flying;
+    return (
+      permanent.card.flying ||
+      (permanent.card.isCreature && this.isOnBattlefield(ELDRAZI_MONUMENT))
+    );
   }
 
   // ================================================================ casting
@@ -272,10 +296,38 @@ export class EdgarGame extends CreatureDeckGame {
    *  Vanquisher's Banner draws a card for each Vampire spell. */
   override castPerm(card: CardDef, fromCommand = false): boolean {
     const wasCast = super.castPerm(card, fromCommand);
-    if (!wasCast || card.name === EDGAR || !isVampire(card)) return wasCast;
+    if (!wasCast) return false;
+    if (card.isCreature) this.creatureSpellMonumentsTrigger();
+    if (card.name === EDGAR || !isVampire(card)) return true;
     if (this.isEdgarAvailable()) this.createTokens(TOKENS.vampire);
     if (this.isOnBattlefield(VANQUISHERS_BANNER)) this.draw(1);
-    return wasCast;
+    return true;
+  }
+
+  /** Bontu's Monument: each creature spell drains 1. Oketra's Monument: each makes a 1/1 Warrior. */
+  creatureSpellMonumentsTrigger(): void {
+    for (let i = 0; i < this.countOnBattlefield(BONTUS_MONUMENT); i++)
+      this.drainAllOpponents(1);
+    for (let i = 0; i < this.countOnBattlefield(OKETRAS_MONUMENT); i++)
+      this.createTokens(TOKENS.warrior);
+  }
+
+  /** Bontu's Monument (black creature spells), Oketra's Monument (white ones) and Herald's Horn (Vampires, the type
+   *  we choose) make creature spells cost {1} less each. */
+  override effectiveCost(
+    card: CardDef,
+    base: Cost | null = null,
+    fromGraveyard = false,
+  ): Cost {
+    const cost = super.effectiveCost(card, base, fromGraveyard);
+    if (!card.isCreature) return cost;
+    let reduction = 0;
+    if (card.cost.black > 0)
+      reduction += this.countOnBattlefield(BONTUS_MONUMENT);
+    if (card.cost.white > 0)
+      reduction += this.countOnBattlefield(OKETRAS_MONUMENT);
+    if (isVampire(card)) reduction += this.countOnBattlefield(HERALDS_HORN);
+    return cost.withGeneric(Math.max(0, cost.generic - reduction));
   }
 
   // ================================================================ sacrifice, death and triggers
@@ -334,10 +386,45 @@ export class EdgarGame extends CreatureDeckGame {
     this.pendingCrackback = 0;
     this.fogUsed = false;
     upkeepOfCommonCards(this);
+    this.upkeepOfNewCards();
     if (this.isOnBattlefield('Dreadhorde Invasion')) this.amassZombies();
     if (this.isOnBattlefield('Keen Duelist')) this.revealWithKeenDuelist();
     if (this.isOnBattlefield('Black Market Connections'))
       this.chooseBlackMarketModes();
+  }
+
+  /** Twilight Prophet (ten permanents: the city's blessing) takes the top card and drains its mana value; Herald's Horn
+   *  takes a Vampire from the top; Sorin's +1 puts a counter on our best Vampire (his other abilities are not
+   *  modelled); Eldrazi Monument sacrifices a creature, or itself when we have none. */
+  upkeepOfNewCards(): void {
+    if (
+      this.isOnBattlefield(TWILIGHT_PROPHET) &&
+      this.battlefield.length >= 10
+    ) {
+      const top = this.library[0];
+      if (top) {
+        this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
+        this.drainAllOpponents(top.manaValue);
+      }
+    }
+    const top = this.library[0];
+    if (
+      this.isOnBattlefield(HERALDS_HORN) &&
+      top &&
+      top.isCreature &&
+      isVampire(top)
+    )
+      this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
+    const vampires = this.vampires();
+    if (this.isOnBattlefield(SORIN) && vampires.length)
+      firstMax(vampires, (vampire) => this.power(vampire)).counters += 1;
+    if (this.isOnBattlefield(ELDRAZI_MONUMENT)) {
+      const fodder = spareFodder(this, [], true).find(
+        (spare) => spare.card.isCreature,
+      );
+      if (fodder) this.sacrifice(fodder);
+      else this.sacrifice(this.findPermanent(ELDRAZI_MONUMENT)!);
+    }
   }
 
   /** Dreadhorde Invasion: lose 1 life and put a +1/+1 counter on our Army (made first if we have none). */

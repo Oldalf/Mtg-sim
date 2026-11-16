@@ -16,12 +16,20 @@ export const BARON_BERTRAM = 'Baron Bertram Graywater';
 export const LEGIONS_LANDING = "Legion's Landing";
 export const SKULLCLAMP = 'Skullclamp';
 export const NINE_LIVES_FAMILIAR = 'Nine-Lives Familiar';
+export const BONTUS_MONUMENT = "Bontu's Monument";
+export const OKETRAS_MONUMENT = "Oketra's Monument";
+export const HERALDS_HORN = "Herald's Horn";
+export const ELDRAZI_MONUMENT = 'Eldrazi Monument';
+export const TWILIGHT_PROPHET = 'Twilight Prophet';
+export const SORIN = 'Sorin, Imperious Bloodlord';
 
 export const TOKENS = {
   /** Edgar's eminence and Bloodline-less Vampire tokens: no lifelink. */
   vampire: makeToken('Vampire', 1, 1, 'black'),
   /** Preacher of the Schism, Legion's Landing, Baron Bertram, Elenda. */
   lifelinkVampire: makeToken('Vampire', 1, 1, 'white', ['lifelink']),
+  /** Oketra's Monument. */
+  warrior: makeToken('Warrior', 1, 1, 'white', ['vigilance']),
   /** Bloodline Keeper's tokens. */
   flyingVampire: makeToken('Vampire', 2, 2, 'black', ['flying']),
   shapeshifter: makeToken('Shapeshifter', 3, 2),
@@ -89,11 +97,18 @@ export const VALUE: Record<string, number> = {
   'Falkenrath Pit Fighter': 48,
   [VANQUISHERS_BANNER]: 48,
   'Gas Guzzler': 45,
+  [TWILIGHT_PROPHET]: 70,
+  [SORIN]: 60,
+  [BONTUS_MONUMENT]: 55,
+  [HERALDS_HORN]: 50,
+  [OKETRAS_MONUMENT]: 45,
+  [ELDRAZI_MONUMENT]: 45,
   'Dreadhorde Invasion': 40,
 };
 
 /** Removal and cards that do nothing in a goldfish game (never cast, the first to discard). */
 export const HOLD = new Set([
+  'Flare of Malice',
   'Swords to Plowshares',
   'Feed the Swarm',
   'New Blood',

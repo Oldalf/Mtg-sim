@@ -10,10 +10,8 @@ Counters
 1x Cordial Vampire
 
 Drain
-1x Arnyn, Deathbloom Botanist
 1x Blood Artist
 1x Cruel Celebrant
-1x Marionette Apprentice
 1x Susurian Voidborn
 1x Vengeful Bloodwitch
 
@@ -22,14 +20,15 @@ Draw
 1x Black Market Connections
 1x Clavileño, First of the Blessed
 1x Corrupted Conviction
+1x Eldrazi Monument
 1x Emeritus of Woe // Demonic Tutor
 1x Falkenrath Pit Fighter
 1x Gas Guzzler
-1x Keen Duelist
 1x Phyrexian Arena
 1x Preacher of the Schism
 1x Scheming Silvertongue // Sign in Blood
 1x Skullclamp
+1x Twilight Prophet
 1x Vampire Gourmand
 1x Vampiric Rites
 1x Vanquisher's Banner
@@ -41,9 +40,11 @@ Land
 1x Command Tower
 1x Exotic Orchard
 7x Mountain
-1x Phyrexian Tower
 9x Plains
-14x Swamp
+1x Reliquary Tower
+1x Savai Triome
+1x Susur Secundi, Void Altar
+13x Swamp
 1x Urborg, Tomb of Yawgmoth
 
 Lifegain
@@ -53,43 +54,43 @@ Lifegain
 Ramp
 1x Arcane Signet
 1x Ashnod's Altar
+1x Bontu's Monument
 1x Commander's Sphere
 1x Culling the Weak
 1x Dark Ritual
 1x Fellwar Stone
+1x Herald's Horn
 1x Legion's Landing // Adanto, the First Fort
 1x Master of Dark Rites
+1x Oketra's Monument
 1x Pawn of Ulamog
 1x Phyrexian Altar
 1x Pitiless Plunderer
 1x Sceptre of Eternal Glory
 1x Sol Ring
 1x Songs of the Damned
+1x Sorin, Imperious Bloodlord
 
 Recursion
 1x Carmen, Cruel Skymarcher
-1x Nine-Lives Familiar
 
 Removal
-1x Blasphemous Act
 1x Captivating Vampire
 1x Feed the Swarm
+1x Flare of Malice
 1x Kindred Dominance
 1x Mayhem Devil
 1x New Blood
 1x Saw in Half
-1x Swords to Plowshares
 
 Sac Outlet
 1x Evereth, Viceroy of Plunder
-1x Indulgent Aristocrat
 1x Pitiless Pontiff
 1x Viscera Seer
 1x Yahenni, Undying Partisan
 
 Tokens
 1x Bloodline Keeper // Lord of Lineage
-1x Dreadhorde Invasion
 1x Elenda, the Dusk Rose
 
 Tutor

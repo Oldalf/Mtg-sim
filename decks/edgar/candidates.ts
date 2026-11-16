@@ -1,4 +1,4 @@
-import { BLOODLINE_KEEPER, EVERETH, HOLD } from './cards';
+import { BLOODLINE_KEEPER, ELDRAZI_MONUMENT, EVERETH, HOLD } from './cards';
 import {
   bloodlineKeeperTransformIsWorthIt,
   castBeseechTheMirror,
@@ -104,6 +104,11 @@ function addHandCardCandidate(
     case 'Keen Duelist':
       // it costs us life every upkeep (the opponent's card is random)
       add(game.myLife > 30 ? 55 : 8, cost, false, () => game.castPerm(card));
+      return;
+    case ELDRAZI_MONUMENT:
+      // it eats a creature each upkeep: only with tokens to feed it
+      if (game.creatures().filter((creature) => creature.token).length >= 3)
+        add(45, cost, false, () => game.castPerm(card));
       return;
     case 'Dreadhorde Invasion':
       add(game.myLife > 25 ? 40 : 10, cost, false, () => game.castPerm(card));

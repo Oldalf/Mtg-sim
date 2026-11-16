@@ -12156,5 +12156,90 @@
   "layout": "normal",
   "oracle_id": "aa77980d-0434-40f0-990f-1c8c50610174",
   "scryfall_id": "1cf07d5a-6618-48e2-a9f0-669b75bb6e85"
+ },
+ "Savai Triome": {
+  "name": "Savai Triome",
+  "full_name": "Savai Triome",
+  "mana_cost": "",
+  "type_line": "Land — Mountain Plains Swamp",
+  "oracle": "({T}: Add {R}, {W}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal",
+  "oracle_id": "00625242-9348-4ef4-b975-f2ac82fee21d",
+  "scryfall_id": "748e6a61-9c1f-4225-9f04-e54002f63ac3"
+ },
+ "Oketra's Monument": {
+  "name": "Oketra's Monument",
+  "full_name": "Oketra's Monument",
+  "mana_cost": "{3}",
+  "type_line": "Legendary Artifact",
+  "oracle": "White creature spells you cast cost {1} less to cast.\nWhenever you cast a creature spell, create a 1/1 white Warrior creature token with vigilance.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "0370afa0-07d3-4787-8a5b-10272cb3a486",
+  "scryfall_id": "a7f1d5a6-bdf2-4b12-b11e-70f58b59dd80"
+ },
+ "Susur Secundi, Void Altar": {
+  "name": "Susur Secundi, Void Altar",
+  "full_name": "Susur Secundi, Void Altar",
+  "mana_cost": "",
+  "type_line": "Land — Planet",
+  "oracle": "This land enters tapped.\n{T}: Add {B}.\nStation (Tap another creature you control: Put charge counters equal to its power on this Planet. Station only as a sorcery.)\n12+ | {1}{B}, {T}, Pay 2 life, Sacrifice a creature: Draw cards equal to the sacrificed creature's power. Activate only as a sorcery.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Station"
+  ],
+  "layout": "normal",
+  "oracle_id": "50d6cadc-07e4-479e-90f4-e3a20f769bab",
+  "scryfall_id": "aefb8c0d-2bc6-4bec-851e-0137b4abfb22"
+ },
+ "Twilight Prophet": {
+  "name": "Twilight Prophet",
+  "full_name": "Twilight Prophet",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Creature — Vampire Cleric",
+  "oracle": "Flying\nAscend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nAt the beginning of your upkeep, if you have the city's blessing, reveal the top card of your library and put it into your hand. Each opponent loses X life and you gain X life, where X is that card's mana value.",
+  "power": "2",
+  "toughness": "4",
+  "keywords": [
+   "Flying",
+   "Ascend"
+  ],
+  "layout": "normal",
+  "oracle_id": "a3afd8b9-d499-40f7-be41-f8fee6636a1d",
+  "scryfall_id": "050ca791-265a-4e7b-9640-4fd5a6d8cd3a"
+ },
+ "Eldrazi Monument": {
+  "name": "Eldrazi Monument",
+  "full_name": "Eldrazi Monument",
+  "mana_cost": "{5}",
+  "type_line": "Artifact",
+  "oracle": "Creatures you control get +1/+1 and have flying and indestructible.\nAt the beginning of your upkeep, sacrifice a creature. If you can't, sacrifice this artifact.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c7ee1b21-d02e-49ef-95d6-d6dbf2f886ae",
+  "scryfall_id": "d5439677-d3db-4083-8dd9-0d654016bd79"
+ },
+ "Sorin, Imperious Bloodlord": {
+  "name": "Sorin, Imperious Bloodlord",
+  "full_name": "Sorin, Imperious Bloodlord",
+  "mana_cost": "{2}{B}",
+  "type_line": "Legendary Planeswalker — Sorin",
+  "oracle": "+1: Target creature you control gains deathtouch and lifelink until end of turn. If it's a Vampire, put a +1/+1 counter on it.\n+1: You may sacrifice a Vampire. When you do, Sorin deals 3 damage to any target and you gain 3 life.\n−3: You may put a Vampire creature card from your hand onto the battlefield.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "fee680c6-afe2-4321-9d8a-8f81a612a53b",
+  "scryfall_id": "219d3e48-e0b1-472d-ac45-11c14b292c9e"
  }
 }

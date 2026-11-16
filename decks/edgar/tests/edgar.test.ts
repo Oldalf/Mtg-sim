@@ -491,5 +491,49 @@ export function runEdgarTests(): boolean {
     [['Pitiless Pontiff'], ['Pitiless Pontiff']],
   );
 
+  // ---- the monuments, Twilight Prophet, Eldrazi Monument
+  game = board(
+    ["Bontu's Monument", "Oketra's Monument"],
+    ['Welcoming Vampire'],
+  );
+  const lifeBefore = game.life.slice();
+  const costBefore = C.get('Welcoming Vampire').manaValue;
+  check(
+    "Bontu's Monument makes a black creature spell cost {1} less",
+    game.effectiveCost(C.get('Welcoming Vampire')).manaValue < costBefore,
+    true,
+  );
+  game.castPerm(C.get('Welcoming Vampire'));
+  check(
+    "a creature spell: Bontu's Monument drains 1, Oketra's Monument makes a Warrior",
+    [
+      game.life.reduce((total, life, i) => total + lifeBefore[i] - life, 0),
+      tokensOf(game, TOKENS.warrior).length,
+    ],
+    [3, 1],
+  );
+  game = board(['Twilight Prophet', 'Legion Lieutenant']);
+  for (let i = 0; i < 8; i++) game.createTokens(TOKENS.vampire);
+  const handBefore = game.hand.length;
+  game.upkeepOfNewCards();
+  check(
+    'Twilight Prophet with ten permanents: a card from the top of the library',
+    game.hand.length,
+    handBefore + 1,
+  );
+  game = board(['Eldrazi Monument']);
+  const token = game.createTokens(TOKENS.vampire)[0];
+  check('Eldrazi Monument: creatures get +1/+1', game.power(token), 2);
+  game.upkeepOfNewCards();
+  game.upkeepOfNewCards();
+  check(
+    'Eldrazi Monument: the token is sacrificed, then with no creature the Monument itself',
+    [
+      game.isOnBattlefield('Eldrazi Monument'),
+      game.battlefield.includes(token),
+    ],
+    [false, false],
+  );
+
   return allPassed;
 }
