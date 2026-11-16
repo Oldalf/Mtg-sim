@@ -321,14 +321,8 @@ export function findNextTurnKill(
   game: CodieGame,
   needBackup: boolean,
 ): Line | null {
-  const copy = game.clone();
+  const copy = game.copyAtNextTurn();
   copy.nextTurn = true;
-  copy.turn += 1;
-  copy.pool = { U: 0, B: 0, C: 0, S: 0, W: 0, R: 0, G: 0 };
-  for (const permanent of copy.battlefield) {
-    permanent.tapped = false;
-    permanent.sick = false;
-  }
   const land = copy.hand.find(
     (card) =>
       card.land !== null &&

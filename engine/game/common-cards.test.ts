@@ -2,7 +2,7 @@
  * Checks of single card rules in the engine that the DnD deck brought: "enters, draw a card" (Wall of Omens), Peregrine
  * Drake's untap doubled by Panharmonicon, Theros gods that aren't creatures below their devotion (Thassa, Ephara),
  * the rocks (Azorius Signet, Midnight Clock, Sarevok's Tome with the initiative), a Plains search, and Day of
- * Judgment as a pod answer.
+ * Judgment as a pod answer. Also a search's copy of our next turn (copyAtNextTurn).
  * Run: npm run pod -- --test
  */
 import * as C from '../cards/cards';
@@ -47,6 +47,34 @@ export function runCommonCardTests(allDecks: Record<string, Deck>): boolean {
     const game = newGame(allDecks);
     game.enter(C.get('Wall of Omens'));
     check('Wall of Omens draws a card as it enters', game.hand.length, 1);
+  }
+  {
+    // a search's copy of our next turn: everything untapped, the pool empty, a new land drop; the game unchanged
+    const game = newGame(allDecks);
+    game.turn = 3;
+    putOnBattlefield(game, 'Island', true);
+    game.pool.U = 2;
+    game.landPlayed = true;
+    game.highTidesThisTurn = 1;
+    const nextTurn = game.copyAtNextTurn();
+    check(
+      'copyAtNextTurn untaps, empties the pool, gives a new land drop; each opponent has drawn',
+      [
+        nextTurn.turn - game.turn,
+        game.opponentLibrarySizes[0] - nextTurn.opponentLibrarySizes[0],
+        untappedLands(nextTurn),
+        nextTurn.pool.U,
+        nextTurn.landPlayed,
+        nextTurn.highTidesThisTurn,
+        nextTurn.verbose,
+      ],
+      [1, 1, 1, 0, false, 0, false],
+    );
+    check(
+      'copyAtNextTurn leaves the game itself as it was',
+      [untappedLands(game), game.pool.U, game.landPlayed],
+      [0, 2, true],
+    );
   }
   {
     const alone = newGame(allDecks);

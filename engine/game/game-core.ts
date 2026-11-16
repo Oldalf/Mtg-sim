@@ -2434,7 +2434,29 @@ export abstract class GameCore<S = unknown> {
 
   startTurn(): void {
     if (this.turn > 0) this.spentEnd[this.turn] = this.spent;
+    this.beginNewTurn();
+    for (const otherPermanent of this.battlefield) {
+      if (
+        otherPermanent.card.name === 'Curious Homunculus' &&
+        !otherPermanent.transformed &&
+        this.graveyard.filter((card) => card.isInstantOrSorcery).length >= 3
+      ) {
+        otherPermanent.transformed = true;
+        this.say('Curious Homunculus transforms');
+      }
+    }
+  }
+
+  /** Our next turn begins: the turn number moves on, the opponents have each drawn a card, everything untaps, the
+   *  pool empties and this turn's flags reset (a new land drop, no spells cast yet). startTurn does it, and so does
+   *  copyAtNextTurn for a search. A deck with per-turn state of its own that a search reads resets it here. */
+  beginNewTurn(): void {
     this.turn += 1;
+    if (this.turn > 1)
+      this.opponentLibrarySizes = this.opponentLibrarySizes.map(
+        (librarySize, i) =>
+          this.life[i] > 0 ? Math.max(0, librarySize - 1) : librarySize,
+      );
     for (const permanent of this.battlefield) {
       permanent.tapped = false;
       permanent.sick = false;
@@ -2448,20 +2470,22 @@ export abstract class GameCore<S = unknown> {
     this.landPlayed = false;
     this.wallUsed = false;
     this.lastKey = null;
-    if (this.turn > 1)
-      this.opponentLibrarySizes = this.opponentLibrarySizes.map((x, i) =>
-        this.life[i] > 0 ? Math.max(0, x - 1) : x,
-      );
-    for (const otherPermanent of this.battlefield) {
-      if (
-        otherPermanent.card.name === 'Curious Homunculus' &&
-        !otherPermanent.transformed &&
-        this.graveyard.filter((card) => card.isInstantOrSorcery).length >= 3
-      ) {
-        otherPermanent.transformed = true;
-        this.say('Curious Homunculus transforms');
-      }
-    }
+  }
+
+  /** A quiet copy of the game for a search to play moves on: no log, and it never plays kill lines of its own. */
+  copyForSearch(): this {
+    const copy = this.clone();
+    copy.verbose = false;
+    copy.inRollout = true;
+    copy.log = [];
+    return copy;
+  }
+
+  /** copyForSearch at the start of our next turn (beginNewTurn; no upkeep or draw yet). */
+  copyAtNextTurn(): this {
+    const copy = this.copyForSearch();
+    copy.beginNewTurn();
+    return copy;
   }
 
   /** Moves the turn on to `step`. Mana left in the pool is lost (rule 106.4: it empties at the end of each step

@@ -235,20 +235,8 @@ export class AesiGame extends Game<AesiGame> {
   // ---------------------------------------------------------------- kill search (only for the log analyzer)
   /** A copy of the game to run the loop solver on (nextTurn: untapped, a fresh land drop). */
   buildKillSearchState(nextTurn = false): AesiGame {
-    const copy = this.clone();
-    copy.verbose = true;
-    copy.log = [];
-    copy.inRollout = true;
-    if (nextTurn) {
-      for (const permanent of copy.battlefield) {
-        permanent.tapped = false;
-        permanent.sick = false;
-      }
-      copy.dropsUsed = 0;
-      copy.dropsBonus = 0;
-      copy.infMana = false;
-      copy.turn += 1;
-    }
+    const copy = nextTurn ? this.copyAtNextTurn() : this.copyForSearch();
+    copy.verbose = true; // the solver's log is the kill line
     copy.comboKey = null;
     return copy;
   }
@@ -831,6 +819,9 @@ export class AesiGame extends Game<AesiGame> {
   override startTurn(): void {
     if (this.turn > 0) this.castsByTurn[this.turn] = this.spellsCast; // (the base class resets it)
     super.startTurn();
+  }
+  override beginNewTurn(): void {
+    super.beginNewTurn();
     this.dropsUsed = 0;
     this.dropsBonus = 0;
     this.infMana = false;

@@ -152,7 +152,12 @@ function analyzeTurn(
       startChecked = true;
       console.log('  Start of turn (after your draw):');
       console.log(describeBoard(board));
-      const check = checkForKill(board.toGame(turn, config), turn > 1, budget);
+      // the log need not record every untap, so after turn 1 this is the turn before's copy of its next turn
+      // (everything untapped, and the turn's count right: the opponents' tapped lands, their libraries)
+      const check =
+        turn > 1
+          ? checkForKill(board.toGame(turn - 1, config), true, budget)
+          : checkForKill(board.toGame(turn, config), false, budget);
       if (check.killLevel) {
         console.log(
           `  >>> KILL AVAILABLE at the start of turn ${turn}${backupText(check.killLevel)}${check.note}:`,

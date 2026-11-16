@@ -68,7 +68,7 @@ Rules for every task:
 | 19 | Z1 | Step 7's loose ends | Sonnet 5.5 |
 | 20 | D1 | Pontus's real lists (Gale, Aesi) become `decklist.txt` (done: same cards, bugs fixed) | Sonnet 5.5, after P |
 | 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
-| 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
+| 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) (done: none needed it; search copies moved to the engine) | Opus 5.5 |
 | 23 | F1 | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
 | 24 | F2 | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
 | 25 | F3 | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
@@ -363,6 +363,8 @@ Pontus, 2026-11-15: wire the other decks into `engine/game/search-mana.ts` (E1),
 - First list which decks count mana on a copy of their own (a kill search, a solver, a loop: Codie's solver, Aesi's loops, Mike's, any other `KillSearchState`) and how each keeps its pool now.
 - Move them one deck at a time: the search keeps a `SearchMana` (`SearchMana.fromGame`), pays with `spendMana`, and its played line sets `plannedPayments` per step, as Gale's `kill-play.ts` does. What the engine's model lacks for a deck (another colour than U/B, a mana doubler) goes into `SearchMana` with a test, not into the deck.
 - Done when each moved deck has 0 kill misses over 300 seeds and `npm run verify` ends VERIFY OK. A deck whose results change: show Pontus the numbers before and after (and the speed), then re-record.
+
+**Done (2026-11-16): no other deck needs `SearchMana`.** Gale was the only deck whose search counted mana on a model of its own. Codie's solver, Aesi's loops and Edgar's sacrifice check play on a copy of the game and pay with the real `pay`, so they already tap what the game taps (and every deck's `--test` checks 0 kill misses over 300 seeds); the other decks have no search. What they did share went to the engine instead (Pontus: as much in the engine as possible): `GameCore.beginNewTurn` (the per-turn reset, out of `startTurn`), `copyForSearch` and `copyAtNextTurn`. Codie's `buildKillSearchState` and its solver's next-turn copy, and Aesi's `buildKillSearchState`, use them; Aesi's per-turn flags moved into its `beginNewTurn`. The opponents' draw moved into `beginNewTurn` too. The analyzer (`--analyze`): its "kill next turn" check now gets a real next turn for Codie (it got the current turn), and its start-of-turn check is the turn before's next-turn copy (it counted one turn too many: an opponent's library one card short, Codie's Mana Geyser two lands too many). Goldfish, pod run and tests: every deck IDENTICAL. Only Gale's and Codie's analyzer baselines were re-recorded: Codie's game 2 and 3 logs gain a kill next turn; Gale's start-of-turn libraries are one card bigger (game 4's near-miss Konrad chain: 73% -> 63% with real shuffles).
 
 ---
 

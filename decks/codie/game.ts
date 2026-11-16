@@ -351,12 +351,8 @@ export class CodieGame extends Game<CodieGame> {
       this.died ? null : protectedKillTurn,
     ];
   }
-  buildKillSearchState(): CodieGame {
-    const copy = this.clone();
-    copy.verbose = false;
-    copy.inRollout = true;
-    copy.log = [];
-    return copy;
+  buildKillSearchState(nextTurn = false): CodieGame {
+    return nextTurn ? this.copyAtNextTurn() : this.copyForSearch();
   }
   killSearchStateKey(): string {
     const hand = this.hand
