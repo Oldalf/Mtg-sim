@@ -40,10 +40,10 @@ Rules for every task:
 | 9 | G9 | Black tutors move to the engine | Sonnet 5.5 |
 | 10 | G10 | Aesi's and Sam & Frodo's land search use the engine's | Sonnet 5.5 |
 | 11 | G11 | Edgar, Meren and Sam & Frodo move onto `CreatureDeckGame` | Opus 5.5 (the first), Sonnet 5.5 (the others) |
-| 12 | G12 | The card pop-up on a real phone | P (a check by hand) |
-| 13 | G13 | Azula plays its combos like a pilot (written in `decks/azula/PLAN.md`, "Next task B7") | Opus 5.5, last; the deck may not be in the pod |
 
-Order: G1 first, because DnD will see real pods soon (Pontus, 2026-11-16). G2 to G7 make the pod numbers more true, so they come before the clean-ups (G8 to G11). G13 is last because Azula may not be played in the pod at all.
+Azula's next task (B7) is not in this plan: it waits in `decks/azula/PLAN.md` ("Next task B7") until Pontus wants it, since Azula may not be played in the pod at all.
+
+Order: G1 first, because DnD will see real pods soon (Pontus, 2026-11-16). G2 to G7 make the pod numbers more true, so they come before the clean-ups (G8 to G11).
 
 ---
 
@@ -137,11 +137,3 @@ Codie and Teval each resolve Demonic Tutor and Vampiric Tutor themselves, and Ar
 1. One deck at a time, starting with Meren (the simplest). List what its game class writes that `CreatureDeckGame` already does, and what differs by a number or a rule. A number becomes a parameter of the engine's version; a rule stays in the deck as an override.
 2. Move the deck. `--regress check` and the fixed-seed pod run must be IDENTICAL after each deck. A deck that cannot be IDENTICAL stays as it is, with the reason written here.
 3. One commit per deck.
-
-## G12. The card pop-up on a real phone (P)
-
-The pop-up (`card-zoom`) is tested in jsdom at 390 px with touch (tap opens, a second tap or a tap elsewhere closes, another card takes over), never on a real phone. Pontus: open the page on a phone, tap a card, tap away, tap another card, and write here what happened. A problem becomes a new task.
-
-## G13. Azula plays its combos like a pilot (Opus 5.5, last)
-
-The task, its diagnosis and the ten combos are in `decks/azula/PLAN.md` ("Next task B7"). Do it only if Azula is played in the pod.

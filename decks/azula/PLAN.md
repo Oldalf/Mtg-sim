@@ -52,7 +52,7 @@ Bracket 4. The combos (Commander Spellbook, "Agni Kai"); all ten count as a win:
 
 4, 5, 8, 9 and 10 only make infinite magecraft triggers, so they count **only with Storm-Kiln Artist on the battlefield** (it triggers on copies too: infinite Treasures). Archmage Emeritus (in this list) would also draw the library with them. A combo needs a **finisher it can reach** (Pontus picked this over a declared win once the pieces are there): a burn spell or Torment of Hailfire in hand to copy or pay X for, Vivi Ornitier out (it pings on each cast), or a draw spell to copy until a finisher turns up. Without one it is just a big turn. Sim runs in eco.
 
-## Next task B7: Azula plays its combos like a pilot (Opus 5.5, last; the deck may not be in the pod)
+## Next task B7: Azula plays its combos like a pilot (Opus 5.5; the bigger plan, parked: not scheduled until Pontus says so)
 
 Written 2026-11-16 for a fresh session: everything needed is here or in the files named. Read `CLAUDE.md` (rule 0 names, KISS, Prettier), `ENGINE.md` ("Rules for changing the engine", "Copies and magecraft", "Firebending"), the sections above in this file (what the deck models and what it does not, the ten combos and Pontus's two conditions). Work straight on `main`, one commit at the end (or one per part if a part is big), as every task here.
 
