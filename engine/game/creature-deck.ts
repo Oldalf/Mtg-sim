@@ -17,17 +17,23 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
     return this.values[card.name] ?? (card.isCreature ? 40 : 30);
   }
 
+  /** A land's value in hand when our mana sources and lands in hand number at most 3, at most 6, at most 8, and more. */
+  readonly landValues: readonly [number, number, number, number] = [
+    80, 60, 40, 15,
+  ];
+
   /** Lands: much wanted while mana is short, little once there's plenty. Other cards: their battlefield value. */
   override cardValue(card: CardDef): number {
     if (card.land !== null) {
       const manaAndLands = this.manaSources() + this.countLandsHand();
+      const [fewest, few, enough, plenty] = this.landValues;
       return manaAndLands <= 3
-        ? 80
+        ? fewest
         : manaAndLands <= 6
-          ? 60
+          ? few
           : manaAndLands <= 8
-            ? 40
-            : 15;
+            ? enough
+            : plenty;
     }
     return this.battlefieldValue(card);
   }

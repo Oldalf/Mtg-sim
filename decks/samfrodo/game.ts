@@ -15,6 +15,7 @@
  * three go down together and "each opponent" drains never hit a dead player.
  * Attacks: only Frodo (for the Ring and its card draw) and Gollum (for its end-step drain), unless
  * attacking with everything kills the table. No crackback (those attacks are tiny).
+ * The win check, the two numbers and card values are the engine's CreatureDeckGame (engine/game/creature-deck.ts).
  * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
 import { TREASURE } from '../../engine/cards/tokens';
@@ -50,7 +51,7 @@ import {
   Permanent,
   Zone,
 } from '../../engine/game/game-types';
-import { GameWithoutKillSearch } from '../../engine/game/game';
+import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import { firstMax } from '../../engine/util/lists';
 import { fetchLand } from '../../engine/game/land-search';
 import { MulliganRule } from '../../engine/game/mulligan';
@@ -58,7 +59,8 @@ import { MULLIGAN } from './mulligan';
 
 type Phase = 'main1' | 'combat' | 'main2' | 'end';
 
-export class SamFrodoGame extends GameWithoutKillSearch {
+export class SamFrodoGame extends CreatureDeckGame {
+  readonly values = VALUE;
   override mulliganRule(): MulliganRule | null {
     return this.config.smart_mulligan ? MULLIGAN : null;
   }
@@ -75,34 +77,6 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   farmerCottonX = 0; // X for Farmer Cotton while it enters
   allInWin = false; // the win came from an all-in attack (for the stats)
 
-  // ================================================================ the win condition
-  hasWon(): boolean {
-    return (
-      this.life.filter((life) => life <= 0).length >=
-      (this.config.win_dead as number)
-    );
-  }
-  override areOpponentsBeaten(): boolean {
-    return this.hasWon();
-  }
-  override checkKill(): number {
-    if (this.died) return 2;
-    if (this.hasWon()) {
-      if (this.unprotectedKillTurn === null) {
-        this.unprotectedKillTurn = this.turn;
-        this.say(`WIN: ${this.describeOpponentLife()}`);
-      }
-      return 2;
-    }
-    return 0;
-  }
-  override play(): [number | null, number | null] {
-    super.play();
-    return [
-      this.died ? null : this.unprotectedKillTurn,
-      this.firstOpponentDeadTurn,
-    ];
-  }
   // ---------------------------------------------------------------- log analyzer hooks
   override syncFromLog(board: { trackers: Record<string, number> }): void {
     this.ringTempts = board.trackers[RING_TRACKER] ?? 0;
@@ -437,23 +411,17 @@ export class SamFrodoGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ card values
-  battlefieldValue(card: CardDef): number {
-    return VALUE[card.name] ?? (card.isCreature ? 40 : 30);
-  }
+  /** Lands are worth a little less than in other creature decks once we have six mana or more. */
+  override readonly landValues: readonly [number, number, number, number] = [
+    80, 60, 35, 12,
+  ];
+
+  /** Cards we hold for later are worth little in hand, and early ramp is worth little once we have 7 mana. */
   override cardValue(card: CardDef): number {
-    if (card.land !== null) {
-      const manaAndLands = this.manaSources() + this.countLandsHand();
-      return manaAndLands <= 3
-        ? 80
-        : manaAndLands <= 6
-          ? 60
-          : manaAndLands <= 8
-            ? 35
-            : 12;
-    }
+    if (card.land !== null) return super.cardValue(card);
     if (HOLD.has(card.name)) return 10;
     if (RAMP_EARLY.has(card.name) && this.manaSources() >= 7) return 25;
-    return this.battlefieldValue(card);
+    return super.cardValue(card);
   }
   override discardValue(card: CardDef): number {
     return this.cardValue(card);

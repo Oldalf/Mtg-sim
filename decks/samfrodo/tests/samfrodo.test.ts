@@ -190,6 +190,16 @@ export function runSamFrodoTests(): boolean {
       .length,
     1,
   );
+  // its Soldier has lifelink: combat damage gains us life (the engine's CreatureDeckGame rule)
+  const lifeBeforeHit = game.myLife;
+  game.onCombatDamage(
+    game.battlefield.filter((permanent) => permanent.card.name === 'Soldier'),
+  );
+  check(
+    'the lifelink Soldier connects: gain 1',
+    game.myLife - lifeBeforeHit,
+    1,
+  );
 
   // Belladonna Took: tokens entering: 1st gain 1, 2nd draw, 3rd +1/+1 counter on each creature
   game = board(['Belladonna Took']);
