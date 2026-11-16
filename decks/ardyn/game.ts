@@ -331,9 +331,6 @@ export class ArdynGame extends CreatureDeckGame {
         if (creature) this.reanimate(creature);
         break;
       }
-      case 'Demonic Counsel':
-        this.doTutor((candidate) => isDemon(candidate), false);
-        break;
     }
   }
 

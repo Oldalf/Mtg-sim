@@ -373,13 +373,6 @@ export class TevalGame extends CreatureDeckGame {
         }
         break;
       }
-      case 'Demonic Tutor':
-        this.doTutor(() => true, false);
-        break;
-      case 'Vampiric Tutor':
-        this.doTutor(() => true, true);
-        this.loseLife(2);
-        break;
       case 'Buried Alive':
         this.buryCreatures(3);
         break;

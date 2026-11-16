@@ -1429,7 +1429,18 @@ export abstract class GameCore<S = unknown> {
         this.muck += 1;
         return true;
       case 'Diabolic Tutor':
+      case 'Demonic Tutor':
         this.doTutor(() => true, false);
+        return true;
+      case 'Vampiric Tutor':
+        this.doTutor(() => true, true);
+        this.loseLife(2);
+        return true;
+      case 'Demonic Counsel':
+        this.doTutor(
+          (otherCard) => C.hasCreatureType(otherCard, 'Demon'),
+          false,
+        );
         return true;
       case 'Solve the Equation':
         this.doTutor((otherCard) => otherCard.isInstantOrSorcery, false);

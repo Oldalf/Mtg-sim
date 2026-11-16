@@ -37,7 +37,7 @@ Rules for every task:
 | 6 | G6 | **Done.** Initiative and dungeon rooms that were left out | Sonnet 5.5 |
 | 7 | G7 | **Done.** Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
 | 8 | G8 | **Done.** Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
-| 9 | G9 | Black tutors move to the engine | Sonnet 5.5 |
+| 9 | G9 | **Done.** Black tutors move to the engine | Sonnet 5.5 |
 | 10 | G10 | Aesi's and Sam & Frodo's land search use the engine's | Sonnet 5.5 |
 | 11 | G11 | Edgar, Meren and Sam & Frodo move onto `CreatureDeckGame` | Opus 5.5 (the first), Sonnet 5.5 (the others) |
 

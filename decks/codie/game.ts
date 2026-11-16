@@ -41,7 +41,6 @@ import { buildCandidates } from './candidates';
 import {
   chooseCodieLand,
   chooseTutorTarget,
-  fetchCardFromLibrary,
   resolveCodieSpell,
 } from './spells';
 import { CodieKillStep, findKillLine } from './solver';
@@ -93,7 +92,7 @@ export class CodieGame extends Game<CodieGame> {
       this.suspended = this.suspended.filter((turnsLeft) => turnsLeft > 0);
       for (let i = 0; i < due; i++) {
         this.say('Profane Tutor arrives');
-        fetchCardFromLibrary(this, chooseTutorTarget(this), false);
+        this.doTutor(() => true, false);
       }
     }
   }
@@ -227,6 +226,9 @@ export class CodieGame extends Game<CodieGame> {
   ): void {
     if (!resolveCodieSpell(this, card))
       super.resolve(card, fromGraveyard, mode);
+  }
+  override tutorTarget(allowed: (card: CardDef) => boolean): CardDef | null {
+    return chooseTutorTarget(this, allowed);
   }
   override chooseLandToFetch(candidates: CardDef[], toHand: boolean): CardDef {
     return chooseCodieLand(this, candidates, toHand);

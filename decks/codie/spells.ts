@@ -5,7 +5,6 @@ import {
   AD_NAUSEAM,
   BRASS_BOUNTY,
   CRACKLE_WITH_POWER,
-  DEMONIC_TUTOR,
   EXSANGUINATE,
   FINISHERS,
   MANA_GEYSER,
@@ -116,30 +115,14 @@ function resolveTutor(game: CodieGame, spell: CardDef): boolean {
     case AD_NAUSEAM:
       resolveAdNauseam(game);
       return true;
-    case DEMONIC_TUTOR:
     case PROFANE_TUTOR:
-      fetchCardFromLibrary(game, chooseTutorTarget(game), false);
+      game.doTutor(() => true, false);
       return true;
     case LIM_DUL_VAULT:
       stackLibraryWithVault(game);
       return true;
-    case 'Vampiric Tutor':
-      fetchCardFromLibrary(game, chooseTutorTarget(game), true);
-      game.loseLife(2);
-      return true;
-    case 'Personal Tutor':
-      fetchCardFromLibrary(
-        game,
-        chooseTutorTarget(game, (card) => card.isSorcery),
-        true,
-      );
-      return true;
     case 'Merchant Scroll':
-      fetchCardFromLibrary(
-        game,
-        chooseTutorTarget(game, (card) => card.isInstant && card.isBlue),
-        false,
-      );
+      game.doTutor((card) => card.isInstant && card.isBlue, false);
       return true;
     default:
       return false;
@@ -259,19 +242,6 @@ export function tutorPriorityList(game: CodieGame): string[] {
     RETURN_THE_FAVOR,
   );
   return out;
-}
-
-export function fetchCardFromLibrary(
-  game: CodieGame,
-  card: CardDef | null,
-  toTop: boolean,
-): void {
-  if (!card) return;
-  game.takeCardIfThere(card, 'library');
-  game.shuffle();
-  if (toTop) game.putCardsOnTopOfLibrary([card]);
-  else game.putCard(card, 'hand');
-  game.say('tutor ->', card, toTop ? '(top)' : '');
 }
 
 /** Ad Nauseam: reveal cards until a limit on life (always the whole library with Teferi's Protection). */
