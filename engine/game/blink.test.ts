@@ -134,6 +134,23 @@ export function runBlinkTests(allDecks: Record<string, Deck>): boolean {
     check('... and Eternal Witness came back again', game.hand.length, 2);
   }
   {
+    const game = newGame(allDecks);
+    const witness = putOnBattlefield(game, 'Eternal Witness');
+    blink(game, witness, { returnsAtEndStep: true, inOpponentTurn: true });
+    game.endTurn();
+    check(
+      'a blink in an opponent turn: not back at our own end step',
+      game.findPermanent('Eternal Witness'),
+      null,
+    );
+    game.returnBlinkedCardsAtOpponentEndStep();
+    check(
+      '... back at that opponent end step',
+      game.findPermanent('Eternal Witness') !== null,
+      true,
+    );
+  }
+  {
     const game = newGame(allDecks, true);
     const witness = putOnBattlefield(game, 'Eternal Witness');
     game.say('before the blink');

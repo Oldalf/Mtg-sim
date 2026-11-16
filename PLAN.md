@@ -33,7 +33,7 @@ Rules for every task:
 | 2 | G2 | The pod report again, with the engine as it is now | Haiku 5.5 |
 | 3 | G3 | **Done.** Helga: annihilator and the Eldrazi's removal | Sonnet 5.5 |
 | 4 | G4 | **Done.** Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
-| 5 | G5 | A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
+| 5 | G5 | **Done.** A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
 | 6 | G6 | Initiative and dungeon rooms that were left out | Sonnet 5.5 |
 | 7 | G7 | Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
 | 8 | G8 | Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
@@ -134,6 +134,8 @@ Then, at Pontus's request (Silence-type cards protect a win by stopping the othe
 Pod after (Codie, Meren, Edgar, Helga, 1,000 games): Codie 20.1% -> 19.0% wins (average round 6.99 -> 7.03; 0.21 win attempts a game, 8.2% stopped); Meren 31.3% -> 31.9%; Edgar 29.6% -> 29.9%; Helga 19.0% -> 19.2%.
 
 ## G5. A blink in an opponent's turn returns at that player's end step (Sonnet 5.5)
+
+**Done.** `BlinkedCard.inOpponentTurn` (set by the `inOpponentTurn` blink option) keeps a card out of our own end step; `playTurn` in pod.ts returns it at the end of that opponent's turn (`returnBlinkedCardsAtOpponentEndStep`). Nothing blinks in an opponent's turn yet (G14 will), so every deck and the pod run are unchanged.
 
 The blink (`engine/game/blink.ts`) exiles "until the next end step" and returns the card at the start of our own `endTurn`. If we blink in an opponent's turn (Ephemerate or Ghostly Flicker at instant speed), the card should return at the end of that opponent's turn.
 

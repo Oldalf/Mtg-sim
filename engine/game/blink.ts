@@ -55,10 +55,14 @@ export const BLINK_SPELLS: Record<string, BlinkSpell> = {
 export interface BlinkedCard {
   card: CardDef;
   tapped: boolean;
+  /** Blinked in an opponent's turn: it comes back at the end of that turn, not at our own end step. */
+  inOpponentTurn: boolean;
 }
 
 export interface BlinkOptions {
   returnsAtEndStep?: boolean;
+  /** The blink happens in an opponent's turn (an instant-speed blink): "the next end step" is theirs. */
+  inOpponentTurn?: boolean;
   tapped?: boolean;
   counters?: number;
 }
@@ -84,7 +88,11 @@ export function blink(
     game.say('  exile', permanent.card, '(it returns at the next end step)');
     game.cardsReturningAtEndStep = [
       ...game.cardsReturningAtEndStep,
-      { card: permanent.card, tapped: !!options.tapped },
+      {
+        card: permanent.card,
+        tapped: !!options.tapped,
+        inOpponentTurn: !!options.inOpponentTurn,
+      },
     ];
     return null;
   }
@@ -103,11 +111,25 @@ function returnFromExile(
   return returned;
 }
 
-/** At the beginning of our end step: the cards blinked "until the next end step" come back. */
+/** At the beginning of our end step: the cards blinked "until the next end step" in our own turn come back. */
 export function returnBlinkedCards(game: GameCore): void {
-  const returning = game.cardsReturningAtEndStep;
+  returnWaitingCards(game, false);
+}
+
+/** At the beginning of an opponent's end step (the pod calls this for every other player): the cards we blinked
+ *  during that opponent's turn come back. */
+export function returnCardsBlinkedInOpponentTurn(game: GameCore): void {
+  returnWaitingCards(game, true);
+}
+
+function returnWaitingCards(game: GameCore, inOpponentTurn: boolean): void {
+  const returning = game.cardsReturningAtEndStep.filter(
+    (waiting) => waiting.inOpponentTurn === inOpponentTurn,
+  );
   if (!returning.length) return;
-  game.cardsReturningAtEndStep = [];
+  game.cardsReturningAtEndStep = game.cardsReturningAtEndStep.filter(
+    (waiting) => waiting.inOpponentTurn !== inOpponentTurn,
+  );
   for (const { card, tapped } of returning) {
     if (!game.exile.includes(card)) continue;
     game.say('  returns from exile', card);

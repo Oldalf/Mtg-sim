@@ -56,7 +56,12 @@ import {
   emptyPool,
 } from './game-types';
 import { playKillLineOnCopy } from './kill-line';
-import { BlinkedCard, resolveBlinkSpell, returnBlinkedCards } from './blink';
+import {
+  BlinkedCard,
+  resolveBlinkSpell,
+  returnBlinkedCards,
+  returnCardsBlinkedInOpponentTurn,
+} from './blink';
 import {
   Dungeon,
   DungeonPosition,
@@ -2506,6 +2511,11 @@ export abstract class GameCore<S = unknown> {
 
   /** Deck hook: something happens at the start of a step (e.g. mana added to the pool). */
   onEnterStep(_step: TurnStep): void {}
+
+  /** The pod calls this at the end of another player's turn (blink.ts). */
+  returnBlinkedCardsAtOpponentEndStep(): void {
+    returnCardsBlinkedInOpponentTurn(this);
+  }
 
   endTurn(): void {
     returnBlinkedCards(this);

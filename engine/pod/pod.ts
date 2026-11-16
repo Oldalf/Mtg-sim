@@ -119,6 +119,12 @@ function playTurn(table: PodTable, player: number): PodGame | null {
   if (left.length === 0) return table.result(null, round, 'nobody left');
   if (table.answersEnabled && table.isAlive[player])
     table.runOffTurn(() => useRemovalAfterTurn(table, player));
+  // blinks the others made in this turn end with it (blink.ts)
+  table.runOffTurn(() => {
+    for (const [other, otherGame] of table.games.entries())
+      if (other !== player && table.isAlive[other])
+        otherGame.returnBlinkedCardsAtOpponentEndStep();
+  });
   return null;
 }
 
