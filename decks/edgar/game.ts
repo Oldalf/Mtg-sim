@@ -4,7 +4,7 @@
  *
  * Files:
  *   cards.ts       the card names and the facts about them (values, tokens, the Vampire check)
- *   game.ts        this file: EdgarGame, its state, the win check, anthems, mana, turn steps, tutors
+ *   game.ts        this file: EdgarGame, its state, anthems, mana, turn steps, tutors
  *   triggers.ts    what happens when a permanent enters, dies, or when we attack
  *   actions.ts     sacrifice outlets, the all-in sacrifice turn, prepared spells, activated abilities
  *   candidates.ts  everything the AI may do now, with a score each
@@ -12,6 +12,8 @@
  * Win: all three opponents at 0 life (40 each). Second measure: first opponent dead.
  * Single-target drains ("target opponent loses ...") go to the opponent closest to dead.
  * Combat is the engine's goldfish combat for creature decks (flyers connect, half the ground attackers are blocked).
+ * The win check, the two numbers, card values and the planner's base score are the engine's CreatureDeckGame
+ * (engine/game/creature-deck.ts).
  * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
 import { TREASURE } from '../../engine/cards/tokens';
@@ -41,7 +43,7 @@ import {
   Zone,
 } from '../../engine/game/game-types';
 import { Answer } from '../../engine/game/answers';
-import { GameWithoutKillSearch } from '../../engine/game/game';
+import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { firstMax } from '../../engine/util/lists';
@@ -56,7 +58,8 @@ interface Revival {
   revivalCounters: number;
 }
 
-export class EdgarGame extends GameWithoutKillSearch {
+export class EdgarGame extends CreatureDeckGame {
+  readonly values = VALUE;
   override mulliganRule(): MulliganRule | null {
     return this.config.smart_mulligan ? MULLIGAN : null;
   }
@@ -96,57 +99,6 @@ export class EdgarGame extends GameWithoutKillSearch {
       damageFromDrains: this.damageFromDrains,
       damageFromExplosion: this.damageFromExplosion,
     };
-  }
-
-  // ================================================================ the win condition
-  hasWon(): boolean {
-    return (
-      this.life.filter((life) => life <= 0).length >=
-      (this.config.win_dead as number)
-    );
-  }
-
-  override areOpponentsBeaten(): boolean {
-    return this.hasWon();
-  }
-
-  override winsWith(damage: number): boolean {
-    const life = this.life.slice();
-    let left = damage;
-    while (left > 0) {
-      let weakestIndex = -1;
-      for (let i = 0; i < life.length; i++)
-        if (life[i] > 0 && (weakestIndex < 0 || life[i] < life[weakestIndex]))
-          weakestIndex = i;
-      if (weakestIndex < 0) break;
-      const hit = Math.min(left, life[weakestIndex]);
-      life[weakestIndex] -= hit;
-      left -= hit;
-    }
-    return (
-      life.filter((life) => life <= 0).length >=
-      (this.config.win_dead as number)
-    );
-  }
-
-  override checkKill(): number {
-    if (this.died) return 2; // the game is over (lost)
-    if (this.hasWon()) {
-      if (this.unprotectedKillTurn === null) {
-        this.unprotectedKillTurn = this.turn;
-        this.say(`WIN: ${this.describeOpponentLife()}`);
-      }
-      return 2;
-    }
-    return 0;
-  }
-
-  override play(): [number | null, number | null] {
-    super.play();
-    return [
-      this.died ? null : this.unprotectedKillTurn,
-      this.firstOpponentDeadTurn,
-    ];
   }
 
   /** Copies need the references to permanents (prepared spells) to point at the copied permanents. */
@@ -228,25 +180,6 @@ export class EdgarGame extends GameWithoutKillSearch {
       }
     }
     return drain;
-  }
-
-  // ================================================================ card values
-  battlefieldValue(card: CardDef): number {
-    return VALUE[card.name] ?? (card.isCreature ? 40 : 30);
-  }
-
-  override cardValue(card: CardDef): number {
-    if (card.land !== null) {
-      const manaAndLands = this.manaSources() + this.countLandsHand();
-      return manaAndLands <= 3
-        ? 80
-        : manaAndLands <= 6
-          ? 60
-          : manaAndLands <= 8
-            ? 40
-            : 15;
-    }
-    return this.battlefieldValue(card);
   }
 
   // ================================================================ Vampires
@@ -431,13 +364,6 @@ export class EdgarGame extends GameWithoutKillSearch {
     return onPermanentAttacks(this, attackers);
   }
 
-  /** Lifelink creatures that connected gain us their power. */
-  override onCombatDamage(connected: Permanent[]): void {
-    for (const permanent of connected)
-      if (permanent.card.keywords.has('lifelink'))
-        this.gainLife(this.power(permanent));
-  }
-
   // ================================================================ tutors
   /** What we want most from the library: a missing drain engine or outlet first, lands while short of them. */
   tutorValue(card: CardDef): number {
@@ -471,33 +397,17 @@ export class EdgarGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ the planner's score
-  /** The planner's score for a position with no win yet (higher is better). */
+  /** The planner's score: the engine's (damage, board, mana, cards, life) plus the drain engines, the Vampires,
+   *  Edgar and the sacrifice outlets. */
   override positionValue(): number {
     if (this.died) return -5000;
-    let value = 0;
-    const startLife = this.config.opp_life as number;
-    for (const life of this.life) value += 3 * (startLife - Math.max(0, life));
-    for (const permanent of this.creatures())
-      value +=
-        6 * this.power(permanent) * (permanent.card.flying ? 1.5 : 1) +
-        0.25 * this.battlefieldValue(permanent.card);
-    value += 30 * this.drainPerDeath();
-    value += 3 * this.vampires().length;
-    if (this.isOnBattlefield(EDGAR)) value += 60;
-    value += 8 * findOutlets(this).length;
-    for (const permanent of this.battlefield)
-      if (permanent.land === null && !permanent.card.isCreature)
-        value += 0.4 * this.battlefieldValue(permanent.card);
-    value += 25 * Math.min(10, this.manaSources());
-    value +=
-      0.4 * this.hand.reduce((total, card) => total + this.cardValue(card), 0);
-    value +=
-      this.myLife <= 0
-        ? -3000
-        : this.myLife < 15
-          ? -10 * (15 - this.myLife)
-          : 0.3 * Math.min(40, this.myLife - 15);
-    return value;
+    return (
+      super.positionValue() +
+      30 * this.drainPerDeath() +
+      3 * this.vampires().length +
+      (this.isOnBattlefield(EDGAR) ? 60 : 0) +
+      8 * findOutlets(this).length
+    );
   }
 
   /** A pod: the explosion is declared after Evereth was pumped (her ability uses the stack), with her still on the
