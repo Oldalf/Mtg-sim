@@ -71,7 +71,7 @@ Rules for every task:
 | 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) (done: none needed it; search copies moved to the engine) | Opus 5.5 |
 | 23 | F1 (done) | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
 | 24 | F2 (done) | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
-| 25 | F3 | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
+| 25 | F3 (done) | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
 | 26 | B7 | Azula plays its combos like a pilot: setup turns, digging, protection | Opus 5.5, last; the deck may not be in the pod |
 
 **If time runs short before game night:** A2 moves only what Helga, Ardyn and Teval need, A3 waits, and a deck can go to the pod with fewer card rules, as long as its `PLAN.md` says what it does not model (C1 then says it next to its numbers).
@@ -413,4 +413,20 @@ Find every card in any `decks/*/decklist.txt` whose text says "no maximum hand s
 1. A one-off node script (in the scratchpad, not the repo) reads `data/cards.json`, picks the cards whose `oracle` contains "no maximum hand size", and prints which decklists have each.
 2. For each card: is it in the engine's `hasNoMaximumHandSize()` (after F1), or does the deck handle it itself (Mike's and Azula's own `hasNoMaximumHandSize`)? Write the table under this task.
 3. A card that is a permanent and in no one's rule: add it to the engine's list (same change as F1, same test idea). A card that is a spell or a condition (Sea Gate Restoration, Wizard Class): list it, do not change it.
+
+**Done (2026-11-16):** audit of `data/cards.json` against every `decks/*/decklist.txt`:
+
+| card | decks | handled by |
+|---|---|---|
+| Reliquary Tower | aesi, ardyn, azula, dnd, gale, helga, mike, thantis | engine; Aesi and Mike in their own code |
+| Thought Vessel | ardyn, azula, helga, mike | engine (F1); Mike's override |
+| Decanter of Endless Water | azula | engine (F1) |
+| Vnwxt, Verbose Host | mike | Mike's override (always, not only at max speed: the card says so) |
+| Body of Knowledge, Folio of Fancies, Wizard Class | mike | Mike's override |
+| Graceful Adept | aesi | Aesi's own `endTurn` |
+| Sea Gate Restoration (spell) | azula | Azula's override (`hasSeaGateRestorationResolved`) |
+| Nerd Rage (aura: the enchanted creature gives it) | mike | **was missing**: added to Mike's override (a creature with `MARK_NERD_RAGE`); Mike `--regress check` stays IDENTICAL |
+| Finale of Revelation (spell, only with X ≥ 10, for the rest of the game) | teval | not handled; teval holds it in goldfish. Listed, not changed |
+
+Aesi's own `endTurn` skips the engine's `hasNoMaximumHandSize()`; fine for its cards (Tower, Graceful Adept), but a new card would have to be added there.
 4. If a deck with a `--regress` baseline changes, stop and show Pontus the numbers before re-recording.

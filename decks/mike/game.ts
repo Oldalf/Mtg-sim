@@ -142,7 +142,8 @@ export class MikeGame extends GameWithoutKillSearch {
       this.isOnBattlefield('Reliquary Tower') ||
       this.isOnBattlefield(WIZARD_CLASS) ||
       this.isOnBattlefield('Body of Knowledge') ||
-      this.isOnBattlefield(FOLIO_OF_FANCIES)
+      this.isOnBattlefield(FOLIO_OF_FANCIES) ||
+      this.battlefield.some((permanent) => permanent.marks & MARK_NERD_RAGE)
     );
   }
   /** Effective card of a permanent (Aurora Shifter may be a copy of something). */
