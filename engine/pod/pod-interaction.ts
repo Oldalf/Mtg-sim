@@ -5,7 +5,7 @@
  *  - the pod's rules for which opponent an attack goes at.
  * Every function takes the PodTable it works on.
  */
-import { Answer } from '../game/answers';
+import { Answer, PROTECTIONS } from '../game/answers';
 import { CardDef } from '../cards/cards';
 import { Game } from '../game/game';
 import { Permanent, Target } from '../game/game-types';
@@ -451,12 +451,34 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
   table.stats.tried[player]++;
   table.sayHighlight(player, 'goes for the win');
 
+  const protection = attempt.protect ? PROTECTIONS[attempt.protect] : undefined;
+  if (protection?.stops === 'all-opponents') {
+    sayProtection(table, player, attempt.protect!, 'no one can cast spells');
+    return false;
+  }
+  const silencedOpponent =
+    protection?.stops === 'one-opponent'
+      ? opponentWithMostInteraction(table, player)
+      : -1;
+  if (protection)
+    sayProtection(
+      table,
+      player,
+      attempt.protect!,
+      protection.stops === 'one-opponent'
+        ? `${table.playerName(silencedOpponent)} can't cast spells`
+        : "blue and black spells can't stop it",
+    );
   const answersNeeded = attempt.backup + 1; // the winner may hold counterspells as backup
   const used: UsedAnswer[] = [];
   const answersStanding = () =>
     used.filter((usedAnswer) => !usedAnswer.shield).length;
   for (const opponent of table.opponentsOf[player]) {
-    if (!table.isAlive[opponent] || answersStanding() >= answersNeeded)
+    if (
+      !table.isAlive[opponent] ||
+      opponent === silencedOpponent ||
+      answersStanding() >= answersNeeded
+    )
       continue;
     for (const response of table.games[opponent].podRespond(
       attempt,
@@ -503,6 +525,35 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
     [stopper.card, stopper.target],
   );
   return true;
+}
+
+function sayProtection(
+  table: PodTable,
+  player: number,
+  protectionName: string,
+  effect: string,
+): void {
+  table.sayAs(
+    player,
+    `casts ${protectionName} before the win: ${effect}`,
+    'answer',
+    [protectionName],
+  );
+}
+
+/** The living opponent with the most interaction in hand (the one an Orim's Chant is aimed at). */
+function opponentWithMostInteraction(table: PodTable, player: number): number {
+  const interactionInHand = (opponent: number) =>
+    table.games[opponent].hand.filter((card) =>
+      table.games[opponent].answer(card),
+    ).length;
+  return table
+    .livingOpponents(player)
+    .reduce(
+      (best, opponent) =>
+        interactionInHand(opponent) > interactionInHand(best) ? opponent : best,
+      table.livingOpponents(player)[0],
+    );
 }
 
 /** Can `defender` counter this spell with a counterspell in hand and mana for it? */

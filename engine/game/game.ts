@@ -8,7 +8,7 @@
  */
 import * as C from '../cards/cards';
 import { Cost, CardDef } from '../cards/cards';
-import { ANSWERS, Answer, KEY_SPELLS } from './answers';
+import { ANSWERS, Answer, KEY_SPELLS, PROTECTIONS } from './answers';
 import { GameCore } from './game-core';
 import { addFirebendingMana } from './firebending';
 import {
@@ -520,7 +520,20 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       this.forceOfWillPitch(card)
     )
       return new Cost();
+    if (
+      card.name === DAZE &&
+      !this.canPay(cost, true) &&
+      this.islandToReturnForDaze()
+    )
+      return new Cost();
     return cost;
+  }
+  /** Daze's other cost: an Island we control returns to hand (a tapped one first), or null. */
+  islandToReturnForDaze(): Permanent | null {
+    const islands = this.battlefield.filter((permanent) =>
+      this.islandTyped(permanent),
+    );
+    return islands.find((island) => island.tapped) ?? islands[0] ?? null;
   }
   controlsCommander(): boolean {
     return this.battlefield.some((permanent) => this.isCommander(permanent));
@@ -562,6 +575,12 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       // the alternative cost: exile a blue card and pay 1 life
       this.moveCard(this.forceOfWillPitch(card)!, 'hand', 'exile');
       this.loseLife(1);
+    }
+    if (card.name === DAZE && cost.manaValue === 0) {
+      // the alternative cost: return an Island to hand
+      const island = this.islandToReturnForDaze()!;
+      this.takeFromBattlefield(island);
+      this.putCard(island.card, 'hand');
     }
     this.moveCard(card, 'hand', 'graveyard');
     this.podAnnounceCast(card);
@@ -606,6 +625,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       if (out.filter((x) => !x.shield).length >= need) break;
       const answer = this.answer(card);
       if (!answer || !answer.instant || answer.kind === 'wipe') continue;
+      const isStoppedByVeil =
+        PROTECTIONS[winAttempt.protect ?? '']?.stops === 'blue-black-cards' &&
+        (card.isBlue || card.isBlack);
+      if (isStoppedByVeil) continue;
       if (answer.kind === 'counter') {
         const target = winAttempt.spells.find((x) =>
           Game.spellOk(answer, C.get(x)),
@@ -903,6 +926,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
 const VOLATILE_STORMDRAKE = 'Volatile Stormdrake';
 const FORCE_OF_WILL = 'Force of Will';
 const FIERCE_GUARDIANSHIP = 'Fierce Guardianship';
+const DAZE = 'Daze';
 
 /** Base for decks that have no kill search (no combo to find), so they skip the three search hooks. */
 export abstract class GameWithoutKillSearch extends Game<null> {

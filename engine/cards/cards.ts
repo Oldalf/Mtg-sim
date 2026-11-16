@@ -233,6 +233,10 @@ export class CardDef {
     this.isCreature = this.types.has('creature');
   }
 
+  /** A black mana symbol in its cost (a getter, so it stays out of dumps of the card). */
+  get isBlack(): boolean {
+    return this.cost.black > 0;
+  }
   toString(): string {
     return this.name;
   }

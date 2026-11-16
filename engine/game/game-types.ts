@@ -175,6 +175,8 @@ export interface WinAttempt {
   spells: string[];
   perms: string[];
   backup: number;
+  /** A protection spell (answers.ts PROTECTIONS) we can still cast before the others answer. */
+  protect?: string;
 }
 /** An opposing permanent, as a removal spell sees it. */
 export interface Target {

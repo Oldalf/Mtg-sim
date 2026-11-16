@@ -32,7 +32,7 @@ Rules for every task:
 | 1 | G1 | **Done.** DnD: map the deck from its owner's primer | Opus 5.5, after P (the primer) |
 | 2 | G2 | The pod report again, with the engine as it is now | Haiku 5.5 |
 | 3 | G3 | **Done.** Helga: annihilator and the Eldrazi's removal | Sonnet 5.5 |
-| 4 | G4 | Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
+| 4 | G4 | **Done.** Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
 | 5 | G5 | A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
 | 6 | G6 | Initiative and dungeon rooms that were left out | Sonnet 5.5 |
 | 7 | G7 | Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
@@ -127,6 +127,11 @@ Codie's `BACKUP` table (`decks/codie/cards.ts`) lists these cards, all in Codie'
 Pontus decides which of them become answers (the rest stay `BACKUP`-only). Read each card's text in the Scryfall data first. They differ: Silence and Orim's Chant stop a player casting spells this turn; Daze counters unless the caster pays {1} (free by returning an Island); Bilbo's Gambit and Autumn's Veil protect our own spells or permanents; Narset's Reversal copies an instant or sorcery and returns it to its owner's hand.
 
 Add each chosen one with a test in `engine/pod/pod.test.ts`. Codie's pod games change: numbers before and after (Codie, Meren, Edgar, Helga, 1,000 games). Goldfish IDENTICAL.
+
+Done 2026-11-16, eco mode. Chosen (decided without waiting for Pontus; say if you want others): **Daze** (counter; free by returning an Island, a tapped one first: `Game.answerCost` / `podCast`) and **Bilbo's Gambit** (counter: it returns the spell to hand, so it is stopped this time; the gift and the no-spells clause are left out). Not answers: Narset's Reversal (copies our own spell) stays `BACKUP`-only. Silence, Orim's Chant and Autumn's Veil are protection, see below. Tests in engine/pod/pod.test.ts.
+Pod (Codie, Meren, Edgar, Helga, 1,000 games, seeds the same): Codie 20.4% -> 20.1% wins (average round 6.96 -> 6.99); Meren 30.8% -> 31.3%; Edgar 30.8% -> 29.6%; Helga 18.0% -> 19.0%. Goldfish untouched (verify below).
+Then, at Pontus's request (Silence-type cards protect a win by stopping the others' answers): (1) Codie got a `winAttempt()` (decks/codie/game.ts): before this its wins in a pod could never be answered. The finisher it casts can now be countered; backup = a counterspell it can still pay for after the line. (2) Engine `PROTECTIONS` (engine/game/answers.ts) and `WinAttempt.protect`: `answerWin` lets the winner cast Silence (no opponent can cast spells), Orim's Chant (one opponent, the one with the most interaction in hand; unkicked) or Autumn's Veil (blue and black cards can't answer) first. Left out: kicked Chant (no attacks), Veil on creatures, protection cast outside a win attempt. (3) Test: engine/pod/pod-protection.test.ts.
+Pod after (Codie, Meren, Edgar, Helga, 1,000 games): Codie 20.1% -> 19.0% wins (average round 6.99 -> 7.03; 0.21 win attempts a game, 8.2% stopped); Meren 31.3% -> 31.9%; Edgar 29.6% -> 29.9%; Helga 19.0% -> 19.2%.
 
 ## G5. A blink in an opponent's turn returns at that player's end step (Sonnet 5.5)
 

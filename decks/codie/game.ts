@@ -52,8 +52,10 @@ import {
   Candidate,
   KillSearcher,
   KillStep,
+  WinAttempt,
 } from '../../engine/game/game-types';
 import { Game } from '../../engine/game/game';
+import { PROTECTIONS } from '../../engine/game/answers';
 import { TurnStep } from '../../engine/game/game-core';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -406,6 +408,31 @@ export class CodieGame extends Game<CodieGame> {
     if (codieStep.kind === 'finisher') return castFinisher(this, codieStep);
     this.say(`> ${step.text}`);
     return codieStep.play!(this) ? null : `could not ${step.text}`;
+  }
+  /** A pod: the finisher the kill line casts can be countered. The backup is what we can still cast after the line
+   *  (a counterspell, or a protection spell that stops the answers: Silence, Orim's Chant, Autumn's Veil). */
+  override winAttempt(): WinAttempt | null {
+    const finisher = FINISHERS.find((name) =>
+      this.lastKillLine.some((step) => step.startsWith(`cast ${name} `)),
+    );
+    if (!finisher) return null;
+    const afterTheLine = this.killLineCopy ?? this;
+    const hasCounterBackup = afterTheLine.hand.some(
+      (card) =>
+        afterTheLine.answer(card)?.kind === 'counter' &&
+        afterTheLine.canPay(afterTheLine.answerCost(card), true),
+    );
+    const protect = Object.keys(PROTECTIONS).find(
+      (name) =>
+        afterTheLine.inHand(name) &&
+        afterTheLine.canPay(Cost.parse(PROTECTIONS[name].cost), true),
+    );
+    return {
+      spells: [finisher],
+      perms: [],
+      backup: hasCounterBackup ? 1 : 0,
+      protect,
+    };
   }
   searchedStates = new Set<string>();
   searchedNodeCount = 0;

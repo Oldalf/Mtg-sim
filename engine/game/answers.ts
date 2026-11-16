@@ -60,6 +60,9 @@ export const ANSWERS: Record<string, Answer> = {
   "It'll Quench Ya!": counter(),
   "Archmage's Charm": counter(),
   'Mana Sculpt': counter(),
+  // (free by returning an Island: Game.answerCost; Bilbo's Gambit returns the spell to hand, so it is stopped this time)
+  Daze: counter(),
+  "Bilbo's Gambit": counter(),
   Rewind: counter(),
   Refute: counter(),
   'Aether Spike': counter(),
@@ -110,6 +113,22 @@ export const ANSWERS: Record<string, Answer> = {
   'Fell the Mighty': wipe('bigger'),
   Evacuation: wipe('bounce', true),
   Aetherize: wipe('attackers', true),
+};
+/**
+ * Protection a deck casts just before going for the win, so the others can't answer it.
+ * - Silence: no opponent can cast spells this turn.
+ * - Orim's Chant: one target player can't cast spells (the opponent holding the most interaction).
+ * - Autumn's Veil: blue and black spells can't counter our spells or target our creatures.
+ * `cost` is the mana cost (Orim's Chant is not kicked).
+ */
+export interface Protection {
+  cost: string;
+  stops: 'all-opponents' | 'one-opponent' | 'blue-black-cards';
+}
+export const PROTECTIONS: Record<string, Protection> = {
+  Silence: { cost: '{W}', stops: 'all-opponents' },
+  "Orim's Chant": { cost: '{W}', stops: 'one-opponent' },
+  "Autumn's Veil": { cost: '{G}', stops: 'blue-black-cards' },
 };
 /** Shriekmaw's enters-the-battlefield trigger (Meren). */
 export const SHRIEKMAW: Answer = {

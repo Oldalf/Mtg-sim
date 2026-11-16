@@ -407,6 +407,29 @@ export function runPodTests(): boolean {
     ],
     [1, 2],
   );
+  // ---- Daze and Bilbo's Gambit (Codie's counterspells)
+  game = mike(1, [], ['Daze']);
+  game.battlefield[0].tapped = true;
+  check(
+    'Daze is free when we can return an Island',
+    game.answerCost(C.get('Daze')).manaValue,
+    0,
+  );
+  game.podCast(game.hand[0]);
+  check(
+    'casting Daze for free returns the Island to hand',
+    [game.battlefield.length, game.hand.map((card) => card.name)],
+    [0, ['Island']],
+  );
+  game = mike(2, [], ["Bilbo's Gambit"]);
+  check(
+    "Bilbo's Gambit counters any spell for {1}{W}'s printed cost",
+    [
+      ANSWERS["Bilbo's Gambit"].kind,
+      game.answerCost(C.get("Bilbo's Gambit")).manaValue,
+    ],
+    ['counter', 2],
+  );
   // ---- legal targets and shields
   game = mike(2, [], ['Go for the Throat']);
   check(
