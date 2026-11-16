@@ -152,6 +152,15 @@ export class HelgaGame extends CreatureDeckGame {
     );
   }
 
+  /** No mana is held back for an answer while Helga can help cast a big creature: her draw and growth beat a held
+   *  counterspell, and the lands she pays for are the ones the reserve would have kept. */
+  override podReserve(): number {
+    const canCastBigCreature =
+      this.readyHelga() !== null &&
+      this.hand.some((card) => this.helgaManaFor(card) > 0);
+    return canCastBigCreature ? 0 : super.podReserve();
+  }
+
   /** Tap Helga for what the spell needs (no more, so nothing is left floating for other spells), then cast it. */
   castWithHelga(card: CardDef): boolean {
     const helga = this.readyHelga();
