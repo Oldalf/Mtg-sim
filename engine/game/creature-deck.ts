@@ -37,11 +37,21 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ the win
+  /** config.win_dead opponents dead, or (when the deck sets config.win_damage) that much damage dealt in total. */
   hasWon(): boolean {
+    return this.isWinningPosition(this.life, this.damageDealt);
+  }
+
+  private isWinningPosition(life: number[], damageDealt: number): boolean {
     return (
-      this.life.filter((life) => life <= 0).length >=
-      (this.config.win_dead as number)
+      life.filter((lifeLeft) => lifeLeft <= 0).length >=
+        (this.config.win_dead as number) || damageDealt >= this.winDamage()
     );
+  }
+
+  /** The total damage that also wins (config.win_damage); no such win when the deck does not set it. */
+  private winDamage(): number {
+    return (this.config.win_damage as number | undefined) ?? Infinity;
   }
 
   override areOpponentsBeaten(): boolean {
@@ -52,6 +62,7 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
   override winsWith(damage: number): boolean {
     const life = this.life.slice();
     let damageLeft = damage;
+    let damageDealt = this.damageDealt;
     while (damageLeft > 0) {
       let weakestIndex = -1;
       for (let i = 0; i < life.length; i++)
@@ -60,12 +71,10 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
       if (weakestIndex < 0) break;
       const hit = Math.min(damageLeft, life[weakestIndex]);
       life[weakestIndex] -= hit;
+      damageDealt += hit;
       damageLeft -= hit;
     }
-    return (
-      life.filter((lifeLeft) => lifeLeft <= 0).length >=
-      (this.config.win_dead as number)
-    );
+    return this.isWinningPosition(life, damageDealt);
   }
 
   override checkKill(): number {
@@ -73,7 +82,11 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
     if (this.hasWon()) {
       if (this.unprotectedKillTurn === null) {
         this.unprotectedKillTurn = this.turn;
-        this.say(`WIN: ${this.describeOpponentLife()}`);
+        const damageNote =
+          this.winDamage() === Infinity
+            ? ''
+            : `, ${this.damageDealt} damage dealt`;
+        this.say(`WIN: ${this.describeOpponentLife()}${damageNote}`);
       }
       return 2;
     }

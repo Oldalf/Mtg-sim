@@ -4,12 +4,13 @@
  *
  * Files:
  *   cards.ts       the card names and the facts about them (values, which creatures do what)
- *   game.ts        this file: MerenGame, its state, the win check, turn steps, combat and tutors
+ *   game.ts        this file: MerenGame, its state, turn steps, combat and tutors
  *   triggers.ts    what happens when a permanent enters the battlefield or dies
  *   candidates.ts  everything the AI may do now, with a score each
  *   actions.ts     what the abilities and spells do when the AI picks them
  *
  * Win: 2 opponents dead, or config.win_damage damage dealt in total. Second measure: first opponent dead.
+ * The win check, the two numbers and goldfish combat are the engine's CreatureDeckGame (engine/game/creature-deck.ts).
  * The game itself (mana, zones, casting, turns, combat) is the shared engine in engine/game/game-core.ts.
  */
 import {
@@ -32,13 +33,14 @@ import {
   Permanent,
   Zone,
 } from '../../engine/game/game-types';
-import { GameWithoutKillSearch } from '../../engine/game/game';
+import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
 import { firstMax, sortDesc } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
-export class MerenGame extends GameWithoutKillSearch {
+export class MerenGame extends CreatureDeckGame {
+  readonly values = VALUE;
   override mulliganRule(): MulliganRule | null {
     return this.config.smart_mulligan ? MULLIGAN : null;
   }
@@ -71,64 +73,6 @@ export class MerenGame extends GameWithoutKillSearch {
   gristUsed = false; // Grist: one loyalty ability per turn
   exileAtEnd: Permanent[] = []; // Puppeteer Clique's stolen creature
   sacAtEnd: Permanent[] = []; // Mobilize warriors
-
-  // ================================================================ the win condition
-  hasWon(): boolean {
-    let dead = 0;
-    for (let i = 0; i < this.life.length; i++) if (this.life[i] <= 0) dead++;
-    return (
-      dead >= (this.config.win_dead as number) ||
-      this.damageDealt >= (this.config.win_damage as number)
-    );
-  }
-
-  override areOpponentsBeaten(): boolean {
-    return this.hasWon();
-  }
-
-  override winsWith(damage: number): boolean {
-    const life = this.life.slice();
-    let left = damage,
-      dealt = this.damageDealt;
-    while (left > 0) {
-      let weakestIndex = -1;
-      for (let i = 0; i < life.length; i++)
-        if (life[i] > 0 && (weakestIndex < 0 || life[i] < life[weakestIndex]))
-          weakestIndex = i;
-      if (weakestIndex < 0) break;
-      const hit = Math.min(left, life[weakestIndex]);
-      life[weakestIndex] -= hit;
-      dealt += hit;
-      left -= hit;
-    }
-    return (
-      life.filter((life) => life <= 0).length >=
-        (this.config.win_dead as number) ||
-      dealt >= (this.config.win_damage as number)
-    );
-  }
-
-  override checkKill(): number {
-    if (this.died) return 2; // the game is over (lost)
-    if (this.hasWon()) {
-      if (this.unprotectedKillTurn === null) {
-        this.unprotectedKillTurn = this.turn;
-        this.say(
-          `WIN: ${this.describeOpponentLife()}, ${this.damageDealt} damage dealt`,
-        );
-      }
-      return 2;
-    }
-    return 0;
-  }
-
-  override play(): [number | null, number | null] {
-    super.play();
-    return [
-      this.died ? null : this.unprotectedKillTurn,
-      this.firstOpponentDeadTurn,
-    ];
-  }
 
   // ---------------------------------------------------------------- log analyzer hooks
   override syncFromLog(board: LogBoardView): void {
@@ -208,24 +152,16 @@ export class MerenGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ card values
-  battlefieldValue(card: CardDef): number {
+  /** Lotleth Giant grows with the creature cards in our graveyard. */
+  override battlefieldValue(card: CardDef): number {
     if (card.name === 'Lotleth Giant')
       return Math.min(95, 10 * this.creaturesInGraveyard());
-    return VALUE[card.name] ?? (card.isCreature ? 40 : 30);
+    return super.battlefieldValue(card);
   }
 
+  /** Spells in hand: cards we hold for later are worth little, the others a flat 45. */
   override cardValue(card: CardDef): number {
-    if (card.land !== null) {
-      const manaAndLands = this.manaSources() + this.countLandsHand();
-      return manaAndLands <= 3
-        ? 80
-        : manaAndLands <= 6
-          ? 60
-          : manaAndLands <= 8
-            ? 40
-            : 15;
-    }
-    if (card.isCreature) return this.battlefieldValue(card);
+    if (card.land !== null || card.isCreature) return super.cardValue(card);
     if (HOLD.has(card.name)) return 20;
     return 45;
   }
@@ -237,13 +173,6 @@ export class MerenGame extends GameWithoutKillSearch {
 
   creaturesInGraveyard(): number {
     return this.graveyard.filter((card) => card.isCreature).length;
-  }
-
-  override manaSourceKind(
-    permanent: Permanent,
-    ignoreSick = false,
-  ): string | null {
-    return super.manaSourceKind(permanent, ignoreSick);
   }
 
   override commanderCost(card: CardDef, cost: Cost): Cost {
@@ -301,11 +230,6 @@ export class MerenGame extends GameWithoutKillSearch {
   /** Eternal Witness: the card we want most, a noncreature first (Meren brings creatures back anyway). */
   override returnToHandValue(card: CardDef): number {
     return this.cardValue(card) + (card.isCreature ? 0 : 10);
-  }
-
-  /** The creature we'd most like back from the graveyard: the one worth most on the battlefield. */
-  override reanimationValue(card: CardDef): number {
-    return this.battlefieldValue(card);
   }
 
   /** Our creatures in the order we'd sacrifice them (cheapest loss first). */
@@ -503,9 +427,6 @@ export class MerenGame extends GameWithoutKillSearch {
       }
     }
     return extra;
-  }
-  override combat(): void {
-    this.creatureCombat();
   }
   /** How close to winning the others think we are: Meren out, black devotion for Gray Merchant, a big graveyard. */
   override podClose(): number {
