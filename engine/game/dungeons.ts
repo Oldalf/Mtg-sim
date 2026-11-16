@@ -10,8 +10,11 @@
  * that one), and again at their upkeep. A player who deals combat damage to its holder takes it (pod-combat.ts).
  * One player has it at a time: in a pod the table moves it (Arena.takeInitiative); in a goldfish game we keep it.
  *
- * The rooms are data; their effects are small functions over the game. Effects that only matter against real
- * opponents' creatures (Twisted Caverns, Fungi Cavern, Arena's goad) are logged and not modelled.
+ * When the initiative's holder leaves the game, the active player takes it (rule 726.4; PodTable.eliminate).
+ *
+ * The rooms are data; their effects are small functions over the game. The rooms that only hit an opponent's
+ * creature (Twisted Caverns, Fungi Cavern, Arena's goad) do something in a pod only: a goldfish game has no one to
+ * target. Runestone Caverns counts as drawing the two cards (the engine has no "play from exile this turn").
  */
 import * as C from '../cards/cards';
 import { CardDef, Cost } from '../cards/cards';
@@ -56,8 +59,6 @@ const room = (
   value: number,
   act: (game: GameCore) => void,
 ): DungeonRoom => ({ name, text, leadsTo, value, act });
-
-const notModelled = (): void => {};
 
 function counterOnBestCreature(game: GameCore, count: number): void {
   const creatures = game.creatures();
@@ -174,10 +175,10 @@ export const LOST_MINE_OF_PHANDELVER: Dungeon = {
     ),
     room(
       'Fungi Cavern',
-      'a creature gets -4/-0 (not modelled)',
+      'a creature an opponent controls gets -4/-0 until our next turn (a pod only)',
       ['Temple of Dumathoin'],
       0,
-      notModelled,
+      (game) => game.podWeakenBestCreature(4),
     ),
     room('Temple of Dumathoin', 'draw a card', [], 4, (game) => game.draw(1)),
   ],
@@ -205,10 +206,10 @@ export const DUNGEON_OF_THE_MAD_MAGE: Dungeon = {
     ),
     room(
       'Twisted Caverns',
-      "a creature can't attack (not modelled)",
+      "a creature can't attack us until our next turn (a pod only)",
       ['Lost Level'],
       0,
-      notModelled,
+      (game) => game.podStopBestCreatureAttackingUs(),
     ),
     room(
       'Lost Level',
@@ -323,10 +324,10 @@ export const UNDERCITY: Dungeon = {
     ),
     room(
       'Arena',
-      'goad a creature (not modelled)',
+      'goad a creature (a pod only)',
       ['Archives', 'Catacombs'],
       1,
-      notModelled,
+      (game) => game.podGoadBestCreature(),
     ),
     room(
       'Stash',

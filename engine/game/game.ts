@@ -49,6 +49,15 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   override podTakeInitiative(): void {
     if (this.inArena()) this.arena!.takeInitiative(this);
   }
+  override podGoadBestCreature(): void {
+    if (this.inArena()) this.arena!.goadBestCreature(this);
+  }
+  override podWeakenBestCreature(powerLoss: number): void {
+    if (this.inArena()) this.arena!.weakenBestCreature(this, powerLoss);
+  }
+  override podStopBestCreatureAttackingUs(): void {
+    if (this.inArena()) this.arena!.stopBestCreatureAttackingUs(this);
+  }
   override podAnnounceCast(card: CardDef): void {
     if (this.inArena()) this.arena!.announceCast(this, card);
   }
@@ -285,6 +294,8 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   /** May this creature attack opponent `slot`? A goaded creature attacks a player who goaded it only when it can
    *  attack no one else (rule 701.15b). */
   mayAttackOpponent(creature: Permanent, slot: number): boolean {
+    if (this.arena!.forbiddenAttackSlots(this, creature).includes(slot))
+      return false;
     const goaderSlots = this.arena!.goaderSlots(this, creature);
     if (!goaderSlots.includes(slot)) return true;
     return !this.life.some(

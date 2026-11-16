@@ -34,7 +34,7 @@ Rules for every task:
 | 3 | G3 | **Done.** Helga: annihilator and the Eldrazi's removal | Sonnet 5.5 |
 | 4 | G4 | **Done.** Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
 | 5 | G5 | **Done.** A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
-| 6 | G6 | Initiative and dungeon rooms that were left out | Sonnet 5.5 |
+| 6 | G6 | **Done.** Initiative and dungeon rooms that were left out | Sonnet 5.5 |
 | 7 | G7 | Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
 | 8 | G8 | Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
 | 9 | G9 | Black tutors move to the engine | Sonnet 5.5 |
@@ -144,6 +144,8 @@ The blink (`engine/game/blink.ts`) exiles "until the next end step" and returns 
 3. Every deck IDENTICAL; pod run unchanged unless DnD blinks in an opponent's turn (then show DnD's numbers).
 
 ## G6. Initiative and dungeon rooms that were left out (Sonnet 5.5)
+
+**Done.** Rule 726.4: when the holder leaves, the active player takes the initiative (the next player in turn order if that player is leaving) and ventures into Undercity (`PodTable.passInitiativeFrom`). Twisted Caverns, Fungi Cavern and Arena hit the biggest threat's most powerful targetable creature in a pod (`pod-interaction.ts`; they end at our next turn). Runestone Caverns stays as drawing two: the engine has no "play from exile this turn". Checks in `dungeons.test.ts`. Every deck IDENTICAL, except that gale's `--regress check` already differs in its kill-finder tests before this change (since b5fc943). The DnD pod run (Pod B, 1,000 games) is unchanged: DnD's path choice never takes those rooms (Arena is worth 1, Stash 2).
 
 `engine/game/dungeons.ts` leaves out: the initiative passing on when its holder leaves the game; rooms that only hit an opponent's creature (Twisted Caverns, Fungi Cavern, Arena's goad); Runestone Caverns, which counts as drawing the two cards.
 

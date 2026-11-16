@@ -2889,6 +2889,10 @@ export abstract class GameCore<S = unknown> {
   }
   /** We take the initiative: in a pod, every other player loses it. */
   podTakeInitiative(): void {}
+  /** Dungeon rooms that only hit an opponent's creature (a pod only: a goldfish game has no one to target). */
+  podGoadBestCreature(): void {}
+  podWeakenBestCreature(_powerLoss: number): void {}
+  podStopBestCreatureAttackingUs(): void {}
   /** We cast this spell: tell the opponents, so their "whenever an opponent casts a spell" cards trigger (before
    *  any counterspell, as the trigger goes on the stack above the spell). */
   podAnnounceCast(_card: CardDef): void {}

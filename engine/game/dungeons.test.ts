@@ -199,6 +199,75 @@ export function runDungeonTests(allDecks: Record<string, Deck>): boolean {
       [true, false],
     );
   }
+  {
+    // the initiative's holder leaves the game on Meren's turn: Meren takes it and ventures (rule 726.4)
+    const MIKE = 0;
+    const MEREN = 1;
+    const spec = podSpec(allDecks, ['mike', 'meren', 'gale', 'aesi'], 17, {
+      pod_answers: false,
+    });
+    const table = seatPlayers(allDecks, spec, 1, false);
+    table.takeInitiative(MIKE);
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    table.eliminate(MIKE, 'test');
+    check(
+      'the holder leaves on Meren’s turn: Meren takes the initiative and ventures',
+      [
+        table.games[MEREN].hasInitiative,
+        table.games[MIKE].hasInitiative,
+        table.games[MEREN].dungeonPosition?.dungeon,
+      ],
+      [true, false, 'Undercity'],
+    );
+    // the active player is the one leaving: the next player in turn order takes it
+    const secondTable = seatPlayers(allDecks, spec, 1, false);
+    secondTable.takeInitiative(MEREN);
+    secondTable.startTurnLog(MEREN);
+    secondTable.eliminate(MEREN, 'test');
+    const next = secondTable.opponentsOf[MEREN][0];
+    check(
+      'the active player holding it leaves: the next player in turn order takes it',
+      secondTable.games.map((game) => game.hasInitiative),
+      secondTable.games.map((_, player) => player === next),
+    );
+  }
+  {
+    // the rooms that hit a creature: Mike's Eternal Witness is the only target
+    const MIKE = 0;
+    const MEREN = 1;
+    const spec = podSpec(allDecks, ['mike', 'meren', 'gale', 'aesi'], 17, {
+      pod_answers: false,
+    });
+    const table = seatPlayers(allDecks, spec, 1, false);
+    const witness = new Permanent(C.get('Eternal Witness'));
+    table.games[MIKE].putOntoBattlefield(witness);
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    const meren = table.games[MEREN];
+    const mikeSlot = table.opponentsOf[MEREN].indexOf(MIKE);
+    meren.podGoadBestCreature();
+    check('Arena goads it', table.goaders.has(witness), true);
+    meren.podWeakenBestCreature(4);
+    check('Fungi Cavern: -4/-0', witness.powerMod, -4);
+    meren.podStopBestCreatureAttackingUs();
+    check(
+      "Twisted Caverns: it can't attack Meren",
+      table.forbiddenAttackSlots(MIKE, witness),
+      [table.opponentsOf[MIKE].indexOf(MEREN)],
+    );
+    check('(Mike is the slot Meren sees)', mikeSlot >= 0, true);
+    table.prepareTurn(MEREN);
+    check(
+      "at Meren's next turn all three end",
+      [
+        table.goaders.has(witness),
+        witness.powerMod,
+        table.forbiddenAttackSlots(MIKE, witness),
+      ],
+      [false, 0, []],
+    );
+  }
 
   const wrong = checks
     .map(([label, actual, expected]) => [

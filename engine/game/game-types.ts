@@ -254,6 +254,14 @@ export interface Arena {
   goaderSlots(game: Game<unknown>, creature: Permanent): number[];
   /** Goad each creature opponent `slot` controls, until our next turn (Geode Rager). */
   goadCreatures(game: Game<unknown>, slot: number): void;
+  /** Arena: goad the best creature of the biggest threat, until our next turn. */
+  goadBestCreature(game: Game<unknown>): void;
+  /** Fungi Cavern: the best creature of the biggest threat gets -`powerLoss`/-0 until our next turn. */
+  weakenBestCreature(game: Game<unknown>, powerLoss: number): void;
+  /** Twisted Caverns: the best creature of the biggest threat can't attack us until our next turn. */
+  stopBestCreatureAttackingUs(game: Game<unknown>): void;
+  /** The opponents (slots) this creature of ours can't attack (Twisted Caverns). */
+  forbiddenAttackSlots(game: Game<unknown>, creature: Permanent): number[];
   /** We found a kill without counter backup: go for it now (the deck's pod policy)? */
   go(game: Game<unknown>): boolean;
   /** Windfall: each opponent discards its hand and draws as many as the biggest hand discarded (at least `mine`). Returns that number. */

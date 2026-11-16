@@ -27,7 +27,7 @@ Card by card, against the simulation. **Modelled** = as the primer says; **new**
 | Hama Pashar on turn 3 | Modelled (the commander is the AI's first choice once it is castable). |
 | Lost Mine early, Undercity later | Modelled: a venture enters Lost Mine; the initiative enters the Undercity (if we are in Lost Mine, the initiative moves on in Lost Mine, by the rules). |
 | Run past the Trap! room | Modelled: the room choice goes Secret Entrance, Forge, **Trap!**, Archives, Throne of the Dead Three. Trap! hits the opponent closest to dying, once per room trigger (three with Hama Pashar and Dungeon Delver). |
-| Arena's goad ("about to be hit for 25") | Not modelled (root `PLAN.md` task G6). Stash and Mine Tunnels (Treasure) are modelled. |
+| Arena's goad ("about to be hit for 25") | Modelled in a pod (the biggest threat's strongest creature is goaded), but the room choice prefers Stash (a Treasure), so Arena is never entered. Stash and Mine Tunnels (Treasure) are modelled. |
 | Opponents remove Hama near the Undercity's end, Tomb of Horrors Adventurer on sight | Differently: the pod's removal takes the most valuable permanent. Hama (commander) is always first; Tomb of Horrors Adventurer and Brago next. Not tied to how deep in the dungeon we are. |
 | Hullbreaker Horror bounces | **New** (pod): each spell we cast returns the opponents' best nonland permanent to hand (a commander to the command zone). Returning a spell, or our own permanent to cast again, is not modelled. |
 | Aether Channeler bounces | **New** (pod): bounces an opponent's permanent worth 60 or more (a commander always) instead of drawing; else draws (a Bird with six cards in hand). |

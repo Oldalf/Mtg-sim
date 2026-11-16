@@ -11,10 +11,13 @@ import {
   bounceEveryOpponentsCreatures,
   counterSpell,
   exchangeForStormdrake,
+  goadBestCreature,
   makeDefenderSacrifice,
   makeOpponentsSacrifice,
   shouldGoForKill,
   snipeBestTarget,
+  stopBestCreatureAttackingUs,
+  weakenBestCreature,
 } from './pod-interaction';
 import { PodTable } from './pod-table';
 
@@ -80,6 +83,14 @@ export function buildArena(table: PodTable): Arena {
         'note',
       );
     },
+    goadBestCreature: (game) =>
+      table.runOffTurn(() => goadBestCreature(table, game)),
+    weakenBestCreature: (game, powerLoss) =>
+      table.runOffTurn(() => weakenBestCreature(table, game, powerLoss)),
+    stopBestCreatureAttackingUs: (game) =>
+      table.runOffTurn(() => stopBestCreatureAttackingUs(table, game)),
+    forbiddenAttackSlots: (game, creature) =>
+      table.forbiddenAttackSlots(table.playerOf(game), creature),
     go: (game) => shouldGoForKill(table, game),
     wheel: (game, cardsInOwnHand) =>
       table.runOffTurn(() =>

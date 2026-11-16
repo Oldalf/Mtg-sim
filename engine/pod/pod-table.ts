@@ -376,8 +376,25 @@ export class PodTable {
     this.outOrder.push(player);
     this.outReason[player] = reason;
     this.endGoadsBy(player);
+    this.endEffectsUntilNextTurnOf(player);
     this.endControlOfPlayerWhoLeft(player);
     this.sayAs(player, `is out (${reason})`, 'out');
+    if (this.games[player].hasInitiative) this.passInitiativeFrom(player);
+  }
+
+  /** Rule 726.4: the initiative goes to the active player, or to the next player in turn order if the active player
+   *  is the one leaving (or nobody's turn is on). The new holder ventures into Undercity as it takes it. */
+  private passInitiativeFrom(leavingPlayer: number): void {
+    this.games[leavingPlayer].hasInitiative = false;
+    const activePlayer = this.turnPlayerInLog;
+    const heir =
+      activePlayer >= 0 && this.isAlive[activePlayer]
+        ? activePlayer
+        : this.livingOpponents(leavingPlayer)[0];
+    if (heir === undefined) return;
+    const takeIt = () => this.games[heir].takeInitiative();
+    if (heir === this.currentPlayer) takeIt();
+    else this.runOffTurn(takeIt);
   }
 
   // ================================================================ forced attacks and goad
@@ -394,6 +411,48 @@ export class PodTable {
     const goaders = this.goaders.get(creature) ?? new Set<number>();
     goaders.add(goader);
     this.goaders.set(creature, goaders);
+  }
+
+  /** Players' creatures that can't attack a player until that player's next turn (Twisted Caverns). */
+  private readonly cannotAttackPlayers = new Map<Permanent, Set<number>>();
+  /** Effects that end when a player's next turn starts (or the player leaves): what ends them. */
+  private readonly effectsUntilNextTurn: { player: number; end: () => void }[] =
+    [];
+
+  /** `end` runs when `player`'s next turn starts. */
+  endAtNextTurnOf(player: number, end: () => void): void {
+    this.effectsUntilNextTurn.push({ player, end });
+  }
+
+  private endEffectsUntilNextTurnOf(player: number): void {
+    for (const effect of this.effectsUntilNextTurn.slice())
+      if (effect.player === player) {
+        effect.end();
+        this.effectsUntilNextTurn.splice(
+          this.effectsUntilNextTurn.indexOf(effect),
+          1,
+        );
+      }
+  }
+
+  /** `creature` can't attack `player` until `player`'s next turn. */
+  forbidAttackingUntilNextTurn(player: number, creature: Permanent): void {
+    const forbidden = this.cannotAttackPlayers.get(creature) ?? new Set();
+    forbidden.add(player);
+    this.cannotAttackPlayers.set(creature, forbidden);
+    this.endAtNextTurnOf(player, () => {
+      forbidden.delete(player);
+      if (forbidden.size === 0) this.cannotAttackPlayers.delete(creature);
+    });
+  }
+
+  /** The opponents (as `player`'s slots) that this creature of `player`'s can't attack. */
+  forbiddenAttackSlots(player: number, creature: Permanent): number[] {
+    const forbidden = this.cannotAttackPlayers.get(creature);
+    if (!forbidden) return [];
+    return [...forbidden]
+      .map((other) => this.opponentsOf[player].indexOf(other))
+      .filter((slot) => slot >= 0);
   }
 
   /** The goads this player made end (its turn starts, or it left the game). */
@@ -573,6 +632,7 @@ export class PodTable {
     this.fogActive = false;
     this.creaturesThatBlocked = new Set();
     this.endGoadsBy(player);
+    this.endEffectsUntilNextTurnOf(player);
     for (let other = 0; other < this.playerCount; other++)
       this.threats[other] = this.isAlive[other]
         ? this.games[other].threat()

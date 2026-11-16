@@ -227,6 +227,91 @@ function hasHexproofOrShroud(permanent: Permanent): boolean {
   return keywords.has('hexproof') || keywords.has('shroud');
 }
 
+/** The creature a dungeon room aims at (Fungi Cavern, Twisted Caverns, Arena): the most powerful one that an ability
+ *  may target, among the biggest threat's. A shield (Kira...) counters the room's ability. */
+function creatureForRoomToHinder(
+  table: PodTable,
+  player: number,
+  roomName: string,
+): { owner: number; creature: Permanent } | null {
+  const biggestThreatFirst = table
+    .livingOpponents(player)
+    .sort((first, second) => table.threats[second] - table.threats[first]);
+  for (const owner of biggestThreatFirst) {
+    const targets = table.games[owner]
+      .podTargets(TAKE_A_CREATURE)
+      .filter((target) => !hasHexproofOrShroud(target.permanent));
+    if (!targets.length) continue;
+    const creature = targets.reduce((best, target) =>
+      target.power > best.power ? target : best,
+    ).permanent;
+    const shield = table.games[owner].podShield(creature);
+    if (shield) {
+      table.stats.shields[owner]++;
+      table.sayAs(
+        player,
+        `${roomName} on ${table.playerName(owner)}'s ${creature.card.name} is countered by ${shield}`,
+        'answer',
+        [roomName, creature.card.name, shield],
+      );
+      return null;
+    }
+    return { owner, creature };
+  }
+  return null;
+}
+
+/** Arena: goad the best creature of the biggest threat, until our next turn. */
+export function goadBestCreature(table: PodTable, game: Game<unknown>): void {
+  const goader = table.playerOf(game);
+  const choice = creatureForRoomToHinder(table, goader, 'Arena');
+  if (!choice) return;
+  table.goad(goader, choice.creature);
+  table.sayAs(
+    goader,
+    `Arena goads ${table.playerName(choice.owner)}'s ${choice.creature.card.name}`,
+    'note',
+    ['Arena', choice.creature.card.name],
+  );
+}
+
+/** Fungi Cavern: the best creature of the biggest threat gets -4/-0 until our next turn. */
+export function weakenBestCreature(
+  table: PodTable,
+  game: Game<unknown>,
+  powerLoss: number,
+): void {
+  const player = table.playerOf(game);
+  const choice = creatureForRoomToHinder(table, player, 'Fungi Cavern');
+  if (!choice) return;
+  const { owner, creature } = choice;
+  creature.powerMod -= powerLoss;
+  table.endAtNextTurnOf(player, () => (creature.powerMod += powerLoss));
+  table.sayAs(
+    player,
+    `Fungi Cavern: ${table.playerName(owner)}'s ${creature.card.name} gets -${powerLoss}/-0`,
+    'note',
+    ['Fungi Cavern', creature.card.name],
+  );
+}
+
+/** Twisted Caverns: the best creature of the biggest threat can't attack us until our next turn. */
+export function stopBestCreatureAttackingUs(
+  table: PodTable,
+  game: Game<unknown>,
+): void {
+  const player = table.playerOf(game);
+  const choice = creatureForRoomToHinder(table, player, 'Twisted Caverns');
+  if (!choice) return;
+  table.forbidAttackingUntilNextTurn(player, choice.creature);
+  table.sayAs(
+    player,
+    `Twisted Caverns: ${table.playerName(choice.owner)}'s ${choice.creature.card.name} can't attack us`,
+    'note',
+    ['Twisted Caverns', choice.creature.card.name],
+  );
+}
+
 /** Each opponent sacrifices its least valuable creature (only nontoken ones if `nontokenOnly`). */
 export function makeOpponentsSacrifice(
   table: PodTable,
