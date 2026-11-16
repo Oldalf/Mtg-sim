@@ -35,7 +35,7 @@ Rules for every task:
 | 4 | G4 | **Done.** Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
 | 5 | G5 | **Done.** A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
 | 6 | G6 | **Done.** Initiative and dungeon rooms that were left out | Sonnet 5.5 |
-| 7 | G7 | Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
+| 7 | G7 | **Done.** Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
 | 8 | G8 | Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
 | 9 | G9 | Black tutors move to the engine | Sonnet 5.5 |
 | 10 | G10 | Aesi's and Sam & Frodo's land search use the engine's | Sonnet 5.5 |
@@ -160,6 +160,9 @@ The blink (`engine/game/blink.ts`) exiles "until the next end step" and returns 
 1. List every place a spell is cast without `podAnnounceCast` (search the engine and the decks for casts that bypass `castInstantOrSorcery` and `castPerm`). Write the list under this task. Make each call it, or say why not.
 2. Mystic Remora and Esper Sentinel: only if a `decklist.txt` plays them (check first; if none does, write "no deck plays them" and skip). Otherwise add them to `engine/game/opponent-cast-triggers.ts` with a test.
 3. Pod run before and after (the fixed-seed run in the rules above): decks that play Rhystic Study or Taurean Mauler may change; show Pontus the numbers.
+
+Done 2026-11-16, eco mode. Now announced (one `podAnnounceCast` each): Gale's Gale recast (`game.ts`) and counter-your-own-spell line (`candidates.ts`; announced once the counter is paid, so a Rhystic Study payment cannot eat its mana); Aesi's Patron of the Moon (moonfolk offering), Fertile Footsteps, Beanstalk Giant from exile, a cast from the top (Case) and Blue Sun's Zenith for itself; Codie's `spendSpell` and the Reiterate cast; Meren's evoke, Eldritch Evolution, Saw in Half and Beast Within; Mike's Treasure Cruise; Sam & Frodo's Farmer Cotton; engine `wishclaw`. Left silent on purpose: kill lines and combos (Gale's `kill-play.ts`, Codie's finishers, Azula's `combos.ts`, Aesi's `castZenithWithX`: they are played on a copy that never announces, and a standing win ends the game); Harmonized Trio's Brainstorm (a copy, not a cast); suspend (not a cast); Codie's Reiterate loops (a combo); Ormos and Mana Drain's flat option (not casts). Mystic Remora and Esper Sentinel: no deck plays them, so nothing was added. Test: `engine/pod/pod-opponent-cast.test.ts` (Beast Within grows an opponent's Mauler).
+Pod run (500 games, same seeds; Thantis plays Rhystic Study and Taurean Mauler, Azula has them too): Thantis, Meren, Gale, Aesi, Codie: Thantis 10.6% -> 10.8% wins, Meren 24.6% -> 24.2%, Gale 17.6% -> 17.6%, Aesi 25.8% -> 25.6%, Codie 21.4% -> 21.8%. Azula, Meren, Sam & Frodo, Gale: Azula 7.0% -> 7.4%, Meren 26.8% -> 26.4%, Sam & Frodo 34.0% -> 34.4%, Gale 32.0% -> 31.6%. All within noise (about 4 points).
 
 ## G8. Finale of Revelation and Aesi's hand size use the engine's rule (Haiku 5.5)
 

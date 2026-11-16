@@ -44,6 +44,7 @@ export function castManaSpell(
       game.putCard(reiterateCard, 'graveyard');
     } // (with buyback it stays in hand)
     game.spellsCast += 1;
+    game.podAnnounceCast(reiterateCard);
     game.resolve(card);
   }
   return true;
@@ -206,6 +207,7 @@ export function spendSpell(
   game.takeCardIfThere(card, 'hand');
   game.putCard(card, 'graveyard');
   game.spellsCast += 1;
+  game.podAnnounceCast(card);
   return card;
 }
 

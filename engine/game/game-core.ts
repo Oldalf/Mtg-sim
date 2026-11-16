@@ -2101,6 +2101,7 @@ export abstract class GameCore<S = unknown> {
       return false;
     this.takeCard(card, 'hand'); // it goes to an opponent
     this.say('Wishclaw Talisman (cast + activate)');
+    this.podAnnounceCast(card);
     this.doTutor(() => true, false);
     return true;
   }

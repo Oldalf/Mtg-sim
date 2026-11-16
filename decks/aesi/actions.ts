@@ -98,6 +98,7 @@ export function castPatronWithOffering(
   game.sacrifice(permanent);
   game.takeCardIfThere(card, 'hand');
   game.spellsCast += 1;
+  game.podAnnounceCast(card);
   game.enter(card);
   game.spiritCast();
   return true;
@@ -109,6 +110,7 @@ export function castFertileFootsteps(game: AesiGame, card: CardDef): boolean {
   game.putCard(card, 'exile');
   game.footstepsExiled = true;
   game.spellsCast += 1;
+  game.podAnnounceCast(card);
   game.say('cast Fertile Footsteps');
   game.fetchBasic();
   return true;
@@ -119,6 +121,7 @@ export function castBeanstalkGiant(game: AesiGame, card: CardDef): boolean {
   game.takeCardIfThere(card, 'exile');
   game.footstepsExiled = false;
   game.spellsCast += 1;
+  game.podAnnounceCast(card);
   game.say('cast Beanstalk Giant from exile');
   game.enter(card);
   return true;
@@ -129,6 +132,7 @@ export function castFromTopOfLibrary(game: AesiGame, card: CardDef): boolean {
     return false;
   game.takeTopCardsOfLibrary(1);
   game.spellsCast += 1;
+  game.podAnnounceCast(card);
   game.say('cast from the top (Case):', card);
   game.enter(card);
   return true;
@@ -215,6 +219,7 @@ export function castZenithForSelf(
   if (!game.pay(card.cost.withGeneric(xValue), true)) return false;
   game.takeCardIfThere(card, 'hand');
   game.spellsCast += 1;
+  game.podAnnounceCast(card);
   game.say(`cast Blue Sun's Zenith (X=${xValue}) for us`);
   game.draw(xValue);
   game.putCard(card, 'library');

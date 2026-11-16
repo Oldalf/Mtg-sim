@@ -154,6 +154,7 @@ export class GaleGame extends Game<KillSearchState> {
         this.say('  Gale recasts', target);
         this.spellsCast += 1;
         this.onCastInstantOrSorcery(true);
+        this.podAnnounceCast(target);
         this.resolve(target, true, null);
         this.putCard(target, 'exile');
       }

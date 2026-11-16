@@ -7,6 +7,8 @@ import * as C from '../cards/cards';
 import { Game } from '../game/game';
 import { Permanent } from '../game/game-types';
 import { Deck } from '../run/runner';
+import type { MerenGame } from '../../decks/meren/game';
+import { castBeastWithin } from '../../decks/meren/actions';
 import { podSpec, seatPlayers } from './pod';
 import { PodTable } from './pod-table';
 
@@ -128,6 +130,19 @@ export function runOpponentCastTests(allDecks: Record<string, Deck>): boolean {
       told.sort(),
       [0, 1, 3].sort(),
     );
+  }
+  {
+    // a spell a deck casts through its own code announces itself too (Meren's Beast Within)
+    const table = newTable(allDecks);
+    const mauler = putOnBattlefield(table.games[GALE], TAUREAN_MAULER);
+    const meren = table.games[MEREN] as unknown as MerenGame;
+    const beastWithin = C.get('Beast Within');
+    meren.hand.push(beastWithin);
+    const target = putOnBattlefield(meren, 'Eternal Witness');
+    meren.pool.G = 3;
+    const wasCast = castBeastWithin(meren, beastWithin, target);
+    check('Beast Within was cast', wasCast, true);
+    check('Beast Within grows the Mauler', mauler.counters, 1);
   }
   {
     const table = newTable(allDecks);

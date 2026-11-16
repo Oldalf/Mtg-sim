@@ -10,6 +10,7 @@ export function evokeCreature(game: MerenGame, card: CardDef): boolean {
     return false;
   game.takeCardIfThere(card, 'hand');
   game.say('evoke', card);
+  game.podAnnounceCast(card);
   const permanent = game.enter(card, 'hand');
   game.sacrifice(permanent);
   return true;
@@ -38,6 +39,7 @@ export function castEldritchEvolution(
   game.takeCardIfThere(card, 'hand');
   const maxManaValue = permanent.card.manaValue + 2;
   game.sacrifice(permanent);
+  game.podAnnounceCast(card);
   game.say(
     'cast',
     card,
@@ -67,6 +69,7 @@ export function castSawInHalf(
   game.takeCardIfThere(card, 'hand');
   game.say('cast', card, 'on our', permanent.card);
   game.onCastInstantOrSorcery(false);
+  game.podAnnounceCast(card);
   const half =
     Math.ceil(game.power(permanent) / 2) -
     (permanent.card.power + permanent.counters);
@@ -84,6 +87,7 @@ export function castBeastWithin(
 ): boolean {
   if (!game.pay(game.effectiveCost(card), true)) return false;
   game.takeCardIfThere(card, 'hand');
+  game.podAnnounceCast(card);
   game.dies(permanent);
   game.createTokens(TOKENS.beast);
   game.putCard(card, 'graveyard');

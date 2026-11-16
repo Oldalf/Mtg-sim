@@ -21,6 +21,7 @@ export function castTreasureCruise(
   game.say('cast Treasure Cruise (delve', delveCount + ')');
   game.spellsCast += 1;
   game.onCastInstantOrSorcery(false);
+  game.podAnnounceCast(card);
   game.draw(3);
   game.putCard(card, 'exile');
   game.imitate(card, null);

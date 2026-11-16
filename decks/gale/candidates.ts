@@ -237,6 +237,10 @@ export function selfCounterDevelopmentCandidates(game: GaleGame): Candidate[] {
   return out;
 }
 
+function announceSpells(game: GaleGame, spells: CardDef[]): void {
+  for (const spell of spells) game.podAnnounceCast(spell);
+}
+
 export function castSelfCounter(
   game: GaleGame,
   card: CardDef,
@@ -251,6 +255,8 @@ export function castSelfCounter(
     return false;
   }
   game.restore(snapshot);
+  // announced once the counter is paid: a Rhystic Study payment must not eat the mana it needs
+  const spellsCast = [targetCard];
   game.pay(game.effectiveCost(targetCard), targetCard.isInstantOrSorcery);
   game.takeCard(targetCard, 'hand');
   game.say('cast', targetCard, 'to counter it with your own', card);
@@ -266,6 +272,7 @@ export function castSelfCounter(
       ) {
         game.takeCard(firstRecast, 'graveyard');
         game.say('  Gale recasts', firstRecast);
+        spellsCast.push(firstRecast);
         game.spellsCast += 1;
         game.onCastInstantOrSorcery(true);
         game.resolve(firstRecast, true);
@@ -276,9 +283,11 @@ export function castSelfCounter(
   if (!game.hand.includes(card) || !game.pay(game.effectiveCost(card), true)) {
     // e.g. discarded by the recast
     game.putCard(targetCard, 'graveyard');
+    announceSpells(game, spellsCast);
     return true;
   }
   game.takeCard(card, 'hand');
+  spellsCast.push(card);
   game.spellsCast += 1;
   game.onCastInstantOrSorcery(false);
   const secondRecast = bestGaleRecastTarget(game, card);
@@ -288,12 +297,14 @@ export function castSelfCounter(
   ) {
     game.takeCard(secondRecast, 'graveyard');
     game.say('  Gale recasts', secondRecast);
+    spellsCast.push(secondRecast);
     game.spellsCast += 1;
     game.onCastInstantOrSorcery(true);
     game.resolve(secondRecast, true);
     game.putCard(secondRecast, 'exile');
   }
   game.putCards([targetCard, card], 'graveyard');
+  announceSpells(game, spellsCast);
   if (card.name === "An Offer You Can't Refuse") {
     game.pool.U += 1; // 2 Treasures (used this turn)
     game.pool.B += 1;
