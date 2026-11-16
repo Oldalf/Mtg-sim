@@ -89,6 +89,7 @@ Current decks:
 - `ardyn`: Ardyn, the Usurper, mono-black Demons (bracket 3, Friend 3's deck, pod-only). Swamp mana doublers, Roaming Throne, drains (Gray Merchant, Archfiend of Despair, Bloodletter, Exquisite Blood) and Starscourge's 5/5 Demon copies. Run `npm run pod -- ardyn ...` (rules: `decks/ardyn/PLAN.md`).
 - `teval`: Teval, the Balanced Scale, Sultai self-mill and graveyard value (strong bracket 3, Friend 4's deck, pod-only). Cards leaving the graveyard make Zombies (Teval, Tormod, Teval's Judgment, doubled by Doubling Season and Parallel Lives); lands come back for landfall. Run `npm run pod -- teval ...` (rules: `decks/teval/PLAN.md`).
 - `thantis`: Thantis, the Warweaver, Jund forced combat (bracket 2-3, Friend 2's deck, pod-only). Every creature must attack each combat; Thantis, Taurean Mauler and Ruric Thar grow or punish, and Syr Konrad, Sangromancer and the reanimation (Avacyn, Meren) profit from the deaths. Run `npm run pod -- thantis ...` (rules: `decks/thantis/PLAN.md`).
+- `dnd`: Hama Pashar, Ruin Seeker, Azorius blink and dungeons (bracket 2-3, William's deck, pod-only). Blinks its enter and leave triggers to venture into the dungeon again and again (Lost Mine of Phandelver, the Undercity through the initiative), and wins by combat. Run `npm run pod -- dnd ...` (rules: `decks/dnd/PLAN.md`).
 
 The phases (Meren, Sam & Frodo, Simic landfall, Mike, then Codie) and what each needs: `ROADMAP.md`.
 

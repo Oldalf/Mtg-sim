@@ -38,6 +38,12 @@ export function enterTriggerOfCommonCard(
     case 'Timeless Witness':
       returnBestCardToHand(game);
       return true;
+    // "When this creature enters, draw a card." (Baleful Strix draws in GameCore.enter)
+    case 'Wall of Omens':
+    case 'Spirited Companion':
+    case 'Helpful Hunter':
+      game.draw(1);
+      return true;
     default:
       return false;
   }

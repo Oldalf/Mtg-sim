@@ -123,6 +123,7 @@ function bestOfTopTenOntoBattlefield(game: GameCore): void {
   const creatures = game.library.slice(0, 10).filter((card) => card.isCreature);
   if (creatures.length) {
     const best = firstMax(creatures, (card) => game.reanimationValue(card));
+    game.say('  onto the battlefield', best);
     game.takeCard(best, 'library');
     game.enter(best, 'library').counters += 3;
   }
@@ -396,6 +397,10 @@ export function ventureIntoDungeon(
 ): void {
   let dungeon: Dungeon;
   let next: DungeonRoom;
+  // A venture while the last room's ability resolves (Throne of the Dead Three puts a venturing creature onto the
+  // battlefield): that dungeon is completed, and this venture starts a new one.
+  if (game.dungeonPosition !== null && isOnLastRoom(game.dungeonPosition))
+    completeDungeon(game);
   if (game.dungeonPosition === null) {
     dungeon = intoUndercity
       ? UNDERCITY
@@ -408,18 +413,29 @@ export function ventureIntoDungeon(
       current.leadsTo.map((name) => roomNamed(dungeon, name)),
     );
   }
-  game.dungeonPosition = { dungeon: dungeon.name, room: next.name };
+  const position = { dungeon: dungeon.name, room: next.name };
+  game.dungeonPosition = position;
   game.sayEvent(
     'note',
     `ventures: ${dungeon.name}, ${next.name}: ${next.text}`,
   );
   const triggers = roomTriggerCount(game);
   for (let i = 0; i < triggers; i++) next.act(game);
-  if (next.leadsTo.length === 0) {
-    game.dungeonPosition = null;
-    game.completedDungeons += 1;
-    game.say(`  completes ${dungeon.name}`);
-  }
+  // (a venture inside the room's ability may have completed it already)
+  if (next.leadsTo.length === 0 && game.dungeonPosition === position)
+    completeDungeon(game);
+}
+
+function isOnLastRoom(position: DungeonPosition): boolean {
+  const dungeon = dungeonNamed(position.dungeon);
+  return roomNamed(dungeon, position.room).leadsTo.length === 0;
+}
+
+function completeDungeon(game: GameCore): void {
+  const completed = game.dungeonPosition!.dungeon;
+  game.dungeonPosition = null;
+  game.completedDungeons += 1;
+  game.say(`  completes ${completed}`);
 }
 
 /** The default choice of path: the room worth the most (the first one on a tie). */

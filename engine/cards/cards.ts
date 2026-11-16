@@ -238,6 +238,62 @@ export class CardDef {
   }
 }
 
+/** The devotion a Theros god needs to be a creature: to these colours together, at least this much. */
+export interface DevotionNeeded {
+  colours: ('W' | 'U' | 'B' | 'R' | 'G')[];
+  atLeast: number;
+}
+
+const COLOUR_LETTER: Record<string, 'W' | 'U' | 'B' | 'R' | 'G'> = {
+  white: 'W',
+  blue: 'U',
+  black: 'B',
+  red: 'R',
+  green: 'G',
+};
+const NUMBER_WORDS = [
+  'zero',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+];
+
+// (kept apart from CardDef, read once per card: a CardDef's fields show in tests that print one)
+const DEVOTION_NEEDED = new Map<CardDef, DevotionNeeded | null>();
+
+/** A Theros god: the devotion it needs to be a creature (null for every other card). */
+export function devotionToBeCreature(card: CardDef): DevotionNeeded | null {
+  let needed = DEVOTION_NEEDED.get(card);
+  if (needed === undefined) {
+    needed = readDevotionToBeCreature(card.oracle);
+    DEVOTION_NEEDED.set(card, needed);
+  }
+  return needed;
+}
+
+/** "As long as your devotion to white and blue is less than seven, Ephara isn't a creature." */
+function readDevotionToBeCreature(oracle: string): DevotionNeeded | null {
+  const match =
+    /As long as your devotion to ([a-z ]+?) is less than (\w+), [^.]* isn't a creature/.exec(
+      oracle,
+    );
+  if (!match) return null;
+  const colours = match[1]
+    .split(' and ')
+    .map((colourWord) => COLOUR_LETTER[colourWord.trim()]);
+  const atLeast = NUMBER_WORDS.indexOf(match[2]);
+  if (colours.some((colour) => colour === undefined) || atLeast < 0)
+    return null;
+  return { colours, atLeast };
+}
+
 /** How a token is written in the game log: its name there and its face. */
 interface TokenLogging {
   name: string;

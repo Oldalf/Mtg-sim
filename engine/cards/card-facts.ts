@@ -127,6 +127,11 @@ export const ROCKS: Record<string, string> = {
   "Commander's Sphere": 'A',
   'Chromatic Lantern': 'A',
   'Pristine Talisman': 'C',
+  // {1}, {T}: Add {W}{U}: one mana more, of either colour
+  'Azorius Signet': 'W/U',
+  'Midnight Clock': 'U',
+  'Dungeon Map': 'C',
+  "Sarevok's Tome": 'C', // {C}{C} with the initiative (GameCore.manaSourceKind)
 };
 
 // cost reducers (+ Voracious Reader, the transformed Curious Homunculus)
@@ -218,9 +223,9 @@ export const DRAW_SPELLS: Record<string, number> = {
   'Mission Briefing': 1.5, // surveil 2, then recast an instant/sorcery from the graveyard
 };
 
-/** Which lands a land-search spell may find: basic = a basic land, forest = a Forest card, types = a land with a
- *  basic land type other than Forest (Farseek), any = any land. */
-export type LandKind = 'basic' | 'forest' | 'types' | 'any';
+/** Which lands a land-search spell may find: basic = a basic land, forest = a Forest card, plains = a Plains card,
+ *  types = a land with a basic land type other than Forest (Farseek), any = any land. */
+export type LandKind = 'basic' | 'forest' | 'plains' | 'types' | 'any';
 /** What a land-search spell does (engine/game/land-search.ts plays it; the deck picks the lands). */
 export interface LandSearchSpell {
   landCount: number;

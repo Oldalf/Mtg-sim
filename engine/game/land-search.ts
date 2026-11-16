@@ -25,6 +25,7 @@ export function isLandOfKind(card: CardDef, kind: LandKind): boolean {
   if (!landInfo) return false;
   if (kind === 'basic') return !!landInfo.basic;
   if (kind === 'forest') return !!landInfo.forest;
+  if (kind === 'plains') return !!landInfo.plains;
   if (kind === 'types')
     return !!(
       landInfo.plains ||

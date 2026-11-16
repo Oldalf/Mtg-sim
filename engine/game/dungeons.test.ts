@@ -165,6 +165,19 @@ export function runDungeonTests(allDecks: Record<string, Deck>): boolean {
     );
   }
   {
+    // Throne of the Dead Three puts a Veteran Dungeoneer onto the battlefield: its venture, from the last room,
+    // completes Undercity and starts Lost Mine
+    const game = newGame(allDecks);
+    game.library = [VETERAN_DUNGEONEER, ...game.library];
+    game.dungeonPosition = { dungeon: 'Undercity', room: 'Archives' };
+    ventureIntoDungeon(game, true);
+    check(
+      'a venture from the last room: that dungeon is completed, a new one starts',
+      [game.completedDungeons, game.dungeonPosition],
+      [1, { dungeon: 'Lost Mine of Phandelver', room: 'Cave Entrance' }],
+    );
+  }
+  {
     // a pod: Meren deals combat damage to Mike, who has the initiative, and takes it
     const MIKE = 0;
     const MEREN = 1;

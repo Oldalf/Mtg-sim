@@ -63,7 +63,7 @@ Rules for every task:
 | 14 | M5 | Dungeons, venture and the initiative (done) | Opus 5.5 |
 | 15 | M6 | Treasure in the engine (done) | Opus 5.5 |
 | 16 | B4 | Thantis (done) | Sonnet 5.5 |
-| 17 | B5 | DnD | Opus 5.5 |
+| 17 | B5 | DnD (done) | Opus 5.5 |
 | 18 | B6 | Azula | Opus 5.5, after P |
 | 19 | Z1 | Step 7's loose ends | Sonnet 5.5 |
 | 20 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
@@ -236,6 +236,8 @@ One task per list, following `/add-deck`'s light path (A4).
 **B3 built (2026-11-15).** `decks/teval`: cards leaving the graveyard make Zombies (one trigger per event), self-mill, lands back from the graveyard and landfall, token and counter doubling, Muldrotha, Meren, Nyxbloom. `hasCreatureType` now reads a token's name word by word ("Zombie Druid" is a Zombie). Goldfish average win turn 9.91: the fastest of the three, and the AI plays it better than its owner.
 
 **B4 built (2026-11-16).** `decks/thantis`, on `CreatureDeckGame` and the light path. Three small engine hooks, all no-ops for other decks: `onAttackedBy` (Thantis's counters, called when an attack is declared), `onOtherPlayersCreatureDies` (a death reaches every other player: Syr Konrad, Sangromancer), and Ruric Thar in the engine's opponent-cast triggers. Assassin's Trophy, Chaos Warp and Deadly Rollick joined `answers.ts`; `countOnBattlefield` moved to `GameCore` (Ardyn, Teval and Thantis had each written it). Goldfish average win turn 12.33; with Meren, Edgar and Helga Thantis wins 19% (see `decks/thantis/PLAN.md` for what is not modelled: Shredder, Titan Hunter, the Archon's sacrifice).
+
+**B5 built (2026-11-16).** `decks/dnd`, on `CreatureDeckGame` and the light path, using M1, M4 and M5 as built. The deck writes the blink permanents (Brago, Thassa, Oji, Airbender Ascension, Niko, Skycoach Conductor's All Aboard), the leave triggers (Momo, Genku), the venture cards that aren't "enters, venture" (Nadaar's attack, Delver's Torch, Yuan-Ti, Midnight Pathlighter, Dungeon Map, Dungeon Descent), Tomb of Horrors Adventurer's copies, Pensive Professor, Ephara, Land Tax and the "opponent has more lands" ramp (an estimate: we can't see their lands); its enter triggers run once per doubler. `blinkValue` comes from a `BLINK_VALUE` table. A spell cast passes through the deck's `podAnnounceCast` (as Thantis's Ruric Thar). Engine additions, every other deck IDENTICAL: a venture during the last room's ability (Throne of the Dead Three) completes that dungeon and starts a new one (it crashed before; the log now names the creature Throne puts out); `GameCore.isCreatureNow` (a Theros god below its devotion isn't a creature, read once per card from its text by `devotionToBeCreature` in `cards.ts`, not a `CardDef` field: Edgar's tests print a whole `CardDef`; `creatures()` uses it); Panharmonicon doubles `UNTAP_ON_ETB`; Wall of Omens, Spirited Companion and Helpful Hunter draw on entering (`common-permanents.ts`); Azorius Signet (`W/U`), Midnight Clock, Dungeon Map and Sarevok's Tome ({C}{C} with the initiative) in `ROCKS`; a `plains` land kind; Day of Judgment in `answers.ts`. Tests: `decks/dnd/tests/dnd.test.ts`, `engine/game/common-cards.test.ts` (in `npm run pod -- --test`) and one more in `dungeons.test.ts`. Goldfish average win turn 10.50 (2,000 games); with Meren, Edgar and Helga DnD wins 25.6% (even 25%). Midnight Pathlighter counts as unblockable, which overrates it (see `decks/dnd/PLAN.md`).
 ---
 
 ## C. Game night

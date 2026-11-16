@@ -12,6 +12,7 @@ import { runForcedAttackTests } from '../engine/pod/pod-forced-attacks.test';
 import { runDungeonTests } from '../engine/game/dungeons.test';
 import { runBlinkTests } from '../engine/game/blink.test';
 import { runTreasureTests } from '../engine/game/treasure.test';
+import { runCommonCardTests } from '../engine/game/common-cards.test';
 import { runSearchManaTests } from '../engine/game/search-mana.test';
 import { runOpponentCastTests } from '../engine/pod/pod-opponent-cast.test';
 import {
@@ -71,6 +72,7 @@ export async function runPodCommand(
     const isBlinkRight = runBlinkTests(decks);
     const areDungeonsRight = runDungeonTests(decks);
     const areTreasuresRight = runTreasureTests(decks);
+    const areCommonCardsRight = runCommonCardTests(decks);
     process.exit(
       podTestsPassed &&
         isLogHarmless &&
@@ -83,7 +85,8 @@ export async function runPodCommand(
         isSearchManaRight &&
         isBlinkRight &&
         areDungeonsRight &&
-        areTreasuresRight
+        areTreasuresRight &&
+        areCommonCardsRight
         ? 0
         : 1,
     );

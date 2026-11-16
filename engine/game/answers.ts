@@ -94,6 +94,7 @@ export const ANSWERS: Record<string, Answer> = {
   'Aether Gale': kill(NONLAND, 'bounce', false, 6),
   // ---- wipes
   'Toxic Deluge': wipe('all'),
+  'Day of Judgment': wipe('all'),
   'Singularity Rupture': wipe('all'),
   Dusk: wipe('power3'),
   'Fell the Mighty': wipe('bigger'),

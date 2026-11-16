@@ -66,6 +66,7 @@ import {
 } from './dungeons';
 import { PaymentRecord, UNTAP, isSourceOfClass } from './search-mana';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
+import { enterTriggerCount } from './trigger-doublers';
 import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
@@ -471,6 +472,8 @@ export abstract class GameCore<S = unknown> {
         return this.colors.length <= 2 ? 'A' : landMana; // a two-colour land
       return landMana || null;
     }
+    if (permanent.card.name === "Sarevok's Tome" && this.hasInitiative)
+      return 'C2';
     if (permanent.card.rock) return permanent.card.rock;
     if (
       permanent.card.name === 'Curious Homunculus' &&
@@ -1487,7 +1490,9 @@ export abstract class GameCore<S = unknown> {
     this.putOntoBattlefield(permanent);
     if (card.name === 'Baleful Strix') this.draw(1);
     const untap = Facts.UNTAP_ON_ETB[card.name];
-    if (untap) this.untapLands(untap);
+    if (untap)
+      for (let i = 0; i < enterTriggerCount(this, permanent); i++)
+        this.untapLands(untap);
     reanimateAsAuraEnters(this, card);
     this.onEnter(permanent, from);
     return permanent;
@@ -1533,7 +1538,20 @@ export abstract class GameCore<S = unknown> {
 
   // ================================================================ creatures
   creatures(): Permanent[] {
-    return this.battlefield.filter((permanent) => permanent.card.isCreature);
+    return this.battlefield.filter((permanent) =>
+      this.isCreatureNow(permanent),
+    );
+  }
+
+  /** A creature card is a creature, except a Theros god while our devotion is below what it needs ("As long as your
+   *  devotion to blue is less than five, Thassa isn't a creature"). */
+  isCreatureNow(permanent: Permanent): boolean {
+    if (!permanent.card.isCreature) return false;
+    const needed = C.devotionToBeCreature(permanent.card);
+    if (needed === null) return true;
+    let devotion = 0;
+    for (const colour of needed.colours) devotion += this.devotion(colour);
+    return devotion >= needed.atLeast;
   }
 
   power(permanent: Permanent): number {

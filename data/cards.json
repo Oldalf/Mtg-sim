@@ -10341,5 +10341,920 @@
   "layout": "normal",
   "oracle_id": "fd5ee26c-cc54-4dc0-b611-5cda14354a5e",
   "scryfall_id": "39938a5a-385b-47ba-a07b-8917cba14fd3"
+ },
+ "Dungeon Delver": {
+  "name": "Dungeon Delver",
+  "full_name": "Dungeon Delver",
+  "mana_cost": "{1}{U}",
+  "type_line": "Legendary Enchantment — Background",
+  "oracle": "Commander creatures you own have \"Room abilities of dungeons you own trigger an additional time.\"",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "0073d731-e60d-433a-ac35-a22af855da20",
+  "scryfall_id": "cba131bb-b8b3-4577-9f41-4700d9985134"
+ },
+ "Mirrorweave": {
+  "name": "Mirrorweave",
+  "full_name": "Mirrorweave",
+  "mana_cost": "{2}{W/U}{W/U}",
+  "type_line": "Instant",
+  "oracle": "Each other creature becomes a copy of target nonlegendary creature until end of turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "026b7221-0caf-4c8b-8c1b-e7de836797b7",
+  "scryfall_id": "1c77925b-0944-4b2b-b389-42bf17907b34"
+ },
+ "Hall of Storm Giants": {
+  "name": "Hall of Storm Giants",
+  "full_name": "Hall of Storm Giants",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "If you control two or more other lands, this land enters tapped.\n{T}: Add {U}.\n{5}{U}: Until end of turn, this land becomes a 7/7 blue Giant creature with ward {3}. It's still a land. (Whenever it becomes the target of a spell or ability an opponent controls, counter it unless that player pays {3}.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "087c8c0e-a91c-4e3c-8387-9312db01f343",
+  "scryfall_id": "bf8f052d-8840-4905-a807-9a305f4fd8f7"
+ },
+ "Daydream": {
+  "name": "Daydream",
+  "full_name": "Daydream",
+  "mana_cost": "{W}",
+  "type_line": "Sorcery",
+  "oracle": "Exile target creature you control, then return that card to the battlefield under its owner's control with a +1/+1 counter on it.\nFlashback {2}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Flashback"
+  ],
+  "layout": "normal",
+  "oracle_id": "094c4486-6cae-4268-850e-ff0082e5ad10",
+  "scryfall_id": "e2b16cb2-b8b2-45df-9695-3c16e9d89e28"
+ },
+ "Nadaar, Selfless Paladin": {
+  "name": "Nadaar, Selfless Paladin",
+  "full_name": "Nadaar, Selfless Paladin",
+  "mana_cost": "{2}{W}",
+  "type_line": "Legendary Creature — Dragon Knight",
+  "oracle": "Vigilance\nWhenever Nadaar enters or attacks, venture into the dungeon. (Enter the first room or advance to the next room.)\nOther creatures you control get +1/+1 as long as you've completed a dungeon.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Vigilance",
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "0e3f9345-d986-4d60-a343-45598ab59aff",
+  "scryfall_id": "878a0d8c-11c1-4c65-9051-78e036ac496f"
+ },
+ "Ephemerate": {
+  "name": "Ephemerate",
+  "full_name": "Ephemerate",
+  "mana_cost": "{W}",
+  "type_line": "Instant",
+  "oracle": "Exile target creature you control, then return it to the battlefield under its owner's control.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Rebound"
+  ],
+  "layout": "normal",
+  "oracle_id": "0fd57894-b917-41c8-a394-360d1d31b236",
+  "scryfall_id": "2da5f3f8-5eef-498f-ba2c-2f3fbc3745aa"
+ },
+ "Azorius Chancery": {
+  "name": "Azorius Chancery",
+  "full_name": "Azorius Chancery",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {W}{U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "189fc8f4-17ac-4f1d-82c8-8401445bdaf4",
+  "scryfall_id": "50ef0ac3-e911-4d67-a751-8d86160ae843"
+ },
+ "Claim Jumper": {
+  "name": "Claim Jumper",
+  "full_name": "Claim Jumper",
+  "mana_cost": "{2}{W}",
+  "type_line": "Creature — Rabbit Mercenary",
+  "oracle": "Vigilance\nWhen this creature enters, if an opponent controls more lands than you, you may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once. If you search your library this way, shuffle.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Vigilance"
+  ],
+  "layout": "normal",
+  "oracle_id": "18f0cd0b-3e4f-4637-a62e-75dd1b2f3fce",
+  "scryfall_id": "11bda4c5-099f-489e-b64b-f4719241cf9d"
+ },
+ "Veteran Dungeoneer": {
+  "name": "Veteran Dungeoneer",
+  "full_name": "Veteran Dungeoneer",
+  "mana_cost": "{3}{W}",
+  "type_line": "Creature — Human Warrior",
+  "oracle": "When this creature enters, venture into the dungeon. (Enter the first room or advance to the next room.)",
+  "power": "3",
+  "toughness": "4",
+  "keywords": [
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "1ce7b966-2a10-4250-8c0d-525e73efe2f4",
+  "scryfall_id": "d8fe33b3-afaf-4a98-ae64-7d7e0eabe993"
+ },
+ "Cave of the Frost Dragon": {
+  "name": "Cave of the Frost Dragon",
+  "full_name": "Cave of the Frost Dragon",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "If you control two or more other lands, this land enters tapped.\n{T}: Add {W}.\n{4}{W}: This land becomes a 3/4 white Dragon creature with flying until end of turn. It's still a land.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1e4146d2-cfa0-4f5e-9761-3c83519b90c3",
+  "scryfall_id": "bdb41396-5008-4a5f-92ca-54ecac42e926"
+ },
+ "Dungeon Map": {
+  "name": "Dungeon Map",
+  "full_name": "Dungeon Map",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "{T}: Add {C}.\n{3}, {T}: Venture into the dungeon. Activate only as a sorcery. (Enter the first room or advance to the next room.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "20f1bba5-d398-4d6e-a76a-75e29df42aec",
+  "scryfall_id": "028506ad-ad36-44e5-b488-d038e2d2445f"
+ },
+ "Thassa, Deep-Dwelling": {
+  "name": "Thassa, Deep-Dwelling",
+  "full_name": "Thassa, Deep-Dwelling",
+  "mana_cost": "{3}{U}",
+  "type_line": "Legendary Enchantment Creature — God",
+  "oracle": "Indestructible\nAs long as your devotion to blue is less than five, Thassa isn't a creature.\nAt the beginning of your end step, exile up to one other target creature you control, then return that card to the battlefield under your control.\n{3}{U}: Tap another target creature.",
+  "power": "6",
+  "toughness": "5",
+  "keywords": [
+   "Indestructible"
+  ],
+  "layout": "normal",
+  "oracle_id": "2396299a-c031-4020-b13e-1f9bf9d64511",
+  "scryfall_id": "c83ed3e0-82d0-4410-a6ca-b0f923eadf83"
+ },
+ "Emeritus of Ideation": {
+  "name": "Emeritus of Ideation",
+  "full_name": "Emeritus of Ideation // Ancestral Recall",
+  "mana_cost": "{3}{U}{U}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "Flying, ward {2}\nThis creature enters prepared.\nWhenever this creature attacks, you may exile eight cards from your graveyard. If you do, this creature becomes prepared.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Flying",
+   "Prepared",
+   "Ward"
+  ],
+  "layout": "prepare",
+  "oracle_id": "24a29be4-5bc2-469b-b2ce-2fb305c3facb",
+  "scryfall_id": "75961d36-acf6-425f-9698-0bf52af74f31",
+  "back": {
+   "name": "Ancestral Recall",
+   "mana_cost": "{U}",
+   "type_line": "Instant",
+   "oracle": "Target player draws three cards."
+  }
+ },
+ "Eccentric Apprentice": {
+  "name": "Eccentric Apprentice",
+  "full_name": "Eccentric Apprentice",
+  "mana_cost": "{2}{U}",
+  "type_line": "Creature — Tiefling Wizard",
+  "oracle": "Flying\nWhen this creature enters, venture into the dungeon. (Enter the first room or advance to the next room.)\nAt the beginning of combat on your turn, if you've completed a dungeon, up to one target creature becomes a Bird with base power and toughness 1/1 and flying until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Flying",
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "27dbe95e-6274-416a-a45b-a2a0a64d5403",
+  "scryfall_id": "3baa08ac-9a94-4e22-91bb-c6966cd0a0de"
+ },
+ "Undercellar Sweep": {
+  "name": "Undercellar Sweep",
+  "full_name": "Undercellar Sweep",
+  "mana_cost": "{4}{W}",
+  "type_line": "Enchantment",
+  "oracle": "When this enchantment enters, you take the initiative.\nWhenever you attack, if you or a player you're attacking has the initiative, you create two 1/1 white Soldier creature tokens that are tapped and attacking.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "2a747cdb-afbe-451d-8b1b-9458401a5419",
+  "scryfall_id": "f8ca369b-4e04-4c80-923b-1212183419d8"
+ },
+ "Reconnaissance": {
+  "name": "Reconnaissance",
+  "full_name": "Reconnaissance",
+  "mana_cost": "{W}",
+  "type_line": "Enchantment",
+  "oracle": "{0}: Remove target attacking creature you control from combat and untap it. (If you activate during end of combat, the creature will untap after it deals combat damage.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "32599d7c-243b-447b-9d5d-e8e29830ac61",
+  "scryfall_id": "a16012d8-703c-4385-8769-13e3caba3fc6"
+ },
+ "Lae'zel's Acrobatics": {
+  "name": "Lae'zel's Acrobatics",
+  "full_name": "Lae'zel's Acrobatics",
+  "mana_cost": "{3}{W}",
+  "type_line": "Instant",
+  "oracle": "Exile all nontoken creatures you control, then roll a d20.\n1—9 | Return those cards to the battlefield under their owner's control at the beginning of the next end step.\n10—20 | Return those cards to the battlefield under their owner's control, then exile them again. Return those cards to the battlefield under their owner's control at the beginning of the next end step.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "3efe6ac8-f92e-4108-913b-077e41c0a841",
+  "scryfall_id": "0d102241-4463-437f-b2bb-f574d9dbbd1e"
+ },
+ "Starfield Shepherd": {
+  "name": "Starfield Shepherd",
+  "full_name": "Starfield Shepherd",
+  "mana_cost": "{3}{W}{W}",
+  "type_line": "Creature — Angel",
+  "oracle": "Flying\nWhen this creature enters, search your library for a basic Plains card or a creature card with mana value 1 or less, reveal it, put it into your hand, then shuffle.\nWarp {1}{W} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [
+   "Flying",
+   "Warp"
+  ],
+  "layout": "normal",
+  "oracle_id": "42fa99ab-d35f-4439-ab00-fe99bad626ac",
+  "scryfall_id": "1226e575-aa78-4c68-be1d-6e5c2dc6315b"
+ },
+ "Port Town": {
+  "name": "Port Town",
+  "full_name": "Port Town",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "As this land enters, you may reveal a Plains or Island card from your hand. If you don't, this land enters tapped.\n{T}: Add {W} or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "458d2b12-f578-4392-98d3-c3bc83f316c4",
+  "scryfall_id": "33cdd576-d115-48c0-a903-dcd0ed8ee5ab"
+ },
+ "Starfield Vocalist": {
+  "name": "Starfield Vocalist",
+  "full_name": "Starfield Vocalist",
+  "mana_cost": "{3}{U}",
+  "type_line": "Creature — Human Bard",
+  "oracle": "If a permanent entering the battlefield causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.\nWarp {1}{U} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)",
+  "power": "3",
+  "toughness": "4",
+  "keywords": [
+   "Warp"
+  ],
+  "layout": "normal",
+  "oracle_id": "4add809e-9caa-45ae-bb0d-4760a360b8e2",
+  "scryfall_id": "deca0b2a-e7f3-444a-883d-7c41dd62c9cc"
+ },
+ "Component Pouch": {
+  "name": "Component Pouch",
+  "full_name": "Component Pouch",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "{T}, Remove a component counter from this artifact: Add two mana of different colors.\n{T}: Roll a d20.\n1—9 | Put a component counter on this artifact.\n10—20 | Put two component counters on this artifact.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4bb1863e-50f3-4e08-884e-1f58ee55817f",
+  "scryfall_id": "8aa4eacb-48d8-49a1-90dd-042f3f1f75bb"
+ },
+ "Agent of Treachery": {
+  "name": "Agent of Treachery",
+  "full_name": "Agent of Treachery",
+  "mana_cost": "{5}{U}{U}",
+  "type_line": "Creature — Human Rogue",
+  "oracle": "When this creature enters, gain control of target permanent.\nAt the beginning of your end step, if you control three or more permanents you don't own, draw three cards.",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4cd82c7a-86df-4d29-b578-c009208c0d4b",
+  "scryfall_id": "cc6686e6-4535-49be-b0b3-e76464656cd2"
+ },
+ "Tomb of Horrors Adventurer": {
+  "name": "Tomb of Horrors Adventurer",
+  "full_name": "Tomb of Horrors Adventurer",
+  "mana_cost": "{5}{U}",
+  "type_line": "Creature — Elf Monk",
+  "oracle": "When this creature enters, you take the initiative.\nWhenever you cast your second spell each turn, copy it. If you've completed a dungeon, copy that spell twice instead. You may choose new targets for the copies. (A copy of a permanent spell becomes a token.)",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4f429b99-6aca-409f-9d2e-5743d81f1f22",
+  "scryfall_id": "30b5bf0c-e617-4a41-bfaa-2b299728a93f"
+ },
+ "White Plume Adventurer": {
+  "name": "White Plume Adventurer",
+  "full_name": "White Plume Adventurer",
+  "mana_cost": "{2}{W}",
+  "type_line": "Creature — Orc Cleric",
+  "oracle": "When this creature enters, you take the initiative.\nAt the beginning of each opponent's upkeep, untap a creature you control. If you've completed a dungeon, untap all creatures you control instead.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "51f091a7-9b0b-4362-8e9c-c174752f369b",
+  "scryfall_id": "b256ddc8-8b12-434c-a610-1a872e948f2f"
+ },
+ "Ephara, God of the Polis": {
+  "name": "Ephara, God of the Polis",
+  "full_name": "Ephara, God of the Polis",
+  "mana_cost": "{2}{W}{U}",
+  "type_line": "Legendary Enchantment Creature — God",
+  "oracle": "Indestructible\nAs long as your devotion to white and blue is less than seven, Ephara isn't a creature.\nAt the beginning of each upkeep, if you had another creature enter the battlefield under your control last turn, draw a card.",
+  "power": "6",
+  "toughness": "5",
+  "keywords": [
+   "Indestructible"
+  ],
+  "layout": "normal",
+  "oracle_id": "5968ecb5-5728-429f-9324-0c108820ebe8",
+  "scryfall_id": "6832e495-7ee9-43e0-94ea-03c88344080e"
+ },
+ "Wall of Omens": {
+  "name": "Wall of Omens",
+  "full_name": "Wall of Omens",
+  "mana_cost": "{1}{W}",
+  "type_line": "Creature — Wall",
+  "oracle": "Defender\nWhen this creature enters, draw a card.",
+  "power": "0",
+  "toughness": "4",
+  "keywords": [
+   "Defender"
+  ],
+  "layout": "normal",
+  "oracle_id": "5f601f48-d24b-4883-9fde-b3f620e7c9ea",
+  "scryfall_id": "3d134bb2-17ec-4e65-976e-f06fa983f3fb"
+ },
+ "Sarevok's Tome": {
+  "name": "Sarevok's Tome",
+  "full_name": "Sarevok's Tome",
+  "mana_cost": "{4}",
+  "type_line": "Artifact — Book",
+  "oracle": "When this artifact enters, you take the initiative.\n{T}: Add {C}. If you have the initiative, add {C}{C} instead.\n{3}, {T}: Exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost. Activate only if you've completed a dungeon.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "6ec54d84-7026-45a3-a7d7-37cd5c9a8463",
+  "scryfall_id": "5a470690-a05d-4311-963c-50cbf779846d"
+ },
+ "Panharmonicon": {
+  "name": "Panharmonicon",
+  "full_name": "Panharmonicon",
+  "mana_cost": "{4}",
+  "type_line": "Artifact",
+  "oracle": "If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "76678885-3674-443d-b9a2-2a460cf6aac0",
+  "scryfall_id": "998d0cc8-ca2a-41c3-ab65-d05c26ab8278"
+ },
+ "Skycloud Expanse": {
+  "name": "Skycloud Expanse",
+  "full_name": "Skycloud Expanse",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{1}, {T}: Add {W}{U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "76f335d0-7f71-4b1a-b60d-73de954cbe2c",
+  "scryfall_id": "d4985fcd-d9d4-418c-a7ca-20233fcfa2b5"
+ },
+ "Skycoach Conductor": {
+  "name": "Skycoach Conductor",
+  "full_name": "Skycoach Conductor // All Aboard",
+  "mana_cost": "{2}{U}",
+  "type_line": "Creature — Bird Pilot",
+  "oracle": "Flash\nFlying, vigilance\nThis creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [
+   "Flying",
+   "Vigilance",
+   "Prepared",
+   "Flash"
+  ],
+  "layout": "prepare",
+  "oracle_id": "788d3cfa-7706-4728-9c48-cf7bc963d002",
+  "scryfall_id": "4ecbca71-9a1d-44c5-b709-d6f565941d5e",
+  "back": {
+   "name": "All Aboard",
+   "mana_cost": "{U}",
+   "type_line": "Instant",
+   "oracle": "Exile target non-Pilot creature you control, then return that card to the battlefield under its owner's control."
+  }
+ },
+ "Petrified Hamlet": {
+  "name": "Petrified Hamlet",
+  "full_name": "Petrified Hamlet",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "When this land enters, choose a land card name.\nActivated abilities of sources with the chosen name can't be activated unless they're mana abilities.\nLands with the chosen name have \"{T}: Add {C}.\"\n{T}: Add {C}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "78a2972c-14f4-41f3-99f9-167948bdd73a",
+  "scryfall_id": "355dd460-b0e9-41f2-a058-b7f7e39ac387"
+ },
+ "Oji, the Exquisite Blade": {
+  "name": "Oji, the Exquisite Blade",
+  "full_name": "Oji, the Exquisite Blade",
+  "mana_cost": "{2}{W}{U}",
+  "type_line": "Legendary Creature — Human Monk",
+  "oracle": "When Oji enters, you gain 2 life and scry 2.\nWhenever you cast your second spell each turn, exile up to one target creature you control, then return it to the battlefield under its owner's control.",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [
+   "Scry"
+  ],
+  "layout": "normal",
+  "oracle_id": "7c4c556c-b5e3-493a-a7b0-38c55b7809ac",
+  "scryfall_id": "13129e63-558d-415d-87eb-616868205341"
+ },
+ "Knight of the White Orchid": {
+  "name": "Knight of the White Orchid",
+  "full_name": "Knight of the White Orchid",
+  "mana_cost": "{W}{W}",
+  "type_line": "Creature — Human Knight",
+  "oracle": "First strike\nWhen this creature enters, if an opponent controls more lands than you, you may search your library for a Plains card, put it onto the battlefield, then shuffle.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "First strike"
+  ],
+  "layout": "normal",
+  "oracle_id": "7d0efc64-151f-45b4-8c0b-c32609f9d862",
+  "scryfall_id": "f332cd21-46ed-4fff-9fd9-d5975bf0004d"
+ },
+ "Displacer Beast": {
+  "name": "Displacer Beast",
+  "full_name": "Displacer Beast",
+  "mana_cost": "{2}{U}",
+  "type_line": "Creature — Cat Beast",
+  "oracle": "When this creature enters, venture into the dungeon. (Enter the first room or advance to the next room.)\nDisplacement — {3}{U}: Return this creature to its owner's hand.",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "7f24c0b7-1d39-48b6-969f-ee97fdf99305",
+  "scryfall_id": "95d5c36c-bcc8-459c-9f4b-b265ccdb1f06"
+ },
+ "Momo, Playful Pet": {
+  "name": "Momo, Playful Pet",
+  "full_name": "Momo, Playful Pet",
+  "mana_cost": "{W}",
+  "type_line": "Legendary Creature — Lemur Bat Ally",
+  "oracle": "Flying, vigilance\nWhen Momo leaves the battlefield, choose one —\n• Create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\n• Put a +1/+1 counter on target creature you control.\n• Scry 2.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [
+   "Scry",
+   "Flying",
+   "Vigilance",
+   "Food"
+  ],
+  "layout": "normal",
+  "oracle_id": "85ee8ab6-8db5-45d7-85ae-64838771146a",
+  "scryfall_id": "9350bf4a-fa12-4867-b31f-1f1394d99571"
+ },
+ "Spirited Companion": {
+  "name": "Spirited Companion",
+  "full_name": "Spirited Companion",
+  "mana_cost": "{1}{W}",
+  "type_line": "Enchantment Creature — Dog",
+  "oracle": "When this creature enters, draw a card.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "9c5f0d91-9d86-4e66-94fd-4af93ad01838",
+  "scryfall_id": "99c27e8e-1a9b-4175-a7fb-c8224bc08e68"
+ },
+ "Delver's Torch": {
+  "name": "Delver's Torch",
+  "full_name": "Delver's Torch",
+  "mana_cost": "{1}{W}",
+  "type_line": "Artifact — Equipment",
+  "oracle": "Equipped creature gets +1/+1.\nWhenever equipped creature attacks, venture into the dungeon. (Enter the first room or advance to the next room.)\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Equip",
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "a1c8b833-8c74-4f95-8a47-1dd41ef99361",
+  "scryfall_id": "53df7b80-71bf-4013-ad44-f76eae8ac81b"
+ },
+ "Morningtide's Light": {
+  "name": "Morningtide's Light",
+  "full_name": "Morningtide's Light",
+  "mana_cost": "{3}{W}",
+  "type_line": "Sorcery",
+  "oracle": "Exile any number of target creatures. At the beginning of the next end step, return those cards to the battlefield tapped under their owners' control.\nUntil your next turn, prevent all damage that would be dealt to you.\nExile Morningtide's Light.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "a25bcf65-4417-45e9-a4b1-94e0ea78af63",
+  "scryfall_id": "181ee045-5650-479a-8c03-015b38fdcd63"
+ },
+ "Fieldmist Borderpost": {
+  "name": "Fieldmist Borderpost",
+  "full_name": "Fieldmist Borderpost",
+  "mana_cost": "{1}{W}{U}",
+  "type_line": "Artifact",
+  "oracle": "You may pay {1} and return a basic land you control to its owner's hand rather than pay this spell's mana cost.\nThis artifact enters tapped.\n{T}: Add {W} or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "a292ca5b-2472-4b02-a26b-d1b5b717a34b",
+  "scryfall_id": "bd652205-192c-4cad-a7c9-2433d5a4febb"
+ },
+ "Opal Palace": {
+  "name": "Opal Palace",
+  "full_name": "Opal Palace",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color in your commander's color identity. If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "aa6723a2-75da-49f5-a1ba-cbfa82c55301",
+  "scryfall_id": "912553e7-1e67-4045-84fd-0a791754cf6c"
+ },
+ "Ghostly Flicker": {
+  "name": "Ghostly Flicker",
+  "full_name": "Ghostly Flicker",
+  "mana_cost": "{2}{U}",
+  "type_line": "Instant",
+  "oracle": "Exile two target artifacts, creatures, and/or lands you control, then return those cards to the battlefield under your control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ad0070db-6454-41cb-861f-8f5b8fc2a3b8",
+  "scryfall_id": "dc143ba3-2a58-4980-9fa0-a05a9e9ed082"
+ },
+ "Helpful Hunter": {
+  "name": "Helpful Hunter",
+  "full_name": "Helpful Hunter",
+  "mana_cost": "{1}{W}",
+  "type_line": "Creature — Cat",
+  "oracle": "When this creature enters, draw a card.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c0864adb-e9aa-40b6-91ff-a0646193e887",
+  "scryfall_id": "1b9a0e91-80b5-428f-8f08-931d0631be14"
+ },
+ "Rasputin, the Oneiromancer": {
+  "name": "Rasputin, the Oneiromancer",
+  "full_name": "Rasputin, the Oneiromancer",
+  "mana_cost": "{1}{W}{U}",
+  "type_line": "Legendary Creature — Human Wizard",
+  "oracle": "When Rasputin enters, put a dream counter on it for each opponent you have. Each opponent creates a 1/1 red Goblin creature token.\n{T}, Remove one or more dream counters from Rasputin: Add that much {C}.\n{T}, Remove a dream counter from Rasputin: Create a 2/2 white Knight creature token with protection from red.",
+  "power": "4",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c16fd2b9-9147-43bc-aa08-6d1bddf1d3e8",
+  "scryfall_id": "7f0f171a-2929-4d95-9829-d0e885622e04"
+ },
+ "Airbender Ascension": {
+  "name": "Airbender Ascension",
+  "full_name": "Airbender Ascension",
+  "mana_cost": "{1}{W}",
+  "type_line": "Enchantment",
+  "oracle": "When this enchantment enters, airbend up to one target creature.\nWhenever a creature you control enters, put a quest counter on this enchantment.\nAt the beginning of your end step, if this enchantment has four or more quest counters on it, exile up to one target creature you control, then return it to the battlefield under its owner's control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Airbend"
+  ],
+  "layout": "normal",
+  "oracle_id": "c4d2fdf9-637d-4e97-ae33-45f2d27bf8cd",
+  "scryfall_id": "99a90d13-891c-45cc-b1d5-6080ebae5862"
+ },
+ "Hama Pashar, Ruin Seeker": {
+  "name": "Hama Pashar, Ruin Seeker",
+  "full_name": "Hama Pashar, Ruin Seeker",
+  "mana_cost": "{1}{W}{U}",
+  "type_line": "Legendary Creature — Human Wizard",
+  "oracle": "Room abilities of dungeons you own trigger an additional time.",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c7371040-160c-4502-b7f9-77b7f54cc020",
+  "scryfall_id": "47b8eb2e-73ac-4ad6-9ab6-4f8da7b41020"
+ },
+ "Genku, Future Shaper": {
+  "name": "Genku, Future Shaper",
+  "full_name": "Genku, Future Shaper",
+  "mana_cost": "{2}{W}{U}",
+  "type_line": "Legendary Creature — Moonfolk Wizard",
+  "oracle": "Whenever another nontoken permanent you control leaves the battlefield, choose one that hasn't been chosen this turn. Create a creature token with those characteristics.\n• 2/2 white Fox with vigilance.\n• 1/2 blue Moonfolk with flying.\n• 1/1 black Rat with lifelink.\n{3}{W}{U}: Put a +1/+1 counter on each creature you control.",
+  "power": "2",
+  "toughness": "5",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ca16b735-26c7-4d0b-959b-b031f6cb376e",
+  "scryfall_id": "0cbcc962-65c4-496d-8034-75c8d204dba3"
+ },
+ "Temple of the False God": {
+  "name": "Temple of the False God",
+  "full_name": "Temple of the False God",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}{C}. Activate only if you control five or more lands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df",
+  "scryfall_id": "cd5e9799-00e1-41a9-b5b9-5d5164c71561"
+ },
+ "Day of Judgment": {
+  "name": "Day of Judgment",
+  "full_name": "Day of Judgment",
+  "mana_cost": "{2}{W}{W}",
+  "type_line": "Sorcery",
+  "oracle": "Destroy all creatures.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d057289d-5e28-43d5-8ff3-4a1bc723477d",
+  "scryfall_id": "96e84bdc-8a9a-4c58-ba8b-9f052fd60069"
+ },
+ "Land Tax": {
+  "name": "Land Tax",
+  "full_name": "Land Tax",
+  "mana_cost": "{W}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your upkeep, if an opponent controls more lands than you, you may search your library for up to three basic land cards, reveal them, put them into your hand, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d2d9ecea-7925-420e-98b9-2f87f41f387c",
+  "scryfall_id": "c70d3706-9d28-49ac-8718-4a516413e727"
+ },
+ "Hullbreaker Horror": {
+  "name": "Hullbreaker Horror",
+  "full_name": "Hullbreaker Horror",
+  "mana_cost": "{5}{U}{U}",
+  "type_line": "Creature — Kraken Horror",
+  "oracle": "Flash\nThis spell can't be countered.\nWhenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
+  "power": "7",
+  "toughness": "8",
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "d4a84e78-d9b9-4c67-8a4b-4329e65f0f15",
+  "scryfall_id": "137acb70-a1fd-4ea9-a5d9-f4b438eb5e82"
+ },
+ "Adarkar Wastes": {
+  "name": "Adarkar Wastes",
+  "full_name": "Adarkar Wastes",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{T}: Add {W} or {U}. This land deals 1 damage to you.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d5ad26cc-2bdb-46b7-b8bf-dd099d5fa09b",
+  "scryfall_id": "42e0aa15-639a-4e88-9bd8-ce5e7c7d7649"
+ },
+ "Azorius Signet": {
+  "name": "Azorius Signet",
+  "full_name": "Azorius Signet",
+  "mana_cost": "{2}",
+  "type_line": "Artifact",
+  "oracle": "{1}, {T}: Add {W}{U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e018773f-95b3-49a3-9674-6f04ddef2092",
+  "scryfall_id": "af690536-b0bc-4d85-8bb8-f6856b9f927b"
+ },
+ "Cloister Gargoyle": {
+  "name": "Cloister Gargoyle",
+  "full_name": "Cloister Gargoyle",
+  "mana_cost": "{2}{W}",
+  "type_line": "Artifact Creature — Gargoyle",
+  "oracle": "When this creature enters, venture into the dungeon. (Enter the first room or advance to the next room.)\nAs long as you've completed a dungeon, this creature gets +3/+0 and has flying.",
+  "power": "0",
+  "toughness": "4",
+  "keywords": [
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "e1e84b14-c521-4eb7-92ed-bde1131e8662",
+  "scryfall_id": "297bf274-d13d-4b75-b251-2d004b16b431"
+ },
+ "Midnight Pathlighter": {
+  "name": "Midnight Pathlighter",
+  "full_name": "Midnight Pathlighter",
+  "mana_cost": "{2}{W}{U}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "Creatures you control can't be blocked except by legendary creatures.\nWhenever one or more creatures you control deal combat damage to a player, venture into the dungeon. (Enter the first room or advance to the next room.)",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "e49228d6-6488-4cbc-aa53-303afd3a549b",
+  "scryfall_id": "8eb6f699-1b5d-412b-a697-ee94b7be07a6"
+ },
+ "Mystic Gate": {
+  "name": "Mystic Gate",
+  "full_name": "Mystic Gate",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{W/U}, {T}: Add {W}{W}, {W}{U}, or {U}{U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e9f5feb2-2c1a-46ce-885a-4f378d7d10af",
+  "scryfall_id": "fa32d90e-1153-42ab-b8ff-0eb82698692c"
+ },
+ "Study Hall": {
+  "name": "Study Hall",
+  "full_name": "Study Hall",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color. When you spend this mana to cast your commander, scry X, where X is the number of times it's been cast from the command zone this game.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Scry"
+  ],
+  "layout": "normal",
+  "oracle_id": "eb735501-19e7-4910-aa6a-6667fff6f4e5",
+  "scryfall_id": "93f812bc-7663-4504-b566-79e2c0a0f845"
+ },
+ "Archaeomancer's Map": {
+  "name": "Archaeomancer's Map",
+  "full_name": "Archaeomancer's Map",
+  "mana_cost": "{2}{W}",
+  "type_line": "Artifact",
+  "oracle": "When this artifact enters, search your library for up to two basic Plains cards, reveal them, put them into your hand, then shuffle.\nWhenever a land an opponent controls enters, if that player controls more lands than you, you may put a land card from your hand onto the battlefield.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ef833546-f755-4ac5-867a-3926984e68a0",
+  "scryfall_id": "3679b9c8-ebae-474a-b862-6397edbcc4ea"
+ },
+ "Djinni Windseer": {
+  "name": "Djinni Windseer",
+  "full_name": "Djinni Windseer",
+  "mana_cost": "{3}{U}",
+  "type_line": "Creature — Djinn",
+  "oracle": "Flying\nWhen this creature enters, roll a d20.\n1—9 | Scry 1.\n10—19 | Scry 2.\n20 | Scry 3.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Scry",
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "f06cecd4-8447-4351-9dfa-861afb84f1e6",
+  "scryfall_id": "67a42698-bf3b-4352-8178-9c98abfc5b09"
+ },
+ "Dungeon Descent": {
+  "name": "Dungeon Descent",
+  "full_name": "Dungeon Descent",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\n{T}: Add {C}.\n{4}, {T}, Tap an untapped legendary creature you control: Venture into the dungeon. Activate only as a sorcery. (Enter the first room or advance to the next room.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "f086a63c-0c62-4674-bd27-82e7aed12b1a",
+  "scryfall_id": "f4cccdbc-f4f4-42b6-9747-6ef703ff949a"
+ },
+ "Yuan-Ti Malison": {
+  "name": "Yuan-Ti Malison",
+  "full_name": "Yuan-Ti Malison",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Snake Rogue",
+  "oracle": "This creature can't be blocked as long as it's attacking alone.\nWhenever this creature deals combat damage to a player, venture into the dungeon. (Enter the first room or advance to the next room.)",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "f0e4dda1-2ffb-4353-a292-dcbc966967b4",
+  "scryfall_id": "0f51afd9-7093-4aa3-ad5b-7383684d6285"
+ },
+ "Deserted Beach": {
+  "name": "Deserted Beach",
+  "full_name": "Deserted Beach",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control two or more other lands.\n{T}: Add {W} or {U}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "f0ec8681-da50-466b-8cdd-1dc710deccd9",
+  "scryfall_id": "56dae4c4-3e71-4a32-979b-4e26d9c9e96c"
+ },
+ "Niko, Light of Hope": {
+  "name": "Niko, Light of Hope",
+  "full_name": "Niko, Light of Hope",
+  "mana_cost": "{2}{W}{U}",
+  "type_line": "Legendary Creature — Human Wizard",
+  "oracle": "When Niko enters, create two Shard tokens. (They're enchantments with \"{2}, Sacrifice this token: Scry 1, then draw a card.\")\n{2}, {T}: Exile target nonlegendary creature you control. Shards you control become copies of it until the next end step. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+  "power": "3",
+  "toughness": "4",
+  "keywords": [
+   "Scry"
+  ],
+  "layout": "normal",
+  "oracle_id": "f153e369-1d5b-4d8b-a2f6-d93b849cabb5",
+  "scryfall_id": "91ad013f-de8d-4980-b4b6-c7f91ff495b1"
+ },
+ "Aether Channeler": {
+  "name": "Aether Channeler",
+  "full_name": "Aether Channeler",
+  "mana_cost": "{2}{U}",
+  "type_line": "Creature — Human Wizard",
+  "oracle": "When this creature enters, choose one —\n• Create a 1/1 white Bird creature token with flying.\n• Return another target nonland permanent to its owner's hand.\n• Draw a card.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "fb220f46-f8b8-4804-baa4-e7d50b4871f7",
+  "scryfall_id": "d5859a42-5a82-47db-9f1d-ffe3f2b61a02"
+ },
+ "Brago, King Eternal": {
+  "name": "Brago, King Eternal",
+  "full_name": "Brago, King Eternal",
+  "mana_cost": "{2}{W}{U}",
+  "type_line": "Legendary Creature — Spirit Noble",
+  "oracle": "Flying\nWhenever Brago deals combat damage to a player, exile any number of target nonland permanents you control, then return those cards to the battlefield under their owner's control.",
+  "power": "2",
+  "toughness": "4",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "fcb0c7db-bd07-4c25-b7f8-b6c207e4f6be",
+  "scryfall_id": "0ac3fb08-741a-49e5-9fae-b26819677d24"
  }
 }

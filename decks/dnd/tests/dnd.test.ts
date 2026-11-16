@@ -1,0 +1,422 @@
+/** Rules checks on hand-built boards. Run: npm run sim -- dnd --test */
+import * as C from '../../../engine/cards/cards';
+import { Permanent } from '../../../engine/game/game-types';
+import { Rng } from '../../../engine/util/rng';
+import { ALL_ABOARD, ANCESTRAL_RECALL, PREPARED } from '../cards';
+import { CFG } from '../config';
+import { DndGame } from '../game';
+import { buildCandidates } from '../candidates';
+
+const repeatName = (cardName: string, count: number) =>
+  new Array(count).fill(cardName) as string[];
+
+function board(
+  battlefieldNames: string[] = [],
+  hand: string[] = [],
+  lands = [...repeatName('Plains', 4), ...repeatName('Island', 4)],
+  library = [...repeatName('Plains', 20), ...repeatName('Island', 20)],
+): DndGame {
+  const game = new DndGame([], library, new Rng(1), { ...CFG });
+  game.startTurn();
+  game.turn = 6;
+  for (const landName of lands) {
+    const card = C.get(landName);
+    const permanent = new Permanent(card, card.land);
+    permanent.sick = false;
+    game.battlefield.push(permanent);
+  }
+  for (const cardName of battlefieldNames) {
+    const permanent = new Permanent(C.get(cardName));
+    permanent.sick = false;
+    game.battlefield.push(permanent);
+  }
+  game.hand = hand.map((cardName) => C.get(cardName));
+  return game;
+}
+
+const namesOnBattlefield = (game: DndGame, cardName: string): number =>
+  game.battlefield.filter((permanent) => permanent.card.name === cardName)
+    .length;
+
+export function runDndTests(): boolean {
+  let allPassed = true;
+  const check = (label: string, got: unknown, expect: unknown) => {
+    const good = JSON.stringify(got) === JSON.stringify(expect);
+    console.log(
+      `${good ? 'OK ' : 'BAD'} ${label}: got ${JSON.stringify(got)}, expected ${JSON.stringify(expect)}`,
+    );
+    if (!good) allPassed = false;
+  };
+
+  // ---------------------------------------------------------------- enter triggers
+  {
+    const game = board(['Panharmonicon']);
+    game.enter(C.get('Veteran Dungeoneer'));
+    check(
+      'Panharmonicon: Veteran Dungeoneer ventures twice',
+      game.dungeonPosition?.room,
+      'Goblin Lair',
+    );
+  }
+  {
+    const game = board(['Hama Pashar, Ruin Seeker']);
+    game.enter(C.get('Veteran Dungeoneer'));
+    game.enter(C.get('Veteran Dungeoneer'));
+    check(
+      'Hama Pashar: the Goblin Lair makes two Goblins',
+      namesOnBattlefield(game, 'Goblin'),
+      2,
+    );
+  }
+  {
+    const game = board();
+    game.enter(C.get('Aether Channeler'));
+    const full = board([], repeatName('Plains', 6));
+    full.enter(C.get('Aether Channeler'));
+    check(
+      'Aether Channeler: a card, or a Bird with a full hand',
+      [game.hand.length, namesOnBattlefield(full, 'Bird')],
+      [1, 1],
+    );
+  }
+  {
+    const game = board();
+    game.enter(C.get('Niko, Light of Hope'));
+    check('Niko: two Shards', namesOnBattlefield(game, 'Shard'), 2);
+  }
+  {
+    const game = board();
+    game.enter(C.get('Oji, the Exquisite Blade'));
+    check('Oji: we gain 2', game.myLife, 42);
+  }
+  {
+    const game = board();
+    game.enter(C.get('Rasputin, the Oneiromancer'));
+    check(
+      'Rasputin: a dream counter per opponent',
+      game.rasputinDreamCounters,
+      3,
+    );
+  }
+  {
+    const behind = board([], [], ['Plains', 'Island']);
+    behind.enter(C.get('Knight of the White Orchid'));
+    const ahead = board();
+    ahead.enter(C.get('Knight of the White Orchid'));
+    check(
+      'Knight of the White Orchid: a Plains only when an opponent has more lands',
+      [behind.landsOnBattlefield().length, ahead.landsOnBattlefield().length],
+      [3, 8],
+    );
+  }
+  {
+    const game = board([], [], ['Plains', 'Island']);
+    game.enter(C.get('Claim Jumper'));
+    check(
+      'Claim Jumper: two Plains, tapped, when far behind',
+      game
+        .landsOnBattlefield()
+        .filter((land) => land.tapped && land.card.name === 'Plains').length,
+      2,
+    );
+  }
+  {
+    const game = board();
+    game.enter(C.get("Archaeomancer's Map"));
+    check(
+      "Archaeomancer's Map: two Plains to hand",
+      game.hand.map((card) => card.name),
+      ['Plains', 'Plains'],
+    );
+  }
+  {
+    const library = ['Momo, Playful Pet', ...repeatName('Plains', 10)];
+    const rich = board([], [], undefined, library);
+    rich.enter(C.get('Starfield Shepherd'));
+    const poor = board([], [], ['Plains'], library);
+    poor.enter(C.get('Starfield Shepherd'));
+    check(
+      'Starfield Shepherd: Momo, or a Plains while short of lands',
+      [rich.hand[0].name, poor.hand[0].name],
+      ['Momo, Playful Pet', 'Plains'],
+    );
+  }
+
+  // ---------------------------------------------------------------- leave triggers and blink
+  {
+    const game = board(['Momo, Playful Pet', 'Veteran Dungeoneer']);
+    game.dies(game.findPermanent('Momo, Playful Pet')!);
+    check(
+      'Momo leaves: a +1/+1 counter on our best creature',
+      game.findPermanent('Veteran Dungeoneer')!.counters,
+      1,
+    );
+  }
+  {
+    const game = board(['Genku, Future Shaper', 'Wall of Omens']);
+    game.blinkBestCreature();
+    game.blinkBestCreature();
+    game.dies(game.battlefield.find((permanent) => permanent.token)!);
+    check(
+      'Genku: a Fox, then a Moonfolk; a token leaving makes none',
+      game.battlefield
+        .filter((permanent) => permanent.token)
+        .map((permanent) => permanent.card.name),
+      ['Moonfolk'],
+    );
+  }
+  {
+    const game = board(['Veteran Dungeoneer', 'Brago, King Eternal']);
+    const dungeoneer = game.findPermanent('Veteran Dungeoneer')!;
+    const goblin = game.createTokens(C.makeToken('Goblin', 1, 1, 'red'))[0];
+    const before = [game.blinkValue(dungeoneer), game.blinkValue(goblin)];
+    game.enter(C.get('Genku, Future Shaper'));
+    check(
+      'blink value: Veteran Dungeoneer 7 (9 with Genku), a token never',
+      [...before, game.blinkValue(dungeoneer)],
+      [7, -1, 9],
+    );
+  }
+  {
+    const game = board([
+      'Brago, King Eternal',
+      'Veteran Dungeoneer',
+      'Wall of Omens',
+      'Sol Ring',
+    ]);
+    game.onCombatDamage([game.findPermanent('Brago, King Eternal')!]);
+    check(
+      'Brago: the permanents worth it are blinked (a venture and a card)',
+      [game.dungeonPosition?.room, game.hand.length],
+      ['Cave Entrance', 1],
+    );
+  }
+  {
+    const game = board(['Thassa, Deep-Dwelling', 'Wall of Omens']);
+    game.endStep();
+    check('Thassa: our end step blinks Wall of Omens', game.hand.length, 1);
+  }
+  {
+    const game = board(['Airbender Ascension']);
+    for (let i = 0; i < 4; i++) game.enter(C.get('Wall of Omens'));
+    const handBefore = game.hand.length;
+    const questCounters = game.airbenderQuestCounters;
+    game.endStep();
+    check(
+      'Airbender Ascension: four creatures entered, the end step blinks one',
+      [questCounters, game.hand.length - handBefore],
+      [4, 1],
+    );
+  }
+
+  // ---------------------------------------------------------------- spells cast
+  {
+    const game = board(['Pensive Professor']);
+    for (let i = 0; i < 3; i++) game.podAnnounceCast(C.get('Wall of Omens'));
+    check(
+      'Pensive Professor: 2-mana spells grow it (and draw) while its power is below 2',
+      [game.findPermanent('Pensive Professor')!.counters, game.hand.length],
+      [2, 2],
+    );
+  }
+  {
+    const game = board(['Oji, the Exquisite Blade', 'Wall of Omens']);
+    game.spellsCast = 1;
+    game.podAnnounceCast(C.get('Brainstorm'));
+    check('Oji: no blink on the first spell', game.hand.length, 0);
+    game.spellsCast = 2;
+    game.podAnnounceCast(C.get('Brainstorm'));
+    check('Oji: the second spell blinks Wall of Omens', game.hand.length, 1);
+  }
+  {
+    const game = board(['Tomb of Horrors Adventurer']);
+    game.spellsCast = 2;
+    game.podAnnounceCast(C.get('Veteran Dungeoneer'));
+    check(
+      'Tomb of Horrors Adventurer: the second spell is copied (a token Veteran Dungeoneer ventures)',
+      [
+        namesOnBattlefield(game, 'Veteran Dungeoneer'),
+        game.dungeonPosition?.room,
+      ],
+      [1, 'Cave Entrance'],
+    );
+  }
+  {
+    const game = board(['Wall of Omens']);
+    const conductor = game.enter(C.get('Skycoach Conductor'));
+    const wasPrepared = !!(conductor.marks & PREPARED);
+    game.castPreparedSpell(conductor, ALL_ABOARD);
+    check(
+      'Skycoach Conductor enters prepared; All Aboard blinks Wall of Omens and unprepares it',
+      [wasPrepared, game.hand.length, !!(conductor.marks & PREPARED)],
+      [true, 1, false],
+    );
+  }
+  {
+    const game = board();
+    const emeritus = game.enter(C.get('Emeritus of Ideation'));
+    game.castPreparedSpell(emeritus, ANCESTRAL_RECALL);
+    check(
+      'Emeritus of Ideation: Ancestral Recall draws three',
+      game.hand.length,
+      3,
+    );
+    game.graveyard = repeatName('Plains', 9).map((name) => C.get(name));
+    game.onAttack([emeritus]);
+    check(
+      'Emeritus of Ideation attacks: eight cards exiled, prepared again',
+      [game.graveyard.length, !!(emeritus.marks & PREPARED)],
+      [1, true],
+    );
+  }
+
+  // ---------------------------------------------------------------- upkeeps
+  {
+    const game = board([], [], ['Plains', 'Island']);
+    game.enter(C.get('Land Tax'));
+    game.upkeep();
+    check(
+      'Land Tax: three basic lands to hand when behind',
+      game.hand.length,
+      3,
+    );
+  }
+  {
+    const game = board(['Ephara, God of the Polis']);
+    game.enter(C.get('Veteran Dungeoneer'));
+    game.opponentUpkeep();
+    game.opponentUpkeep();
+    check(
+      'Ephara: one card at the next upkeep after a creature entered',
+      game.hand.length,
+      1,
+    );
+  }
+  {
+    const game = board(['White Plume Adventurer', 'Veteran Dungeoneer']);
+    for (const creature of game.creatures()) creature.tapped = true;
+    game.opponentUpkeep();
+    const untappedOne = game
+      .creatures()
+      .filter((creature) => !creature.tapped).length;
+    game.completedDungeons = 1;
+    for (const creature of game.creatures()) creature.tapped = true;
+    game.opponentUpkeep();
+    check(
+      "White Plume Adventurer: one creature untaps at an opponent's upkeep, all with a completed dungeon",
+      [
+        untappedOne,
+        game.creatures().filter((creature) => !creature.tapped).length,
+      ],
+      [1, 2],
+    );
+  }
+
+  // ---------------------------------------------------------------- combat
+  {
+    const game = board(['Nadaar, Selfless Paladin', 'Veteran Dungeoneer']);
+    game.onAttack([game.findPermanent('Nadaar, Selfless Paladin')!]);
+    const dungeoneer = game.findPermanent('Veteran Dungeoneer')!;
+    const powerBefore = game.power(dungeoneer);
+    game.completedDungeons = 1;
+    check(
+      'Nadaar ventures as it attacks; the others +1/+1 after a completed dungeon',
+      [game.dungeonPosition?.room, powerBefore, game.power(dungeoneer)],
+      ['Cave Entrance', 3, 4],
+    );
+  }
+  {
+    const game = board(["Delver's Torch", 'Veteran Dungeoneer']);
+    const candidate = buildCandidates(game, false).find(
+      (each) => each.cost.generic === 3 && each.score === 45,
+    )!;
+    candidate.action();
+    const dungeoneer = game.findPermanent('Veteran Dungeoneer')!;
+    game.onAttack([dungeoneer]);
+    check(
+      "Delver's Torch: equipped (+1/+1), its holder ventures as it attacks",
+      [game.power(dungeoneer), game.dungeonPosition?.room],
+      [4, 'Cave Entrance'],
+    );
+  }
+  {
+    const game = board(['Undercellar Sweep', 'Veteran Dungeoneer']);
+    const attacker = game.findPermanent('Veteran Dungeoneer')!;
+    const withoutInitiative = game.onAttack([attacker]).length;
+    game.hasInitiative = true;
+    check(
+      'Undercellar Sweep: two Soldiers join the attack with the initiative',
+      [withoutInitiative, game.onAttack([attacker]).length],
+      [0, 2],
+    );
+  }
+  {
+    const game = board(['Midnight Pathlighter', 'Yuan-Ti Malison']);
+    const malison = game.findPermanent('Yuan-Ti Malison')!;
+    game.onCombatDamage([malison]);
+    check(
+      'Yuan-Ti Malison and Midnight Pathlighter venture on combat damage; Pathlighter: unblockable',
+      [game.dungeonPosition?.room, game.evasive(malison)],
+      ['Goblin Lair', true],
+    );
+  }
+  {
+    const game = board(['Cloister Gargoyle']);
+    const gargoyle = game.findPermanent('Cloister Gargoyle')!;
+    const before = [game.power(gargoyle), game.evasive(gargoyle)];
+    game.completedDungeons = 1;
+    check(
+      'Cloister Gargoyle: +3/+0 and flying after a completed dungeon',
+      [...before, game.power(gargoyle), game.evasive(gargoyle)],
+      [0, false, 3, true],
+    );
+  }
+
+  // ---------------------------------------------------------------- activated abilities
+  {
+    const game = board(['Dungeon Map']);
+    const map = game.findPermanent('Dungeon Map')!;
+    const candidate = buildCandidates(game, false).find(
+      (each) => each.cost.generic === 3 && each.score === 50,
+    )!;
+    candidate.action();
+    check(
+      'Dungeon Map: {3} and tap it to venture',
+      [game.dungeonPosition?.room, map.tapped],
+      ['Cave Entrance', true],
+    );
+  }
+  {
+    const game = board(['Rasputin, the Oneiromancer']);
+    game.rasputinDreamCounters = 3;
+    const candidate = buildCandidates(game, true).find(
+      (each) => each.score === 45,
+    )!;
+    candidate.action();
+    check(
+      'Rasputin: tap, remove a dream counter, a 2/2 Knight',
+      [namesOnBattlefield(game, 'Knight'), game.rasputinDreamCounters],
+      [1, 2],
+    );
+  }
+  {
+    const game = board(['Niko, Light of Hope', 'Veteran Dungeoneer']);
+    const candidate = buildCandidates(game, true).find(
+      (each) => each.score === 35 + 5 * 7,
+    )!;
+    candidate.action();
+    const exiledNow = game.isOnBattlefield('Veteran Dungeoneer');
+    game.endTurn();
+    check(
+      'Niko: the creature is exiled until the end step, then its trigger ventures',
+      [
+        exiledNow,
+        game.isOnBattlefield('Veteran Dungeoneer'),
+        game.dungeonPosition?.room,
+      ],
+      [false, true, 'Cave Entrance'],
+    );
+  }
+
+  return allPassed;
+}
