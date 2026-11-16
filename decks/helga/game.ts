@@ -9,7 +9,9 @@
  */
 import {
   AKROMAS_MEMORIAL,
+  ANNIHILATOR,
   CRATERHOOF,
+  DEFILER_COUNTERS_IN_A_POD,
   GORECLAW,
   HELGA,
   KOMA,
@@ -17,11 +19,14 @@ import {
   OB_NIXILIS,
   RADAGAST,
   REGAL_BEHEMOTH,
+  TERASTODON_MINIMUM_TARGET_VALUE,
   TOKENS,
+  ULAMOG_THE_DEFILER,
   VALUE,
 } from './cards';
 import { buildCandidates } from './candidates';
 import { CardDef, Cost } from '../../engine/cards/cards';
+import { Answer } from '../../engine/game/answers';
 import { Candidate, Permanent, Zone } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
@@ -30,6 +35,27 @@ import {
 } from '../../engine/game/common-permanents';
 
 type Colour = 'W' | 'U' | 'G';
+
+const EXILE_ANY_PERMANENT: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['creature', 'artifact', 'enchantment', 'planeswalker'],
+  how: 'exile',
+};
+const EXILE_ARTIFACT_OR_ENCHANTMENT: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['artifact', 'enchantment'],
+  how: 'exile',
+};
+/** The owner gets a 3/3 for each (the engine's token3; Terastodon's is a green Elephant). */
+const DESTROY_NONCREATURE_PERMANENT: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['artifact', 'enchantment', 'planeswalker'],
+  how: 'destroy',
+  gives: 'token3',
+};
 
 /** No coloured pips: an Eldrazi, an artifact creature, a colourless token. */
 function isColourless(card: CardDef): boolean {
@@ -172,7 +198,23 @@ export class HelgaGame extends CreatureDeckGame {
       case 'Apex Devastator':
         for (let i = 0; i < 4; i++) this.cascade(card.manaValue);
         break;
+      case 'Ulamog, the Ceaseless Hunger':
+        this.removeInPod(EXILE_ANY_PERMANENT, card.name, 2, 0);
+        break;
     }
+  }
+
+  /** An enters or cast trigger that removes up to `count` of the opponents' permanents (a pod only: in a goldfish
+   *  game they have none worth taking). Each one must be worth at least `minimumValue`. */
+  removeInPod(
+    answer: Answer,
+    sourceName: string,
+    count: number,
+    minimumValue: number,
+  ): void {
+    if (!this.inArena()) return;
+    for (let i = 0; i < count; i++)
+      if (!this.arena!.snipe(this, answer, sourceName, minimumValue)) return;
   }
 
   /** Cascade: from the top, the first nonland card that costs less; a permanent is cast for free, the rest
@@ -204,6 +246,17 @@ export class HelgaGame extends CreatureDeckGame {
     if (card.name === "Garruk's Uprising" && this.hasCreatureWithPower(4))
       this.draw(1);
     if (card.name === REGAL_BEHEMOTH) this.isMonarch = true;
+    if (card.name === ULAMOG_THE_DEFILER && this.inArena())
+      permanent.counters += DEFILER_COUNTERS_IN_A_POD;
+    if (card.name === 'Terastodon')
+      this.removeInPod(
+        DESTROY_NONCREATURE_PERMANENT,
+        card.name,
+        3,
+        TERASTODON_MINIMUM_TARGET_VALUE,
+      );
+    if (card.name === 'Angel of the Ruins')
+      this.removeInPod(EXILE_ARTIFACT_OR_ENCHANTMENT, card.name, 2, 0);
     if (card.name === CRATERHOOF) this.pumpThisTurn += this.creatures().length;
   }
 
@@ -282,6 +335,27 @@ export class HelgaGame extends CreatureDeckGame {
   /** Akroma's Memorial gives every creature flying. */
   override evasive(permanent: Permanent): boolean {
     return super.evasive(permanent) || this.isOnBattlefield(AKROMAS_MEMORIAL);
+  }
+
+  /** Annihilator N: when it attacks, the defending player sacrifices N permanents (before blocks). */
+  annihilatorOf(permanent: Permanent): number {
+    return permanent.card.name === ULAMOG_THE_DEFILER
+      ? permanent.counters
+      : (ANNIHILATOR[permanent.card.name] ?? 0);
+  }
+
+  override strike(
+    slot: number,
+    attackers: Permanent[],
+    powerOf?: (permanent: Permanent) => number,
+    toughnessOf?: (permanent: Permanent) => number,
+  ): { damage: number; connected: Permanent[] } {
+    for (const attacker of attackers) {
+      const sacrifices = this.annihilatorOf(attacker);
+      if (sacrifices > 0)
+        this.arena!.annihilate(this, slot, sacrifices, attacker.card.name);
+    }
+    return super.strike(slot, attackers, powerOf, toughnessOf);
   }
 
   override onCombatDamage(connected: Permanent[]): void {

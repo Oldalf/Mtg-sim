@@ -11,6 +11,7 @@ import {
   bounceEveryOpponentsCreatures,
   counterSpell,
   exchangeForStormdrake,
+  makeDefenderSacrifice,
   makeOpponentsSacrifice,
   shouldGoForKill,
   snipeBestTarget,
@@ -38,6 +39,10 @@ export function buildArena(table: PodTable): Arena {
     },
     edict: (game, nontokenOnly) =>
       table.runOffTurn(() => makeOpponentsSacrifice(table, game, nontokenOnly)),
+    annihilate: (game, slot, count, sourceName) =>
+      table.runOffTurn(() =>
+        makeDefenderSacrifice(table, game, slot, count, sourceName),
+      ),
     snipe: (game, answer, sourceName, minimumValue = 0) =>
       table.runOffTurn(() =>
         snipeBestTarget(table, game, answer, sourceName, minimumValue),

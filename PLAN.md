@@ -31,7 +31,7 @@ Rules for every task:
 |---|---|---|---|
 | 1 | G1 | **Done.** DnD: map the deck from its owner's primer | Opus 5.5, after P (the primer) |
 | 2 | G2 | The pod report again, with the engine as it is now | Haiku 5.5 |
-| 3 | G3 | Helga: annihilator and the Eldrazi's removal | Sonnet 5.5 |
+| 3 | G3 | **Done.** Helga: annihilator and the Eldrazi's removal | Sonnet 5.5 |
 | 4 | G4 | Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
 | 5 | G5 | A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
 | 6 | G6 | Initiative and dungeon rooms that were left out | Sonnet 5.5 |
@@ -88,7 +88,7 @@ Pod A: Meren, Edgar, Helga, Ardyn, Teval (5 decks, even share 20%)
 - Helga: 12.6% wins, average round 9.8, first knocked out 16.9%
 - Edgar: 10.3% wins, average round 9.0, first knocked out 31.6%
 Watch: Teval. It wins most, and 8.0% of all games end by round 8. Edgar is knocked out first most often.
-Not modelled: Teval (the owner's misplays: the numbers likely overrate it; see decks/teval/PLAN.md). Ardyn (Cabal Coffers, Nykthos and extra mana from the lands; menace; another player's graveyard). Helga (annihilator hits only for power; the removal on Ulamog, the Ceaseless Hunger and Terastodon; see G3). Edgar (Master of Dark Rites' mana; Cabal Coffers; a counterspell on the explosion ability).
+Not modelled: Teval (the owner's misplays: the numbers likely overrate it; see decks/teval/PLAN.md). Ardyn (Cabal Coffers, Nykthos and extra mana from the lands; menace; another player's graveyard). Helga (It That Betrays taking sacrifices; Ob Nixilis's removal; the Ulamogs' mills; see G3). Edgar (Master of Dark Rites' mana; Cabal Coffers; a counterspell on the explosion ability).
 
 Pod B: DnD, Thantis, Helga, Ardyn, Teval (5 decks, even share 20%)
 - Teval: 30.1% wins, average round 9.3, first knocked out 14.4%
@@ -116,6 +116,9 @@ Helga's `PLAN.md` lists annihilator and the removal that Eldrazi and Terastodon 
 1. Annihilator N: when the creature attacks, each defending player sacrifices N permanents (the least valuable first: tokens, then lands, then the cheapest permanents). Read each card's text in the Scryfall data (`data/cards.json`) first; do not go from memory. Keep it in `decks/helga/` unless a second deck needs it (rule of three).
 2. The removal on cast or enter: Ulamog, the Ceaseless Hunger (exile two target permanents when cast), Terastodon (destroy up to three noncreature permanents; their controllers get 3/3 Elephants), Kozilek, Butcher of Truth (draw four when cast). Use the pod's removal path (`podCast` / the Arena's helpers) so shields and the log work.
 3. A test for each rule in `decks/helga/tests`. Pod numbers before and after (Helga, Meren, Edgar, Ardyn, 1,000 games), written under this task. Goldfish results unchanged.
+
+Done 2026-11-16, eco mode. Built: `Arena.annihilate` (engine/pod/pod-interaction.ts: the defender sacrifices N permanents, tokens first, then the cheapest nonland permanents, then lands); Helga overrides `strike` to fire annihilator (Kozilek 4, Crusher 2, It That Betrays 2, Ulamog the Defiler X = its counters); the removal uses the existing `arena.snipe` (Ulamog, the Ceaseless Hunger exiles two permanents; Terastodon destroys up to three noncreature permanents worth 45+ and the owner gets a 3/3; Angel of the Ruins exiles up to two artifacts or enchantments). All pod-only: goldfish is unchanged. Test: engine/pod/pod-eldrazi.test.ts (run by `npm run pod -- --test`). Assumptions: Ulamog the Defiler enters with 6 counters in a pod (the exiled half of the library is not looked at); Terastodon's tokens are the engine's 3/3 Beast, not an Elephant. Left out: It That Betrays taking what is sacrificed; Ob Nixilis's destroy-tapped-creatures; the Ulamogs' mills. `verify --full`: VERIFY OK, every deck IDENTICAL.
+Pod (Helga, Meren, Edgar, Ardyn, 1,000 games, seeds the same): Helga 16.0% -> 18.9% wins (average round 9.85 -> 9.75); Meren 29.9% -> 28.3%; Edgar 28.2% -> 27.5%; Ardyn 25.9% -> 25.3%. (Lands are sacrificed last, after the cheapest nonland permanents: Pontus, 2026-11-16.)
 
 ## G4. Codie's counterspells missing from `answers.ts` (Sonnet 5.5, after P)
 

@@ -7,6 +7,7 @@ import { Config } from '../engine/game/game-types';
 import * as Pod from '../engine/pod/pod';
 import { buildPodReport, printPod } from '../engine/pod/pod-report';
 import { runPodTests } from '../engine/pod/pod.test';
+import { runEldraziTests } from '../engine/pod/pod-eldrazi.test';
 import { runControlExchangeTests } from '../engine/pod/pod-exchange.test';
 import { runForcedAttackTests } from '../engine/pod/pod-forced-attacks.test';
 import { runDungeonTests } from '../engine/game/dungeons.test';
@@ -73,6 +74,7 @@ export async function runPodCommand(
     const areDungeonsRight = runDungeonTests(decks);
     const areTreasuresRight = runTreasureTests(decks);
     const areCommonCardsRight = runCommonCardTests(decks);
+    const areEldraziRight = runEldraziTests(decks);
     process.exit(
       podTestsPassed &&
         isLogHarmless &&
@@ -86,7 +88,8 @@ export async function runPodCommand(
         isBlinkRight &&
         areDungeonsRight &&
         areTreasuresRight &&
-        areCommonCardsRight
+        areCommonCardsRight &&
+        areEldraziRight
         ? 0
         : 1,
     );

@@ -214,6 +214,14 @@ export interface Arena {
   tappedLands(game: Game<unknown>, slot: number): number;
   /** Each opponent sacrifices its least valuable creature (nontoken only: Accursed Marauder). */
   edict(game: Game<unknown>, nontoken: boolean): void;
+  /** Opponent `slot` sacrifices `count` permanents of its choice (annihilator): tokens first, then the cheapest
+   *  nonland permanents, then lands. `sourceName` names it in the log. */
+  annihilate(
+    game: Game<unknown>,
+    slot: number,
+    count: number,
+    sourceName: string,
+  ): void;
   /** Take the best legal target of the biggest threat off the battlefield (an enters-the-battlefield removal effect,
    *  named `sourceName` in the log). Only a target worth at least `minimumValue` (default 0). Returns its name, or
    *  null if there was none. */

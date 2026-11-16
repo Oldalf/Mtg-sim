@@ -19,10 +19,12 @@ Helga grows and taps for more and more mana, so huge threats (Eldrazi titans, Cr
 - **Card draw:** Garruk's Uprising, Elemental Bond, Guardian Project, Colossal Majesty, Ohran Frostfang, Kozilek, Become the Avalanche, Rishkar's Expertise (draws, then a free permanent up to mana value 5), Regal Behemoth (the monarch: a card each end step).
 - **Static:** Goreclaw and Radagast cost reductions, Stormsurge Kraken +2/+2 with Helga out, Kozilek, the Broken Reality's +3/+2 to other colourless creatures, Akroma's Memorial (every creature flies), Lightning Greaves (each new creature gets haste), Craterhoof and Become the Avalanche pump until end of turn, Koma's four Coils, Ob Nixilis's Angel when we gained life, Verdant Sun's Avatar's life.
 - **Removal and counterspells** are held in a goldfish game; the pod uses them as answers (`engine/game/answers.ts`).
+- **Annihilator** (pod only, before blocks): Kozilek, Butcher of Truth 4, Ulamog's Crusher 2, It That Betrays 2, Ulamog, the Defiler X. The defender sacrifices tokens first, then its cheapest nonland permanents, then lands. Ulamog, the Defiler enters with 6 counters in a pod (an assumption: its exile of half a library is not looked at).
+- **Removal on cast or enter** (pod only, through the pod's removal path): Ulamog, the Ceaseless Hunger exiles two permanents; Terastodon destroys up to three noncreature permanents worth 45 or more (the owner gets a 3/3 Beast, not an Elephant); Angel of the Ruins exiles up to two artifacts or enchantments.
 
 ## Not modelled
 
-Annihilator (Kozilek, Ulamog's Crusher, It That Betrays, Ulamog, the Defiler): the engine has no "defending player sacrifices" yet, so in a pod these hit only for their power. Ulamog, the Ceaseless Hunger's and Terastodon's, Angel of the Ruins's and Ob Nixilis's removal when they enter or are cast; Ulamog, the Defiler's mill and counters; Breaker of Armies's forced blocks; Myojin's counters; Selvala's mana and draws; Seedborn Muse; Wilderness Reclamation; Omnath; Moldgraf Monstrosity's return; Ruin Processor; Wandering Archaic; Serra's Emissary's protection; Explore's extra land; the monarch being taken.
+It That Betrays taking what the opponents sacrifice; Ob Nixilis's destroy-all-tapped-creatures; Ulamog, the Ceaseless Hunger's attack mill and Ulamog, the Defiler's cast mill; Breaker of Armies's forced blocks; Myojin's counters; Selvala's mana and draws; Seedborn Muse; Wilderness Reclamation; Omnath; Moldgraf Monstrosity's return; Ruin Processor; Wandering Archaic; Serra's Emissary's protection; Explore's extra land; the monarch being taken.
 
 ## First numbers (2026-11-15)
 

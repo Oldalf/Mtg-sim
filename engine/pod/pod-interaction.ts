@@ -251,6 +251,46 @@ export function makeOpponentsSacrifice(
   }
 }
 
+/** How much a defender minds losing a permanent: a token least, then its nonland permanents by value, then a land (losing lands
+ *  hurts most), a commander last. Annihilator makes it sacrifice the lowest first. */
+function sacrificeWorth(defender: Game<unknown>, permanent: Permanent): number {
+  if (permanent.token) return 0;
+  if (permanent.land !== null) return 3000;
+  return (
+    1000 +
+    defender.cardValue(permanent.card) +
+    (defender.isCommander(permanent) ? 5000 : 0)
+  );
+}
+
+/** Annihilator: the defending player in `slot` sacrifices `count` permanents, the ones it minds least first. */
+export function makeDefenderSacrifice(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+  count: number,
+  sourceName: string,
+): void {
+  const defenderPlayer = table.opponentsOf[table.playerOf(game)][slot];
+  const defender = table.games[defenderPlayer];
+  const sacrificed = defender.battlefield
+    .slice()
+    .sort(
+      (first, second) =>
+        sacrificeWorth(defender, first) - sacrificeWorth(defender, second),
+    )
+    .slice(0, count);
+  if (!sacrificed.length) return;
+  table.sayAs(
+    defenderPlayer,
+    `${sourceName}: sacrifices ${sacrificed.map((permanent) => permanent.card.name).join(', ')}`,
+    'note',
+    [sourceName, ...sacrificed.map((permanent) => permanent.card.name)],
+  );
+  for (const permanent of sacrificed)
+    defender.podRemove(permanent, 'sacrifice');
+}
+
 /**
  * After its own turn, a player uses removal on the biggest threat and a board wipe when it is far behind on board.
  * An instant that could stop a win stays in hand unless there is a second answer.
