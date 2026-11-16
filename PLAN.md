@@ -1,22 +1,8 @@
-﻿# Plan: step 8, the friends' decks for game night, then Gale
+﻿# Plan: step 9, after game night
 
-Written 2026-11-15. Step 7's plan (mana as it really is, B6, C1, D1, E1) is in git (`PLAN.md` at commit `ed1a598`).
+Written 2026-11-16. Step 8's plan (the engine rules for many decks, the friends' decks, Gale's kill search, the maximum hand size audit) is done and is in git: `PLAN.md` at commit `c88cda4`. Its finished tasks are not repeated here.
 
-Pontus plays a real pod with friends on 2026-11-16 and wants to simulate it before then. The friends' lists are in `decks/<folder>/decklist.txt`, as given on 2026-11-15. The table plays bracket 2-3 (Pontus, 2026-11-15).
-
-| Friend | Deck (folder) | Commander | Bracket | How it wins (Pontus's words, short) |
-|---|---|---|---|---|
-| William | Edgar (`edgar`) | Edgar Markov | 2-3 | modelled already |
-| William | DnD (`dnd`) | Hama Pashar, Ruin Seeker | 2-3 | blinks enter / leave triggers, and with them ventures into the dungeon again and again (mostly Lost Mine of Phandelver: scry, tokens, pings, cards; also the Undercity through the initiative) |
-| Friend 2 | Helga (`helga`) | Helga, Skittish Seer | 2-3 | Helga grows and taps for more and more mana, so huge threats (Eldrazi titans, Craterhoof) come turns early |
-| Friend 2 | Thantis (`thantis`) | Thantis, the Warweaver | 2-3 | forced combat: every creature must attack each combat. Taurean Mauler grows on everyone's spells |
-| Friend 3 | Azula (`azula`) | Fire Lord Azula | 4 | value engines, free casts while Azula is out, spells during combat while she attacks, many infinite mana combos |
-| Friend 3 | Ardyn (`ardyn`) | Ardyn, the Usurper | 3 | Demon tribal: extra enter triggers (Roaming Throne), copied abilities, many value effects. Friend 3 mostly plays bracket 2; this deck is his exception |
-| Friend 4 | Teval (`teval`) | Teval, the Balanced Scale | strong 3 | ramps with the commander and self-mill; wins with Rise of the Dark Realms or a value engine that makes many Zombies that attack. The owner pilots it poorly |
-
-**The pod for game night** (Pontus, 2026-11-15, assuming the friends bring their simplest decks): **Meren, Edgar, Helga, Ardyn, Teval.** So Helga, Ardyn and Teval come first; Thantis, DnD and Azula come after game night. Azula may not be played in the pod at all (Pontus, 2026-11-16), so B7 is the last task (it now lives in `decks/azula/PLAN.md`).
-
-The new decks are **pod-only**: no goldfish tuning, no mulligan study, no swap tests, no primer, unless the owner asks (Pontus, 2026-11-15). Before so many decks arrive, the engine should take over what decks keep writing for themselves, so a new deck is mostly data. The lists also need mechanics the engine has none of yet (doubled enter triggers, forced attacks and goad, triggers on an opponent's spell, blink, dungeons and the initiative): tasks M1 to M5.
+The friends' decks (Helga, Ardyn, Teval, Thantis, DnD, Azula) are **pod-only**: no goldfish tuning, no mulligan study, no swap tests, no primer of ours, unless the owner asks (Pontus, 2026-11-15). The table plays bracket 2-3. Each deck's own `PLAN.md` says how it wins and what it does not model.
 
 ## How to read this plan
 
@@ -32,339 +18,130 @@ Each task names a model. Give it to that model or a stronger one.
 Rules for every task:
 
 - Read `CLAUDE.md` first (rule 0 names, KISS). For the engine also `ENGINE.md`, for the page also `app/web/CLAUDE.md`, for a new deck `/add-deck`.
-- One task is one commit, straight on `main`. `npm run format`, then `npm run verify` must end with VERIFY OK, except for Gale's known kill misses (below).
+- One task is one commit, straight on `main`. `npm run format`, then `npm run verify` must end with VERIFY OK.
 - Ask Pontus eco or full power before any task that runs simulations (`verify` with regress checks counts).
 - Before changing pod code, save a fixed-seed pod run (`npm run pod -- gale meren samfrodo aesi edgar -n 200 --no-log`) and compare it afterwards; `--regress check` does not cover pod mode.
 - An engine change must leave every existing deck IDENTICAL (goldfish and the pod run). A task that would change them stops and asks.
 - A task that finds its steps do not fit the code stops and says so. It does not improvise a bigger change.
-- When a task is done, add one line under it here: what was built and anything the next task must know.
-
-**Gale's kill misses are gone** (task E1, done 2026-11-15): `gale --test` plays 300 seeds with 0 misses and `npm run verify` ends VERIFY OK. Codie's baseline was re-recorded after the Cultivate fix (see A2). `npm run verify` runs its checks in parallel (`--jobs N`, 4 by default, 2 with `--eco`). `KILL_MISS_LOG_SEED=24 npm run sim -- gale --test` prints that seed's whole log.
+- When a task is done, add one line under it here: what was built and anything the next task must know. When the whole plan is done, it is cleared and a new one written.
 
 ## Order
 
 | # | Task | What | Model |
 |---|---|---|---|
-| | | **Before game night** | |
-| 1 | P0 | The lists, the commanders and the pod (done) | Pontus |
-| 2 | A1 | What decks write for themselves that the engine should own (done) | Opus 5.5 |
-| 3 | A2 | Move the shared card rules into the engine (done) | Opus 5.5 / Sonnet 5.5 |
-| 4 | A3 | Register a deck in one place (done) | Sonnet 5.5 |
-| 5 | A4 | A pod-only deck: the light path in `/add-deck` (done) | Opus 5.5 |
-| 6 | M1 | Doubled enter triggers (Roaming Throne) (done) | Opus 5.5 |
-| 7 | B1 | Helga (done) | Sonnet 5.5 |
-| 8 | B2 | Ardyn (done) | Sonnet 5.5 |
-| 9 | B3 | Teval (done) | Sonnet 5.5 |
-| 10 | C1 | The game-night pod, a report (done) | Sonnet 5.5 |
-| | | **After game night** | |
-| 11 | M2 | Forced attacks and goad in pod combat (done) | Opus 5.5 |
-| 12 | M3 | Triggers on another player's spell (done) | Sonnet 5.5 |
-| 13 | M4 | Blink (done) | Opus 5.5 |
-| 14 | M5 | Dungeons, venture and the initiative (done) | Opus 5.5 |
-| 15 | M6 | Treasure in the engine (done) | Opus 5.5 |
-| 16 | B4 | Thantis (done) | Sonnet 5.5 |
-| 17 | B5 | DnD (done) | Opus 5.5 |
-| 18 | B6 | Azula (done) | Opus 5.5, after P |
-| 19 | Z1 (done) | Step 7's loose ends | Sonnet 5.5 |
-| 20 | D1 | Pontus's real lists (Gale, Aesi) become `decklist.txt` (done: same cards, bugs fixed) | Sonnet 5.5, after P |
-| 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
-| 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) (done: none needed it; search copies moved to the engine) | Opus 5.5 |
-| 23 | F1 (done) | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
-| 24 | F2 (done) | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
-| 25 | F3 (done) | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
-| 26 | B7 (moved) | Azula plays its combos like a pilot: now the "Next task B7" section of `decks/azula/PLAN.md` | Opus 5.5, last; the deck may not be in the pod |
+| 1 | G1 | DnD: map the deck from its owner's primer | Opus 5.5, after P (the primer) |
+| 2 | G2 | The pod report again, with the engine as it is now | Haiku 5.5 |
+| 3 | G3 | Helga: annihilator and the Eldrazi's removal | Sonnet 5.5 |
+| 4 | G4 | Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
+| 5 | G5 | A blink in an opponent's turn returns at that player's end step | Sonnet 5.5 |
+| 6 | G6 | Initiative and dungeon rooms that were left out | Sonnet 5.5 |
+| 7 | G7 | Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
+| 8 | G8 | Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
+| 9 | G9 | Black tutors move to the engine | Sonnet 5.5 |
+| 10 | G10 | Aesi's and Sam & Frodo's land search use the engine's | Sonnet 5.5 |
+| 11 | G11 | Edgar, Meren and Sam & Frodo move onto `CreatureDeckGame` | Opus 5.5 (the first), Sonnet 5.5 (the others) |
+| 12 | G12 | The card pop-up on a real phone | P (a check by hand) |
+| 13 | G13 | Azula plays its combos like a pilot (written in `decks/azula/PLAN.md`, "Next task B7") | Opus 5.5, last; the deck may not be in the pod |
 
-**If time runs short before game night:** A2 moves only what Helga, Ardyn and Teval need, A3 waits, and a deck can go to the pod with fewer card rules, as long as its `PLAN.md` says what it does not model (C1 then says it next to its numbers).
+Order: G1 first, because DnD will see real pods soon (Pontus, 2026-11-16). G2 to G7 make the pod numbers more true, so they come before the clean-ups (G8 to G11). G13 is last because Azula may not be played in the pod at all.
 
 ---
 
-## P0. What Pontus gives (done 2026-11-15)
+## G1. DnD: map the deck from its owner's primer (Opus 5.5, after P)
 
-The lists, commanders, brackets and the game-night pod are in the tables at the top. Azula's combos and bracket are asked for at B6.
+Hama Pashar, Ruin Seeker (`decks/dnd`), William's deck. Its owner wrote a primer for it and gave it to Pontus; the deck will be played in real pods soon, so this is the most important task. The deck was built from the list and a short description (blink enter and leave triggers, ventures into Lost Mine of Phandelver, the Undercity through the initiative). The primer says what the deck is really trying to do.
 
----
+**Needs from Pontus:** the primer as a text file in `decks/dnd/` (for example `decks/dnd/primer.txt`, in the owner's own words).
 
-## A. The engine before many decks
+1. Read the primer and `decks/dnd/PLAN.md` (how the deck wins, what it models, what it does not). List what the primer says that the deck does not do yet: the game plan by turn, the key cards and why, the combos and engines, what to mulligan, what to hold, what to protect, what it fears.
+2. Write that list into `decks/dnd/PLAN.md` under "From the primer", card by card where the primer names a card: modelled / not modelled / modelled differently.
+3. Fix what the primer shows is wrong or missing, biggest effect first, each with a test in `decks/dnd/tests/dnd.test.ts`: the AI's priorities (`VALUE`, `HOLD`, `candidates.ts`), the blink targets (`BLINK_VALUE`), any combo or loop the primer names (a declared win, like Gale's kill line or Azula's `combos.ts`), the opening hand (`mulligan.ts`; see the `/add-deck` skill). Midnight Pathlighter counts as unblockable, which overrates the deck: make it right.
+4. If the primer needs an engine rule the engine lacks, add it to `engine/` with a test (every other deck IDENTICAL) or, if it is big, write it as a new task here and stop.
+5. Numbers before and after (goldfish 2,000 games; pod with Meren, Edgar and Helga 1,000 games) in `decks/dnd/PLAN.md`. Show Pontus what changed.
+6. Done when `npm run sim -- dnd --test` exits 0, a `--trace` game and a pod `--trace` game look like what the primer describes, and `npm run verify` ends VERIFY OK.
 
-### A1. What should be the engine's (Opus 5.5)
+## G2. The pod report again (Haiku 5.5)
 
-Read the seven decks (`gale`, `meren`, `samfrodo`, `aesi`, `mike`, `codie`, `edgar`) and list what more than one of them writes for itself that holds for any deck. Likely places to look:
+The game-night report of 2026-11-15 (Teval 31.4%, Meren 23.5%, Ardyn 22.7%, Helga 12.0%, Edgar 10.3%) was run before forced attacks, opponent-cast triggers, blink, Treasure in the engine and the hand size fixes. Helga's numbers in particular changed (her Ulamog's Crusher now attacks every combat).
 
-- **Triggers:** enter-the-battlefield token makers, death drains (Blood Artist, Zulaport Cutthroat kind), "whenever a creature dies" draws, Treasure / Food / Clue makers (`meren/triggers.ts`, `samfrodo/triggers.ts`, `edgar/triggers.ts`).
-- **Static effects:** anthems and lords, keyword grants (`powerBonus` / `toughnessBonus` overrides).
-- **Activated abilities:** sacrifice outlets (free, {1}, {2}, mana-making altars), Skullclamp.
-- **Mana:** Treasures and Spawn spent last, the `isTestingRitual` workaround (edgar).
-- **Cards:** tutors, card draw, removal and ramp that several lists play (`card-facts.ts` already has some), and token definitions.
-- **Pod:** `podClose()`, `blockValue()` and `evasion()` rules that repeat.
+1. Ask Pontus eco or full power. Run `npm run pod -- meren edgar helga ardyn teval -n 1000` (on this machine: `node --enable-source-maps dist/sim.js pod ...`, see the running-node memory). Save the reports in the scratchpad.
+2. Also run the pods Pontus is likely to play next: `dnd thantis helga ardyn teval` and `azula meren edgar helga`, 1,000 games each.
+3. Write a short table per pod under this task: each deck's win rate, average round, who goes out first, and which deck the others should watch. Plain text a person can read on a phone. Next to each friend's deck, say what is not modelled (copy it from its `PLAN.md`).
+4. Do not change code.
 
-Write the list into this task: for each item, which decks have it, where, and whether moving it is a plain move (same behaviour) or would change a deck's results. Then also what a deck must still write itself (its win check, its combo, its AI priorities). Also say how many cards in Helga's, Ardyn's and Teval's lists are already handled by the engine and how many would be after A2.
+## G3. Helga: annihilator and the Eldrazi's removal (Sonnet 5.5)
 
-No code in this task. Pontus reads the list and picks what A2 moves.
+Helga's `PLAN.md` lists annihilator and the removal that Eldrazi and Terastodon do as not modelled. Her list plays Kozilek, Butcher of Truth, Ulamog, the Defiler, Ulamog's Crusher, Ulamog, the Ceaseless Hunger and Terastodon. In a pod these decide games and make Helga look weaker than she is.
 
-**Found (2026-11-15).** What the engine already owns: lands (`LANDS`, `land-text.ts`), mana rocks, mana creatures, rituals, cost reducers, counterspells and removal for the pod (`answers.ts`), some draw spells and blue tutors. Every other card rule is in a deck. Of the nonland cards, the engine knows about 12 of Helga's, 4 of Ardyn's and 4 of Teval's; the rest would be cast as plain bodies or plain spells (a creature keeps its power, toughness and Scryfall keywords).
+1. Annihilator N: when the creature attacks, each defending player sacrifices N permanents (the least valuable first: tokens, then lands, then the cheapest permanents). Read each card's text in the Scryfall data (`data/cards.json`) first; do not go from memory. Keep it in `decks/helga/` unless a second deck needs it (rule of three).
+2. The removal on cast or enter: Ulamog, the Ceaseless Hunger (exile two target permanents when cast), Terastodon (destroy up to three noncreature permanents; their controllers get 3/3 Elephants), Kozilek, Butcher of Truth (draw four when cast). Use the pod's removal path (`podCast` / the Arena's helpers) so shields and the log work.
+3. A test for each rule in `decks/helga/tests`. Pod numbers before and after (Helga, Meren, Edgar, Ardyn, 1,000 games), written under this task. Goldfish results unchanged.
 
-What more than one deck writes for itself, and whether it should move:
+## G4. Codie's counterspells missing from `answers.ts` (Sonnet 5.5, after P)
 
-| # | What | Written in | New lists that need it | Move? |
-|---|---|---|---|---|
-| 1 | **The candidate list skeleton**: the `AddCandidate` type, cast the commander, go through the hand once per name, skip `HOLD`, cast the rest by `VALUE` | all six AI decks (`*/candidates.ts`) | all | Yes, as an engine helper the new decks use. The old decks keep theirs for now: each has small score differences, so switching them is its own IDENTICAL check, after game night. |
-| 2 | **Land-search ramp** (Rampant Growth, Farseek, Cultivate, Nature's Lore, Three Visits, Explosive Vegetation...) | `aesi/candidates.ts`, `samfrodo/game.ts`, `codie/cards.ts` (a data table: lands, tapped, which kind) | Helga, Teval | Yes: codie's table goes to `card-facts.ts`, one engine function resolves it. The decks keep their own scores (Aesi wants lands in hand for its extra drops). A plain move. |
-| 3 | **Reanimation**: `reanimate()` and the spells (Animate Dead, Necromancy, Reanimate, Victimize, Unearth) | `meren/game.ts`, `meren/actions.ts` | Ardyn, Teval (and Thantis later) | Yes: `reanimate()` and the spells to the engine; Meren calls them. A plain move. |
-| 4 | **Simple value cards**: Phyrexian Arena (upkeep), Solemn Simulacrum, Sakura-Tribe Elder, Wood Elves, Eternal and Timeless Witness | `meren` (all), `edgar` (Arena), `aesi` (Elder, Wood Elves) | Helga (Solemn, Elder, Explore), Ardyn (Arena, Solemn), Teval (Elder, Witnesses) | Yes, as engine rules for `onEnter` / `onDies` / upkeep that a deck gets unless it overrides them. A plain move, but each deck's choice of when to cast them stays in the deck. |
-| 5 | Black tutors (Demonic, Vampiric Tutor) and what to fetch | `codie`; `tutorTarget` in gale, meren, edgar | Teval, Ardyn (Demonic Counsel) | The resolution only (search the library for `tutorTarget()`); what to fetch stays per deck. Small. |
-| 6 | Death drains (Blood Artist, Marionette Apprentice, Susurian Voidborn) | `edgar/game.ts`, `samfrodo/game.ts` | none of the three | No: two decks, and Sam & Frodo's count artifacts too (Food). Revisit with Thantis. |
-| 7 | Sacrifice outlets (Viscera Seer, altars) | `edgar/actions.ts`, `meren/cards.ts` | none of the three | No, for the same reason. |
-| 8 | Treasures spent last | `codie/game.ts`, `edgar/game.ts` | none of the three | No, not yet. |
+Codie's `BACKUP` table (`decks/codie/cards.ts`) lists these cards, all in Codie's decklist, that `engine/game/answers.ts` does not know: **Silence, Orim's Chant, Daze, Bilbo's Gambit, Autumn's Veil, Narset's Reversal**. In a pod Codie holds them for its combo but never uses them as answers, and no other deck can either.
 
-What stays in each deck: its win check, its combo or kill search (Gale, Aesi's loops, Codie's solver), its `VALUE` and `HOLD` (the AI's taste), its tribe's lords and anthems, its pod hooks (`podClose`, `winAttempt`: each one differs).
+Pontus decides which of them become answers (the rest stay `BACKUP`-only). Read each card's text in the Scryfall data first. They differ: Silence and Orim's Chant stop a player casting spells this turn; Daze counters unless the caster pays {1} (free by returning an Island); Bilbo's Gambit and Autumn's Veil protect our own spells or permanents; Narset's Reversal copies an instant or sorcery and returns it to its owner's hand.
 
-What Helga, Ardyn and Teval must still write themselves: Helga's counters and mana ability, the Eldrazi cast triggers and annihilator, Craterhoof. Ardyn himself, the Demons' enter triggers, Exquisite Blood, Roaming Throne (M1). Teval's mill and Zombie triggers, Doubling Season and Parallel Lives, Rise of the Dark Realms, The Scarab God.
+Add each chosen one with a test in `engine/pod/pod.test.ts`. Codie's pod games change: numbers before and after (Codie, Meren, Edgar, Helga, 1,000 games). Goldfish IDENTICAL.
 
-**Recommendation for game night:** A2 moves 1 to 4 (four commits, 5 if time allows); 6 to 8 wait for Thantis.
+## G5. A blink in an opponent's turn returns at that player's end step (Sonnet 5.5)
 
-**Pontus picked (2026-11-15):** 2, 3 and 4, and 5 if time allows. 1 stays in the decks: a deck decides what to do, the engine tells it what it can do (the direction in `ROADMAP.md`). After A2 the engine would know about 18 of Helga's, 12 of Ardyn's and 15 of Teval's nonland cards; the rest are mostly creatures the deck gives a `VALUE` and, for the ones that matter, a trigger.
+The blink (`engine/game/blink.ts`) exiles "until the next end step" and returns the card at the start of our own `endTurn`. If we blink in an opponent's turn (Ephemerate or Ghostly Flicker at instant speed), the card should return at the end of that opponent's turn.
 
-### A2. Move the shared card rules into the engine (Opus 5.5 for the shape, Sonnet 5.5 for the moves, after P)
+1. `GameCore.cardsReturningAtEndStep` holds the cards. Record whose end step each one waits for, and let the pod return them at the end of each player's turn.
+2. A test in `engine/game/blink.test.ts`: a card blinked in an opponent's turn is back after that turn's end step, not before.
+3. Every deck IDENTICAL; pod run unchanged unless DnD blinks in an opponent's turn (then show DnD's numbers).
 
-What Pontus picked from A1. Each card rule moves to `engine/` (`card-facts.ts` for the data, a new topic file in `engine/game/` for the behaviour: `game-core.ts` is already 2,628 lines and must not grow). Each deck that had it uses the engine's version. Every deck stays IDENTICAL (goldfish `--regress check` and the fixed-seed pod run); a difference means the move is wrong, or the deck's version had a deck-specific twist that must stay in the deck.
+## G6. Initiative and dungeon rooms that were left out (Sonnet 5.5)
 
-**Built (2026-11-15).** Three engine files, each a card fact table in `card-facts.ts` plus the code that plays it; the choice stays with the deck through a hook:
-- `engine/game/land-search.ts`: `LAND_SEARCH` (Codie's table, moved), `resolveLandSearch` from `GameCore.resolve`, `fetchLand`; the deck picks with `chooseLandToFetch` (default: a land of the colour we have fewest lands for). Codie uses it with its own chooser. Aesi and Sam & Frodo keep their own versions for now (their fetch triggers landfall at another moment; moving them is its own IDENTICAL check).
-- `engine/game/reanimation.ts`: `REANIMATION_SPELLS` (Persist, Unearth, Victimize, Reanimate, Dread Return, Exhume, Animate Dead, Necromancy, Rise of the Dark Realms; our graveyard only), `GameCore.reanimate` and `bestCreatureInGraveyard` (moved from Meren); the deck picks with `reanimationValue`. Gale keeps its own Unearth (it picks by its kill roles and triggers Syr Konrad).
-- `engine/game/common-permanents.ts`: Solemn Simulacrum, Wood Elves, Eternal and Timeless Witness, Phyrexian Arena, run from the engine's default `onEnter` / `onDies` / `upkeep`; Meren and Edgar call them from their own hooks at the same place as before (`returnToHandValue` picks the Witness's card).
-- Every deck IDENTICAL and the pod run unchanged, except **Codie: its Cultivate fetched one land, not two** (its table said `landCount: 1`). Same seeds, 3,000 games: win by turn 12 62.7% before and after, average turn 8.99 -> 8.94. Pontus (2026-11-15): keep Codie's old baseline for now (Codie isn't in this pod), so `codie --regress check` stays DIFFERENT until it is re-recorded.
-- Left for after game night: item 5 (black tutors: Codie and Teval each resolve Demonic and Vampiric Tutor themselves now, so a third deck moves them to the engine); Aesi's and Sam & Frodo's land search onto the engine's; the old creature decks (Edgar, Meren, Sam & Frodo) onto `CreatureDeckGame`. Each must be IDENTICAL.
+`engine/game/dungeons.ts` leaves out: the initiative passing on when its holder leaves the game; rooms that only hit an opponent's creature (Twisted Caverns, Fungi Cavern, Arena's goad); Runestone Caverns, which counts as drawing the two cards.
 
-### A3. Register a deck in one place (Sonnet 5.5)
+1. Initiative: read the rule text (comprehensive rules 725) for what happens when the holder leaves the game, then build it.
+2. The three rooms use the pod's removal and goad helpers (`arena.goadCreatures`). Only in a pod: a goldfish game has no one to target.
+3. Tests in `engine/game/dungeons.test.ts`. Every deck IDENTICAL except DnD's pod numbers (show them).
 
-Today a deck is named in five places in two files: `DECKS`, `TESTS` and `REGRESS` in `decks/index.ts` (plus its imports), and `DECKS_WITH_BASELINE` and `POD_DECKS` in `scripts/verify.mjs`. With six new decks, one missed line makes `verify` skip a deck silently.
+## G7. Spells cast through a deck's own code announce themselves (Sonnet 5.5)
 
-- Each deck's `index.ts` exports its tests and regress lists on its `deck` object (`tests`, `regress`), plus whether it is pod-only.
-- `decks/index.ts` keeps one list, `DECKS`; `TESTS` and `REGRESS` are built from it.
-- `verify.mjs` asks the simulator for the deck names (a small command such as `node dist/sim.js --list-decks --json`) instead of keeping its own arrays. `POD_DECKS` stays a fixed list in `verify.mjs`: it is the pod baseline and changes only on purpose.
-- Pod-only decks: `--test` yes, no goldfish baseline (`--regress`), not in the fixed-seed pod run unless Pontus asks.
-- Update `/add-deck` section 4 to the one place. Results IDENTICAL.
+`podAnnounceCast(card)` tells the other players a spell was cast, so Taurean Mauler and Rhystic Study see it. Spells that a deck casts through its own code (Gale's counter-your-own-spell line, Codie's finishers) don't announce. Mystic Remora (cumulative upkeep) and Esper Sentinel are not modelled.
 
-**Built (2026-11-15).** `Deck.tests` and `Deck.regress` on each deck's `deck` object; `decks/index.ts` has only `DECKS`; `sim.ts` reads them from the deck and has `--list-decks` (JSON: the decks with a baseline, and all); `verify.mjs` builds first, then asks it. `/add-deck` section 4, `README.md` and `ENGINE.md` say so.
+1. List every place a spell is cast without `podAnnounceCast` (search the engine and the decks for casts that bypass `castInstantOrSorcery` and `castPerm`). Write the list under this task. Make each call it, or say why not.
+2. Mystic Remora and Esper Sentinel: only if a `decklist.txt` plays them (check first; if none does, write "no deck plays them" and skip). Otherwise add them to `engine/game/opponent-cast-triggers.ts` with a test.
+3. Pod run before and after (the fixed-seed run in the rules above): decks that play Rhystic Study or Taurean Mauler may change; show Pontus the numbers.
 
-### A4. The light path for a pod-only deck (Opus 5.5)
+## G8. Finale of Revelation and Aesi's hand size use the engine's rule (Haiku 5.5)
 
-A section in `/add-deck` (`.claude/skills/add-deck/SKILL.md`) for a pod-only deck, written so Sonnet 5.5 can follow it alone:
+1. Aesi's `endTurn()` (`decks/aesi/game.ts`) skips the discard to seven with its own check (Reliquary Tower, Graceful Adept). Replace that check with an override of `hasNoMaximumHandSize()` (Graceful Adept, then `super`) and call the engine's check. Aesi's `--regress check` must be IDENTICAL.
+2. Teval plays Finale of Revelation: with X of 10 or more it gives no maximum hand size for the rest of the game. Read how Teval casts it (`decks/teval`). If it can reach X of 10 or more, set a flag when it resolves (as Azula does with `hasSeaGateRestorationResolved`) and return it from Teval's `hasNoMaximumHandSize()`. If Teval never casts it for 10 or more, write that under this task and change nothing.
+3. A test for each (`decks/aesi` and `decks/teval` tests).
 
-- What to ask (the list, the commander, how it wins, the bracket; no logs, no goals, no swaps).
-- Which existing deck to copy from, now that A2 moved the shared rules.
-- The minimum: `index.ts`, `config.ts`, `cards.ts` (its roles, `VALUE`, `HOLD`), `game.ts` (the win check, the deck's few own rules), a short `candidates.ts`, the default mulligan, tests for each card rule written, `PLAN.md` with the sections "How the deck wins", "Simulation rules", "Not modelled" and the pod numbers.
-- Its interaction cards checked against `engine/game/answers.ts` (new ones added there with a test).
-- Done when: `--test` passes, a `--trace` game and a pod `--trace` game look like real play, `npm run pod -- <deck> goldfish goldfish goldfish --set pod_race=true` gives a sane kill turn, and it shows in the app.
+## G9. Black tutors move to the engine (Sonnet 5.5)
 
-Try it on the first B deck and fix the section from what went wrong.
+Codie and Teval each resolve Demonic Tutor and Vampiric Tutor themselves, and Ardyn plays Demonic Counsel. Three decks: the rule of three says it goes into the engine.
 
-**Built (2026-11-15).** `/add-deck` section 10, "A pod-only deck (the light path)", and `CreatureDeckGame` (`engine/game/creature-deck.ts`): the win, the two numbers, combat, card values and the planner score that Edgar, Meren and Sam & Frodo each wrote, for the light decks to extend (the old decks keep theirs for now). To be checked on Helga (B1).
+1. One engine function searches the library for what the deck's `tutorTarget()` names (Gale, Meren and Edgar already have `tutorTarget`). Demonic Tutor puts the card into hand; Vampiric Tutor puts it on top and costs 2 life.
+2. Codie, Teval and Ardyn drop their own code and call it; what to fetch stays per deck.
+3. Codie's `--regress check` must be IDENTICAL, and so must the fixed-seed pod run; Teval's and Ardyn's tests pass. A difference means the deck's version had a twist: keep the twist in the deck.
 
----
+## G10. Aesi's and Sam & Frodo's land search use the engine's (Sonnet 5.5)
 
-## M. Mechanics the new lists need
+`engine/game/land-search.ts` (`LAND_SEARCH`, `resolveLandSearch`) is used by Codie. Aesi (`candidates.ts`) and Sam & Frodo (`game.ts`) keep their own versions because their fetch triggers landfall at another moment than the engine's.
 
-Each is engine code with tests in `engine/pod/pod.test.ts` or a new test file, and leaves every existing deck IDENTICAL. Check the card text in the Scryfall bulk data, not from memory.
+1. For each deck: find what differs (when landfall fires, which land is chosen, tapped or untapped) and make the engine's function do it the same way (a parameter or a hook the deck sets), or find that it can't and write why.
+2. Move the deck onto it. `--regress check` must be IDENTICAL for both. A difference means the move changed the behaviour: undo it and write what differs.
 
-### M1. Doubled enter triggers (Opus 5.5)
+## G11. Edgar, Meren and Sam & Frodo move onto `CreatureDeckGame` (Opus 5.5 for the first, Sonnet 5.5 for the others)
 
-For Ardyn (Roaming Throne) before game night, and later DnD (Panharmonicon). An effect that doubles enter triggers makes the deck's `onEnter` for that permanent run one more time (Panharmonicon: artifacts and creatures; Roaming Throne: creatures of the chosen type). Teval's Doubling Season and Parallel Lives double tokens and counters, not triggers: they stay in Teval's folder unless A1 finds them elsewhere too. Look first at how `enter` and `onEnter` work in `game-core.ts`; the deck still writes its own card's trigger.
+`engine/game/creature-deck.ts` (`CreatureDeckGame`) has the win check, the two numbers, combat, card values and the planner score that Edgar, Meren and Sam & Frodo each wrote for themselves. Helga, Ardyn, Teval, Thantis, DnD and Azula already use it. The three old decks keep their own copies, with small differences.
 
-**Built (2026-11-15).** `engine/game/trigger-doublers.ts`: `triggerCount` (Roaming Throne, with the type the deck names through `GameCore.roamingThroneType`) and `enterTriggerCount` (plus Panharmonicon); the deck runs its trigger that many times. `hasCreatureType` in `engine/cards/cards.ts` reads a card's type line (Edgar's `isVampire` does the same and could use it later). Tested in Ardyn's tests.
+1. One deck at a time, starting with Meren (the simplest). List what its game class writes that `CreatureDeckGame` already does, and what differs by a number or a rule. A number becomes a parameter of the engine's version; a rule stays in the deck as an override.
+2. Move the deck. `--regress check` and the fixed-seed pod run must be IDENTICAL after each deck. A deck that cannot be IDENTICAL stays as it is, with the reason written here.
+3. One commit per deck.
 
-### M2. Forced attacks and goad (Opus 5.5)
+## G12. The card pop-up on a real phone (P)
 
-For Thantis ("each creature attacks each combat if able") and, later, Pontus's and Friend 2's goad decks. The two must stay different (Pontus, 2026-11-15):
+The pop-up (`card-zoom`) is tested in jsdom at 390 px with touch (tap opens, a second tap or a tap elsewhere closes, another card takes over), never on a real phone. Pontus: open the page on a phone, tap a card, tap away, tap another card, and write here what happened. A problem becomes a new task.
 
-- **Must attack:** the creature attacks each combat if able, any player its controller picks.
-- **Goaded** (rule 701.15): it attacks each combat if able, and attacks a player other than the one who goaded it if able. It attacks the goader only when no other player can be attacked. Goad lasts until the goader's next turn.
+## G13. Azula plays its combos like a pilot (Opus 5.5, last)
 
-Both go on the pod's attacker choice (`engine/pod/pod-combat.ts`), so every deck's creatures obey them without the deck knowing. A forced attacker's controller still picks the defender (by the threat rule) within what is allowed. Tests: a goaded creature with two possible defenders never attacks the goader; with only the goader left, it attacks the goader; a "must attack" creature attacks even when the deck's own rule would hold it back.
-
-**Built (2026-11-15).** Must attack is read from the card text (`attacksEachCombat`: "This creature / Ruric Thar attacks each combat if able"; `makesAllCreaturesAttack`: Thantis's "All creatures attack each combat if able", on any living player's battlefield). Goad is pod state (`PodTable.goaders`, `goad`), ended at the goader's next turn or when it leaves; a deck goads through `arena.goadCreatures(game, slot)` (Geode Rager; Kardur can use it too). `Game.arenaCombat` keeps a goaded creature off its goaders while someone else can be attacked, never keeps a forced creature home as a guard, and adds a forced creature the plan left home to a group it may join (or the opponent the threat rule picks). After the deck's combat, `attackWithForcedCreatures` sends the forced creatures the deck's own combat didn't (Gale's mana creatures, a deck that doesn't attack): a second attack, so blockers that already blocked can't block again and attack triggers fire again. Planner copies don't foresee forced attacks. Tests: `engine/pod/pod-forced-attacks.test.ts` (in `npm run pod -- --test`). The decks in `verify`'s pod run have no forced attackers; Helga's Ulamog's Crusher now attacks each combat in a pod, so her pod numbers change (the game-night run above was before this).
-
-### M3. Triggers on another player's spell (Sonnet 5.5)
-
-Taurean Mauler ("whenever an opponent casts a spell, you may put a +1/+1 counter"; its size matters in a pod, Pontus 2026-11-15), Rhystic Study, and the like. The pod tells each game when another player casts a spell (a hook such as `onOpponentCast(card)`); in a goldfish game the opponents cast nothing, so nothing changes there.
-
-**Built (2026-11-15).** `engine/game/opponent-cast-triggers.ts`: Taurean Mauler (+1/+1 counter) and Rhystic Study (draw unless the caster pays {1}: it pays when it has a mana left, tapping it). Every cast calls `podAnnounceCast(card)` (`castInstantOrSorcery`, `castPerm`, `flashback`, the pod's `podCast` for removal and counterspells, Edgar's Beseech the Mirror and Teval's Muldrotha casts); in a pod it goes through `Arena.announceCast` to each living opponent's `onOpponentCast(spell, caster)`, before any counterspell (the trigger is on the stack above the spell). A deck overrides `onOpponentCast` for its own cards. Mystic Remora (cumulative upkeep) and Esper Sentinel are not modelled. Tests: `engine/pod/pod-opponent-cast.test.ts` (in `npm run pod -- --test`). Not covered: spells a deck casts through its own code without `castInstantOrSorcery`/`castPerm` (Gale's counter-your-own-spell line, Codie's finishers) don't announce.
-
-### M4. Blink (Opus 5.5)
-
-For DnD (Ephemerate, Ghostly Flicker, Brago, Thassa, Displacer Beast...). A blinked permanent leaves and comes back as a new object: leave and enter triggers fire again, counters and attached auras are lost, a token blinked away is gone, and the log shows both moves.
-
-**Built (2026-11-15).** `engine/game/blink.ts`: `blink(game, permanent, options)` takes it off the battlefield, into exile, and back through `enter` as a new `Permanent` (counters, marks, the tap and goad gone, summoning sick; the deck's `onEnter` runs again), or for a token, gone. A card blinked "until the next end step" waits in `GameCore.cardsReturningAtEndStep` and comes back at the start of our `endTurn` (tapped if the spell says so). A permanent another player owns is not blinked. New hooks: `GameCore.onLeave(permanent)` (a permanent of ours left the battlefield: called by `dies`, `blink` and the pod's removal), `GameCore.blinkValue(permanent)` (how much the deck wants it blinked; default: a nontoken creature's mana value, a token never). Card facts: `BLINK_SPELLS` (Ephemerate, Daydream, Ghostly Flicker, Morningtide's Light, Lae'zel's Acrobatics with its d20), resolved by `resolve`. Rebound is an engine rule (`castInstantOrSorcery` exiles the card, `castReboundCards` casts it free at our next upkeep). Starfield Vocalist doubles enter triggers (`enterTriggerCount`). Tests: `engine/game/blink.test.ts` (in `npm run pod -- --test`). Every deck IDENTICAL. Left for B5 (DnD's own card rules on these pieces): the blink permanents (Thassa's end step, Brago's combat damage, Oji's second spell, Airbender Ascension, Niko's Shards), the leave triggers (Momo, Genku), All Aboard (Skycoach Conductor's prepared spell), a blink in an opponent's turn returning at that player's end step (now: ours).
-
-### M5. Dungeons, venture and the initiative (Opus 5.5)
-
-For DnD. Rules 309 (dungeons) and 725 (the initiative):
-
-- **Venture into the dungeon:** start a dungeon (the player picks one of Lost Mine of Phandelver, Dungeon of the Mad Mage, Tomb of Annihilation) or move one room down; each room has its effect; finishing a dungeon counts for "completed a dungeon" cards.
-- **The initiative:** taking it ventures into the Undercity (only there). The holder ventures again at their upkeep. A player who deals combat damage to the holder takes it. It is a pod-wide thing: one player has it at a time, and the others want to take it, so the pod's attack choice must value it.
-- The rooms as data (one table per dungeon, the room effects as small functions), the dungeon a player is in and the room they are in as game state, shown in the log ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin").
-- Which dungeon and which path to pick: a simple rule first (Lost Mine for DnD, as Pontus says the owner plays; the path that gives cards or tokens), written in the deck, not the engine.
-
-**Built (2026-11-16).** `engine/game/dungeons.ts`: the four dungeons as data (Lost Mine of Phandelver, Dungeon of the Mad Mage, Tomb of Annihilation, Undercity; each room's text, where it leads, a value for the default path, its effect), `ventureIntoDungeon(game, intoUndercity)`, a completed dungeon (`completedDungeons`), and the log line ("ventures: Lost Mine of Phandelver, Goblin Lair: create a 1/1 Goblin"). Room abilities trigger again with Hama Pashar, or Dungeon Delver with our commander out. Game state: `dungeonPosition`, `completedDungeons`, `hasInitiative`. Hooks for the deck: `chooseDungeon` (default Lost Mine) and `chooseDungeonRoom` (default: the room worth the most: cards and tokens first). The initiative: `takeInitiative()` ventures into Undercity, its holder ventures again at the upkeep (`upkeepTriggersOfTheGame`, with rebound), combat damage to the holder takes it (`pod-combat.ts`), one holder in a pod (`PodTable.takeInitiative`), and the pod's attack choice adds 6 to the holder (`attackPreference`). Card text: "When ... enters, venture into the dungeon" and "... you take the initiative" are read from the oracle (`venturesOnEnter`, `takesInitiativeOnEnter`) in the common enter trigger. Not modelled: rooms that only hit an opponent's creature (Twisted Caverns, Fungi Cavern, Arena's goad), the initiative passing on when its holder leaves the game, Runestone Caverns is counted as drawing the two cards. Treasure tokens from rooms are made, but the engine doesn't tap Treasures yet (Codie, Edgar, Gale and Sam & Frodo each do it themselves: rule of three, task M6). Tests: `engine/game/dungeons.test.ts` (in `npm run pod -- --test`). Every deck IDENTICAL.
-
-### M6. Treasure in the engine (Opus 5.5)
-
-Pontus, 2026-11-16: the next step, before Thantis. Treasure tokens are made by the engine now (M5's dungeon rooms) but only decks can tap them: Codie, Edgar, Gale and Sam & Frodo each write it themselves (rule of three).
-
-- **The rule, once:** a Treasure token is a mana source of any colour (`manaSourceKind` gives 'A'), and tapping it for mana sacrifices it. The sacrifice happens when a payment commits (`pay` with commit), not when a payment is only tested, and it goes through the battlefield functions so the log shows it. One `TREASURE` token card for all (`engine/game/dungeons.ts` has one; move it to `engine/cards/` where the other shared tokens are).
-- **When to spend them:** a Treasure is spent last, when lands and rocks are not enough (Edgar's rule: `mayUseExpendableMana`, `pay` tries without first). That goes into the engine too; Eldrazi Spawn (Edgar) fits the same "expendable mana" idea.
-- **The decks:** Codie (`purgeTreasures`), Edgar (`TOKENS.treasure`, the expendable-mana `pay`), Gale (An Offer You Can't Refuse's Treasures, `TREASURE` in `kill-play.ts`; and `SearchMana`'s `pool.A += 2` for them), Sam & Frodo (`TREASURE` with Food and Clue, `sacrificeValue`) drop their own code and use the engine's. Sam & Frodo also sacrifices Treasures for value (artifacts leaving): keep that the deck's choice.
-- **Tests:** a Treasure pays any colour and is gone after a committed payment, a tested payment keeps it, lands are tapped before a Treasure, the log shows the sacrifice.
-- **Done when:** `npm run verify` ends VERIFY OK. A deck whose results change (Codie or Edgar may tap in another order): show Pontus the numbers before and after, then re-record.
-
-**Built (2026-11-16).** `engine/cards/tokens.ts`: `TREASURE` and `ELDRAZI_SPAWN`, the one definition every deck and the dungeons use. `GameCore.manaSourceKind` gives a Treasure 'A' and a Spawn 'C'; `pay` first tries without them (`isKeepingExpendableManaBack`), and a committed payment that needed them sacrifices the ones it tapped (`sacrifice`: logged, death triggers fire); a tested one keeps them. Tests that pay for real and restore a snapshot (`ritualCandidates`, `rockFirst`) run `withoutExpendableMana`; the pod's `tapMana` leaves them alone. `SearchMana` counts untapped Treasures (`treasures`, `addTreasures`) and spends them last too, recording the tap so the played line follows it. Dropped from the decks: Codie's `purgeTreasures` and its override (Brass's Bounty now makes real tokens with `createTokens`), Edgar's `mayUseExpendableMana` / `isTestingRitual` / `pay` override and `TOKENS.treasure` / `TOKENS.spawn`, Gale's `TREASURE` and override (its search's Offer uses `addTreasures(2)`; the development play's `pool.U/B += 1` shortcut in `castSelfCounter` stays), Sam & Frodo's Treasure override and sacrifice (Goose and Talisman stay; its own sacrifices for value stay its choice). Tests: `engine/game/treasure.test.ts` (in `npm run pod -- --test`). Untapped Treasures now count as mana sources outside payments (`manaSources`, `openMana`), which Edgar did not do. Results: Codie, Aesi, Meren, Mike IDENTICAL; Edgar (5 of 600 seeds), Sam & Frodo (6) and Gale (1) changed by at most 0.1 point in 3000 games, re-recorded with Pontus's yes, and the pod baseline too.
-
-## B. The friends' decks (after A4; the M tasks a deck needs come first)
-
-One task per list, following `/add-deck`'s light path (A4).
-
-| Task | Deck | Needs | Model | Notes |
-|---|---|---|---|---|
-| B1 | Helga | | Sonnet 5.5 | Ramp into big threats. Helga's counters and mana are the core; Eldrazi annihilator and "cast" triggers (Ulamog, Kozilek), Craterhoof. |
-| B2 | Ardyn | M1 | Sonnet 5.5 | Demon tribal, drains and life loss (Gray Merchant, Exquisite Blood, Vilis). Reanimation: reuse Meren's `reanimate`. |
-| B3 | Teval | | Sonnet 5.5 | Self-mill as ramp, reanimation, Zombie tokens (Rise of the Dark Realms, The Scarab God), Doubling Season and Parallel Lives. The AI plays the list as built, not the owner's misplays: C1 says the numbers may overrate it. |
-| B4 | Thantis | M2, M3 | Sonnet 5.5 | Forced combat, Taurean Mauler, reanimation, Syr Konrad. |
-| B5 | DnD | M1, M4, M5 | Opus 5.5 | Blink engines, dungeons, the initiative. |
-| B6 | Azula | | Opus 5.5, after P | Ask Pontus first for the infinite combos (which cards, how each wins) and the bracket. Free casts while Azula is out, spells during combat, counterspells (add to `answers.ts`), the combos as a declared win (`winAttempt`, like Gale's kill line or Aesi's loops). |
-
-
-**B1 built (2026-11-15).** `decks/helga`, on `CreatureDeckGame` and the light path (A4 worked as written). Helga's mana and cast trigger, the Eldrazi cast triggers, the draw engines, Craterhoof; annihilator and the removal on enter are not modelled (see `decks/helga/PLAN.md`). Goldfish average win turn 10.99; against three goldfish in a pod 99.3%, round 11.29.
-
-**B2 built (2026-11-15).** `decks/ardyn`: Ardyn (haste, lifelink, Starscourge), Roaming Throne, the Swamp mana doublers and cost reducers, the drains and Exquisite Blood, Vilis, the tutors and reanimation. Goldfish average win turn 11.18 (see `decks/ardyn/PLAN.md` for what is not modelled).
-
-**B3 built (2026-11-15).** `decks/teval`: cards leaving the graveyard make Zombies (one trigger per event), self-mill, lands back from the graveyard and landfall, token and counter doubling, Muldrotha, Meren, Nyxbloom. `hasCreatureType` now reads a token's name word by word ("Zombie Druid" is a Zombie). Goldfish average win turn 9.91: the fastest of the three, and the AI plays it better than its owner.
-
-**B4 built (2026-11-16).** `decks/thantis`, on `CreatureDeckGame` and the light path. Three small engine hooks, all no-ops for other decks: `onAttackedBy` (Thantis's counters, called when an attack is declared), `onOtherPlayersCreatureDies` (a death reaches every other player: Syr Konrad, Sangromancer), and Ruric Thar in the engine's opponent-cast triggers. Assassin's Trophy, Chaos Warp and Deadly Rollick joined `answers.ts`; `countOnBattlefield` moved to `GameCore` (Ardyn, Teval and Thantis had each written it). Goldfish average win turn 12.33; with Meren, Edgar and Helga Thantis wins 19% (see `decks/thantis/PLAN.md` for what is not modelled: Shredder, Titan Hunter, the Archon's sacrifice).
-
-**B6 built (2026-11-16).** `decks/azula`, on `CreatureDeckGame` and the light path: Azula's copies of spells cast while she attacks (combat spells held back in the first main phase), Storm of Saruman, Prismari's storm, Arcane Bombardment, Mysterious Stranger and Torrential Gearhulk free casts, Vivi, Ozai, Fated Firepower, the equipment on Azula, and the ten combos as a declared win with Pontus's finisher rule (`combos.ts`). Engine additions: `engine/game/spell-copies.ts` (copySpell, Twinning Staff, magecraft on casts and copies: Archmage Emeritus / of Runes moved there, Storm-Kiln Artist, Veyran), `engine/game/firebending.ts` (an attacker's printed firebending, before `onAttack`), `Arena.handSize` / `tappedLands`, `GameCore.hasNoMaximumHandSize()` (default Reliquary Tower; Mike's own method now overrides it, unchanged), answers: Mana Drain, Void Shatter, Force of Will (free by pitching when it can't be paid), Fierce Guardianship (free with a commander out), Sink into Stupor, Kill! Maim! Burn!, Isildur's Fateful Strike, Untimely Malfunction; Sink into Stupor and Sea Gate Restoration as MDFC lands. **Found:** Thought Vessel is in Ardyn's and Helga's lists but the engine doesn't give them no maximum hand size (they discard to seven); Codie's Mana Drain and Fierce Guardianship now answer in its pod games. Goldfish average win turn 11.27; with Meren, Edgar and Helga Azula wins 5.7% and is out first in 48% (see `decks/azula/PLAN.md`: likely underrated).
-
-**B5 built (2026-11-16).** `decks/dnd`, on `CreatureDeckGame` and the light path, using M1, M4 and M5 as built. The deck writes the blink permanents (Brago, Thassa, Oji, Airbender Ascension, Niko, Skycoach Conductor's All Aboard), the leave triggers (Momo, Genku), the venture cards that aren't "enters, venture" (Nadaar's attack, Delver's Torch, Yuan-Ti, Midnight Pathlighter, Dungeon Map, Dungeon Descent), Tomb of Horrors Adventurer's copies, Pensive Professor, Ephara, Land Tax and the "opponent has more lands" ramp (an estimate: we can't see their lands); its enter triggers run once per doubler. `blinkValue` comes from a `BLINK_VALUE` table. A spell cast passes through the deck's `podAnnounceCast` (as Thantis's Ruric Thar). Engine additions, every other deck IDENTICAL: a venture during the last room's ability (Throne of the Dead Three) completes that dungeon and starts a new one (it crashed before; the log now names the creature Throne puts out); `GameCore.isCreatureNow` (a Theros god below its devotion isn't a creature, read once per card from its text by `devotionToBeCreature` in `cards.ts`, not a `CardDef` field: Edgar's tests print a whole `CardDef`; `creatures()` uses it); Panharmonicon doubles `UNTAP_ON_ETB`; Wall of Omens, Spirited Companion and Helpful Hunter draw on entering (`common-permanents.ts`); Azorius Signet (`W/U`), Midnight Clock, Dungeon Map and Sarevok's Tome ({C}{C} with the initiative) in `ROCKS`; a `plains` land kind; Day of Judgment in `answers.ts`. Tests: `decks/dnd/tests/dnd.test.ts`, `engine/game/common-cards.test.ts` (in `npm run pod -- --test`) and one more in `dungeons.test.ts`. Goldfish average win turn 10.50 (2,000 games); with Meren, Edgar and Helga DnD wins 25.6% (even 25%). Midnight Pathlighter counts as unblockable, which overrates it (see `decks/dnd/PLAN.md`).
-
----
-
-## C. Game night
-
-### C1. The game-night pod (Sonnet 5.5, after B1 to B3)
-
-`npm run pod -- meren edgar helga ardyn teval -n 1000` (ask Pontus eco or full power). Write a short report for Pontus, in this plan and as plain text he can read on his phone: each deck's win rate, average win turn, how it wins, who goes out first, and next to each friend's deck what is not modelled. Point out anything that looks too strong or too weak for the table, and which deck the others should watch. Teval's numbers come from an AI that plays it well; its owner does not, so say so.
-
-**Run (2026-11-15, 1,000 games, eco, `session-logs/01-pod-meren-edgar-helga-ardyn-teval`).** An even pod is 20%, noise about ±3 points.
-
-| Deck | Wins | Avg round | Out first | Not modelled that matters |
-|---|---|---|---|---|
-| Teval | 31.4% | 9.17 | 9.6% | the owner's misplays (the AI plays it well), Muldrotha's lands, Underrealm Lich |
-| Meren | 23.5% | 9.36 | 24.8% | |
-| Ardyn | 22.7% | 9.31 | 17.5% | menace, Cabal Coffers / Nykthos mana, his removal creatures |
-| Helga | 12.0% | 9.77 | 16.5% | annihilator, the Eldrazi's and Terastodon's removal |
-| Edgar | 10.3% | 9.02 | 31.6% | |
-
-Games end in round 9.3 on average. Teval is the deck to watch: its Zombie board grows with every card leaving its graveyard, and it is the least often out first. Edgar goes out first most (a small, early board that the others attack). Helga is likely underrated: annihilator is not modelled yet. Seat 5 hurts Meren (13.3% against about 27% elsewhere).
-
----
-
-## Z. Step 7's loose ends
-
-### Z1. Check and fix (Sonnet 5.5)
-
-- (Done 2026-11-16) D1's card pop-up at 390 px and with touch: `card-zoom.spec.ts` (tap opens, a second tap or a tap elsewhere closes, another card takes over, touch's pointer-enter is ignored) and the phone case of `zoom-placement.spec.ts` (262 px card inside 390 px, never over the small card). Checked in jsdom, not in a real browser on a phone.
-- (Done 2026-11-15) The app test failed on "no primer or swap notes among the lists": `aesi/SUGGESTED_SWAPS.txt` was read as a decklist. Pontus had it removed; its swaps are `lists/suggested_affinity.txt` and `decklist.txt`.
-
----
-
-## D. Pontus's real list
-
-### D1. The list he plays becomes `decklist.txt` (Sonnet 5.5, after P)
-
-Pontus has updated one of his decks in real life, partly from its `lists/proposed.txt`. Same as was done for Aesi (commit `e686967`): the current `decklist.txt` moves to `lists/original.txt`, his assembled list becomes `decklist.txt`, then results before and after with the same seeds, the baseline re-recorded (`--regress record`) and the deck's `PLAN.md` updated. Pontus gives the deck and the list.
-
-**Checked 2026-11-16 (Gale and Aesi).** The lists Pontus sent hold the same cards as the `decklist.txt` files, only in another order (Archidekt's export), so the files are left as they are. Trying them anyway changed the seeded shuffle and exposed bugs the old seeds did not hit; they are fixed, each for any list: (1) Gale's kill search misses 4 of 300 seeds -> 0. Energybending: a search records a land's own kind, but the game read it as "any colour" (`isSourceOfClass` now asks `manaSourceKind(..., ignoreEnergybending)`), so a planned Swamp was never found. Brainstorm's put-back ignored the cards the kill line still needs (`cardsTheKillLineNeeds`, as `discard` already did). `couldPayAtAll` ignored High Tide's / Bubbling Muck's bonus mana of a colour, so a payment search that would have found the B was never tried. Singularity Rupture destroys our creatures, and with them Nightscape Familiar, Geist of Saint Thalia and the other creature cost reducers (the search kept them: `creatureReductions`). (2) Aesi's log-board test compared the game's `Illusion army` with the log's `Illusion` (a marker token is logged as what it stands for): the test now uses `logName`. Gale's baselines (the goldfish and the pod run) were re-recorded: 2 to 5 of 600 seeds per list differ. 3,000 games, same seeds: average win turn 7.16 -> 7.16, win by T8 with backup 49.0% -> 49.1%. Pod run (200 games, same seeds): Gale 18.0% -> 19.0%, the others within 1 point.
-
----
-
-## E. Gale
-
-### E1. Gale's kill search taps lands for real (Opus 5.5, after P)
-
-`ROADMAP.md` step 9 has the problem and the idea; `PLAN.md` B3b part 2 at commit `e686967` has the details. Design first, the speed measured (Gale's search is most of its 25 s), Pontus's yes, then build. Done when `KILL_MISS_SEEDS_SHOWN=100 npm run sim -- gale --test` shows no kill miss and `npm run verify` ends VERIFY OK.
-
-**Built (2026-11-15).** `KillSearchState` (`decks/gale/kill-state.ts`) keeps untapped sources apart from floating mana: `landClasses` (a kind of source: what it taps for, Island / Swamp typed, land or not) with `untappedLands` and `allLands` counts; `pool` holds only mana already made. A payment that falls short taps one more source (`tapAnotherLand`, a filter Signet is fed a mana first), so High Tide / Muck count the Islands / Swamps really untapped, and Turnabout, Frantic Search, Snap, Unwind and Peregrine Drake put real lands back (`untapLands`, the game's own order). An any-colour source makes the colour it is short of when tapped, like the game. The search records what it tapped (`PaymentRecord`, on each step as `payments`; the untaps too) and the real play follows it: engine hooks `sourcesPlannedFor` (in `pay`) and `landsToUntap` (in `untapLands`), Gale fills them from the step being played. Engine rule: with Energybending out every land taps for either colour (`manaSourceKind`). Singularity Rupture also destroys Gale and Emet-Selch in the search. Misses on the current list: 42 -> 0 of 300 seeds. 3,000 games, same seeds, Gale: win by T8 65.2% -> 69.3%, with backup 49.7% -> 51.1%; 51 s -> 55 s (+8%). Other decks IDENTICAL. Gale's regress baseline and the pod baseline were re-recorded (pod: Gale 18.0% -> 18.5%, within noise). **Moved into the engine (2026-11-15, same day):** `engine/game/search-mana.ts` (`SearchMana`: the source classes, paying, High Tide / Muck, untaps, the payment record; `SearchMana.fromGame` reads the game's battlefield) with tests in `engine/game/search-mana.test.ts` (in `npm run pod -- --test`); `GameCore.plannedPayments`, `sourcesPlannedFor` and `landsToUntap` now do the planned taps for any deck. `KillSearchState` keeps a `mana: SearchMana` and only decides when a High Tide / Muck is still to come. Every deck IDENTICAL, Gale's baseline unchanged by the move. Another deck's search (Codie's solver, Aesi's loops) can use it the same way; not done, nothing there needs it yet. Known limit: the search taps greedily, so "Island + Signet pay {U}{B}" is missed (the Island's mana is spent before the Signet could be fed); the real `pay` finds it by its payment search.
-
-### E2. The other decks' searches use the engine's land tapping (Opus 5.5)
-
-Pontus, 2026-11-15: wire the other decks into `engine/game/search-mana.ts` (E1), so every search that counts mana does it the engine's way: sources untapped until a payment needs them, and the real game taps what the search tapped (`GameCore.plannedPayments`).
-
-- First list which decks count mana on a copy of their own (a kill search, a solver, a loop: Codie's solver, Aesi's loops, Mike's, any other `KillSearchState`) and how each keeps its pool now.
-- Move them one deck at a time: the search keeps a `SearchMana` (`SearchMana.fromGame`), pays with `spendMana`, and its played line sets `plannedPayments` per step, as Gale's `kill-play.ts` does. What the engine's model lacks for a deck (another colour than U/B, a mana doubler) goes into `SearchMana` with a test, not into the deck.
-- Done when each moved deck has 0 kill misses over 300 seeds and `npm run verify` ends VERIFY OK. A deck whose results change: show Pontus the numbers before and after (and the speed), then re-record.
-
-**Done (2026-11-16): no other deck needs `SearchMana`.** Gale was the only deck whose search counted mana on a model of its own. Codie's solver, Aesi's loops and Edgar's sacrifice check play on a copy of the game and pay with the real `pay`, so they already tap what the game taps (and every deck's `--test` checks 0 kill misses over 300 seeds); the other decks have no search. What they did share went to the engine instead (Pontus: as much in the engine as possible): `GameCore.beginNewTurn` (the per-turn reset, out of `startTurn`), `copyForSearch` and `copyAtNextTurn`. Codie's `buildKillSearchState` and its solver's next-turn copy, and Aesi's `buildKillSearchState`, use them; Aesi's per-turn flags moved into its `beginNewTurn`. The opponents' draw moved into `beginNewTurn` too. The analyzer (`--analyze`): its "kill next turn" check now gets a real next turn for Codie (it got the current turn), and its start-of-turn check is the turn before's next-turn copy (it counted one turn too many: an opponent's library one card short, Codie's Mana Geyser two lands too many). Goldfish, pod run and tests: every deck IDENTICAL. Only Gale's and Codie's analyzer baselines were re-recorded: Codie's game 2 and 3 logs gain a kill next turn; Gale's start-of-turn libraries are one card bigger (game 4's near-miss Konrad chain: 73% -> 63% with real shuffles).
-
----
-
-## F. Loose ends found in B6 (Azula)
-
-Small, mechanical tasks. Each one: read `CLAUDE.md` first, ask Pontus eco or full power before any run, `npm run format`, then `npm run verify` must end with VERIFY OK, one commit, and one line under the task saying what was done.
-
-### F1. Thought Vessel and Decanter of Endless Water in the engine (Haiku 5.5)
-
-Both say "You have no maximum hand size". The engine skips the discard to seven only for Reliquary Tower, so Ardyn and Helga (both play Thought Vessel) discard when they should not. Azula and Mike handle it themselves.
-
-1. Run `npm run pod -- ardyn helga meren edgar -n 1000 --no-log` and save the report (scratchpad).
-2. In `engine/game/game-core.ts`, `hasNoMaximumHandSize()` (near `endTurn`): return true for `'Thought Vessel'` and `'Decanter of Endless Water'` too, next to `'Reliquary Tower'`.
-3. In `decks/azula/game.ts`, `hasNoMaximumHandSize()`: drop the two lines for those cards (the engine has them now); keep Sea Gate Restoration and the `super` call. Leave Mike alone: it has its own `endTurn`.
-4. Add one check to `engine/game/common-cards.test.ts` (it runs in `npm run pod -- --test`): a game with Thought Vessel on the battlefield and 9 cards in hand keeps 9 after `endTurn()`. Copy the shape of the checks already there.
-5. Run step 1 again. Write both reports' win rates under this task. Ardyn and Helga are pod-only (no `--regress` baseline), so nothing is re-recorded; every deck with a baseline must stay IDENTICAL in `verify` (none of them plays these cards except Mike, which overrides).
-
-**Done (2026-11-16):** the engine's `hasNoMaximumHandSize()` now covers Thought Vessel and Decanter; Azula keeps only Sea Gate Restoration; new check in `common-cards.test.ts`. Pod win rates (1000 games, ardyn/helga/meren/edgar), before → after: 24.5 → 24.2%, 16.9 → 17.2%, 29.6 → 29.7%, 28.8 → 28.7% (all within noise). Mike keeps its own override (Vnwxt, Thought Vessel, Reliquary Tower, Wizard Class, Body of Knowledge, Folio of Fancies). VERIFY OK.
-
-### F2. Codie's pod games with its counterspells as answers (Haiku 5.5)
-
-B6 added Mana Drain and Fierce Guardianship (free with a commander out) to `engine/game/answers.ts`. Codie plays both, so in a pod it now counters with them. Its goldfish results are unchanged (verify: IDENTICAL); only its pod games change. Pontus wants to see by how much.
-
-1. `git switch --detach 0ef7cf7` (the commit before B6), `npm run pod -- codie meren edgar helga -n 1000 --no-log`, save the report.
-2. `git switch main`, run the same command, save the report.
-3. Write both under this task: each deck's win rate, Codie's "answers used" and "spells countered". Nothing to commit but this plan's lines.
-4. Also check that Codie's own `BACKUP` table (`decks/codie/cards.ts`: counterspells that make a win "backed up") still agrees with `answers.ts`: every counterspell in `BACKUP` that is in Codie's `decklist.txt` should be in `ANSWERS` too. List any that are not; do not add them (that is Pontus's call).
-
-**Done (2026-11-16, full power, 1000 pod games, codie meren edgar helga, `0ef7cf7` → `main`):**
-
-| deck | wins before → after | answers used | spells countered |
-|---|---|---|---|
-| codie | 20.8% → 20.5% | 0.09 → 0.12 | 0.00 → 0.00 |
-| meren | 31.2% → 32.0% | 0.00 → 0.00 | 0.04 → 0.05 |
-| edgar | 31.4% → 31.2% | 0.00 → 0.00 | 0.10 → 0.11 |
-| helga | 16.6% → 16.3% | 0.07 → 0.07 | 0.01 → 0.02 |
-
-Codie's own win ("declared") 22.6% → 21.0%. All changes are inside the ±3 point noise; Codie uses about a third more answers per game. Note: "answers used" for Helga is 0.07–0.08 (her own answers). The reports are in the scratchpad (`f2-before.txt`, `f2-after.txt`).
-
-`BACKUP` vs `ANSWERS` (Codie's decklist): in both are Counterspell, Mana Drain, Arcane Denial, An Offer You Can't Refuse, Fierce Guardianship. In `BACKUP`, in the decklist, but **not** in `ANSWERS`: Silence, Orim's Chant, Daze, Bilbo's Gambit, Autumn's Veil, Narset's Reversal. Nothing added (Pontus's call).
-
-### F3. Every "no maximum hand size" card in the lists (Haiku 5.5, after F1)
-
-Find every card in any `decks/*/decklist.txt` whose text says "no maximum hand size", and check that the deck playing it skips the discard to seven.
-
-1. A one-off node script (in the scratchpad, not the repo) reads `data/cards.json`, picks the cards whose `oracle` contains "no maximum hand size", and prints which decklists have each.
-2. For each card: is it in the engine's `hasNoMaximumHandSize()` (after F1), or does the deck handle it itself (Mike's and Azula's own `hasNoMaximumHandSize`)? Write the table under this task.
-3. A card that is a permanent and in no one's rule: add it to the engine's list (same change as F1, same test idea). A card that is a spell or a condition (Sea Gate Restoration, Wizard Class): list it, do not change it.
-
-**Done (2026-11-16):** audit of `data/cards.json` against every `decks/*/decklist.txt`:
-
-| card | decks | handled by |
-|---|---|---|
-| Reliquary Tower | aesi, ardyn, azula, dnd, gale, helga, mike, thantis | engine; Aesi and Mike in their own code |
-| Thought Vessel | ardyn, azula, helga, mike | engine (F1); Mike's override |
-| Decanter of Endless Water | azula | engine (F1) |
-| Vnwxt, Verbose Host | mike | Mike's override (always, not only at max speed: the card says so) |
-| Body of Knowledge, Folio of Fancies, Wizard Class | mike | Mike's override |
-| Graceful Adept | aesi | Aesi's own `endTurn` |
-| Sea Gate Restoration (spell) | azula | Azula's override (`hasSeaGateRestorationResolved`) |
-| Nerd Rage (aura: the enchanted creature gives it) | mike | **was missing**: added to Mike's override (a creature with `MARK_NERD_RAGE`); Mike `--regress check` stays IDENTICAL |
-| Finale of Revelation (spell, only with X ≥ 10, for the rest of the game) | teval | not handled; teval holds it in goldfish. Listed, not changed |
-
-Aesi's own `endTurn` skips the engine's `hasNoMaximumHandSize()`; fine for its cards (Tower, Graceful Adept), but a new card would have to be added there.
-4. If a deck with a `--regress` baseline changes, stop and show Pontus the numbers before re-recording.
+The task, its diagnosis and the ten combos are in `decks/azula/PLAN.md` ("Next task B7"). Do it only if Azula is played in the pod.
