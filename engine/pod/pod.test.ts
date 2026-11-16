@@ -158,6 +158,20 @@ export function runPodTests(): boolean {
     ['Wall'],
   );
   check(
+    'legendary (Midnight Pathlighter): only a legendary creature blocks',
+    blocks(
+      [
+        makeFighter('Wizard', 2, 3, { evasion: 'legendary' }),
+        makeFighter('Paladin', 3, 3, { evasion: 'legendary' }),
+      ],
+      [
+        makeFighter('Giant', 4, 4),
+        makeFighter('Commander', 4, 4, { legendary: true }),
+      ],
+    ),
+    [null, 'Commander'],
+  );
+  check(
     'lethal: chump the biggest attacker with the cheapest creature',
     blocks(
       [makeFighter('Giant', 6, 6), makeFighter('Bear', 2, 2)],

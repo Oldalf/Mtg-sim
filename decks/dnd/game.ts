@@ -7,9 +7,11 @@
  *
  * Files: cards.ts (names, values, blink values), game.ts (this file), candidates.ts (what the AI may do now).
  *
- * The deck blinks its enter and leave triggers again and again, and with them ventures into the dungeon (mostly
- * Lost Mine of Phandelver: scry, tokens, drains, cards) or into the Undercity through the initiative. It wins by
- * combat: tokens, evasive creatures (Midnight Pathlighter) and the dungeon bonuses (Nadaar, Cloister Gargoyle).
+ * The deck blinks its enter and leave triggers again and again, and with them ventures into the dungeon (Lost Mine
+ * of Phandelver early: scry, tokens, drains, cards; the Undercity later through the initiative, past the Trap! room).
+ * It controls the board by bouncing the opponents' permanents (Hullbreaker Horror, Aether Channeler, Avatar's Wrath)
+ * and wins by combat (+1/+1 counters from the rooms and Cathars' Crusade, Midnight Pathlighter) or by the Trap!
+ * room's 5 life, three times with Hama Pashar and Dungeon Delver. See primer.txt (the owner's) and PLAN.md.
  */
 import {
   AETHER_CHANNELER,
@@ -20,8 +22,8 @@ import {
   ARCHAEOMANCERS_MAP,
   BIRD,
   BLINK_VALUE,
+  AVATARS_WRATH,
   BRAGO,
-  CLAIM_JUMPER,
   CLOISTER_GARGOYLE,
   DELVERS_TORCH,
   DJINNI_WINDSEER,
@@ -30,11 +32,14 @@ import {
   EQUIPPED_WITH_TORCH,
   FOX,
   GENKU,
+  HULLBREAKER_HORROR,
   KNIGHT_OF_THE_WHITE_ORCHID,
+  KYKAR,
   LAND_TAX,
   MIDNIGHT_PATHLIGHTER,
   MOMO,
   MOONFOLK,
+  MORNINGTIDES_LIGHT,
   NADAAR,
   NIKO,
   OJI,
@@ -44,7 +49,9 @@ import {
   RAT,
   SHARD,
   SKYCOACH_CONDUCTOR,
+  SMALLEST_BLINK_WORTH_IT,
   SOLDIER,
+  SPIRIT,
   STARFIELD_SHEPHERD,
   THASSA,
   TOMB_OF_HORRORS_ADVENTURER,
@@ -55,26 +62,51 @@ import {
 } from './cards';
 import { buildCandidates } from './candidates';
 import { CardDef } from '../../engine/cards/cards';
-import { Candidate, Permanent, Zone } from '../../engine/game/game-types';
-import { Answer } from '../../engine/game/answers';
+import {
+  Candidate,
+  Evasion,
+  Permanent,
+  Zone,
+} from '../../engine/game/game-types';
+import type { TurnStep } from '../../engine/game/game-core';
+import { Answer, Hit } from '../../engine/game/answers';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
 } from '../../engine/game/common-permanents';
+import { triggersOfCreatureEntering } from '../../engine/game/creature-enter-triggers';
 import { blink } from '../../engine/game/blink';
 import { ventureIntoDungeon } from '../../engine/game/dungeons';
 import { fetchLand } from '../../engine/game/land-search';
 import { enterTriggerCount } from '../../engine/game/trigger-doublers';
 import { firstMax } from '../../engine/util/lists';
 
+const NONLAND: Hit[] = ['creature', 'artifact', 'enchantment', 'planeswalker'];
+
 /** Agent of Treachery's "gain control of target permanent", as the pod's removal (we don't use what we take). */
 const AGENT_OF_TREACHERY_STEALS: Answer = {
   kind: 'removal',
   instant: false,
-  hits: ['creature', 'artifact', 'enchantment', 'planeswalker'],
+  hits: NONLAND,
   how: 'exile',
 };
+
+/** Aether Channeler's and Hullbreaker Horror's "return target nonland permanent to its owner's hand". */
+const BOUNCE_NONLAND_PERMANENT: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: NONLAND,
+  how: 'bounce',
+};
+
+/** Aether Channeler bounces instead of drawing only a permanent worth at least this much to its owner (an
+ *  opponent's commander always counts: it costs 2 more next time). */
+const CHANNELER_BOUNCE_MIN_VALUE = 60;
+
+/** Avatar's Wrath (and Morningtide's Light for its shield) when the strongest opponent's creatures have this much
+ *  power in all, and what we lose has at most half of it (the pod's rule for a board wipe). */
+const BEHIND_ON_BOARD_POWER = 10;
 
 /** Genku's tokens, one of each a turn, in the order we take them. */
 const GENKU_TOKENS = [FOX, MOONFOLK, RAT];
@@ -91,10 +123,13 @@ export class DndGame extends CreatureDeckGame {
   genkuTokensThisTurn = 0;
   /** Ephara: did a creature enter under our control since the last upkeep (ours or an opponent's)? */
   hasCreatureEnteredSinceLastUpkeep = false;
+  /** Morningtide's Light resolved: all damage to us is prevented until our next turn. */
+  isDamagePreventedUntilOurTurn = false;
 
   override startTurn(): void {
     super.startTurn();
     this.genkuTokensThisTurn = 0;
+    this.isDamagePreventedUntilOurTurn = false;
   }
 
   // ================================================================ enter
@@ -110,6 +145,8 @@ export class DndGame extends CreatureDeckGame {
     for (let i = 0; i < triggerCount; i++) {
       enterTriggerOfCommonCard(this, permanent);
       this.enterTrigger(permanent);
+      // Cathars' Crusade, Radiant Solar
+      triggersOfCreatureEntering(this, permanent);
     }
     if (this.isCreatureNow(permanent)) {
       this.hasCreatureEnteredSinceLastUpkeep = true;
@@ -129,9 +166,7 @@ export class DndGame extends CreatureDeckGame {
         this.scry(2);
         break;
       case AETHER_CHANNELER:
-        // a card, or a flying Bird when the hand is full
-        if (this.hand.length >= 6) this.createTokens(BIRD);
-        else this.draw(1);
+        this.aetherChannelerChooses();
         break;
       case DJINNI_WINDSEER:
         this.scry(this.rollD20() >= 10 ? 2 : 1);
@@ -149,14 +184,32 @@ export class DndGame extends CreatureDeckGame {
       case KNIGHT_OF_THE_WHITE_ORCHID:
         if (this.opponentHasMoreLands()) fetchLand(this, 'plains', false);
         break;
-      case CLAIM_JUMPER:
-        if (this.opponentHasMoreLands()) fetchLand(this, 'plains', true);
-        if (this.opponentHasMoreLands()) fetchLand(this, 'plains', true);
-        break;
       case AGENT_OF_TREACHERY:
-        if (this.inArena()) this.arena!.snipe(this, AGENT_OF_TREACHERY_STEALS);
+        if (this.inArena())
+          this.arena!.snipe(
+            this,
+            AGENT_OF_TREACHERY_STEALS,
+            AGENT_OF_TREACHERY,
+          );
         break;
     }
+  }
+
+  /** Aether Channeler: in a pod, bounce an opponent's permanent worth it (the primer's control); else a card, or a
+   *  flying Bird when the hand is full. */
+  aetherChannelerChooses(): void {
+    if (
+      this.inArena() &&
+      this.arena!.snipe(
+        this,
+        BOUNCE_NONLAND_PERMANENT,
+        AETHER_CHANNELER,
+        CHANNELER_BOUNCE_MIN_VALUE,
+      )
+    )
+      return;
+    if (this.hand.length >= 6) this.createTokens(BIRD);
+    else this.draw(1);
   }
 
   /** A d20 (20 counts as 19: Djinni Windseer's scry 3 is not worth a rule of its own). */
@@ -214,7 +267,8 @@ export class DndGame extends CreatureDeckGame {
   }
 
   // ================================================================ blink
-  /** How much we want this permanent blinked: its enter trigger (BLINK_VALUE), plus a token when Genku is out. */
+  /** How much we want this permanent blinked: its enter trigger (BLINK_VALUE), plus a token when Genku is out, less
+   *  the +1/+1 counters it would lose (Cathars' Crusade and the rooms pile them up). */
   override blinkValue(permanent: Permanent): number {
     if (permanent.token || permanent.owner !== null) return -1;
     let value = BLINK_VALUE[permanent.card.name] ?? 0;
@@ -234,7 +288,7 @@ export class DndGame extends CreatureDeckGame {
       permanent.card.name !== GENKU
     )
       value += 2;
-    return value;
+    return value - permanent.counters;
   }
 
   /** Our creature most worth blinking (above 0), or null. */
@@ -268,11 +322,13 @@ export class DndGame extends CreatureDeckGame {
   }
 
   // ================================================================ spells we cast
-  /** Every spell we cast passes here (the engine announces it to a pod): Pensive Professor, and on our second spell
-   *  of the turn Oji and Tomb of Horrors Adventurer. */
+  /** Every spell we cast passes here (the engine announces it to a pod): Pensive Professor, Hullbreaker Horror,
+   *  Kykar, and on our second spell of the turn Oji and Tomb of Horrors Adventurer. */
   override podAnnounceCast(card: CardDef): void {
     super.podAnnounceCast(card);
     this.pensiveProfessorGrows(card);
+    this.hullbreakerBounces();
+    if (!card.isCreature) this.kykarTriggers();
     if (this.spellsCast !== 2) return;
     if (this.isOnBattlefield(OJI)) this.blinkBestCreature();
     for (
@@ -295,6 +351,31 @@ export class DndGame extends CreatureDeckGame {
       if (card.manaValue <= smaller) continue;
       professor.counters += 1;
       this.draw(1);
+    }
+  }
+
+  /** Hullbreaker Horror, in a pod: each spell we cast returns the opponents' best nonland permanent to its owner's
+   *  hand. (Returning a spell, or our own permanent to cast again, is not modelled.) */
+  hullbreakerBounces(): void {
+    if (!this.inArena()) return;
+    for (let i = 0; i < this.countOnBattlefield(HULLBREAKER_HORROR); i++)
+      this.arena!.snipe(this, BOUNCE_NONLAND_PERMANENT, HULLBREAKER_HORROR);
+  }
+
+  /** Kykar (a noncreature spell cast): blink another creature until the end step, or a 1/1 flying Spirit. Before
+   *  combat only a creature that can't attack anyway is blinked (it would miss the attack). */
+  kykarTriggers(): void {
+    for (const kykar of this.battlefield.slice()) {
+      if (kykar.card.name !== KYKAR) continue;
+      const isBeforeCombat = this.step === 'main1' && !this.attacked;
+      const creature = this.bestCreatureToBlink(
+        (other) =>
+          other !== kykar &&
+          this.blinkValue(other) >= SMALLEST_BLINK_WORTH_IT &&
+          (!isBeforeCombat || !this.canAttack(other)),
+      );
+      if (creature) blink(this, creature, { returnsAtEndStep: true });
+      else this.createTokens(SPIRIT);
     }
   }
 
@@ -330,6 +411,20 @@ export class DndGame extends CreatureDeckGame {
     return true;
   }
 
+  /** Morningtide's Light: the engine blinks our creatures (blink.ts); here its shield, "until your next turn, prevent
+   *  all damage that would be dealt to you". (Exiling the opponents' creatures too is not modelled.) */
+  override resolve(
+    card: CardDef,
+    fromGraveyard = false,
+    mode: string | null = null,
+  ): void {
+    if (card.name === MORNINGTIDES_LIGHT) {
+      this.isDamagePreventedUntilOurTurn = true;
+      this.say('  all damage to us is prevented until our next turn');
+    }
+    super.resolve(card, fromGraveyard, mode);
+  }
+
   override resolveOther(
     card: CardDef,
     fromGraveyard: boolean,
@@ -340,7 +435,66 @@ export class DndGame extends CreatureDeckGame {
         (creature) => creature.card.name !== SKYCOACH_CONDUCTOR,
       );
     else if (card === ANCESTRAL_RECALL) this.draw(3);
+    else if (card.name === AVATARS_WRATH) this.avatarsWrathResolves();
     else super.resolveOther(card, fromGraveyard, mode);
+  }
+
+  /** A pod attack on us: Morningtide's Light's shield prevents the damage. */
+  override fogPrevent(_damage: number, _isLethal: boolean): boolean {
+    return this.isDamagePreventedUntilOurTurn;
+  }
+
+  // ================================================================ Avatar's Wrath (a pod only)
+  /** The power of the strongest opponent's creatures (0 outside a pod: a goldfish opponent has none). */
+  strongestOpponentBoardPower(): number {
+    if (!this.inArena()) return 0;
+    let strongest = 0;
+    for (let slot = 0; slot < this.life.length; slot++) {
+      if (this.life[slot] <= 0) continue;
+      const power = this.arena!.board(this, slot).reduce(
+        (total, creaturePower) => total + creaturePower,
+        0,
+      );
+      strongest = Math.max(strongest, power);
+    }
+    return strongest;
+  }
+
+  /** The creature Avatar's Wrath spares: our strongest. */
+  creatureToKeepFromWrath(): Permanent | null {
+    const creatures = this.creatures();
+    return creatures.length
+      ? firstMax(creatures, (creature) => this.power(creature))
+      : null;
+  }
+
+  /** At the start of our second main phase in a pod, Avatar's Wrath when we are behind on board (the pod's rule for
+   *  a wipe: the strongest opponent has 10 power or more, and what we lose has at most half of that). Outside the
+   *  candidates, because the planner's copies have no opponents to see it work on. */
+  override onEnterStep(step: TurnStep): void {
+    super.onEnterStep(step);
+    if (step !== 'main2' || !this.inArena()) return;
+    const wrath = this.hand.find((card) => card.name === AVATARS_WRATH);
+    if (!wrath || !this.canPay(this.effectiveCost(wrath), true)) return;
+    const opponentPower = this.strongestOpponentBoardPower();
+    const kept = this.creatureToKeepFromWrath();
+    const powerWeLose = this.creatures()
+      .filter((creature) => creature !== kept)
+      .reduce((total, creature) => total + this.power(creature), 0);
+    if (
+      opponentPower >= BEHIND_ON_BOARD_POWER &&
+      2 * powerWeLose <= opponentPower
+    )
+      this.castInstantOrSorcery(wrath);
+  }
+
+  /** Avatar's Wrath: our strongest creature stays, every other creature is airbended. The opponents' go back to
+   *  hand (their {2} recast is counted as a full one), and so do ours (we cast them again: their enter triggers). */
+  avatarsWrathResolves(): void {
+    const kept = this.creatureToKeepFromWrath();
+    if (this.inArena()) this.arena!.bounceAllCreatures(this, AVATARS_WRATH);
+    for (const creature of this.creatures())
+      if (creature !== kept) this.podRemove(creature, 'bounce');
   }
 
   // ================================================================ upkeep and end step
@@ -421,13 +575,32 @@ export class DndGame extends CreatureDeckGame {
       this.bragoBlinks();
   }
 
-  /** Midnight Pathlighter: our creatures can't be blocked except by legendary creatures (counted as unblockable).
-   *  Cloister Gargoyle flies once a dungeon is completed. */
+  /** Does it fly now? Cloister Gargoyle flies once a dungeon is completed. */
+  fliesNow(permanent: Permanent): boolean {
+    return (
+      permanent.card.flying ||
+      (permanent.card.name === CLOISTER_GARGOYLE && this.completedDungeons > 0)
+    );
+  }
+
+  /** Goldfish combat. Midnight Pathlighter: our creatures can't be blocked except by legendary creatures. Most
+   *  opponents have a legendary commander, so one of them blocks our biggest ground creature; the rest get through. */
   override evasive(permanent: Permanent): boolean {
-    if (this.isOnBattlefield(MIDNIGHT_PATHLIGHTER)) return true;
-    if (permanent.card.name === CLOISTER_GARGOYLE && this.completedDungeons > 0)
-      return true;
-    return super.evasive(permanent);
+    if (this.fliesNow(permanent)) return true;
+    if (!this.isOnBattlefield(MIDNIGHT_PATHLIGHTER)) return false;
+    const groundCreatures = this.creatures().filter(
+      (creature) => !this.fliesNow(creature),
+    );
+    return (
+      firstMax(groundCreatures, (creature) => this.power(creature)) !==
+      permanent
+    );
+  }
+
+  /** Pod combat: with Midnight Pathlighter, only the opponents' legendary creatures may block our ground creatures. */
+  override evasion(permanent: Permanent): Evasion {
+    if (this.fliesNow(permanent)) return 'flying';
+    return this.isOnBattlefield(MIDNIGHT_PATHLIGHTER) ? 'legendary' : 'none';
   }
 
   /** Nadaar (+1/+1 for the others once a dungeon is completed), Cloister Gargoyle (+3/+0), Delver's Torch (+1/+1). */

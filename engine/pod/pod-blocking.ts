@@ -9,6 +9,7 @@ function canBlock(blocker: Fighter, attacker: Fighter): boolean {
   if (attacker.evasion === 'unblockable') return false;
   if (attacker.evasion === 'flying') return blocker.air;
   if (attacker.evasion === 'skulk') return blocker.power <= attacker.power;
+  if (attacker.evasion === 'legendary') return !!blocker.legendary;
   return true;
 }
 

@@ -15,6 +15,7 @@ import {
   PREPARED,
   RASPUTIN,
   SKYCOACH_CONDUCTOR,
+  SMALLEST_BLINK_WORTH_IT,
   WINDFALL,
 } from './cards';
 import type { DndGame } from './game';
@@ -37,9 +38,6 @@ type AddCandidate = (
   action: () => boolean,
   rockCard?: CardDef,
 ) => void;
-
-/** A blink is worth casting only if what it brings back is worth at least this much (BLINK_VALUE). */
-const SMALLEST_BLINK_WORTH_IT = 4;
 
 export function buildCandidates(game: DndGame, main2: boolean): Candidate[] {
   const candidates: Candidate[] = [];

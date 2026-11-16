@@ -9,6 +9,7 @@ Blink
 1x Ephemerate
 1x Genku, Future Shaper
 1x Ghostly Flicker
+1x Kykar, Zephyr Awakener
 1x Lae'zel's Acrobatics
 1x Momo, Playful Pet
 1x Morningtide's Light
@@ -21,6 +22,9 @@ Blink
 
 Copy
 1x Mirrorweave
+
+Counters
+1x Cathars' Crusade
 
 Draw
 1x Aether Channeler
@@ -41,6 +45,7 @@ Dungeon
 1x Eccentric Apprentice
 1x Midnight Pathlighter
 1x Nadaar, Selfless Paladin
+1x Radiant Solar
 1x Tomb of Horrors Adventurer
 1x Undercellar Sweep
 1x Veteran Dungeoneer
@@ -79,9 +84,6 @@ Protection
 Ramp
 1x Arcane Signet
 1x Archaeomancer's Map
-1x Azorius Signet
-1x Claim Jumper
-1x Cloud of Faeries
 1x Component Pouch
 1x Dungeon Map
 1x Fellwar Stone

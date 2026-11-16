@@ -139,8 +139,9 @@ export const emptyPool = (): ManaPool => ({
   G: 0,
 });
 
-/** How an attacker gets past blockers. "skulk": creatures with greater power can't block it. */
-export type Evasion = 'none' | 'flying' | 'skulk' | 'unblockable';
+/** How an attacker gets past blockers. "skulk": creatures with greater power can't block it. "legendary": only
+ *  legendary creatures can block it (Midnight Pathlighter). */
+export type Evasion = 'none' | 'flying' | 'skulk' | 'legendary' | 'unblockable';
 /** A creature in a pod combat, as both sides see it. */
 export interface Fighter {
   permanent: Permanent;
@@ -156,6 +157,8 @@ export interface Fighter {
   first?: boolean;
   /** Menace: it takes two blockers. */
   menace?: boolean;
+  /** A legendary creature (it can block an attacker with 'legendary' evasion). */
+  legendary?: boolean;
   /** What its owner would pay to keep it (tokens are cheap, the commander is dear). */
   value: number;
   commander: boolean;
@@ -211,8 +214,18 @@ export interface Arena {
   tappedLands(game: Game<unknown>, slot: number): number;
   /** Each opponent sacrifices its least valuable creature (nontoken only: Accursed Marauder). */
   edict(game: Game<unknown>, nontoken: boolean): void;
-  /** Take the best legal target of the biggest threat off the battlefield (an enters-the-battlefield removal effect). Returns its name. */
-  snipe(game: Game<unknown>, ans: Answer): string | null;
+  /** Take the best legal target of the biggest threat off the battlefield (an enters-the-battlefield removal effect,
+   *  named `sourceName` in the log). Only a target worth at least `minimumValue` (default 0). Returns its name, or
+   *  null if there was none. */
+  snipe(
+    game: Game<unknown>,
+    answer: Answer,
+    sourceName: string,
+    minimumValue?: number,
+  ): string | null;
+  /** Every creature each opponent controls goes back to its owner's hand (a commander to the command zone, a token is
+   *  gone). Not targeted: no shield stops it. `sourceName` names it in the log. */
+  bounceAllCreatures(game: Game<unknown>, sourceName: string): void;
   /** We declared a win in the middle of our turn: the others may answer it now. True = it was stopped (the turn goes on). */
   answerWin(game: Game<unknown>): boolean;
   /** We cast this spell (paid, on the stack): does an opponent counter it? */

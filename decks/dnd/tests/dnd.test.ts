@@ -1,6 +1,7 @@
 /** Rules checks on hand-built boards. Run: npm run sim -- dnd --test */
 import * as C from '../../../engine/cards/cards';
-import { Permanent } from '../../../engine/game/game-types';
+import { Arena, Permanent } from '../../../engine/game/game-types';
+import { Answer } from '../../../engine/game/answers';
 import { Rng } from '../../../engine/util/rng';
 import { ALL_ABOARD, ANCESTRAL_RECALL, PREPARED } from '../cards';
 import { CFG } from '../config';
@@ -32,6 +33,34 @@ function board(
   }
   game.hand = hand.map((cardName) => C.get(cardName));
   return game;
+}
+
+/** Puts the game in a pod of stand-in opponents. `snipeHits` is what a snipe takes (null: nothing worth it);
+ *  `opponentBoard` the power of each opponent's creatures. Returns the list of what was asked of the pod. */
+function joinPod(
+  game: DndGame,
+  snipeHits: string | null,
+  opponentBoard: number[] = [],
+): string[] {
+  const calls: string[] = [];
+  game.arena = {
+    real: () => true,
+    announceCast: () => {},
+    counter: () => false,
+    board: () => opponentBoard,
+    snipe: (
+      _game: unknown,
+      answer: Answer,
+      sourceName: string,
+      minimumValue = 0,
+    ) => {
+      calls.push(`snipe ${sourceName} ${answer.how} ${minimumValue}`);
+      return snipeHits;
+    },
+    bounceAllCreatures: (_game: unknown, sourceName: string) =>
+      calls.push(`bounce all ${sourceName}`),
+  } as unknown as Arena;
+  return calls;
 }
 
 const namesOnBattlefield = (game: DndGame, cardName: string): number =>
@@ -110,14 +139,26 @@ export function runDndTests(): boolean {
     );
   }
   {
-    const game = board([], [], ['Plains', 'Island']);
-    game.enter(C.get('Claim Jumper'));
+    const game = board([
+      "Cathars' Crusade",
+      'Panharmonicon',
+      'Yuan-Ti Malison',
+    ]);
+    game.enter(C.get('Wall of Omens'));
     check(
-      'Claim Jumper: two Plains, tapped, when far behind',
-      game
-        .landsOnBattlefield()
-        .filter((land) => land.tapped && land.card.name === 'Plains').length,
-      2,
+      "Cathars' Crusade with Panharmonicon: two counters on each creature as one enters",
+      game.creatures().map((creature) => creature.counters),
+      [2, 2],
+    );
+  }
+  {
+    const game = board(['Radiant Solar']);
+    game.enter(C.get('Wall of Omens'));
+    game.createTokens(C.makeToken('Goblin', 1, 1, 'red'));
+    check(
+      'Radiant Solar: another nontoken creature entering ventures (a token does not)',
+      game.dungeonPosition?.room,
+      'Cave Entrance',
     );
   }
   {
@@ -227,6 +268,50 @@ export function runDndTests(): boolean {
     game.spellsCast = 2;
     game.podAnnounceCast(C.get('Brainstorm'));
     check('Oji: the second spell blinks Wall of Omens', game.hand.length, 1);
+  }
+  {
+    const game = board([
+      'Kykar, Zephyr Awakener',
+      'Wall of Omens',
+      'Veteran Dungeoneer',
+    ]);
+    game.step = 'main2';
+    game.podAnnounceCast(C.get('Sol Ring'));
+    const exiledUntilEndStep = !game.isOnBattlefield('Veteran Dungeoneer');
+    game.podAnnounceCast(C.get('Wall of Omens'));
+    game.endTurn();
+    check(
+      'Kykar: a noncreature spell blinks Veteran Dungeoneer until the end step (it ventures then); a creature spell does nothing',
+      [
+        exiledUntilEndStep,
+        game.dungeonPosition?.room,
+        namesOnBattlefield(game, 'Spirit'),
+      ],
+      [true, 'Cave Entrance', 0],
+    );
+  }
+  {
+    const game = board(['Kykar, Zephyr Awakener', 'Veteran Dungeoneer']);
+    game.step = 'main1';
+    game.podAnnounceCast(C.get('Sol Ring'));
+    check(
+      'Kykar before combat: a Spirit (the attacker is not blinked away)',
+      [
+        namesOnBattlefield(game, 'Spirit'),
+        game.isOnBattlefield('Veteran Dungeoneer'),
+      ],
+      [1, true],
+    );
+  }
+  {
+    const game = board(['Veteran Dungeoneer']);
+    const dungeoneer = game.findPermanent('Veteran Dungeoneer')!;
+    dungeoneer.counters = 3;
+    check(
+      'blink value: the +1/+1 counters a blink would lose count against it',
+      game.blinkValue(dungeoneer),
+      4,
+    );
   }
   {
     const game = board(['Tomb of Horrors Adventurer']);
@@ -355,9 +440,31 @@ export function runDndTests(): boolean {
     const malison = game.findPermanent('Yuan-Ti Malison')!;
     game.onCombatDamage([malison]);
     check(
-      'Yuan-Ti Malison and Midnight Pathlighter venture on combat damage; Pathlighter: unblockable',
-      [game.dungeonPosition?.room, game.evasive(malison)],
-      ['Goblin Lair', true],
+      'Yuan-Ti Malison and Midnight Pathlighter venture on combat damage',
+      game.dungeonPosition?.room,
+      'Goblin Lair',
+    );
+  }
+  {
+    const game = board([
+      'Midnight Pathlighter',
+      'White Plume Adventurer',
+      'Yuan-Ti Malison',
+      'Kykar, Zephyr Awakener',
+    ]);
+    const evasiveNames = game
+      .creatures()
+      .filter((creature) => game.evasive(creature))
+      .map((creature) => creature.card.name);
+    check(
+      "Midnight Pathlighter (goldfish): an opponent's legendary commander blocks our biggest ground creature",
+      evasiveNames,
+      ['Midnight Pathlighter', 'Yuan-Ti Malison', 'Kykar, Zephyr Awakener'],
+    );
+    check(
+      'Midnight Pathlighter (pod): only legendary creatures block our ground creatures; a flyer is a flyer',
+      game.creatures().map((creature) => game.evasion(creature)),
+      ['legendary', 'legendary', 'legendary', 'flying'],
     );
   }
   {
@@ -369,6 +476,77 @@ export function runDndTests(): boolean {
       'Cloister Gargoyle: +3/+0 and flying after a completed dungeon',
       [...before, game.power(gargoyle), game.evasive(gargoyle)],
       [0, false, 3, true],
+    );
+  }
+
+  // ---------------------------------------------------------------- control in a pod (a stand-in for the other players)
+  {
+    const game = board();
+    const calls = joinPod(game, 'a Sol Ring');
+    game.enter(C.get('Aether Channeler'));
+    check(
+      "Aether Channeler in a pod: bounces an opponent's permanent worth 60 or more instead of drawing",
+      [calls, game.hand.length],
+      [['snipe Aether Channeler bounce 60'], 0],
+    );
+  }
+  {
+    const game = board();
+    const calls = joinPod(game, null);
+    game.enter(C.get('Aether Channeler'));
+    check(
+      'Aether Channeler in a pod with nothing worth bouncing: draws',
+      game.hand.length,
+      1,
+    );
+    check('(it looked first)', calls, ['snipe Aether Channeler bounce 60']);
+  }
+  {
+    const game = board(['Hullbreaker Horror']);
+    const calls = joinPod(game, 'a Sol Ring');
+    game.podAnnounceCast(C.get('Brainstorm'));
+    check(
+      "Hullbreaker Horror in a pod: each spell we cast bounces an opponent's best nonland permanent",
+      calls,
+      ['snipe Hullbreaker Horror bounce 0'],
+    );
+  }
+  {
+    const game = board(
+      ['Veteran Dungeoneer', 'Wall of Omens'],
+      ["Avatar's Wrath"],
+    );
+    const calls = joinPod(game, null, [12]);
+    game.onEnterStep('main2');
+    check(
+      "Avatar's Wrath in a pod, behind on board: every opponent's creatures bounce; we keep our strongest, the rest to hand",
+      [
+        calls,
+        game.isOnBattlefield('Veteran Dungeoneer'),
+        game.hand.map((card) => card.name),
+      ],
+      [["bounce all Avatar's Wrath"], true, ['Wall of Omens']],
+    );
+  }
+  {
+    const game = board([], ["Avatar's Wrath"]);
+    const calls = joinPod(game, null, [6]);
+    game.onEnterStep('main2');
+    check(
+      "Avatar's Wrath waits while the opponents' boards are small",
+      [calls, game.hand.length],
+      [[], 1],
+    );
+  }
+  {
+    const game = board();
+    game.resolve(C.get("Morningtide's Light"));
+    const shieldedNow = game.fogPrevent(20, true);
+    game.startTurn();
+    check(
+      "Morningtide's Light: all damage to us is prevented until our next turn",
+      [shieldedNow, game.fogPrevent(20, true)],
+      [true, false],
     );
   }
 

@@ -82,24 +82,51 @@ export function hitWithRemoval(
   table.games[owner].podSuffer(permanent, answer);
 }
 
-/** An enters-the-battlefield removal effect (Shriekmaw): hits the best target. Returns the name of what it hit. */
+/** An enters-the-battlefield removal effect (Shriekmaw): hits the best target worth at least `minimumValue`.
+ *  Returns the name of what it hit. */
 export function snipeBestTarget(
   table: PodTable,
   game: Game<unknown>,
   answer: Answer,
+  sourceName: string,
+  minimumValue: number,
 ): string | null {
   const caster = table.playerOf(game);
-  const hit = bestRemovalTarget(table, caster, answer);
+  const hit = bestRemovalTarget(table, caster, answer, minimumValue);
   if (!hit) return null;
   hitWithRemoval(
     table,
     caster,
-    'Shriekmaw',
+    sourceName,
     hit.owner,
     hit.target.permanent,
     answer,
   );
   return hit.target.name;
+}
+
+/** Every creature of every living opponent goes back to its owner's hand (Avatar's Wrath). */
+export function bounceEveryOpponentsCreatures(
+  table: PodTable,
+  game: Game<unknown>,
+  sourceName: string,
+): void {
+  const caster = table.playerOf(game);
+  table.stats.removals[caster]++;
+  for (const opponent of table.livingOpponents(caster)) {
+    const opponentGame = table.games[opponent];
+    const creatures = opponentGame.creatures();
+    if (!creatures.length) continue;
+    table.sayAs(
+      caster,
+      `${sourceName}: ${table.playerName(opponent)}'s ${creatures.length} creature(s) return to hand`,
+      'answer',
+      [sourceName],
+    );
+    table.stats.removed[opponent] += creatures.length;
+    for (const creature of creatures)
+      opponentGame.podRemove(creature, 'bounce');
+  }
 }
 
 /** What Volatile Stormdrake's ability may target, as a removal spell would: one creature. */

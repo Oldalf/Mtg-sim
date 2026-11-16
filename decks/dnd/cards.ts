@@ -1,5 +1,9 @@
 /** The DnD deck (Hama Pashar, Ruin Seeker): card names and values. The rules are in game.ts. */
 import * as C from '../../engine/cards/cards';
+import {
+  CATHARS_CRUSADE,
+  RADIANT_SOLAR,
+} from '../../engine/game/creature-enter-triggers';
 
 export const HAMA_PASHAR = 'Hama Pashar, Ruin Seeker';
 // blink
@@ -7,6 +11,7 @@ export const AIRBENDER_ASCENSION = 'Airbender Ascension';
 export const BRAGO = 'Brago, King Eternal';
 export const DAYDREAM = 'Daydream';
 export const GENKU = 'Genku, Future Shaper';
+export const KYKAR = 'Kykar, Zephyr Awakener';
 export const MOMO = 'Momo, Playful Pet';
 export const NIKO = 'Niko, Light of Hope';
 export const OJI = 'Oji, the Exquisite Blade';
@@ -32,13 +37,14 @@ export const WHITE_PLUME_ADVENTURER = 'White Plume Adventurer';
 export const YUAN_TI_MALISON = 'Yuan-Ti Malison';
 // ramp
 export const ARCHAEOMANCERS_MAP = "Archaeomancer's Map";
-export const CLAIM_JUMPER = 'Claim Jumper';
 export const KNIGHT_OF_THE_WHITE_ORCHID = 'Knight of the White Orchid';
 export const LAND_TAX = 'Land Tax';
 export const RASPUTIN = 'Rasputin, the Oneiromancer';
 export const STARFIELD_SHEPHERD = 'Starfield Shepherd';
-// removal
+// removal and control (the primer: "bounce permanents back to your opponents' hands")
 export const AGENT_OF_TREACHERY = 'Agent of Treachery';
+export const AVATARS_WRATH = "Avatar's Wrath";
+export const HULLBREAKER_HORROR = 'Hullbreaker Horror';
 
 /** Permanent.marks: Skycoach Conductor and Emeritus of Ideation are prepared (they may cast a copy of their spell). */
 export const PREPARED = 1;
@@ -67,6 +73,7 @@ export const FOX = C.makeToken('Fox', 2, 2, 'white', ['vigilance']);
 export const MOONFOLK = C.makeToken('Moonfolk', 1, 2, 'blue', ['flying']);
 export const RAT = C.makeToken('Rat', 1, 1, 'black', ['lifelink']);
 export const BIRD = C.makeToken('Bird', 1, 1, 'white', ['flying']);
+export const SPIRIT = C.makeToken('Spirit', 1, 1, 'white', ['flying']);
 /** Niko's Shard: an enchantment token, "{2}, Sacrifice this token: Scry 1, then draw a card." */
 export const SHARD = new C.CardDef('Shard', {
   name: 'Shard',
@@ -79,7 +86,6 @@ export const VALUE: Record<string, number> = {
   [HAMA_PASHAR]: 95,
   'Sol Ring': 90,
   'Arcane Signet': 75,
-  'Azorius Signet': 72,
   'Fellwar Stone': 68,
   'Fieldmist Borderpost': 62,
   'Midnight Clock': 60,
@@ -88,11 +94,9 @@ export const VALUE: Record<string, number> = {
   [ARCHAEOMANCERS_MAP]: 58,
   [LAND_TAX]: 56,
   [KNIGHT_OF_THE_WHITE_ORCHID]: 54,
-  [CLAIM_JUMPER]: 56,
   [RASPUTIN]: 60,
   'Solemn Simulacrum': 64,
   [STARFIELD_SHEPHERD]: 58,
-  'Cloud of Faeries': 44,
   'Peregrine Drake': 66,
   // blink
   Panharmonicon: 74,
@@ -101,6 +105,7 @@ export const VALUE: Record<string, number> = {
   [BRAGO]: 78,
   'Displacer Beast': 62,
   [GENKU]: 70,
+  [KYKAR]: 74,
   [MOMO]: 46,
   [NIKO]: 70,
   [OJI]: 72,
@@ -122,13 +127,20 @@ export const VALUE: Record<string, number> = {
   'Eccentric Apprentice': 60,
   [MIDNIGHT_PATHLIGHTER]: 76,
   [NADAAR]: 74,
+  [RADIANT_SOLAR]: 72,
+  [CATHARS_CRUSADE]: 72,
   [TOMB_OF_HORRORS_ADVENTURER]: 78,
   [UNDERCELLAR_SWEEP]: 72,
   'Veteran Dungeoneer': 62,
   [WHITE_PLUME_ADVENTURER]: 74,
   [YUAN_TI_MALISON]: 52,
   [AGENT_OF_TREACHERY]: 50,
-  'Hullbreaker Horror': 62,
+  [HULLBREAKER_HORROR]: 62,
+  // in hand: the pod's answers are kept over spare lands at the discard to seven
+  [AVATARS_WRATH]: 55,
+  'Path to Exile': 50,
+  'Swords to Plowshares': 50,
+  'Day of Judgment': 50,
 };
 
 /** How much a second run of each permanent's enter trigger is worth (a blink; Brago, Thassa and the spells take the
@@ -145,6 +157,7 @@ export const BLINK_VALUE: Record<string, number> = {
   'Eccentric Apprentice': 7,
   [CLOISTER_GARGOYLE]: 7,
   [NADAAR]: 7,
+  [RADIANT_SOLAR]: 7,
   [AETHER_CHANNELER]: 6,
   'Solemn Simulacrum': 6,
   [NIKO]: 5,
@@ -152,23 +165,25 @@ export const BLINK_VALUE: Record<string, number> = {
   'Wall of Omens': 5,
   'Spirited Companion': 5,
   'Helpful Hunter': 5,
-  [CLAIM_JUMPER]: 4,
   [DJINNI_WINDSEER]: 4,
   [OJI]: 4,
-  'Cloud of Faeries': 4,
   [RASPUTIN]: 4,
   [ARCHAEOMANCERS_MAP]: 3,
   [MOMO]: 3, // its leave trigger
   [KNIGHT_OF_THE_WHITE_ORCHID]: 3,
 };
 
-/** Cards never cast in a goldfish game: removal (the pod uses Path, Swords and Day of Judgment as answers), and cards
- *  with no use here (not modelled: Mirrorweave, Reconnaissance, Avatar's Wrath, Component Pouch). */
+/** A blink is worth it only if what it brings back is worth at least this much (BLINK_VALUE). */
+export const SMALLEST_BLINK_WORTH_IT = 4;
+
+/** Cards the AI never casts from its candidates: removal (the pod uses Path, Swords and Day of Judgment as answers,
+ *  and DndGame casts Avatar's Wrath in a pod when behind on board), and cards with no use here (not modelled:
+ *  Mirrorweave, Reconnaissance, Component Pouch). */
 export const HOLD = new Set([
   'Path to Exile',
   'Swords to Plowshares',
   'Day of Judgment',
-  "Avatar's Wrath",
+  AVATARS_WRATH,
   'Mirrorweave',
   'Reconnaissance',
   'Component Pouch',

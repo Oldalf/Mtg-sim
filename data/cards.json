@@ -12098,5 +12098,50 @@
   "layout": "normal",
   "oracle_id": "fc9ec820-4245-4a96-b009-5308a818ca58",
   "scryfall_id": "5525d6a6-e532-4047-9da4-bfae7927fecc"
+ },
+ "Kykar, Zephyr Awakener": {
+  "name": "Kykar, Zephyr Awakener",
+  "full_name": "Kykar, Zephyr Awakener",
+  "mana_cost": "{2}{W}{U}",
+  "type_line": "Legendary Creature — Bird Wizard",
+  "oracle": "Flying\nWhenever you cast a noncreature spell, choose one —\n• Exile another target creature you control. Return that card to the battlefield under its owner's control at the beginning of the next end step.\n• Create a 1/1 white Spirit creature token with flying.",
+  "power": "3",
+  "toughness": "4",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "0156c94b-e64c-49de-a46c-a203c5e05e98",
+  "scryfall_id": "6c980998-7124-4ec6-a0b6-e8d9a2364925"
+ },
+ "Radiant Solar": {
+  "name": "Radiant Solar",
+  "full_name": "Radiant Solar",
+  "mana_cost": "{5}{W}",
+  "type_line": "Creature — Angel",
+  "oracle": "Flying, lifelink\nWhenever this creature or another nontoken creature you control enters, venture into the dungeon. (Enter the first room or advance to the next room.)\n{W}, Discard this card: Venture into the dungeon and you gain 3 life.",
+  "power": "3",
+  "toughness": "6",
+  "keywords": [
+   "Flying",
+   "Lifelink",
+   "Venture into the dungeon"
+  ],
+  "layout": "normal",
+  "oracle_id": "21a86dcd-03e3-409b-b214-5feed07db584",
+  "scryfall_id": "fa0e443a-c479-40ab-9702-8beca3e5ab95"
+ },
+ "Cathars' Crusade": {
+  "name": "Cathars' Crusade",
+  "full_name": "Cathars' Crusade",
+  "mana_cost": "{3}{W}{W}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever a creature you control enters, put a +1/+1 counter on each creature you control.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "cc65ac73-5bef-4ecb-ad8e-39199084c027",
+  "scryfall_id": "5296e353-2efc-4d72-a877-7957eff630b9"
  }
 }

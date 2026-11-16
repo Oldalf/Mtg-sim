@@ -107,6 +107,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       trample: keywords.has('trample'),
       first: keywords.has('first strike') || keywords.has('double strike'),
       menace: keywords.has('menace'),
+      legendary: permanent.card.types.has('legendary'),
     };
   }
   /** Our untapped creatures, as blockers (a summoning-sick creature can block). */

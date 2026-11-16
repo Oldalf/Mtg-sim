@@ -1,0 +1,60 @@
+Primer for Hama Pashar, Ruin Seeker, by the deck's owner (William). Given to Pontus on 2026-11-16, kept in his words.
+
+## Ways To Win
+- Combat Damage
+- Ping Damage (Undercity 'Trap!' Room)
+
+### Combat Damage
+Both ways of winning with this deck are honestly extremely similar, but I'll explain them separately either way. Leverage your control by bouncing permanents back to your opponents' hands using cards like Hullbreaker Horror, Avatar's Wrath, Aether Channeler or Morningtide's Light, blink your creatures so that they receive tons of +1/+1 counters, whether through Dungeon rooms or through Cathars' Crusade. Then hit them in the face. Hard.
+
+### Ping Damage
+Similar to the Combat Damage route, we want to control the board, make it difficult for our opponents to actually go for our throat. Set up little blink engines such as Oji, the Exquisite Blade, Thassa, Deep-Dwelling or Brago, King Eternal, and have your creatures pop in and out as many times as you possibly can. Once you're in the Undercity, run past the 'Trap!' room as many times as you can, preferably with both room additional effects from both your commander, and the background in the deck.
+
+## Key Pieces
+
+### Commander
+Honestly, our commander doesn't do too much by herself in this deck. It can be *extremely* useful once you have some dungeondelving set up, but until then, she mostly sits pretty. You can play her turn 3, most people won't bat an eye as she doesn't do anything by herself. Once you're a couple of rooms in, and you're approaching an end-bonus like the one in **Undercity**? Expect to have your opponents aiming to remove her as swiftly as possible.
+
+### Venture/Initiative (Dungeon)
+Dungeons, our main objective with this deck. It's how we generate value, it's partly our card draw engine, it allows us to ramp. It influences the board in infinite amounts, and every room matters. About to be hit for 25 damage by a creature? Goad it with the room bonus from the **Arena** room. Need more mana? Find some from the **Stash** or the **Mine Tunnels** rooms. We have two dungeons we primarly go into. **Undercity** which is where we want to go into in the mid/late game phase, and **Lost Mine of Phandelver** which is our bread and butter early game. How do we get into the dungeon? For **Undercity** we get into it through "you take the initiative" effects, and **Lost Mine of Phandelver** we get into via "venture into the dungeon". We get there primarily through creatures, but we can also get into the dungeon through mana rocks, lands, and enchantments. I'll divide them into ETB effects and abilities.
+
+ETB Effects:
+- Sarevok's Tome | A mana rock that gives us the initiative
+- Undercellar Sweep | An enchantment that generates tokens, and gives us the initiative
+- Veteran Dungeoneer // Displacer Beast // Cloister Gargoyle | Short and sweet, when they ETB we venture into the dungeon
+- Radiant Solar | Ventures on ETB, but it also ventures whenever another nontoken creature of yours ETBs!
+- White Plume Adventurer | It ventures on ETB, but also untaps a creature at each opponent's upkeep. It untaps all your creatures if you've completed a dungeon!
+- Eccentric Apprentice | Also ventures on ETB, and if you've completed a dungeon, at the beginning of combat it turns a creature into a 1/1 bird until the end of turn. All other passives, gone.
+- Nadaar, Selfless Paladin | On ETB and whenever he attacks, you venture into the dungeon. Dungeon completionist bonus is a +1/+1 bonus to other creatures you control :)
+- Tomb of Horrors Adventurer | Ridiculous creature. On ETB it grants you initiative, and the second spell you cast each turn is copied! Dungeon completion bonus, you guessed it, copy said spell twice! Will be removed on sight if they can.
+
+Abilities:
+- Nadaar, Selfless Paladin | Again, when he attacks you venture.
+- Yuan-Ti Malison | When he deals combat damage to an opponent, you venture! Nice caveat is that he's unblockable if he attacks alone.
+- Midnight Pathlighter | Whenever one or more creatures you control deals combat damage to a player, venture! He makes it easier for you to deal said damage by making your creatures only blockable by legendary creatures.
+- Dungeon Map | 3 generic mana, tap the mana rock. Venture!
+- Dungeon Descent | A land that you can pay 4 generic, tap, and tap an untapped legendary creature. Venture! Very expensive, but may save you in a pinch.
+
+### Trigger Doublers
+In a deck where nearly all of our bonuses stem from ETBs and Rooms, of course we want some tools to cause these effects to trigger additional times!
+
+- Hama Pashar, Ruin Seeker | It's already been mentioned, but she causes room abilities of dungeons to trigger an additional time.
+- Dungeon Delver | It's a background to your commander. Room abilities trigger yet another time!
+- Panharmonicon // Starfield Vocalist | Creatures and artifacts effects on ETB trigger an additional time. Venture once? Venture an additional time! Draw a card? Draw another card! Works wonders in a blink deck.
+
+### Blink Tools
+These ETB effects are great and all, but if they only happened once we wouldn't get a lot done here really. That's why these little tools exist, to allow us to consistently blink! Over, and over, and over.
+
+Blink Engines:
+- Kykar, Zephyr Awakener | Cast a non-creature spell? Go ahead and blink a creature! It comes back at the end of the turn, so you can use it to dodge boardwipes or removal :)
+- Brago, King Eternal | Whenever he successfully deals combat damage to a player, blink as many of your creatures as you'd like!
+- Thassa, Deep-Dwelling | At the end of your turn, go ahead and blink a creature
+- Airbender Ascension | It's like a budget Thassa. If four creatures have entered while this enchantment has been out, blink a creature at the end of your turn
+- Oji, the Exquisite Blade | Each turn you cast your second spell, blink one creature straight away!
+
+Blink Once, Blink Twice:
+- Daydream | Blink a creature once, it comes back with a +1/+1 counter straight away. You may cast it from your graveyard to do it again
+- Ephemerate | Blink a creature once, and at the beginning of your next turn, blink a creature once again!
+- Skycoach Conductor | You may blink a creature that isn't this one, once. If he magically enters the battlefield again, you may cast the blink again!
+- Ghostly Flicker | Blink two targets, whether that be artifacts, creatures, or lands. Very nice stuff!
+- Lae'zel's Acrobatics | Go ahead and blink all your creatures! Just roll a D20 first, and see whether they blink once or twice! They come back at the end of your turn. Also useful to avoid boardwipes :)

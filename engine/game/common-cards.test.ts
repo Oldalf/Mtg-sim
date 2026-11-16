@@ -2,13 +2,14 @@
  * Checks of single card rules in the engine that the DnD deck brought: "enters, draw a card" (Wall of Omens), Peregrine
  * Drake's untap doubled by Panharmonicon, Theros gods that aren't creatures below their devotion (Thassa, Ephara),
  * the rocks (Azorius Signet, Midnight Clock, Sarevok's Tome with the initiative), a Plains search, and Day of
- * Judgment as a pod answer. Also a search's copy of our next turn (copyAtNextTurn).
+ * Judgment as a pod answer, Cathars' Crusade and Radiant Solar. Also a search's copy of our next turn (copyAtNextTurn).
  * Run: npm run pod -- --test
  */
 import * as C from '../cards/cards';
 import { Rng } from '../util/rng';
 import { Deck } from '../run/runner';
 import { ANSWERS } from './answers';
+import { triggersOfCreatureEntering } from './creature-enter-triggers';
 import { Permanent } from './game-types';
 import { fetchLand } from './land-search';
 
@@ -139,6 +140,27 @@ export function runCommonCardTests(allDecks: Record<string, Deck>): boolean {
       'a Plains search finds the Plains among the Islands',
       fetchLand(game, 'plains', false, true)?.name,
       'Plains',
+    );
+  }
+  {
+    const game = newGame(allDecks);
+    putOnBattlefield(game, "Cathars' Crusade");
+    const solar = putOnBattlefield(game, 'Radiant Solar');
+    const bear = putOnBattlefield(game, 'Wall of Omens');
+    triggersOfCreatureEntering(game, bear);
+    const roomAfterCreature = game.dungeonPosition?.room;
+    const token = game.createTokens(C.makeToken('Goblin', 1, 1, 'red'))[0];
+    triggersOfCreatureEntering(game, token);
+    check(
+      "Cathars' Crusade: a counter on each creature as one enters; Radiant Solar ventures for a nontoken one only",
+      [
+        solar.counters,
+        bear.counters,
+        token.counters,
+        roomAfterCreature,
+        game.dungeonPosition?.room,
+      ],
+      [2, 2, 1, 'Cave Entrance', 'Cave Entrance'],
     );
   }
   check(

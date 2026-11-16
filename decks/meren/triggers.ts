@@ -170,7 +170,7 @@ function resolveRemovalOnEnter(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
   if (name === 'Shriekmaw') {
     // a pod: destroy the biggest threat's best creature (nonartifact, nonblack isn't checked)
-    if (game.inArena()) game.arena!.snipe(game, SHRIEKMAW);
+    if (game.inArena()) game.arena!.snipe(game, SHRIEKMAW, name);
   } else if (EDICT_ETB.has(name)) {
     if (game.inArena()) game.arena!.edict(game, name === 'Accursed Marauder'); // a pod: the opponents sacrifice too
     // each player sacrifices: we lose our worst creature (Accursed Marauder: a nontoken one)

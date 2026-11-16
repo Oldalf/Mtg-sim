@@ -330,7 +330,8 @@ export class AzulaGame extends CreatureDeckGame {
         break;
       case 'Necron Deathmark':
         // destroy a creature (the pod's biggest threat's best); the mill is not modelled
-        if (this.inArena()) this.arena!.snipe(this, CREATURE_REMOVAL);
+        if (this.inArena())
+          this.arena!.snipe(this, CREATURE_REMOVAL, 'Necron Deathmark');
         break;
     }
   }

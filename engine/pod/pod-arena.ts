@@ -8,6 +8,7 @@ import { fightOpponent } from './pod-combat';
 import {
   answerWin,
   attackPreference,
+  bounceEveryOpponentsCreatures,
   counterSpell,
   exchangeForStormdrake,
   makeOpponentsSacrifice,
@@ -37,8 +38,14 @@ export function buildArena(table: PodTable): Arena {
     },
     edict: (game, nontokenOnly) =>
       table.runOffTurn(() => makeOpponentsSacrifice(table, game, nontokenOnly)),
-    snipe: (game, answer) =>
-      table.runOffTurn(() => snipeBestTarget(table, game, answer)),
+    snipe: (game, answer, sourceName, minimumValue = 0) =>
+      table.runOffTurn(() =>
+        snipeBestTarget(table, game, answer, sourceName, minimumValue),
+      ),
+    bounceAllCreatures: (game, sourceName) =>
+      table.runOffTurn(() =>
+        bounceEveryOpponentsCreatures(table, game, sourceName),
+      ),
     answerWin: (game) => table.runOffTurn(() => answerWin(table, game)),
     counter: (game, spell) =>
       table.runOffTurn(() => counterSpell(table, game, spell)),

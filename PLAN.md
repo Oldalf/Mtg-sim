@@ -60,6 +60,16 @@ Hama Pashar, Ruin Seeker (`decks/dnd`), William's deck. Its owner wrote a primer
 5. Numbers before and after (goldfish 2,000 games; pod with Meren, Edgar and Helga 1,000 games) in `decks/dnd/PLAN.md`. Show Pontus what changed.
 6. Done when `npm run sim -- dnd --test` exits 0, a `--trace` game and a pod `--trace` game look like what the primer describes, and `npm run verify` ends VERIFY OK.
 
+Done 2026-11-16: primer in `decks/dnd/primer.txt`, the card-by-card map in `decks/dnd/PLAN.md` ("From the primer"). The list swapped Cloud of Faeries, Claim Jumper and Azorius Signet for Cathars' Crusade, Radiant Solar and Kykar (the owner's cuts). Engine: a `'legendary'` evasion (Midnight Pathlighter), `creature-enter-triggers.ts` (Cathars' Crusade, Radiant Solar), `Arena.bounceAllCreatures`, and `Arena.snipe` takes the source's name for the log (it said "Shriekmaw" for every card) and a minimum value. Every other deck IDENTICAL (fixed-seed pod run). Blink as an answer to removal and wipes is new task G14.
+
+## G14. Blink in answer to removal and wipes (Sonnet 5.5)
+
+DnD's primer: Kykar, Lae'zel's Acrobatics and Ephemerate "dodge boardwipes or removal". In a pod an opponent's removal (`hitWithRemoval`) asks the owner's `podShield` first; a wipe (`castBoardWipe`) asks nothing.
+
+1. Targeted removal: DnD overrides `podShield` to cast Ephemerate (or Ghostly Flicker) on the targeted creature when it has the mana open; the blink makes the removal miss. The blink must target that creature, not the best blink target.
+2. Wipes: a hook before `castBoardWipe` removes the creatures, so the owner can answer with Lae'zel's Acrobatics (all nontoken creatures exiled until the end step: G5's end step rule matters here). Only DnD plays these now.
+3. Tests in `decks/dnd/tests` and `engine/pod/pod.test.ts`. Every other deck IDENTICAL; DnD's pod numbers before and after.
+
 ## G2. The pod report again (Haiku 5.5)
 
 The game-night report of 2026-11-15 (Teval 31.4%, Meren 23.5%, Ardyn 22.7%, Helga 12.0%, Edgar 10.3%) was run before forced attacks, opponent-cast triggers, blink, Treasure in the engine and the hand size fixes. Helga's numbers in particular changed (her Ulamog's Crusher now attacks every combat).
