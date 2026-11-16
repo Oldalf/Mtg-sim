@@ -8,6 +8,7 @@
  * and GameCore.landsToUntap), so a line the search found is paid for the way it counted.
  */
 import { Cost } from '../cards/cards';
+import { TREASURE } from '../cards/tokens';
 import type { GameCore } from './game-core';
 import type { Permanent } from './game-types';
 
@@ -22,6 +23,14 @@ export interface LandClass {
   /** False for a filter Signet: it taps like a land here but Turnabout and the untap spells don't untap it. */
   isLand: boolean;
 }
+
+/** A Treasure, as a payment records it: a source of any colour that is not a land. */
+const TREASURE_SOURCE: LandClass = {
+  kind: 'A',
+  isIsland: false,
+  isSwamp: false,
+  isLand: false,
+};
 
 /** The cost text of a PaymentRecord that is an untap effect: its `taps` are the lands it untapped. */
 export const UNTAP = 'untap';
@@ -103,6 +112,8 @@ export class SearchMana {
   allLands: number[] = [];
   /** Energybending: every land is an Island and a Swamp (it taps for either colour). */
   isEnergybent = false;
+  /** Untapped Treasures: a mana of any colour each, spent last, as the game does (GameCore.pay). */
+  treasures = 0;
   /** The payments (and untaps) since the last time the caller took them. */
   payments: PaymentRecord[] = [];
 
@@ -115,6 +126,7 @@ export class SearchMana {
     mana.untappedLands = this.untappedLands.slice();
     mana.allLands = this.allLands; // replaced, never changed in place
     mana.isEnergybent = this.isEnergybent;
+    mana.treasures = this.treasures;
     mana.payments = this.payments; // replaced, never changed in place
     return mana;
   }
@@ -122,7 +134,7 @@ export class SearchMana {
   /** For telling two searched positions apart. */
   key(): string {
     const pool = this.pool;
-    return `${pool.U},${pool.B},${pool.A},${pool.C},${pool.S},${this.highTides},${this.bubblingMucks},${+this.isEnergybent},${this.untappedLands},${this.allLands}`;
+    return `${pool.U},${pool.B},${pool.A},${pool.C},${pool.S},${this.highTides},${this.bubblingMucks},${+this.isEnergybent},${this.untappedLands},${this.allLands},${this.treasures}`;
   }
 
   /** The mana the game has now (nextTurn: at the start of our next turn, everything untapped, no High Tide).
@@ -146,6 +158,10 @@ export class SearchMana {
       const kind = game.manaSourceKind(permanent, nextTurn);
       if (kind === null) continue;
       const isUntapped = nextTurn || !permanent.tapped;
+      if (permanent.card === TREASURE) {
+        if (isUntapped) mana.treasures += 1;
+        continue;
+      }
       if (kind === 'S') {
         if (isUntapped) mana.pool.S += 1; // only pays for instants and sorceries
         continue;
@@ -199,13 +215,49 @@ export class SearchMana {
     this.countSource(landClass, true);
   }
 
-  /** Pays a cost from the pool, tapping more lands (one at a time) while the pool falls short.
+  /** Treasures come into play untapped (An Offer You Can't Refuse). */
+  addTreasures(count: number): void {
+    this.treasures += count;
+  }
+
+  /** Pays a cost from the pool, tapping more lands (one at a time) while the pool falls short. Treasures only when
+   *  the lands can't pay it, as the game does.
    *  keepTypedLandsBack: a High Tide / Muck is still to come, so Islands and Swamps stay untapped if anything else
    *  will do (tapping them first would waste their bonus). */
   spendMana(
     cost: Cost,
     isInstantOrSorcery: boolean,
     keepTypedLandsBack: boolean,
+  ): boolean {
+    if (this.treasures === 0)
+      return this.spendFromLands(
+        cost,
+        isInstantOrSorcery,
+        keepTypedLandsBack,
+        false,
+      );
+    const poolBefore = { ...this.pool };
+    const untappedLandsBefore = this.untappedLands.slice();
+    if (
+      this.spendFromLands(cost, isInstantOrSorcery, keepTypedLandsBack, false)
+    )
+      return true;
+    this.pool = poolBefore;
+    this.untappedLands = untappedLandsBefore;
+    return this.spendFromLands(
+      cost,
+      isInstantOrSorcery,
+      keepTypedLandsBack,
+      true,
+    );
+  }
+
+  /** spendMana, with or without the Treasures. */
+  private spendFromLands(
+    cost: Cost,
+    isInstantOrSorcery: boolean,
+    keepTypedLandsBack: boolean,
+    mayUseTreasures: boolean,
   ): boolean {
     const taps: LandClass[] = [];
     for (;;) {
@@ -223,6 +275,7 @@ export class SearchMana {
           false,
           taps,
           keepTypedLandsBack,
+          mayUseTreasures,
         )
       )
         return false;
@@ -267,13 +320,15 @@ export class SearchMana {
     );
   }
 
-  /** Taps one more untapped land to make what the pool is short of. False if no land can. */
+  /** Taps one more untapped land to make what the pool is short of (a Treasure when no land can and
+   *  mayUseTreasures). False if nothing can. */
   private tapAnotherLand(
     shortOf: 'U' | 'B' | 'any',
     poolAfterPaying: Pool,
     skipFilters: boolean,
     taps: LandClass[],
     keepTypedLandsBack: boolean,
+    mayUseTreasures: boolean,
   ): boolean {
     // For a generic cost, an Island or a Swamp from the colour we have more of (a tie: the Swamp), so the
     // scarcer colour stays for the costs still to come.
@@ -317,7 +372,13 @@ export class SearchMana {
         bestClass = index;
       }
     }
-    if (bestClass < 0) return false;
+    if (bestClass < 0) {
+      if (!mayUseTreasures || this.treasures === 0) return false;
+      this.treasures -= 1;
+      this.tapLand(TREASURE_SOURCE, shortOf);
+      taps.push(TREASURE_SOURCE);
+      return true;
+    }
     if (this.landClasses[bestClass].kind === 'F') {
       // fed with a mana the payment doesn't need; if there is none, tap something else for it first
       const leftover =
@@ -333,6 +394,7 @@ export class SearchMana {
           true,
           taps,
           keepTypedLandsBack,
+          mayUseTreasures,
         );
       this.feedFilterSource(poolAfterPaying, shortOf);
     }
@@ -393,6 +455,7 @@ export class SearchMana {
   /** The pool if every untapped land were tapped now (how much mana we could have: for scoring and the log). */
   manaWithAllLandsTapped(): Pool {
     const everything = this.copy();
+    everything.pool.A += everything.treasures;
     for (let index = 0; index < everything.landClasses.length; index++)
       while (everything.untappedLands[index] > 0) {
         everything.untappedLands[index] -= 1;

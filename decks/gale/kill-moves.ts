@@ -547,7 +547,7 @@ function selfCounterMoves(state: KillSearchState): KillSearchState[] {
             next.resolveSpell(secondName, secondVariant as string);
           }
           if (counterName === "An Offer You Can't Refuse") {
-            next.pool.A += 2;
+            next.mana.addTreasures(2);
           } else if (counterName === 'Unwind') next.untapLands(3);
           else if (counterName === 'Rewind') next.untapLands(4);
           next.graveyardSpells = addSorted(

@@ -11,6 +11,7 @@ import { deck as edgar } from './edgar/index';
 import { deck as helga } from './helga/index';
 import { deck as ardyn } from './ardyn/index';
 import { deck as teval } from './teval/index';
+import { deck as thantis } from './thantis/index';
 import { deck as goldfish } from './goldfish/index';
 
 export const DECKS: Record<string, Deck> = {
@@ -24,5 +25,6 @@ export const DECKS: Record<string, Deck> = {
   helga,
   ardyn,
   teval,
+  thantis,
   goldfish,
 };

@@ -47,11 +47,6 @@ export class ArdynGame extends CreatureDeckGame {
     this.lifeAtTurnStart = this.life.slice();
   }
 
-  countOnBattlefield(name: string): number {
-    return this.battlefield.filter((permanent) => permanent.card.name === name)
-      .length;
-  }
-
   // ================================================================ mana and costs
   /** Crypt Ghast and Nirkana Revenant: each Swamp makes an extra {B}; Gauntlet of Power (black) for basic Swamps,
    *  Caged Sun (black) for any land tapped for black. */

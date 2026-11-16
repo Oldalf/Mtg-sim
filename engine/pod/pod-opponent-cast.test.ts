@@ -23,6 +23,15 @@ const TAUREAN_MAULER = new C.CardDef('Taurean Mauler', {
   toughness: '2',
   keywords: ['Changeling'],
 });
+const RURIC_THAR = new C.CardDef('Ruric Thar, the Unbowed', {
+  mana_cost: '{4}{R}{G}',
+  type_line: 'Legendary Creature — Ogre Warrior',
+  oracle:
+    'Reach, vigilance\nRuric Thar attacks each combat if able.\nWhenever a player casts a noncreature spell, Ruric Thar deals 6 damage to that player.',
+  power: '6',
+  toughness: '6',
+  keywords: ['Reach', 'Vigilance'],
+});
 const RHYSTIC_STUDY = new C.CardDef('Rhystic Study', {
   mana_cost: '{2}{U}',
   type_line: 'Enchantment',
@@ -87,6 +96,38 @@ export function runOpponentCastTests(allDecks: Record<string, Deck>): boolean {
       handBefore + 1,
     );
     check('the caster tapped its land to pay', forest.tapped, true);
+  }
+  {
+    const table = newTable(allDecks);
+    putOnBattlefield(table.games[GALE], RURIC_THAR);
+    const lifeBefore = table.games[MEREN].myLife;
+    table.games[MEREN].podAnnounceCast(spell);
+    check(
+      'Ruric Thar: a creature spell costs its caster nothing',
+      table.games[MEREN].myLife,
+      lifeBefore,
+    );
+    table.games[MEREN].podAnnounceCast(C.get('Sol Ring'));
+    check(
+      'Ruric Thar: a noncreature spell costs its caster 6 life',
+      table.games[MEREN].myLife,
+      lifeBefore - 6,
+    );
+  }
+  {
+    // a creature dying is told to every other living player (Syr Konrad, Sangromancer)
+    const table = newTable(allDecks);
+    const told: number[] = [];
+    table.games.forEach((game, player) => {
+      game.onOtherPlayersCreatureDies = () => told.push(player);
+    });
+    const creature = putOnBattlefield(table.games[GALE], spell);
+    table.games[GALE].dies(creature);
+    check(
+      "a creature of Gale's dies: the other three players hear it",
+      told.sort(),
+      [0, 1, 3].sort(),
+    );
   }
   {
     const table = newTable(allDecks);

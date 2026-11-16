@@ -9666,5 +9666,680 @@
   "layout": "normal",
   "oracle_id": "cb184995-700f-4900-994a-4ce7fd12f942",
   "scryfall_id": "47c25e41-f43c-4447-81b5-b9631448bd29"
+ },
+ "Brawn": {
+  "name": "Brawn",
+  "full_name": "Brawn",
+  "mana_cost": "{3}{G}",
+  "type_line": "Creature — Incarnation",
+  "oracle": "Trample\nAs long as this card is in your graveyard and you control a Forest, creatures you control have trample.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "00876e98-d062-4a12-85e6-86a2b20cf867",
+  "scryfall_id": "8c05568e-fa50-46e9-aec4-1ba5e814029e"
+ },
+ "Deadly Rollick": {
+  "name": "Deadly Rollick",
+  "full_name": "Deadly Rollick",
+  "mana_cost": "{3}{B}",
+  "type_line": "Instant",
+  "oracle": "If you control a commander, you may cast this spell without paying its mana cost.\nExile target creature.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "0456ec64-2c81-4763-a352-8ff64a4c3d6b",
+  "scryfall_id": "0e13f735-54fa-42b6-aea4-ced33811d7d4"
+ },
+ "Chaos Warp": {
+  "name": "Chaos Warp",
+  "full_name": "Chaos Warp",
+  "mana_cost": "{2}{R}",
+  "type_line": "Instant",
+  "oracle": "The owner of target permanent shuffles it into their library, then reveals the top card of their library. If it's a permanent card, they put it onto the battlefield.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8",
+  "scryfall_id": "fb8d8106-b9bd-405c-886e-72fc301c65e1"
+ },
+ "Savage Lands": {
+  "name": "Savage Lands",
+  "full_name": "Savage Lands",
+  "mana_cost": "",
+  "type_line": "Card",
+  "oracle": "(Theme color: {G})",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "front_card",
+  "oracle_id": "0c451330-1154-474d-8b69-626420a7ec75",
+  "scryfall_id": "d5c05237-de47-4440-801f-8613588fe610"
+ },
+ "Icetill Explorer": {
+  "name": "Icetill Explorer",
+  "full_name": "Icetill Explorer",
+  "mana_cost": "{2}{G}{G}",
+  "type_line": "Creature — Insect Scout",
+  "oracle": "You may play an additional land on each of your turns.\nYou may play lands from your graveyard.\nLandfall — Whenever a land you control enters, mill a card.",
+  "power": "2",
+  "toughness": "4",
+  "keywords": [
+   "Mill",
+   "Landfall"
+  ],
+  "layout": "normal",
+  "oracle_id": "109cdefd-e8cc-4ac7-b6ba-2cfdef8d780f",
+  "scryfall_id": "d9482aab-6ddf-48e1-84fa-b13d5ff81e69"
+ },
+ "Chainer, Nightmare Adept": {
+  "name": "Chainer, Nightmare Adept",
+  "full_name": "Chainer, Nightmare Adept",
+  "mana_cost": "{2}{B}{R}",
+  "type_line": "Legendary Creature — Human Minion",
+  "oracle": "Discard a card: You may cast a creature spell from your graveyard this turn. Activate only once each turn.\nWhenever a nontoken creature you control enters, if you didn't cast it from your hand, it gains haste until your next turn.",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "14f6fcb0-bed4-4a38-b7df-1e438d81bedb",
+  "scryfall_id": "d8089e7f-7619-43fe-8e0b-31ce5d988a1b"
+ },
+ "Lurking Predators": {
+  "name": "Lurking Predators",
+  "full_name": "Lurking Predators",
+  "mana_cost": "{4}{G}{G}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever an opponent casts a spell, reveal the top card of your library. If it's a creature card, put it onto the battlefield. Otherwise, you may put that card on the bottom of your library.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "15fbb7b1-c62d-4f82-9f35-2c10299779f4",
+  "scryfall_id": "9952da7c-3cfc-413f-8849-0f10e9c8dceb"
+ },
+ "Alesha, Who Laughs at Fate": {
+  "name": "Alesha, Who Laughs at Fate",
+  "full_name": "Alesha, Who Laughs at Fate",
+  "mana_cost": "{1}{B}{R}",
+  "type_line": "Legendary Creature — Human Warrior",
+  "oracle": "First strike\nWhenever Alesha attacks, put a +1/+1 counter on it.\nRaid — At the beginning of your end step, if you attacked this turn, return target creature card with mana value less than or equal to Alesha's power from your graveyard to the battlefield.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "First strike",
+   "Raid"
+  ],
+  "layout": "normal",
+  "oracle_id": "17ce2c17-b69b-4ebf-9c3c-c64e771af101",
+  "scryfall_id": "a93e3406-4e29-4bc0-ae52-cbd2ac1f99a4"
+ },
+ "Grave Venerations": {
+  "name": "Grave Venerations",
+  "full_name": "Grave Venerations",
+  "mana_cost": "{3}{B}",
+  "type_line": "Enchantment",
+  "oracle": "When this enchantment enters, you become the monarch.\nAt the beginning of your end step, if you're the monarch, return up to one target creature card from your graveyard to your hand.\nWhenever a creature you control dies, each opponent loses 1 life and you gain 1 life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1cb71772-592d-4dd1-91af-816933af760c",
+  "scryfall_id": "ec52f819-038a-41c3-91ef-91b1975d094c"
+ },
+ "Graveshifter": {
+  "name": "Graveshifter",
+  "full_name": "Graveshifter",
+  "mana_cost": "{3}{B}",
+  "type_line": "Creature — Shapeshifter",
+  "oracle": "Changeling (This card is every creature type.)\nWhen this creature enters, you may return target creature card from your graveyard to your hand.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Changeling"
+  ],
+  "layout": "normal",
+  "oracle_id": "1eebc02a-9a64-49b0-8322-c5ce671457ce",
+  "scryfall_id": "dadb02b9-d3a0-4b51-bbc3-53b2316cd70d"
+ },
+ "Black Market": {
+  "name": "Black Market",
+  "full_name": "Black Market",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever a creature dies, put a charge counter on this enchantment.\nAt the beginning of your first main phase, add {B} for each charge counter on this enchantment.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "21338b71-37f5-4121-9b84-565025ebcd17",
+  "scryfall_id": "78c80c6d-f3ae-48d3-ba6a-b9b738e1affb"
+ },
+ "Dread Return": {
+  "name": "Dread Return",
+  "full_name": "Dread Return",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Sorcery",
+  "oracle": "Return target creature card from your graveyard to the battlefield.\nFlashback—Sacrifice three creatures. (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Flashback"
+  ],
+  "layout": "normal",
+  "oracle_id": "352b64d2-2ae5-44ee-a64f-94932ef545d3",
+  "scryfall_id": "34a87901-98bb-41dd-b566-bcb510c20022"
+ },
+ "Smoldering Marsh": {
+  "name": "Smoldering Marsh",
+  "full_name": "Smoldering Marsh",
+  "mana_cost": "",
+  "type_line": "Land — Swamp Mountain",
+  "oracle": "({T}: Add {B} or {R}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "390f1b56-264e-4336-83be-dc1fe79bfdcf",
+  "scryfall_id": "efcacf88-b6f2-4acd-948e-04dad8ea472d"
+ },
+ "Geode Rager": {
+  "name": "Geode Rager",
+  "full_name": "Geode Rager",
+  "mana_cost": "{4}{R}{R}",
+  "type_line": "Creature — Elemental",
+  "oracle": "First strike\nLandfall — Whenever a land you control enters, goad each creature target player controls. (Until your next turn, those creatures attack each combat if able and attack a player other than you if able.)",
+  "power": "4",
+  "toughness": "3",
+  "keywords": [
+   "Goad",
+   "First strike",
+   "Landfall"
+  ],
+  "layout": "normal",
+  "oracle_id": "3969d1d6-0aed-4fa8-aa09-d9be50576fb4",
+  "scryfall_id": "1c5974dd-78fc-4bfb-8678-72041c797584"
+ },
+ "Talisman of Resilience": {
+  "name": "Talisman of Resilience",
+  "full_name": "Talisman of Resilience",
+  "mana_cost": "{2}",
+  "type_line": "Artifact",
+  "oracle": "{T}: Add {C}.\n{T}: Add {B} or {G}. This artifact deals 1 damage to you.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "42b8aa14-10bc-4bd6-88d9-4bb287eadd19",
+  "scryfall_id": "eff598b0-0b32-41d0-b980-584576e58626"
+ },
+ "Avacyn, Angel of Horror": {
+  "name": "Avacyn, Angel of Horror",
+  "full_name": "Avacyn, Angel of Horror",
+  "mana_cost": "{5}{B}{B}{B}",
+  "type_line": "Legendary Creature — Angel",
+  "oracle": "Flying, deathtouch\nWhenever Avacyn or another nontoken creature you control dies, return that card to the battlefield under your control at the beginning of the next end step.",
+  "power": "8",
+  "toughness": "8",
+  "keywords": [
+   "Deathtouch",
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "4af61d45-7114-4eb4-a905-9e03caf87454",
+  "scryfall_id": "ff65f46b-0f82-49b8-93b9-7ac0243ce941"
+ },
+ "Riveteers Overlook": {
+  "name": "Riveteers Overlook",
+  "full_name": "Riveteers Overlook",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "When this land enters, sacrifice it. When you do, search your library for a basic Swamp, Mountain, or Forest card, put it onto the battlefield tapped, then shuffle and you gain 1 life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5548ff43-e5f6-4a63-8562-a2b1de06d6f5",
+  "scryfall_id": "65ce9590-87c0-4057-bddb-fadc0de552f6"
+ },
+ "Dragonskull Summit": {
+  "name": "Dragonskull Summit",
+  "full_name": "Dragonskull Summit",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "63398c02-6fb1-481d-9d9f-81063532fbc0",
+  "scryfall_id": "33e29673-5cf3-4b63-b526-0d9865873d64"
+ },
+ "Spinner of Souls": {
+  "name": "Spinner of Souls",
+  "full_name": "Spinner of Souls",
+  "mana_cost": "{2}{G}",
+  "type_line": "Creature — Spider Spirit",
+  "oracle": "Reach\nWhenever another nontoken creature you control dies, you may reveal cards from the top of your library until you reveal a creature card. Put that card into your hand and the rest on the bottom of your library in a random order.",
+  "power": "4",
+  "toughness": "3",
+  "keywords": [
+   "Reach"
+  ],
+  "layout": "normal",
+  "oracle_id": "6883e79e-0b4f-4fb8-aee3-a3905246a408",
+  "scryfall_id": "f50a8dec-b079-4192-9098-6cdc1026c693"
+ },
+ "Ruric Thar, the Unbowed": {
+  "name": "Ruric Thar, the Unbowed",
+  "full_name": "Ruric Thar, the Unbowed",
+  "mana_cost": "{4}{R}{G}",
+  "type_line": "Legendary Creature — Ogre Warrior",
+  "oracle": "Reach, vigilance\nRuric Thar attacks each combat if able.\nWhenever a player casts a noncreature spell, Ruric Thar deals 6 damage to that player.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Reach",
+   "Vigilance"
+  ],
+  "layout": "normal",
+  "oracle_id": "6ed13a89-4284-4c01-8099-75e2d68c8c63",
+  "scryfall_id": "aa828bdc-221e-4e81-9e71-6f288690ddcd"
+ },
+ "Dictate of Erebos": {
+  "name": "Dictate of Erebos",
+  "full_name": "Dictate of Erebos",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Enchantment",
+  "oracle": "Flash\nWhenever a creature you control dies, each opponent sacrifices a creature of their choice.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "7c777a41-e40a-4b40-96bf-8ddd5c12924c",
+  "scryfall_id": "9f06db70-95f9-41eb-8e5f-8bc56fd34c09"
+ },
+ "Yavimaya Elder": {
+  "name": "Yavimaya Elder",
+  "full_name": "Yavimaya Elder",
+  "mana_cost": "{1}{G}{G}",
+  "type_line": "Creature — Human Druid",
+  "oracle": "When this creature dies, you may search your library for up to two basic land cards, reveal them, put them into your hand, then shuffle.\n{2}, Sacrifice this creature: Draw a card.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7fd4c452-07f2-492c-9c78-d1c6362d9eec",
+  "scryfall_id": "27dacbde-a646-418c-b569-4a4f11c9faae"
+ },
+ "Raph & Mikey, Troublemakers": {
+  "name": "Raph & Mikey, Troublemakers",
+  "full_name": "Raph & Mikey, Troublemakers",
+  "mana_cost": "{5}{R/G}{R/G}",
+  "type_line": "Legendary Creature — Mutant Ninja Turtle",
+  "oracle": "Trample, haste\nWhenever Raph & Mikey attack, reveal cards from the top of your library until you reveal a creature card. Put that card onto the battlefield tapped and attacking and the rest on the bottom of your library in a random order.",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Haste",
+   "Trample"
+  ],
+  "layout": "normal",
+  "oracle_id": "82563a5f-cae4-4ece-876c-0df245d2dc58",
+  "scryfall_id": "8795fba4-0ff3-4c04-a81c-60408608a00c"
+ },
+ "Glissa Sunslayer": {
+  "name": "Glissa Sunslayer",
+  "full_name": "Glissa Sunslayer",
+  "mana_cost": "{1}{B}{G}",
+  "type_line": "Legendary Creature — Phyrexian Zombie Elf",
+  "oracle": "First strike, deathtouch\nWhenever Glissa Sunslayer deals combat damage to a player, choose one —\n• You draw a card and lose 1 life.\n• Destroy target enchantment.\n• Remove up to three counters from target permanent.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "First strike",
+   "Deathtouch"
+  ],
+  "layout": "normal",
+  "oracle_id": "8859a692-d107-4de2-9110-4681fc2761c7",
+  "scryfall_id": "682b1b62-338a-49d1-9d4e-2d8ee2e6fc76"
+ },
+ "Ares, God of War": {
+  "name": "Ares, God of War",
+  "full_name": "Ares, God of War",
+  "mana_cost": "{1}{B}{R}",
+  "type_line": "Legendary Creature — God Warrior Villain",
+  "oracle": "Ares attacks each combat if able.\nWhenever an attacking creature you control dies, return that card to its owner's hand.",
+  "power": "4",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8a09d4a2-4796-4a15-ab75-a3a0b717f62d",
+  "scryfall_id": "3e121d65-d341-40b9-bebc-1e7d1b83905c"
+ },
+ "Professor Dellian Fel": {
+  "name": "Professor Dellian Fel",
+  "full_name": "Professor Dellian Fel",
+  "mana_cost": "{2}{B}{G}",
+  "type_line": "Legendary Planeswalker — Dellian",
+  "oracle": "+2: You gain 3 life.\n0: You draw a card and lose 1 life.\n−3: Destroy target creature.\n−6: You get an emblem with \"Whenever you gain life, target opponent loses that much life.\"",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8c5fe985-69e1-4a03-99fc-a6fd2314a9a7",
+  "scryfall_id": "6ff3b4d8-1271-4c5d-8834-7662244f173d"
+ },
+ "Sangromancer": {
+  "name": "Sangromancer",
+  "full_name": "Sangromancer",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Creature — Vampire Shaman",
+  "oracle": "Flying\nWhenever a creature an opponent controls dies, you may gain 3 life.\nWhenever an opponent discards a card, you may gain 3 life.",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "920445ab-0ac2-4de7-bc1c-f5e58eb4424c",
+  "scryfall_id": "63472b56-cbf0-4474-b8c2-c3a3d9ec242a"
+ },
+ "Rootbound Crag": {
+  "name": "Rootbound Crag",
+  "full_name": "Rootbound Crag",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control a Mountain or a Forest.\n{T}: Add {R} or {G}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "9516c4c1-d72d-434f-97e1-6a862434a169",
+  "scryfall_id": "42d174e5-b8c2-45eb-8e08-1b94fc27cbee"
+ },
+ "Blazemire Verge": {
+  "name": "Blazemire Verge",
+  "full_name": "Blazemire Verge",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {B}.\n{T}: Add {R}. Activate only if you control a Swamp or a Mountain.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "977c2f33-b622-4172-9efb-7f523becd32b",
+  "scryfall_id": "d151c8e2-d715-470d-868a-f45191db9fa0"
+ },
+ "Lavaleaper": {
+  "name": "Lavaleaper",
+  "full_name": "Lavaleaper",
+  "mana_cost": "{3}{R}",
+  "type_line": "Creature — Elemental",
+  "oracle": "All creatures have haste.\nWhenever a player taps a basic land for mana, that player adds one mana of any type that land produced.",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "a107fb84-6874-4964-a729-4425dad98330",
+  "scryfall_id": "82902488-d178-4752-bcfb-dd3050654d23"
+ },
+ "Archon of Cruelty": {
+  "name": "Archon of Cruelty",
+  "full_name": "Archon of Cruelty",
+  "mana_cost": "{6}{B}{B}",
+  "type_line": "Creature — Archon",
+  "oracle": "Flying\nWhenever this creature enters or attacks, target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life.",
+  "power": "6",
+  "toughness": "6",
+  "keywords": [
+   "Flying"
+  ],
+  "layout": "normal",
+  "oracle_id": "aa1a6646-c1e6-4bff-9092-43ee3e137914",
+  "scryfall_id": "95ff951b-a098-409c-86c8-373b6c9f8331"
+ },
+ "Neyith of the Dire Hunt": {
+  "name": "Neyith of the Dire Hunt",
+  "full_name": "Neyith of the Dire Hunt",
+  "mana_cost": "{2}{G}{G}",
+  "type_line": "Legendary Creature — Human Warrior",
+  "oracle": "Whenever one or more creatures you control fight or become blocked, draw a card.\nAt the beginning of combat on your turn, you may pay {2}{R/G}. If you do, double target creature's power until end of turn. That creature must be blocked this combat if able. ({R/G} can be paid with either {R} or {G}.)",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Double"
+  ],
+  "layout": "normal",
+  "oracle_id": "aba04455-c13f-48f7-9674-56803b39a42b",
+  "scryfall_id": "0c1eed0f-9692-44c0-b1ad-afa691165d52"
+ },
+ "Titan Hunter": {
+  "name": "Titan Hunter",
+  "full_name": "Titan Hunter",
+  "mana_cost": "{4}{B}",
+  "type_line": "Creature — Human Warrior",
+  "oracle": "At the beginning of each player's end step, if no creatures died this turn, this creature deals 4 damage to that player.\n{1}{B}, Sacrifice a creature: You gain 4 life.",
+  "power": "4",
+  "toughness": "5",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "abd9ed47-e3ef-40f3-9c18-769228e68792",
+  "scryfall_id": "eb564473-7416-4cf7-971a-e6dc5eb10445"
+ },
+ "Assassin's Trophy": {
+  "name": "Assassin's Trophy",
+  "full_name": "Assassin's Trophy",
+  "mana_cost": "{B}{G}",
+  "type_line": "Instant",
+  "oracle": "Destroy target permanent an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ac10d218-f9a6-4058-9cda-a15ca1b0b7b5",
+  "scryfall_id": "aaf258fc-3ba4-4b83-bdbf-10a07e0b6c03"
+ },
+ "Rhythm of the Wild": {
+  "name": "Rhythm of the Wild",
+  "full_name": "Rhythm of the Wild",
+  "mana_cost": "{1}{R}{G}",
+  "type_line": "Enchantment",
+  "oracle": "Creature spells you control can't be countered.\nNontoken creatures you control have riot. (They enter with your choice of a +1/+1 counter or haste.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "acfa77fd-3610-4f12-9c3c-bd860ce91700",
+  "scryfall_id": "c2a6453e-a373-44ec-807a-15c0c8b1af57"
+ },
+ "Zopandrel, Hunger Dominus": {
+  "name": "Zopandrel, Hunger Dominus",
+  "full_name": "Zopandrel, Hunger Dominus",
+  "mana_cost": "{5}{G}{G}",
+  "type_line": "Legendary Creature — Phyrexian Horror",
+  "oracle": "Reach\nAt the beginning of each combat, double the power and toughness of each creature you control until end of turn.\n{G/P}{G/P}, Sacrifice two other creatures: Put an indestructible counter on Zopandrel. ({G/P} can be paid with either {G} or 2 life.)",
+  "power": "4",
+  "toughness": "6",
+  "keywords": [
+   "Reach",
+   "Double"
+  ],
+  "layout": "normal",
+  "oracle_id": "b168e4e6-f572-4d9f-b98f-95b2611354cb",
+  "scryfall_id": "fb419d9d-e06f-48c8-a4f8-a57f9be39e50"
+ },
+ "Tainted Peak": {
+  "name": "Tainted Peak",
+  "full_name": "Tainted Peak",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{T}: Add {B} or {R}. Activate only if you control a Swamp.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b2bae7fc-0668-4b34-9cd6-0d80aea52275",
+  "scryfall_id": "7e6f1a55-0fec-4b94-9640-9110ca8d0212"
+ },
+ "Kardur, Doomscourge": {
+  "name": "Kardur, Doomscourge",
+  "full_name": "Kardur, Doomscourge",
+  "mana_cost": "{2}{B}{R}",
+  "type_line": "Legendary Creature — Demon Berserker",
+  "oracle": "When Kardur enters, until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able.\nWhenever an attacking creature dies, each opponent loses 1 life and you gain 1 life.",
+  "power": "4",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "bc14356c-3a1a-47af-9a6e-2b449de0331f",
+  "scryfall_id": "7c0f7712-7bbf-471b-8107-3a49cf922ad9"
+ },
+ "Thantis, the Warweaver": {
+  "name": "Thantis, the Warweaver",
+  "full_name": "Thantis, the Warweaver",
+  "mana_cost": "{3}{B}{R}{G}",
+  "type_line": "Legendary Creature — Spider",
+  "oracle": "Reach, vigilance\nAll creatures attack each combat if able.\nWhenever a creature attacks you or a planeswalker you control, put a +1/+1 counter on Thantis.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [
+   "Reach",
+   "Vigilance"
+  ],
+  "layout": "normal",
+  "oracle_id": "be543388-1e4f-412f-8f3b-dd826fd8e03d",
+  "scryfall_id": "91c54ac0-0edc-406f-8a22-f2996f604f36"
+ },
+ "Pyrewood Gearhulk": {
+  "name": "Pyrewood Gearhulk",
+  "full_name": "Pyrewood Gearhulk",
+  "mana_cost": "{2}{R}{R}{G}{G}",
+  "type_line": "Artifact Creature — Construct",
+  "oracle": "Vigilance, menace\nWhen this creature enters, other creatures you control get +2/+2 and gain vigilance and menace until end of turn. Damage can't be prevented this turn.",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Vigilance",
+   "Menace"
+  ],
+  "layout": "normal",
+  "oracle_id": "c4c6083a-b0b5-4c6b-9f11-9f4fe38417c2",
+  "scryfall_id": "3d8493ee-bd06-4583-9908-a0dbcc5be6d7"
+ },
+ "Wastewood Verge": {
+  "name": "Wastewood Verge",
+  "full_name": "Wastewood Verge",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {G}.\n{T}: Add {B}. Activate only if you control a Swamp or a Forest.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c6e0574c-3e2b-4c40-b17a-05bce3d49309",
+  "scryfall_id": "5ceacc7d-d407-4f82-af58-9bdf8426924e"
+ },
+ "Cinder Glade": {
+  "name": "Cinder Glade",
+  "full_name": "Cinder Glade",
+  "mana_cost": "",
+  "type_line": "Land — Mountain Forest",
+  "oracle": "({T}: Add {R} or {G}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "dfac0258-e148-4d7d-8ded-fc2466d9caa6",
+  "scryfall_id": "ec93087a-5728-40e8-8625-a1d175d5252c"
+ },
+ "Thornspire Verge": {
+  "name": "Thornspire Verge",
+  "full_name": "Thornspire Verge",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {R}.\n{T}: Add {G}. Activate only if you control a Mountain or a Forest.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e861bc08-4f0b-4d22-9b85-9d20227fd5b4",
+  "scryfall_id": "7e1cdc03-6faa-4138-9a52-caafbe34fb59"
+ },
+ "Turbulent Crater": {
+  "name": "Turbulent Crater",
+  "full_name": "Turbulent Crater",
+  "mana_cost": "",
+  "type_line": "Land — Swamp Mountain",
+  "oracle": "({T}: Add {B} or {R}.)\nThis land enters tapped unless your opponents control eight or more lands.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e86a0b64-fe4a-4ea8-99e8-35860dbac765",
+  "scryfall_id": "0cb04417-063e-45f7-86d3-7648111d04d7"
+ },
+ "Anger": {
+  "name": "Anger",
+  "full_name": "Anger",
+  "mana_cost": "{3}{R}",
+  "type_line": "Creature — Incarnation",
+  "oracle": "Haste\nAs long as this card is in your graveyard and you control a Mountain, creatures you control have haste.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Haste"
+  ],
+  "layout": "normal",
+  "oracle_id": "eaabd151-2160-4bff-82c0-3fa88659be98",
+  "scryfall_id": "e886a604-e3ce-4c6a-b63e-2c7f910a177a"
+ },
+ "Shredder, Shadow Master": {
+  "name": "Shredder, Shadow Master",
+  "full_name": "Shredder, Shadow Master",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Legendary Creature — Human Ninja",
+  "oracle": "Whenever Shredder attacks a player, for each other opponent, create a token that's a copy of Shredder tapped and attacking that player, except it isn't legendary. Sacrifice those tokens at end of combat.\nWhenever Shredder deals combat damage to a player, that player loses half their life, rounded up.",
+  "power": "5",
+  "toughness": "5",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ee82947d-1cf0-4c53-84d4-81f81c6201ee",
+  "scryfall_id": "ddf4d3c9-bef9-4796-91ef-3d5beebae571"
+ },
+ "Tortured Existence": {
+  "name": "Tortured Existence",
+  "full_name": "Tortured Existence",
+  "mana_cost": "{B}",
+  "type_line": "Enchantment",
+  "oracle": "{B}, Discard a creature card: Return target creature card from your graveyard to your hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "fa9dfcf7-069c-4441-9ea0-133de47ecada",
+  "scryfall_id": "1754b92b-d6f9-4503-af01-dee03f72a048"
+ },
+ "Taurean Mauler": {
+  "name": "Taurean Mauler",
+  "full_name": "Taurean Mauler",
+  "mana_cost": "{2}{R}",
+  "type_line": "Creature — Shapeshifter",
+  "oracle": "Changeling (This card is every creature type.)\nWhenever an opponent casts a spell, you may put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Changeling"
+  ],
+  "layout": "normal",
+  "oracle_id": "fd5ee26c-cc54-4dc0-b611-5cda14354a5e",
+  "scryfall_id": "39938a5a-385b-47ba-a07b-8917cba14fd3"
  }
 }

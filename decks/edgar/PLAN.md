@@ -4,7 +4,7 @@ Mardu Vampire tribal / aristocrats, bracket 2–3. It is William's deck, not Pon
 
 ## Files
 
-- `cards.ts`: the card names, the Vampire check, the tokens, `VALUE` and `HOLD`. `game.ts`: `EdgarGame` (state, win check, anthems, mana from Treasures and Spawn, upkeep and end step, tutors, the planner's score). `triggers.ts`: enter, death and attack triggers. `actions.ts`: sacrifice outlets, the all-in sacrifice turn, prepared spells, activated abilities. `candidates.ts`: what the AI may do now, with a score. `index.ts`: deck registration and the `--diag` / `--hands` measures. `mulligan.ts`, `config.ts`, `tests/`.
+- `cards.ts`: the card names, the Vampire check, the tokens, `VALUE` and `HOLD`. `game.ts`: `EdgarGame` (state, win check, anthems, upkeep and end step, tutors, the planner's score). `triggers.ts`: enter, death and attack triggers. `actions.ts`: sacrifice outlets, the all-in sacrifice turn, prepared spells, activated abilities. `candidates.ts`: what the AI may do now, with a score. `index.ts`: deck registration and the `--diag` / `--hands` measures. `mulligan.ts`, `config.ts`, `tests/`.
 
 ## How the deck wins (Pontus, 2026-11-14)
 
@@ -25,7 +25,7 @@ Mardu Vampire tribal / aristocrats, bracket 2–3. It is William's deck, not Pon
 - **Deaths:** Blood Artist, Vengeful Bloodwitch, Susurian Voidborn (one target opponent loses 1), Cruel Celebrant and Marionette Apprentice (each opponent loses 1), Arnyn (2, for creatures with power or toughness 1), Cordial Vampire (counters on every Vampire), Elenda (counters, then tokens when it dies), Pitiless Plunderer (Treasure), Pawn of Ulamog (Eldrazi Spawn), Carmen and Mayhem Devil (sacrifices only), Nine-Lives Familiar (comes back at the end step with one counter fewer).
 - **Sacrifice outlets:** Evereth, Viscera Seer, Ashnod's Altar (makes {C}{C}), Phyrexian Altar (makes {B}), Indulgent Aristocrat ({2}), Pitiless Pontiff ({1}), Vampiric Rites and Baron Bertram ({1}{B}, draw). In the second main phase the AI sacrifices spare tokens when it has drain engines (a Vampire token only with two drains or more: it attacks and takes anthems). Skullclamp kills a 1-toughness token for two cards.
 - **The all-in sacrifice turn:** when an outlet and enough fodder could kill the table (a cheap guess first, then a tried play on a copy of the game), the AI sacrifices everything that is not a drain engine, then Evereth itself to a second outlet and pays {1}{B}: Evereth hits each opponent for its power.
-- **Mana:** Treasures and Eldrazi Spawn are spent only when lands and rocks are not enough.
+- **Mana:** Treasures and Eldrazi Spawn are spent only when lands and rocks are not enough (an engine rule since task M6).
 - **Life:** Keen Duelist is cast only above 30 life (it costs us life every upkeep), Phyrexian Arena above 20, Black Market Connections above 20 (it draws, makes Treasures early and a 3/2 when life is high).
 - **Tutors:** the AI wants a missing drain engine or outlet first (`tutorValue`). Beseech the Mirror is bargained with a token and casts what it finds for free up to mana value 4.
 - **Prepared spells:** Emeritus of Woe (Demonic Tutor, {1}{B}) and Scheming Silvertongue (Sign in Blood, {B}{B}); they are prepared again at the end step after two deaths or two life gained.
@@ -56,7 +56,7 @@ The kind of damage that killed the last opponent, in wins: **combat 57.0%, drain
 
 ## Simulator bug found on the way
 
-The engine pays for a Dark Ritual by really paying and then undoing it. A payment that sacrifices Treasures or Spawn must not do that while the engine only tests: `isTestingRitual` in `game.ts` switches the sacrifice off during `ritualCandidates`.
+The engine pays for a Dark Ritual by really paying and then undoing it. A payment that sacrifices Treasures or Spawn must not do that while the engine only tests: the engine now keeps them out of such tests (`withoutExpendableMana`, task M6).
 
 ## Open
 

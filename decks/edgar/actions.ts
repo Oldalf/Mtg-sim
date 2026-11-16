@@ -1,5 +1,6 @@
 /** What Edgar's abilities and spells do when the AI picks them: sacrifice outlets, the all-in sacrifice turn,
  *  prepared spells and the activated abilities of permanents. */
+import { ELDRAZI_SPAWN, TREASURE } from '../../engine/cards/tokens';
 import {
   EDGAR,
   EVERETH,
@@ -102,8 +103,8 @@ export function sacrificeCost(game: EdgarGame, permanent: Permanent): number {
   if (card.name === EDGAR || card === TOKENS.army) return Infinity;
   if (card.name === NINE_LIVES_FAMILIAR && permanent.marks > 0) return 4;
   if (card === TOKENS.servo) return 8;
-  if (card === TOKENS.spawn) return game.turn < 6 ? 12 : 9;
-  if (card === TOKENS.treasure) return game.turn < 7 ? 14 : 10;
+  if (card === ELDRAZI_SPAWN) return game.turn < 6 ? 12 : 9;
+  if (card === TREASURE) return game.turn < 7 ? 14 : 10;
   if (permanent.token)
     return 15 + game.power(permanent) + (card.flying ? 5 : 0);
   return game.battlefieldValue(card);
@@ -121,7 +122,7 @@ export function spareFodder(
   return game.battlefield
     .filter((permanent) => {
       if (exclude.includes(permanent) || permanent.land !== null) return false;
-      if (!permanent.card.isCreature && permanent.card !== TOKENS.treasure)
+      if (!permanent.card.isCreature && permanent.card !== TREASURE)
         return false;
       const cost = sacrificeCost(game, permanent);
       if (allIn) return cost < Infinity && permanent.card.name !== EVERETH;

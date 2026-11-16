@@ -17,6 +17,7 @@
  * attacking with everything kills the table. No crackback (those attacks are tiny).
  * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
+import { TREASURE } from '../../engine/cards/tokens';
 import {
   ART_TOKENS,
   BASIC_COL,
@@ -32,7 +33,6 @@ import {
   SAGA,
   SAM,
   TOK,
-  TREASURE,
   VALUE,
   isHalfling,
 } from './cards';
@@ -416,7 +416,6 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     permanent: Permanent,
     ignoreSick = false,
   ): string | null {
-    if (permanent.card === TREASURE) return 'A';
     const name = permanent.card.name;
     if (name === 'Gilded Goose')
       return (ignoreSick || !permanent.sick) && this.foodsOnBattlefield().length
@@ -433,16 +432,15 @@ export class SamFrodoGame extends GameWithoutKillSearch {
     return super.manaSourceKind(permanent, ignoreSick);
   }
 
-  /** Sources with a side effect when tapped for mana: Treasures are sacrificed, Gilded Goose eats a Food,
-   *  Pristine Talisman gains 1 life. */
+  /** Sources with a side effect when tapped for mana: Gilded Goose eats a Food, Pristine Talisman gains 1 life.
+   *  (The engine sacrifices a Treasure.) */
   override pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
     if (!commit) return super.pay(cost, isInstantOrSorcery, false);
     const before = this.battlefield.filter((permanent) => !permanent.tapped);
     if (!super.pay(cost, isInstantOrSorcery, true)) return false;
     for (const tappedSource of before) {
       if (!tappedSource.tapped) continue;
-      if (tappedSource.card === TREASURE) this.sacrifice(tappedSource);
-      else if (tappedSource.card.name === 'Gilded Goose') {
+      if (tappedSource.card.name === 'Gilded Goose') {
         const food = this.foodsOnBattlefield()[0];
         if (food) this.sacrifice(food);
       } else if (tappedSource.card.name === 'Pristine Talisman')

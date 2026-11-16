@@ -41,6 +41,8 @@ export function fightOpponent(
             fighter.power >=
             COMMANDER_DAMAGE_TO_KILL,
       ));
+  // the trigger is on the stack once attackers are declared: before blocks and before any removal
+  if (apply) defender.onAttackedBy(attackersIn.length);
   const blockers = defender
     .blockers()
     .filter((blocker) => !table.creaturesThatBlocked.has(blocker.permanent));

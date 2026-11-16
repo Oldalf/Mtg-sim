@@ -88,6 +88,7 @@ Current decks:
 - `helga`: Helga, Skittish Seer, Bant ramp into Eldrazi and big creatures (bracket 2–3, Friend 2's deck, pod-only). Helga taps for her power toward big creature spells and grows with each one. Run `npm run pod -- helga ...` (rules: `decks/helga/PLAN.md`).
 - `ardyn`: Ardyn, the Usurper, mono-black Demons (bracket 3, Friend 3's deck, pod-only). Swamp mana doublers, Roaming Throne, drains (Gray Merchant, Archfiend of Despair, Bloodletter, Exquisite Blood) and Starscourge's 5/5 Demon copies. Run `npm run pod -- ardyn ...` (rules: `decks/ardyn/PLAN.md`).
 - `teval`: Teval, the Balanced Scale, Sultai self-mill and graveyard value (strong bracket 3, Friend 4's deck, pod-only). Cards leaving the graveyard make Zombies (Teval, Tormod, Teval's Judgment, doubled by Doubling Season and Parallel Lives); lands come back for landfall. Run `npm run pod -- teval ...` (rules: `decks/teval/PLAN.md`).
+- `thantis`: Thantis, the Warweaver, Jund forced combat (bracket 2-3, Friend 2's deck, pod-only). Every creature must attack each combat; Thantis, Taurean Mauler and Ruric Thar grow or punish, and Syr Konrad, Sangromancer and the reanimation (Avacyn, Meren) profit from the deaths. Run `npm run pod -- thantis ...` (rules: `decks/thantis/PLAN.md`).
 
 The phases (Meren, Sam & Frodo, Simic landfall, Mike, then Codie) and what each needs: `ROADMAP.md`.
 

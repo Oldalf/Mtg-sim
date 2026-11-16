@@ -5,7 +5,8 @@ import { Permanent } from '../../../engine/game/game-types';
 import { Rng } from '../../../engine/util/rng';
 import { CFG } from '../config';
 import { SamFrodoGame } from '../game';
-import { FOOD, TREASURE, CLUE, FRODO, SAM, GOLLUM } from '../cards';
+import { TREASURE } from '../../../engine/cards/tokens';
+import { FOOD, CLUE, FRODO, SAM, GOLLUM } from '../cards';
 import { activateWitchsOven, returnCauldronFamiliar } from '../actions';
 import { playCombat } from '../combat';
 

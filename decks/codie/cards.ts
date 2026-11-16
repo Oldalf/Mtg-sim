@@ -1,6 +1,5 @@
 /** The cards of the Codie deck that have rules of their own, and the facts about them. */
 import * as C from '../../engine/cards/cards';
-import { makeArtifactToken } from '../../engine/cards/cards';
 
 export const CODIE = 'Codie, Vociferous Codex';
 export const REITERATE = 'Reiterate';
@@ -39,9 +38,6 @@ export const MANA_SPELLS = [
   'Pyretic Ritual',
   'Dark Ritual',
 ];
-
-/** A Treasure token: any colour, gone when tapped. */
-export const TREASURE = makeArtifactToken('Treasure');
 
 /** Counterspells and protection that make a win "backed up": [cost, needs]. needs: "commander" (Codie on the battlefield), "island" (an Island to return). */
 export const BACKUP: Record<string, [string, string?]> = {

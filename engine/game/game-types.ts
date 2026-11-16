@@ -217,6 +217,8 @@ export interface Arena {
   takeInitiative(game: Game<unknown>): void;
   /** We cast this spell: each living opponent's "whenever an opponent casts a spell" cards trigger. */
   announceCast(game: Game<unknown>, card: CardDef): void;
+  /** A creature of ours died: each other living player's `onOtherPlayersCreatureDies` runs. */
+  announceDeath(game: Game<unknown>, permanent: Permanent): void;
   /** How much we'd rather attack opponent `slot` (the pod's threat rule, step 4). */
   prefer(game: Game<unknown>, slot: number): number;
   /** Must this creature of ours attack this combat if able ("attacks each combat if able", Thantis, goad)? */

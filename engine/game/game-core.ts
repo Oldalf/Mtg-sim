@@ -27,6 +27,7 @@ import * as C from '../cards/cards';
 import * as Facts from '../cards/card-facts';
 import { Cost, CardDef } from '../cards/cards';
 import { LandInfo } from '../cards/card-facts';
+import { ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
 import { Rng } from '../util/rng';
 import { MulliganRule, DEFAULT_MULLIGAN, keepsHand } from './mulligan';
 import { formatLogPart, formatList, formatPool } from './log-format';
@@ -378,6 +379,12 @@ export abstract class GameCore<S = unknown> {
     return false;
   }
 
+  /** How many permanents of ours have this name. */
+  countOnBattlefield(name: string): number {
+    return this.battlefield.filter((permanent) => permanent.card.name === name)
+      .length;
+  }
+
   findPermanent(name: string): Permanent | null {
     for (const permanent of this.battlefield)
       if (permanent.card.name === name) return permanent;
@@ -440,6 +447,10 @@ export abstract class GameCore<S = unknown> {
 
   // ================================================================ mana
   manaSourceKind(permanent: Permanent, ignoreSick = false): string | null {
+    if (permanent.card === TREASURE)
+      return this.isKeepingExpendableManaBack ? null : 'A';
+    if (permanent.card === ELDRAZI_SPAWN)
+      return this.isKeepingExpendableManaBack ? null : 'C';
     if (permanent.land !== null) {
       // Energybending: every land is also an Island and a Swamp, so it taps for either colour
       if (this.isEnergybendingActive && permanent.land.mana) return 'A';
@@ -718,10 +729,62 @@ export abstract class GameCore<S = unknown> {
       this.battlefield[i].tapped = snapshot[1][i];
   }
 
+  /** Treasures and Eldrazi Spawn: mana sources that are sacrificed for their mana. */
+  isExpendableManaSource(permanent: Permanent): boolean {
+    return permanent.card === TREASURE || permanent.card === ELDRAZI_SPAWN;
+  }
+
+  /** While true, Treasures and Eldrazi Spawn are not mana sources (manaSourceKind gives null). */
+  isKeepingExpendableManaBack = false;
+
+  /** Runs a test that pays for real and then restores a snapshot (a restore can't bring back a sacrificed Treasure),
+   *  so Treasures and Eldrazi Spawn are kept out of it. */
+  withoutExpendableMana<T>(test: () => T): T {
+    const wasKeepingThemBack = this.isKeepingExpendableManaBack;
+    this.isKeepingExpendableManaBack = true;
+    try {
+      return test();
+    } finally {
+      this.isKeepingExpendableManaBack = wasKeepingThemBack;
+    }
+  }
+
+  /** Pays a cost (payFromSources). Treasures and Eldrazi Spawn are spent last: only when lands, rocks and mana
+   *  creatures are not enough. A committed payment sacrifices the ones it tapped; a tested one keeps them. */
+  pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
+    if (
+      this.isKeepingExpendableManaBack ||
+      !this.battlefield.some(
+        (permanent) =>
+          !permanent.tapped && this.isExpendableManaSource(permanent),
+      )
+    )
+      return this.payFromSources(cost, isInstantOrSorcery, commit);
+    const plannedPaymentsBefore = this.plannedPayments.slice();
+    const isPaidWithoutThem = this.withoutExpendableMana(() =>
+      this.payFromSources(cost, isInstantOrSorcery, commit),
+    );
+    if (isPaidWithoutThem) return true;
+    this.plannedPayments = plannedPaymentsBefore; // the failed try used up this cost's plan
+    const untappedBefore = this.battlefield.filter(
+      (permanent) =>
+        !permanent.tapped && this.isExpendableManaSource(permanent),
+    );
+    if (!this.payFromSources(cost, isInstantOrSorcery, commit)) return false;
+    if (commit)
+      for (const source of untappedBefore)
+        if (source.tapped) this.sacrifice(source);
+    return true;
+  }
+
   /** Pays a cost: taps sources one by one into the pool (rules 601.2g-h, 605), then pays from the pool. The greedy
    *  order comes first (the best source for what we are short of); if it fails while the sources could pay at all,
    *  payment-search.ts tries other orders and colours. commit = false only tests it (everything is undone). */
-  pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
+  private payFromSources(
+    cost: Cost,
+    isInstantOrSorcery: boolean,
+    commit: boolean,
+  ): boolean {
     // undo = untap what this payment tapped and restore the pool (cheaper than a snapshot of a big board)
     const poolBefore = { ...this.pool };
     const tapped: Permanent[] = [];
@@ -1498,6 +1561,7 @@ export abstract class GameCore<S = unknown> {
     if (!permanent.token) this.toGraveyard(permanent.card);
     this.onDies(permanent);
     this.onLeave(permanent);
+    this.podAnnounceDeath(permanent);
   }
 
   sacrifice(permanent: Permanent): void {
@@ -2014,8 +2078,15 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ choosing what to do
-  /** Use a ritual only if it lets us cast something good we otherwise can't. */
+  /** Use a ritual only if it lets us cast something good we otherwise can't. (Tested without Treasures: the test
+   *  pays for real and restores a snapshot.) */
   ritualCandidates(candidates: Candidate[]): Candidate[] {
+    return this.withoutExpendableMana(() =>
+      this.ritualCandidatesTested(candidates),
+    );
+  }
+
+  private ritualCandidatesTested(candidates: Candidate[]): Candidate[] {
     const out: Candidate[] = [];
     const bestAffordable = () =>
       Math.max(
@@ -2116,12 +2187,14 @@ export abstract class GameCore<S = unknown> {
         continue;
       const snapshot = this.takeSnapshot();
       let topSpellPayable = false;
-      if (this.pay(candidate.cost, false)) {
-        const permanent = new Permanent(candidate.rock);
-        this.battlefield.push(permanent);
-        topSpellPayable = this.canPay(top.cost, top.isInstantOrSorcery);
-        this.battlefield.pop();
-      }
+      this.withoutExpendableMana(() => {
+        if (this.pay(candidate.cost, false)) {
+          const permanent = new Permanent(candidate.rock!);
+          this.battlefield.push(permanent);
+          topSpellPayable = this.canPay(top.cost, top.isInstantOrSorcery);
+          this.battlefield.pop();
+        }
+      });
       this.restore(snapshot);
       if (topSpellPayable) {
         candidates.splice(i, 1);
@@ -2732,6 +2805,12 @@ export abstract class GameCore<S = unknown> {
   /** We cast this spell: tell the opponents, so their "whenever an opponent casts a spell" cards trigger (before
    *  any counterspell, as the trigger goes on the stack above the spell). */
   podAnnounceCast(_card: CardDef): void {}
+  /** A creature of ours died: tell the other players, so their "whenever another creature dies" cards trigger. */
+  podAnnounceDeath(_permanent: Permanent): void {}
+  /** A creature of another player died (a pod only): Syr Konrad, Sangromancer. A deck overrides it. */
+  onOtherPlayersCreatureDies(_permanent: Permanent): void {}
+  /** Creatures attack us (a pod, after the attacker's removal answers): "whenever a creature attacks you" (Thantis). */
+  onAttackedBy(_attackerCount: number): void {}
   /** An opponent cast this spell: run our triggers for it (see opponent-cast-triggers.ts). A deck may add its own. */
   onOpponentCast(spell: CardDef, caster: GameCore<unknown>): void {
     triggerOnOpponentCast(this, caster, spell);

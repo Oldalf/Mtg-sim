@@ -1,4 +1,5 @@
 /** What a spell does when it resolves, for the cards Codie's deck knows. Returns false for other cards (the engine handles them). */
+import { TREASURE } from '../../engine/cards/tokens';
 import * as C from '../../engine/cards/cards';
 import {
   AD_NAUSEAM,
@@ -15,7 +16,6 @@ import {
   RETURN_THE_FAVOR,
   TEFERIS_PROTECTION,
   TORMENT_OF_HAILFIRE,
-  TREASURE,
   LIM_DUL_VAULT,
   JESKAS_WILL,
 } from './cards';
@@ -23,7 +23,6 @@ import { findKillLine } from './solver';
 import { stackLibraryWithVault } from './solver-actions';
 import type { CodieGame } from './game';
 import { CardDef } from '../../engine/cards/cards';
-import { Permanent } from '../../engine/game/game-types';
 import { firstMax } from '../../engine/util/lists';
 
 export function resolveCodieSpell(game: CodieGame, spell: CardDef): boolean {
@@ -53,8 +52,7 @@ function resolveManaSpell(game: CodieGame, spell: CardDef): boolean {
       game.pool.R += game.opponentTappedLands();
       return true;
     case BRASS_BOUNTY:
-      for (let i = 0; i < game.landsOnBattlefield().length; i++)
-        game.putOntoBattlefield(new Permanent(TREASURE));
+      game.createTokens(TREASURE, game.landsOnBattlefield().length);
       return true;
     case 'Manamorphose': {
       const colours = coloursWeAreShortOf(game);

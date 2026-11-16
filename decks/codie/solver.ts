@@ -14,7 +14,6 @@ import {
   RETURN_THE_FAVOR,
   TEFERIS_PROTECTION,
   TORMENT_OF_HAILFIRE,
-  TREASURE,
   TRIGGER_SPELLS,
   LIM_DUL_VAULT,
   JESKAS_WILL,
@@ -326,9 +325,6 @@ export function findNextTurnKill(
   copy.nextTurn = true;
   copy.turn += 1;
   copy.pool = { U: 0, B: 0, C: 0, S: 0, W: 0, R: 0, G: 0 };
-  copy.battlefield = copy.battlefield.filter(
-    (permanent) => permanent.card !== TREASURE || !permanent.tapped,
-  );
   for (const permanent of copy.battlefield) {
     permanent.tapped = false;
     permanent.sick = false;

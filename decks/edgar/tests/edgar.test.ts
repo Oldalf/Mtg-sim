@@ -1,4 +1,5 @@
 /** Rules checks on hand-built boards. Run: npm run sim -- edgar --test */
+import { ELDRAZI_SPAWN, TREASURE } from '../../../engine/cards/tokens';
 import * as C from '../../../engine/cards/cards';
 import { Arena, Permanent } from '../../../engine/game/game-types';
 import { Rng } from '../../../engine/util/rng';
@@ -151,7 +152,7 @@ export function runEdgarTests(): boolean {
     [[39, 39, 39], 40],
   );
   game = board(['Susurian Voidborn']);
-  game.sacrifice(game.createTokens(TOKENS.treasure)[0]);
+  game.sacrifice(game.createTokens(TREASURE)[0]);
   check(
     'Susurian Voidborn: a Treasure (artifact) dying drains 1',
     game.life,
@@ -188,20 +189,20 @@ export function runEdgarTests(): boolean {
   game.sacrifice(game.createTokens(TOKENS.vampire)[0]);
   check(
     'Pitiless Plunderer: a Treasure for each other creature that dies',
-    tokensOf(game, TOKENS.treasure).length,
+    tokensOf(game, TREASURE).length,
     1,
   );
   game = board(['Pawn of Ulamog', 'Sol Ring']);
   game.sacrifice(game.createTokens(TOKENS.vampire)[0]);
   check(
     'Pawn of Ulamog: a token dying makes no Spawn',
-    tokensOf(game, TOKENS.spawn).length,
+    tokensOf(game, ELDRAZI_SPAWN).length,
     0,
   );
   game.sacrifice(permanentNamed(game, 'Pawn of Ulamog'));
   check(
     'Pawn of Ulamog: it making a Spawn when it dies itself',
-    tokensOf(game, TOKENS.spawn).length,
+    tokensOf(game, ELDRAZI_SPAWN).length,
     1,
   );
   game = board(['Mayhem Devil']);
@@ -246,19 +247,19 @@ export function runEdgarTests(): boolean {
 
   // ---- mana from Treasures and Spawn
   game = board(['Sol Ring'], [], [], ['Swamp', 'Swamp']);
-  game.createTokens(TOKENS.treasure);
+  game.createTokens(TREASURE);
   game.pay(C.Cost.parse('{1}{B}'), false);
   check(
     'a payment lands and rocks can make leaves the Treasure alone',
-    tokensOf(game, TOKENS.treasure).length,
+    tokensOf(game, TREASURE).length,
     1,
   );
   game = board([], [], [], ['Swamp', 'Swamp']);
-  game.createTokens(TOKENS.treasure);
+  game.createTokens(TREASURE);
   game.pay(C.Cost.parse('{1}{B}{B}'), false);
   check(
     'a payment that needs it sacrifices the Treasure',
-    tokensOf(game, TOKENS.treasure).length,
+    tokensOf(game, TREASURE).length,
     0,
   );
 
@@ -329,7 +330,10 @@ export function runEdgarTests(): boolean {
   check('a stopped win clears the declared explosion', game.winAttempt(), null);
   // a stub arena makes this the real game of a pod: the explosion is declared only if Evereth was pumped
   const inPod = (podGame: EdgarGame) => {
-    podGame.arena = { real: () => true } as unknown as Arena;
+    podGame.arena = {
+      real: () => true,
+      announceDeath: () => {},
+    } as unknown as Arena;
     return podGame;
   };
   game = inPod(board([EVERETH, 'Viscera Seer']));

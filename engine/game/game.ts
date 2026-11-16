@@ -51,6 +51,9 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   override podAnnounceCast(card: CardDef): void {
     if (this.inArena()) this.arena!.announceCast(this, card);
   }
+  override podAnnounceDeath(permanent: Permanent): void {
+    if (this.inArena()) this.arena!.announceDeath(this, permanent);
+  }
   override podAnswersWin(): boolean {
     return this.inArena() && this.arena!.answerWin(this);
   }
@@ -712,10 +715,15 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       this.onLeave(permanent);
     }
   }
-  /** Tap n of our untapped mana sources (mana spent on something that was answered). */
+  /** Tap n of our untapped mana sources (mana spent on something that was answered). Treasures are left alone. */
   tapMana(amount: number): void {
     for (const permanent of this.battlefield)
-      if (amount > 0 && !permanent.tapped && this.manaSourceKind(permanent)) {
+      if (
+        amount > 0 &&
+        !permanent.tapped &&
+        !this.isExpendableManaSource(permanent) &&
+        this.manaSourceKind(permanent)
+      ) {
         permanent.tapped = true;
         amount--;
       }

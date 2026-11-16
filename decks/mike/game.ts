@@ -120,7 +120,7 @@ export class MikeGame extends GameWithoutKillSearch {
 
   // ================================================================ helpers
   /** Permanents with this name, counting Aurora Shifter if it is a copy of it. */
-  countOnBattlefield(name: string): number {
+  override countOnBattlefield(name: string): number {
     let count = 0;
     for (const permanent of this.battlefield) {
       if (permanent.card.name === name) count++;

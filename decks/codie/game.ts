@@ -19,6 +19,7 @@
  * Brass's Bounty) is not played out: the solver recognises it and adds a big pile of that mana ("bottomless").
  * Codie cannot cast permanent spells; it taps for five mana for four and its free-spell trigger is not modelled.
  */
+import { TREASURE } from '../../engine/cards/tokens';
 import {
   AD_NAUSEAM,
   BACKUP,
@@ -33,7 +34,6 @@ import {
   REITERATE,
   TEFERIS_PROTECTION,
   TORMENT_OF_HAILFIRE,
-  TREASURE,
   VALUE,
   JESKAS_WILL,
 } from './cards';
@@ -52,7 +52,6 @@ import {
   Candidate,
   KillSearcher,
   KillStep,
-  Permanent,
 } from '../../engine/game/game-types';
 import { Game } from '../../engine/game/game';
 import { TurnStep } from '../../engine/game/game-core';
@@ -214,19 +213,6 @@ export class CodieGame extends Game<CodieGame> {
     }
     return colours;
   }
-  override manaSourceKind(
-    permanent: Permanent,
-    ignoreSick = false,
-  ): string | null {
-    if (permanent.card === TREASURE) return 'A';
-    return super.manaSourceKind(permanent, ignoreSick);
-  }
-  /** A Treasure that was tapped for mana is gone (done outside pay(): the engine pays speculatively). */
-  purgeTreasures(): void {
-    for (const permanent of this.battlefield.slice())
-      if (permanent.card === TREASURE && permanent.tapped)
-        this.takeFromBattlefield(permanent);
-  }
   override ritualCandidates(_cands: Candidate[]): Candidate[] {
     return [];
   }
@@ -320,7 +306,6 @@ export class CodieGame extends Game<CodieGame> {
   // ================================================================ the planner's score
   override positionValue(): number {
     if (this.died) return -5000;
-    this.purgeTreasures();
     let value = 0;
     value += 22 * Math.min(14, this.manaSources());
     value +=

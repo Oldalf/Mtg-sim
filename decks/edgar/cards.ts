@@ -22,11 +22,9 @@ export const TOKENS = {
   lifelinkVampire: makeToken('Vampire', 1, 1, 'white', ['lifelink']),
   /** Bloodline Keeper's tokens. */
   flyingVampire: makeToken('Vampire', 2, 2, 'black', ['flying']),
-  spawn: makeToken('Eldrazi Spawn', 0, 1),
   shapeshifter: makeToken('Shapeshifter', 3, 2),
   army: makeToken('Zombie Army', 0, 0, 'black'),
   servo: makeArtifactToken('Servo', 1, 1),
-  treasure: makeArtifactToken('Treasure'),
 };
 
 /** Other Vampires you control get +1/+1. */

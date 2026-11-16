@@ -88,6 +88,19 @@ export function runForcedAttackTests(allDecks: Record<string, Deck>): boolean {
   }
 
   {
+    // the defender is told how many creatures attack it (Thantis's counters)
+    const table = newTable(allDecks);
+    const meren = table.games[MEREN];
+    let attackersTold = 0;
+    table.games[MIKE].onAttackedBy = (count) => (attackersTold += count);
+    meren.arenaCombat([
+      putOnBattlefield(meren, 'Eternal Witness'),
+      putOnBattlefield(meren, 'Eternal Witness'),
+    ]);
+    check('the defender hears about 2 attackers', attackersTold, 2);
+  }
+
+  {
     const table = newTable(allDecks);
     const meren = table.games[MEREN];
     const mikeSlot = table.opponentsOf[MEREN].indexOf(MIKE);

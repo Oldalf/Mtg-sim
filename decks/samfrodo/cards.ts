@@ -1,4 +1,5 @@
 /** The cards of the Sam & Frodo deck that have rules of their own, and the facts about them. */
+import { TREASURE } from '../../engine/cards/tokens';
 import * as C from '../../engine/cards/cards';
 import {
   CardDef,
@@ -13,7 +14,6 @@ export const GOLLUM = 'Gollum, Obsessed Stalker';
 export const RING_TRACKER = 'The Ring // The Ring Tempts You';
 
 export const FOOD = makeArtifactToken('Food');
-export const TREASURE = makeArtifactToken('Treasure');
 export const CLUE = makeArtifactToken('Clue');
 export const TOK = {
   halfling: makeToken('Halfling', 1, 1, 'white'),

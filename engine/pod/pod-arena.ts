@@ -42,6 +42,11 @@ export function buildArena(table: PodTable): Arena {
         for (const opponent of table.livingOpponents(table.playerOf(game)))
           table.games[opponent].onOpponentCast(spell, game);
       }),
+    announceDeath: (game, permanent) =>
+      table.runOffTurn(() => {
+        for (const opponent of table.livingOpponents(table.playerOf(game)))
+          table.games[opponent].onOtherPlayersCreatureDies(permanent);
+      }),
     prefer: (game, slot) => attackPreference(table, game, slot),
     mustAttack: (_game, creature) => table.mustAttack(creature),
     goaderSlots: (game, creature) =>

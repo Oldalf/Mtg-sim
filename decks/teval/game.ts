@@ -53,11 +53,6 @@ export class TevalGame extends CreatureDeckGame {
     this.hasCastCreatureFromGraveyard = false;
   }
 
-  countOnBattlefield(name: string): number {
-    return this.battlefield.filter((permanent) => permanent.card.name === name)
-      .length;
-  }
-
   zombies(): Permanent[] {
     return this.creatures().filter((permanent) => isZombie(permanent.card));
   }

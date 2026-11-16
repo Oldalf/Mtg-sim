@@ -1,4 +1,5 @@
-import { FOOD, SAGA, TOK, TREASURE } from './cards';
+import { TREASURE } from '../../engine/cards/tokens';
+import { FOOD, SAGA, TOK } from './cards';
 import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards/cards';
 import { Permanent, Zone } from '../../engine/game/game-types';

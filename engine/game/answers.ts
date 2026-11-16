@@ -85,6 +85,9 @@ export const ANSWERS: Record<string, Answer> = {
   'Extended Absence': kill(['creature', 'planeswalker'], 'exile'),
   Mortify: kill(['creature', 'enchantment']),
   'Beast Within': kill(NONLAND, 'destroy', true, 1, { gives: 'token3' }),
+  "Assassin's Trophy": kill(NONLAND, 'destroy', true, 1, { gives: 'land' }),
+  'Chaos Warp': kill(NONLAND, 'destroy'), // (shuffled away; the top card it may give back is not modelled)
+  'Deadly Rollick': kill(['creature'], 'exile'),
   'Anguished Unmaking': kill(NONLAND, 'exile', true, 1, { pay: 3 }),
   Snap: kill(['creature'], 'bounce'),
   // ---- sorcery-speed removal

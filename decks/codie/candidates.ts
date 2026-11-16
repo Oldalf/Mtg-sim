@@ -33,7 +33,6 @@ type AddCandidate = (
 
 /** Everything the AI may do now while it develops its mana and finds pieces, with a score each. */
 export function buildCandidates(game: CodieGame, _main2: boolean): Candidate[] {
-  game.purgeTreasures();
   const candidates: Candidate[] = [];
   const add: AddCandidate = (score, cost, isInstantOrSorcery, action) =>
     candidates.push({

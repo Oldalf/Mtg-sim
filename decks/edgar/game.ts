@@ -14,6 +14,7 @@
  * Combat is the engine's goldfish combat for creature decks (flyers connect, half the ground attackers are blocked).
  * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
+import { TREASURE } from '../../engine/cards/tokens';
 import {
   BLOODLINE_KEEPER,
   EDGAR,
@@ -32,7 +33,7 @@ import {
   onPermanentDied,
   onPermanentEntered,
 } from './triggers';
-import { CardDef, Cost } from '../../engine/cards/cards';
+import { CardDef } from '../../engine/cards/cards';
 import {
   Candidate,
   Permanent,
@@ -65,10 +66,6 @@ export class EdgarGame extends GameWithoutKillSearch {
   creaturesDiedThisTurn = 0;
   /** True while a permanent is being sacrificed (Carmen and Mayhem Devil only care about sacrifices). */
   isSacrificing = false;
-  /** True while a payment may spend Treasures and Eldrazi Spawn (they are kept for later otherwise). */
-  mayUseExpendableMana = false;
-  /** True while the engine only tries a ritual (it pays for real and then undoes it): nothing may be sacrificed. */
-  isTestingRitual = false;
   baronBertramUsed = false;
   welcomingVampireUsed = false;
   /** Emeritus of Woe and Scheming Silvertongue: their spell can be cast once. */
@@ -327,45 +324,13 @@ export class EdgarGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ mana
-  /** Treasures and Eldrazi Spawn are spent only when lands and rocks are not enough. */
   override manaSourceKind(
     permanent: Permanent,
     ignoreSick = false,
   ): string | null {
-    const card = permanent.card;
-    if (card === TOKENS.treasure) return this.mayUseExpendableMana ? 'A' : null;
-    if (card === TOKENS.spawn) return this.mayUseExpendableMana ? 'C' : null;
-    if (card.name === LEGIONS_LANDING)
+    if (permanent.card.name === LEGIONS_LANDING)
       return permanent.transformed ? 'W' : null;
     return super.manaSourceKind(permanent, ignoreSick);
-  }
-
-  override ritualCandidates(candidates: Candidate[]): Candidate[] {
-    this.isTestingRitual = true;
-    const ritualCandidates = super.ritualCandidates(candidates);
-    this.isTestingRitual = false;
-    return ritualCandidates;
-  }
-
-  /** A payment that needs a Treasure or Spawn sacrifices it. */
-  override pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
-    this.mayUseExpendableMana = false;
-    if (this.isTestingRitual)
-      return super.pay(cost, isInstantOrSorcery, commit);
-    if (super.pay(cost, isInstantOrSorcery, false))
-      return super.pay(cost, isInstantOrSorcery, commit);
-    this.mayUseExpendableMana = true;
-    const before = this.battlefield.filter((permanent) => !permanent.tapped);
-    const paid = super.pay(cost, isInstantOrSorcery, commit);
-    this.mayUseExpendableMana = false;
-    if (paid && commit)
-      for (const source of before)
-        if (
-          source.tapped &&
-          (source.card === TOKENS.treasure || source.card === TOKENS.spawn)
-        )
-          this.sacrifice(source);
-    return paid;
   }
 
   // ================================================================ turn steps
@@ -425,7 +390,7 @@ export class EdgarGame extends GameWithoutKillSearch {
       this.loseLife(2);
     }
     if (this.turn <= 8 && this.myLife > 8) {
-      this.createTokens(TOKENS.treasure);
+      this.createTokens(TREASURE);
       this.loseLife(1);
     }
     if (this.myLife > 25) {

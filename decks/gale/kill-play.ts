@@ -3,6 +3,7 @@
  * played in the real game: every cost is paid with pay(), every card moves, and the effects on the opponents are
  * the search's own rules (KillSearchState), applied to the game's opponents.
  */
+import { TREASURE } from '../../engine/cards/tokens';
 import * as C from '../../engine/cards/cards';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { GALE } from './roles';
@@ -16,9 +17,6 @@ import {
 } from './kill-moves';
 import { GaleAbility, GaleKillStep, OPPONENT_EVENT } from './kill-state';
 import type { GaleGame } from './game';
-
-/** A Treasure token (An Offer You Can't Refuse): GaleGame.manaSourceKind makes it a mana of any colour. */
-export const TREASURE = C.makeArtifactToken('Treasure');
 
 const JIDOOR = 'Jidoor, Aristocratic Capital';
 const GUILDMAGE = 'Duskmantle Guildmage';

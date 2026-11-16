@@ -61,8 +61,8 @@ Rules for every task:
 | 12 | M3 | Triggers on another player's spell (done) | Sonnet 5.5 |
 | 13 | M4 | Blink (done) | Opus 5.5 |
 | 14 | M5 | Dungeons, venture and the initiative (done) | Opus 5.5 |
-| 15 | M6 | Treasure in the engine | Opus 5.5 |
-| 16 | B4 | Thantis | Sonnet 5.5 |
+| 15 | M6 | Treasure in the engine (done) | Opus 5.5 |
+| 16 | B4 | Thantis (done) | Sonnet 5.5 |
 | 17 | B5 | DnD | Opus 5.5 |
 | 18 | B6 | Azula | Opus 5.5, after P |
 | 19 | Z1 | Step 7's loose ends | Sonnet 5.5 |
@@ -213,6 +213,8 @@ Pontus, 2026-11-16: the next step, before Thantis. Treasure tokens are made by t
 - **Tests:** a Treasure pays any colour and is gone after a committed payment, a tested payment keeps it, lands are tapped before a Treasure, the log shows the sacrifice.
 - **Done when:** `npm run verify` ends VERIFY OK. A deck whose results change (Codie or Edgar may tap in another order): show Pontus the numbers before and after, then re-record.
 
+**Built (2026-11-16).** `engine/cards/tokens.ts`: `TREASURE` and `ELDRAZI_SPAWN`, the one definition every deck and the dungeons use. `GameCore.manaSourceKind` gives a Treasure 'A' and a Spawn 'C'; `pay` first tries without them (`isKeepingExpendableManaBack`), and a committed payment that needed them sacrifices the ones it tapped (`sacrifice`: logged, death triggers fire); a tested one keeps them. Tests that pay for real and restore a snapshot (`ritualCandidates`, `rockFirst`) run `withoutExpendableMana`; the pod's `tapMana` leaves them alone. `SearchMana` counts untapped Treasures (`treasures`, `addTreasures`) and spends them last too, recording the tap so the played line follows it. Dropped from the decks: Codie's `purgeTreasures` and its override (Brass's Bounty now makes real tokens with `createTokens`), Edgar's `mayUseExpendableMana` / `isTestingRitual` / `pay` override and `TOKENS.treasure` / `TOKENS.spawn`, Gale's `TREASURE` and override (its search's Offer uses `addTreasures(2)`; the development play's `pool.U/B += 1` shortcut in `castSelfCounter` stays), Sam & Frodo's Treasure override and sacrifice (Goose and Talisman stay; its own sacrifices for value stay its choice). Tests: `engine/game/treasure.test.ts` (in `npm run pod -- --test`). Untapped Treasures now count as mana sources outside payments (`manaSources`, `openMana`), which Edgar did not do. Results: Codie, Aesi, Meren, Mike IDENTICAL; Edgar (5 of 600 seeds), Sam & Frodo (6) and Gale (1) changed by at most 0.1 point in 3000 games, re-recorded with Pontus's yes, and the pod baseline too.
+
 ## B. The friends' decks (after A4; the M tasks a deck needs come first)
 
 One task per list, following `/add-deck`'s light path (A4).
@@ -232,6 +234,8 @@ One task per list, following `/add-deck`'s light path (A4).
 **B2 built (2026-11-15).** `decks/ardyn`: Ardyn (haste, lifelink, Starscourge), Roaming Throne, the Swamp mana doublers and cost reducers, the drains and Exquisite Blood, Vilis, the tutors and reanimation. Goldfish average win turn 11.18 (see `decks/ardyn/PLAN.md` for what is not modelled).
 
 **B3 built (2026-11-15).** `decks/teval`: cards leaving the graveyard make Zombies (one trigger per event), self-mill, lands back from the graveyard and landfall, token and counter doubling, Muldrotha, Meren, Nyxbloom. `hasCreatureType` now reads a token's name word by word ("Zombie Druid" is a Zombie). Goldfish average win turn 9.91: the fastest of the three, and the AI plays it better than its owner.
+
+**B4 built (2026-11-16).** `decks/thantis`, on `CreatureDeckGame` and the light path. Three small engine hooks, all no-ops for other decks: `onAttackedBy` (Thantis's counters, called when an attack is declared), `onOtherPlayersCreatureDies` (a death reaches every other player: Syr Konrad, Sangromancer), and Ruric Thar in the engine's opponent-cast triggers. Assassin's Trophy, Chaos Warp and Deadly Rollick joined `answers.ts`; `countOnBattlefield` moved to `GameCore` (Ardyn, Teval and Thantis had each written it). Goldfish average win turn 12.33; with Meren, Edgar and Helga Thantis wins 19% (see `decks/thantis/PLAN.md` for what is not modelled: Shredder, Titan Hunter, the Archon's sacrifice).
 ---
 
 ## C. Game night

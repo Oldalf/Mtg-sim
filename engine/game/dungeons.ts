@@ -15,6 +15,7 @@
  */
 import * as C from '../cards/cards';
 import { CardDef, Cost } from '../cards/cards';
+import { TREASURE } from '../cards/tokens';
 import type { GameCore } from './game-core';
 import { Permanent } from './game-types';
 import { firstMax } from '../util/lists';
@@ -42,7 +43,6 @@ export interface DungeonPosition {
   room: string;
 }
 
-export const TREASURE = C.makeArtifactToken('Treasure');
 const GOBLIN = C.makeToken('Goblin', 1, 1, 'red');
 const SMALL_SKELETON = C.makeToken('Skeleton', 1, 1, 'black');
 const BIG_SKELETON = C.makeToken('Skeleton', 4, 1, 'black', ['menace']);

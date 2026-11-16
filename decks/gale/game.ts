@@ -34,7 +34,7 @@ import {
   OPPONENT_EVENT,
   Op,
 } from './kill-state';
-import { TREASURE, playGaleKillStep } from './kill-play';
+import { playGaleKillStep } from './kill-play';
 import { finisherReachable, search } from './kills';
 import { chooseTutorTarget } from './tutoring';
 import { buildCandidates, castWithGaleRecast } from './candidates';
@@ -351,14 +351,6 @@ export class GaleGame extends Game<KillSearchState> {
         needs.has('Bubbling Muck') &&
         this.swampTyped(permanent))
     );
-  }
-  /** An Offer You Can't Refuse's Treasures, made during a kill line: a mana of any colour each. */
-  override manaSourceKind(
-    permanent: Permanent,
-    ignoreSick = false,
-  ): string | null {
-    if (permanent.card === TREASURE) return 'A';
-    return super.manaSourceKind(permanent, ignoreSick);
   }
 
   // ---------------------------------------------------------------- what the AI wants

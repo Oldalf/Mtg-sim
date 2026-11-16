@@ -1,4 +1,5 @@
 /** What happens when a permanent enters the battlefield, dies, or attacks: the triggers of Edgar's cards. */
+import { ELDRAZI_SPAWN, TREASURE } from '../../engine/cards/tokens';
 import {
   BARON_BERTRAM,
   EDGAR,
@@ -120,10 +121,10 @@ export function onPermanentDied(game: EdgarGame, dead: Permanent): void {
         if (!isDeadItself && wasCreature) source.counters += 1;
         break;
       case 'Pitiless Plunderer':
-        if (!isDeadItself && wasCreature) game.createTokens(TOKENS.treasure);
+        if (!isDeadItself && wasCreature) game.createTokens(TREASURE);
         break;
       case 'Pawn of Ulamog':
-        if (wasCreature && !dead.token) game.createTokens(TOKENS.spawn);
+        if (wasCreature && !dead.token) game.createTokens(ELDRAZI_SPAWN);
         break;
       case 'Carmen, Cruel Skymarcher':
         if (game.isSacrificing && !isDeadItself) {
