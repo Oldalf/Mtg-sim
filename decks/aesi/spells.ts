@@ -4,11 +4,9 @@ import {
   CLAIM,
   CROP,
   DOMINION,
-  LORE,
   SCRYING,
   SEARCH,
   SWARM,
-  THREE,
 } from './cards';
 import { tutorLand } from './candidates';
 import type { AesiGame } from './game';
@@ -36,13 +34,6 @@ function resolveBasicLandFetcher(
   mode: string | null,
 ): boolean {
   switch (spell.name) {
-    case 'Rampant Growth':
-      game.fetchBasic({ tapped: true });
-      return true;
-    case LORE:
-    case THREE:
-      game.fetchBasic({ only: 'Forest' });
-      return true;
     case CLAIM:
       game.fetchBasic({ only: 'Forest' });
       game.fetchBasic({ only: 'Forest' });
@@ -50,14 +41,6 @@ function resolveBasicLandFetcher(
     case SEARCH:
       game.fetchBasic();
       return true;
-    case 'Farseek':
-      game.fetchBasic({ tapped: true, only: 'Island' });
-      return true;
-    case 'Cultivate':
-      game.fetchBasic({ tapped: true });
-      game.fetchBasic({ toHand: true });
-      return true;
-    case 'Explosive Vegetation':
     case 'Circuitous Route':
     case 'Reach the Horizon':
       game.fetchBasic({ tapped: true });

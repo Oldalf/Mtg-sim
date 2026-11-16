@@ -79,6 +79,7 @@ import {
 } from '../../engine/game/game-types';
 import { Game } from '../../engine/game/game';
 import { firstMax, removeIfPresent } from '../../engine/util/lists';
+import { fetchLand } from '../../engine/game/land-search';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -566,31 +567,36 @@ export class AesiGame extends Game<AesiGame> {
     this.putCard(landToReturn.card, 'hand');
     this.say(`${self.card.name} returns`, landToReturn.card);
   }
-  /** Search the library for a basic land (the colour we need; only = Forest or Island). */
+  /** Search the library for a basic land (only = Forest or Island; the colour we need if not given). The engine
+   *  does the search; chooseLandToFetch picks the land. */
   fetchBasic(
     options: { tapped?: boolean; toHand?: boolean; only?: string } = {},
   ): boolean {
-    const want =
-      options.only ?? (this.wantColour() === 'U' ? 'Island' : 'Forest');
-    const otherCard =
-      this.library.find((card) => card.name === want) ??
-      (options.only
-        ? undefined
-        : this.library.find((card) => card.land?.basic));
-    if (!otherCard) return false;
-    if (options.toHand) {
-      this.takeCardIfThere(otherCard, 'library');
-      this.putCard(otherCard, 'hand');
-      this.say('basic to hand:', otherCard);
-    } else
-      this.putLand(
-        otherCard,
-        'library',
-        'basic onto the battlefield',
-        !!options.tapped,
-      );
+    const kind =
+      options.only === 'Forest'
+        ? 'forest'
+        : options.only === 'Island'
+          ? 'types'
+          : 'basic';
+    return fetchLand(this, kind, !!options.tapped, !!options.toHand) !== null;
+  }
+  /** The land enters before the shuffle (landfall draws come from the unshuffled library) and counts as having
+   *  entered this turn (matters only when lands are creatures). */
+  override putSearchedLand(land: CardDef, tapped: boolean): void {
+    const permanent = new Permanent(land, land.land, tapped);
+    permanent.sick = true;
+    this.putOntoBattlefield(permanent);
+    this.onLandEnter(permanent, false);
     this.shuffle();
-    return true;
+  }
+  /** The basic of the colour we need, else any basic. */
+  override chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
+    const wantedBasic = this.wantColour() === 'U' ? 'Island' : 'Forest';
+    return (
+      candidates.find((card) => card.name === wantedBasic) ??
+      candidates.find((card) => card.land?.basic) ??
+      candidates[0]
+    );
   }
 
   // ================================================================ landfall and enter triggers

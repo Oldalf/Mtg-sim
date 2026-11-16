@@ -3,6 +3,7 @@ import { FOOD, SAGA, TOK } from './cards';
 import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards/cards';
 import { Permanent, Zone } from '../../engine/game/game-types';
+import { fetchLand } from '../../engine/game/land-search';
 
 // ================================================================ entering
 export function onPermanentEntered(
@@ -162,7 +163,7 @@ export function onFoodSacrificed(game: SamFrodoGame): void {
       game.landsOnBattlefield().length < 7 &&
       game.battlefield.includes(permanent)
     ) {
-      if (game.putBasic()) {
+      if (fetchLand(game, 'basic', true)) {
         game.takeFromBattlefieldIfThere(permanent);
         game.putCard(permanent.card, 'library');
       }

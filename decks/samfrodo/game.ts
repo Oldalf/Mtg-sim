@@ -52,6 +52,7 @@ import {
 } from '../../engine/game/game-types';
 import { GameWithoutKillSearch } from '../../engine/game/game';
 import { firstMax } from '../../engine/util/lists';
+import { fetchLand } from '../../engine/game/land-search';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -374,12 +375,9 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       this.gainLife(1);
   }
 
-  /** Put a basic land from the library onto the battlefield tapped (the colour we have least of). */
-  putBasic(
-    toHand = false,
-    only: string[] = ['Plains', 'Swamp', 'Forest'],
-  ): boolean {
-    const source = (colour: string) =>
+  /** The basic land of the colour we have the fewest sources of (Plains, then Swamp, then Forest on a tie). */
+  override chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
+    const sourcesOfColour = (colour: string) =>
       this.landsOnBattlefield().filter((permanent) => {
         const kind = this.manaSourceKind(permanent, true) ?? '';
         return (
@@ -388,27 +386,16 @@ export class SamFrodoGame extends GameWithoutKillSearch {
           (kind.length === 3 && kind.includes(colour))
         );
       }).length;
-    const order = only
+    const basicNames = Object.keys(BASIC_COL);
+    const basics = candidates.filter((card) => card.name in BASIC_COL);
+    return (basics.length ? basics : candidates)
       .slice()
       .sort(
-        (first, second) => source(BASIC_COL[first]) - source(BASIC_COL[second]),
-      );
-    for (const name of order) {
-      const card = this.library.find((candidate) => candidate.name === name);
-      if (!card) continue;
-      this.takeCardIfThere(card, 'library');
-      this.shuffle();
-      if (toHand) this.putCard(card, 'hand');
-      else {
-        const landPermanent = new Permanent(card, card.land, true);
-        landPermanent.sick = false;
-        this.putOntoBattlefield(landPermanent);
-        this.say('basic land onto the battlefield:', card);
-        this.onLandEnter(landPermanent, false);
-      }
-      return true;
-    }
-    return false;
+        (first, second) =>
+          sourcesOfColour(BASIC_COL[first.name] ?? '') -
+            sourcesOfColour(BASIC_COL[second.name] ?? '') ||
+          basicNames.indexOf(first.name) - basicNames.indexOf(second.name),
+      )[0];
   }
 
   // ================================================================ mana
@@ -549,7 +536,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       else if (name === 'Tippy-Toe, Terrific Partner' && gainedThisTurn() > 0)
         this.draw(1);
       else if (name === 'Elanor Gardner' && this.foodSacrificedThisTurn)
-        this.putBasic();
+        fetchLand(this, 'basic', true);
     }
     this.checkKill();
   }
@@ -599,9 +586,9 @@ export class SamFrodoGame extends GameWithoutKillSearch {
       this.loseLife(2);
     } else if (name === 'Harmonize') this.draw(3);
     else if (name === 'Cultivate') {
-      this.putBasic();
-      this.putBasic(true);
-    } else if (name === 'Farseek') this.putBasic(false, ['Plains', 'Swamp']);
+      fetchLand(this, 'basic', true);
+      fetchLand(this, 'basic', true, true);
+    } else if (name === 'Farseek') fetchLand(this, 'types', true);
     else if (name === 'Second Harvest')
       this.makeTokens(
         this.battlefield
@@ -623,7 +610,7 @@ export class SamFrodoGame extends GameWithoutKillSearch {
         this.putCard(guest.card, 'exile');
         this.drainTargetOpponent(power); // leaves the battlefield: target opponent loses its power
         if (name === 'Swords to Plowshares') this.gainLife(power);
-        else if (name === 'Path to Exile') this.putBasic();
+        else if (name === 'Path to Exile') fetchLand(this, 'basic', true);
         else this.loseLife(3);
       } else this.dies(guest); // destroyed: onDies drains its power (and the death triggers)
     } else super.resolve(card, fromGraveyard, mode);

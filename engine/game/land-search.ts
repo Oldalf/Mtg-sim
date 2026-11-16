@@ -5,7 +5,6 @@
 import { CardDef } from '../cards/cards';
 import { LAND_SEARCH, LandKind } from '../cards/card-facts';
 import type { GameCore } from './game-core';
-import { Permanent } from './game-types';
 
 /** Plays a land-search spell. Returns false if the spell isn't one. */
 export function resolveLandSearch(game: GameCore, spell: CardDef): boolean {
@@ -48,15 +47,13 @@ export function fetchLand(
   if (!candidates.length) return null;
   const pick = game.chooseLandToFetch(candidates, toHand);
   game.takeCardIfThere(pick, 'library');
-  game.shuffle();
-  if (toHand) game.putCard(pick, 'hand');
-  else {
+  if (toHand) {
+    game.shuffle();
+    game.putCard(pick, 'hand');
+  } else {
     const entersTapped =
       tapped || game.entersTapped(pick) || pick.land!.etb === 'tapped';
-    const land = new Permanent(pick, pick.land, entersTapped);
-    land.sick = false;
-    game.putOntoBattlefield(land);
-    game.onLandEnter(land, false);
+    game.putSearchedLand(pick, entersTapped);
   }
   return pick;
 }

@@ -38,7 +38,7 @@ Rules for every task:
 | 7 | G7 | **Done.** Spells cast through a deck's own code announce themselves; Mystic Remora and Esper Sentinel | Sonnet 5.5 |
 | 8 | G8 | **Done.** Finale of Revelation and Aesi's hand size use the engine's rule | Haiku 5.5 |
 | 9 | G9 | **Done.** Black tutors move to the engine | Sonnet 5.5 |
-| 10 | G10 | Aesi's and Sam & Frodo's land search use the engine's | Sonnet 5.5 |
+| 10 | G10 | **Done.** Aesi's and Sam & Frodo's land search use the engine's | Sonnet 5.5 |
 | 11 | G11 | Edgar, Meren and Sam & Frodo move onto `CreatureDeckGame` | Opus 5.5 (the first), Sonnet 5.5 (the others) |
 
 Azula's next task (B7) is not in this plan: it waits in `decks/azula/PLAN.md` ("Next task B7") until Pontus wants it, since Azula may not be played in the pod at all.
@@ -186,6 +186,8 @@ Codie and Teval each resolve Demonic Tutor and Vampiric Tutor themselves, and Ar
 
 1. For each deck: find what differs (when landfall fires, which land is chosen, tapped or untapped) and make the engine's function do it the same way (a parameter or a hook the deck sets), or find that it can't and write why.
 2. Move the deck onto it. `--regress check` must be IDENTICAL for both. A difference means the move changed the behaviour: undo it and write what differs.
+
+Done 2026-11-16, eco mode. Both decks now call the engine's `fetchLand` and fill in `chooseLandToFetch` (what to take stays per deck). Sam & Frodo: its `putBasic` is gone (always tapped; the basic of the colour with the fewest sources); nothing else differed. Aesi: `fetchBasic` is a thin wrapper over `fetchLand`, and Rampant Growth, Nature's Lore, Three Visits, Farseek, Cultivate and Explosive Vegetation are now resolved by the engine (the rest of its fetch spells still call `fetchBasic`). What differed was when the land enters: Aesi's land counts as entered this turn (`sick`) and its landfall draws come before the shuffle. That is a new engine hook, `GameCore.putSearchedLand` (default: shuffle, then the land enters; Aesi overrides it). `--regress check` IDENTICAL for Aesi and Sam & Frodo.
 
 ## G11. Edgar, Meren and Sam & Frodo move onto `CreatureDeckGame` (Opus 5.5 for the first, Sonnet 5.5 for the others)
 

@@ -3,6 +3,7 @@ import { FOOD, GOLLUM } from './cards';
 import type { SamFrodoGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Permanent } from '../../engine/game/game-types';
+import { fetchLand } from '../../engine/game/land-search';
 
 export function valueOfGainingLife(game: SamFrodoGame, amount: number): number {
   let value = 0;
@@ -153,5 +154,5 @@ export function activateShireTerrace(
 ): boolean {
   if (!game.pay(new Cost(1))) return false;
   game.sacrifice(permanent);
-  return game.putBasic();
+  return fetchLand(game, 'basic', true) !== null;
 }

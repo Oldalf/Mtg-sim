@@ -2982,6 +2982,15 @@ export abstract class GameCore<S = unknown> {
   onToGraveyard(_card: CardDef): void {}
   /** Replacement effects on a draw (e.g. look at the top cards first). */
   beforeDraw(): void {}
+  /** A land taken from the library enters the battlefield, and the library is shuffled (engine/game/land-search.ts).
+   *  By default shuffled first, so landfall draws come from the shuffled library. */
+  putSearchedLand(land: CardDef, tapped: boolean): void {
+    this.shuffle();
+    const permanent = new Permanent(land, land.land, tapped);
+    permanent.sick = false;
+    this.putOntoBattlefield(permanent);
+    this.onLandEnter(permanent, false);
+  }
   /** Which land a land-search spell takes from these (engine/game/land-search.ts). By default the one that makes
    *  the deck's colour we have the fewest lands for. */
   chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
