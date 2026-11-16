@@ -79,6 +79,36 @@ The game-night report of 2026-11-15 (Teval 31.4%, Meren 23.5%, Ardyn 22.7%, Helg
 3. Write a short table per pod under this task: each deck's win rate, average round, who goes out first, and which deck the others should watch. Plain text a person can read on a phone. Next to each friend's deck, say what is not modelled (copy it from its `PLAN.md`).
 4. Do not change code.
 
+Done 2026-11-16, eco mode, 1,000 games per pod, no code changed. "First knocked out" = the share of games where that deck was the first one out.
+
+Pod A: Meren, Edgar, Helga, Ardyn, Teval (5 decks, even share 20%)
+- Teval: 31.6% wins, average round 9.2, first knocked out 9.1%
+- Meren: 23.2% wins, average round 9.3, first knocked out 25.2%
+- Ardyn: 22.1% wins, average round 9.3, first knocked out 17.2%
+- Helga: 12.6% wins, average round 9.8, first knocked out 16.9%
+- Edgar: 10.3% wins, average round 9.0, first knocked out 31.6%
+Watch: Teval. It wins most, and 8.0% of all games end by round 8. Edgar is knocked out first most often.
+Not modelled: Teval (the owner's misplays: the numbers likely overrate it; see decks/teval/PLAN.md). Ardyn (Cabal Coffers, Nykthos and extra mana from the lands; menace; another player's graveyard). Helga (annihilator hits only for power; the removal on Ulamog, the Ceaseless Hunger and Terastodon; see G3). Edgar (Master of Dark Rites' mana; Cabal Coffers; a counterspell on the explosion ability).
+
+Pod B: DnD, Thantis, Helga, Ardyn, Teval (5 decks, even share 20%)
+- Teval: 30.1% wins, average round 9.3, first knocked out 14.4%
+- DnD: 22.6% wins, average round 9.6, first knocked out 26.4%
+- Ardyn: 21.5% wins, average round 9.5, first knocked out 20.4%
+- Thantis: 16.4% wins, average round 9.8, first knocked out 14.9%
+- Helga: 9.2% wins, average round 10.0, first knocked out 23.9%
+Watch: Teval and DnD. DnD wins a third of its games by round 10 and loses first in 26.4%. Ardyn also declares some wins itself (1.9%).
+Not modelled: DnD (blink against removal and wipes, G14; the goad rooms, G6; a blink on an opponent's turn, G5; Avatar's Wrath's exile; warp). Thantis (Shredder's copies, Archon of Cruelty's sacrifice and discard, Chainer, Black Market). Helga (as in Pod A). Teval and Ardyn (as in Pod A).
+
+Pod C: Azula, Meren, Edgar, Helga (4 decks, even share 25%)
+- Meren: 37.5% wins, average round 9.4, first knocked out 19.3%
+- Edgar: 31.9% wins, average round 9.1, first knocked out 18.9%
+- Helga: 24.7% wins, average round 10.0, first knocked out 13.5%
+- Azula: 5.8% wins, average round 8.5, first knocked out 48.3%
+Watch: Meren and Edgar. Azula is knocked out first in almost half its games. When it does win, it is earlier (average round 8.5), but it wins only 5.8%. It is stopped in 28.6% of its win attempts.
+Not modelled: Azula (Reiterate and Reverberate outside the combos; Torment of Hailfire outside a combo; Callidus Assassin's copy; Deflecting Swat, Redirect Lightning and Vandalblast; Ozai's flying).
+
+Helga is below an even share in all three pods (lowest in Pod B, 9.2%). Her annihilator and removal are G3.
+
 ## G3. Helga: annihilator and the Eldrazi's removal (Sonnet 5.5)
 
 Helga's `PLAN.md` lists annihilator and the removal that Eldrazi and Terastodon do as not modelled. Her list plays Kozilek, Butcher of Truth, Ulamog, the Defiler, Ulamog's Crusher, Ulamog, the Ceaseless Hunger and Terastodon. In a pod these decide games and make Helga look weaker than she is.
