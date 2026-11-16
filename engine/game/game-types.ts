@@ -205,6 +205,10 @@ export interface Arena {
   ): FightResult;
   /** The power of each creature opponent `slot` controls (what could attack us on their turn). */
   board(game: Game<unknown>, slot: number): number[];
+  /** How many cards opponent `slot` holds (Jeska's Will). */
+  handSize(game: Game<unknown>, slot: number): number;
+  /** How many tapped lands opponent `slot` controls (Mana Geyser). */
+  tappedLands(game: Game<unknown>, slot: number): number;
   /** Each opponent sacrifices its least valuable creature (nontoken only: Accursed Marauder). */
   edict(game: Game<unknown>, nontoken: boolean): void;
   /** Take the best legal target of the biggest threat off the battlefield (an enters-the-battlefield removal effect). Returns its name. */

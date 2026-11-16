@@ -10,6 +10,7 @@ import * as C from '../cards/cards';
 import { Cost, CardDef } from '../cards/cards';
 import { ANSWERS, Answer, KEY_SPELLS } from './answers';
 import { GameCore } from './game-core';
+import { addFirebendingMana } from './firebending';
 import {
   Arena,
   CardListZone,
@@ -425,6 +426,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     const sent = groups.flatMap((x) => x.attackers);
     for (const permanent of sent)
       if (!permanent.card.keywords.has('vigilance')) permanent.tapped = true;
+    addFirebendingMana(this, sent);
     const joined = this.onAttack(sent);
     const connected: Permanent[] = [];
     let total = 0;
@@ -505,10 +507,33 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   answerCost(card: CardDef): Cost {
     const answer = this.answer(card);
-    return this.effectiveCost(
+    const cost = this.effectiveCost(
       card,
       answer?.cost ? Cost.parse(answer.cost) : null,
     );
+    if (card.name === FIERCE_GUARDIANSHIP && this.controlsCommander())
+      return new Cost();
+    if (
+      card.name === FORCE_OF_WILL &&
+      !this.canPay(cost, true) &&
+      this.forceOfWillPitch(card)
+    )
+      return new Cost();
+    return cost;
+  }
+  controlsCommander(): boolean {
+    return this.battlefield.some((permanent) => this.isCommander(permanent));
+  }
+  /** Force of Will's other cost: a blue card from hand to exile (the least wanted), or null. */
+  forceOfWillPitch(forceOfWill: CardDef): CardDef | null {
+    const blueCards = this.hand.filter(
+      (card) => card !== forceOfWill && card.isBlue,
+    );
+    return blueCards.length
+      ? blueCards.reduce((least, card) =>
+          this.cardValue(card) < this.cardValue(least) ? card : least,
+        )
+      : null;
   }
   /** Mana to leave untapped on our own turn for the cheapest instant-speed answer in hand (from round config.hold_from, default 5). */
   override podReserve(): number {
@@ -532,6 +557,11 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   podCast(card: CardDef): boolean {
     const cost = this.answerCost(card);
     if (!this.hand.includes(card) || !this.pay(cost, true)) return false;
+    if (card.name === FORCE_OF_WILL && cost.manaValue === 0) {
+      // the alternative cost: exile a blue card and pay 1 life
+      this.moveCard(this.forceOfWillPitch(card)!, 'hand', 'exile');
+      this.loseLife(1);
+    }
     this.moveCard(card, 'hand', 'graveyard');
     this.podAnnounceCast(card);
     const life = this.answer(card)?.pay ?? 0;
@@ -870,6 +900,8 @@ export abstract class Game<S = unknown> extends GameCore<S> {
 }
 
 const VOLATILE_STORMDRAKE = 'Volatile Stormdrake';
+const FORCE_OF_WILL = 'Force of Will';
+const FIERCE_GUARDIANSHIP = 'Fierce Guardianship';
 
 /** Base for decks that have no kill search (no combo to find), so they skip the three search hooks. */
 export abstract class GameWithoutKillSearch extends Game<null> {

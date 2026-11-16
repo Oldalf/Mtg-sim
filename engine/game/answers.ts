@@ -49,6 +49,13 @@ const NONLAND: Hit[] = ['creature', 'artifact', 'enchantment', 'planeswalker'];
 export const ANSWERS: Record<string, Answer> = {
   // ---- counterspells ("unless its controller pays" ones count as hard counters: a deck going for the win is tapped out)
   Counterspell: counter(),
+  'Mana Drain': counter(),
+  'Void Shatter': counter(),
+  // (free by pitching a blue card, or with a commander out: Game.answerCost)
+  'Force of Will': counter(),
+  'Fierce Guardianship': counter('noncreature'),
+  // (returns the spell to its owner's hand: it is stopped this time)
+  'Sink into Stupor': counter(),
   'Arcane Denial': counter(),
   "It'll Quench Ya!": counter(),
   "Archmage's Charm": counter(),
@@ -90,6 +97,9 @@ export const ANSWERS: Record<string, Answer> = {
   'Deadly Rollick': kill(['creature'], 'exile'),
   'Anguished Unmaking': kill(NONLAND, 'exile', true, 1, { pay: 3 }),
   Snap: kill(['creature'], 'bounce'),
+  'Kill! Maim! Burn!': kill(['creature', 'artifact']),
+  "Isildur's Fateful Strike": kill(['creature']),
+  'Untimely Malfunction': kill(['artifact']),
   // ---- sorcery-speed removal
   'Aether Gale': kill(NONLAND, 'bounce', false, 6),
   // ---- wipes

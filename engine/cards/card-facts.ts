@@ -111,6 +111,9 @@ export const LANDS: Record<string, LandInfo> = {
 /** Modal double-faced spells that may be played as a land instead. */
 export const MDFC_LAND_BACK: Record<string, LandInfo> = {
   'Waterlogged Teachings': { mana: 'A', etb: 'tapped' },
+  // (or untapped for 3 life: not modelled)
+  'Sink into Stupor': { mana: 'U', etb: 'tapped' },
+  'Sea Gate Restoration': { mana: 'U', etb: 'tapped' },
 };
 /** card name: [spell name, cost, effect key] */
 export const ADVENTURE: Record<string, [string, string, string]> = {

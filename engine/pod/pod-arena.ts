@@ -25,6 +25,12 @@ export function buildArena(table: PodTable): Arena {
         table.games[table.opponentsOf[table.playerOf(game)][slot]];
       return opponent.creatures().map((creature) => opponent.power(creature));
     },
+    handSize: (game, slot) =>
+      table.games[table.opponentsOf[table.playerOf(game)][slot]].hand.length,
+    tappedLands: (game, slot) =>
+      table.games[table.opponentsOf[table.playerOf(game)][slot]]
+        .landsOnBattlefield()
+        .filter((land) => land.tapped).length,
     fight: (game, slot, attackers, apply) => {
       const fight = () => fightOpponent(table, game, slot, attackers, apply);
       return apply ? table.runOffTurn(fight) : fight();

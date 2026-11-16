@@ -67,6 +67,8 @@ import {
 import { PaymentRecord, UNTAP, isSourceOfClass } from './search-mana';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import { enterTriggerCount } from './trigger-doublers';
+import { castInstantOrSorceryTriggers } from './spell-copies';
+import { addFirebendingMana } from './firebending';
 import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
@@ -1743,11 +1745,10 @@ export abstract class GameCore<S = unknown> {
 
   onCastInstantOrSorcery(fromGraveyard: boolean): void {
     this.isCast += 1;
+    castInstantOrSorceryTriggers(this);
     for (const permanent of this.battlefield.slice()) {
       const cardName = permanent.card.name;
-      if (cardName === 'Archmage Emeritus' || cardName === 'Archmage of Runes')
-        this.draw(1);
-      else if (cardName === 'Academy Wall' && !this.wallUsed) {
+      if (cardName === 'Academy Wall' && !this.wallUsed) {
         this.wallUsed = true;
         this.draw(1);
         this.discard(1);
@@ -2475,8 +2476,13 @@ export abstract class GameCore<S = unknown> {
     this.endStep();
     if (this.isCast >= 4 && this.isOnBattlefield('Case of the Ransacked Lab'))
       this.caseSolved = true;
-    if (this.hand.length > 7 && !this.isOnBattlefield('Reliquary Tower'))
+    if (this.hand.length > 7 && !this.hasNoMaximumHandSize())
       this.discard(this.hand.length - 7);
+  }
+
+  /** Do we skip the discard to seven at the end of the turn? (Reliquary Tower; a deck adds its own cards.) */
+  hasNoMaximumHandSize(): boolean {
+    return this.isOnBattlefield('Reliquary Tower');
   }
 
   /** Before the first turn: the opening hand and mulligans. */
@@ -2773,6 +2779,7 @@ export abstract class GameCore<S = unknown> {
     if (!best.length) return;
     this.attacked = true;
     for (const otherPermanent of best) otherPermanent.tapped = true;
+    addFirebendingMana(this, best);
     const all = [...best, ...this.onAttack(best)].filter((permanent) =>
       this.battlefield.includes(permanent),
     );

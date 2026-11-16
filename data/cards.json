@@ -11256,5 +11256,847 @@
   "layout": "normal",
   "oracle_id": "fcb0c7db-bd07-4c25-b7f8-b6c207e4f6be",
   "scryfall_id": "0ac3fb08-741a-49e5-9fae-b26819677d24"
+ },
+ "Vivi Ornitier": {
+  "name": "Vivi Ornitier",
+  "full_name": "Vivi Ornitier",
+  "mana_cost": "{1}{U}{R}",
+  "type_line": "Legendary Creature — Wizard",
+  "oracle": "{0}: Add X mana in any combination of {U} and/or {R}, where X is Vivi Ornitier's power. Activate only during your turn and only once each turn.\nWhenever you cast a noncreature spell, put a +1/+1 counter on Vivi Ornitier and it deals 1 damage to each opponent.",
+  "power": "0",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "0452be2a-e97a-4269-a9e3-b616265ecb2e",
+  "scryfall_id": "ecc1027a-8c07-44a0-bdde-fa2844cff694"
+ },
+ "Kill! Maim! Burn!": {
+  "name": "Kill! Maim! Burn!",
+  "full_name": "Kill! Maim! Burn!",
+  "mana_cost": "{3}{B}{R}",
+  "type_line": "Instant",
+  "oracle": "Choose one or more —\n• Destroy target artifact.\n• Destroy target creature.\n• Kill! Maim! Burn! deals 3 damage to target player.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "05c7d88d-c081-411b-a530-969b5816d792",
+  "scryfall_id": "7c48e10d-2b70-4f87-b5ce-6fb0d56452eb"
+ },
+ "Fated Firepower": {
+  "name": "Fated Firepower",
+  "full_name": "Fated Firepower",
+  "mana_cost": "{X}{R}{R}{R}",
+  "type_line": "Enchantment",
+  "oracle": "Flash\nThis enchantment enters with X fire counters on it.\nIf a source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus an amount of damage equal to the number of fire counters on this enchantment instead.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "13daa21c-278d-45bd-9a6e-a77d6a558453",
+  "scryfall_id": "51352127-1f86-42e9-b4ca-2fd58b14e86b"
+ },
+ "Steam Vents": {
+  "name": "Steam Vents",
+  "full_name": "Steam Vents",
+  "mana_cost": "",
+  "type_line": "Land — Island Mountain",
+  "oracle": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "17039058-822d-409f-938c-b727a366ba63",
+  "scryfall_id": "a83903c7-fd51-4526-aed2-359e946fea36"
+ },
+ "Arcane Bombardment": {
+  "name": "Arcane Bombardment",
+  "full_name": "Arcane Bombardment",
+  "mana_cost": "{4}{R}{R}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever you cast your first instant or sorcery spell each turn, exile an instant or sorcery card at random from your graveyard. Then copy each card exiled with this enchantment. You may cast any number of the copies without paying their mana costs.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "1e36a42f-58e2-49bc-8c14-7f75e1d8ef98",
+  "scryfall_id": "ef7e6e2d-d984-483e-b117-b1c5d640dc23"
+ },
+ "Prismari, the Inspiration": {
+  "name": "Prismari, the Inspiration",
+  "full_name": "Prismari, the Inspiration",
+  "mana_cost": "{5}{U}{R}",
+  "type_line": "Legendary Creature — Elder Dragon",
+  "oracle": "Flying\nWard—Pay 5 life.\nInstant and sorcery spells you cast have storm. (Whenever you cast an instant or sorcery spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Flying",
+   "Ward"
+  ],
+  "layout": "normal",
+  "oracle_id": "258f5045-3aa7-4b95-a15f-3172577294a8",
+  "scryfall_id": "767ff9fa-4e7f-421a-b911-45186b520ae1"
+ },
+ "Fire Lord Azula": {
+  "name": "Fire Lord Azula",
+  "full_name": "Fire Lord Azula",
+  "mana_cost": "{1}{U}{B}{R}",
+  "type_line": "Legendary Creature — Human Noble",
+  "oracle": "Firebending 2 (Whenever this creature attacks, add {R}{R}. This mana lasts until end of combat.)\nWhenever you cast a spell while Fire Lord Azula is attacking, copy that spell. You may choose new targets for the copy. (A copy of a permanent spell becomes a token.)",
+  "power": "4",
+  "toughness": "4",
+  "keywords": [
+   "Firebending"
+  ],
+  "layout": "normal",
+  "oracle_id": "2631130e-63e2-43a3-914a-648e76722203",
+  "scryfall_id": "bc6146bf-f0c6-4557-af6a-74c643d5fc01"
+ },
+ "High Fae Trickster": {
+  "name": "High Fae Trickster",
+  "full_name": "High Fae Trickster",
+  "mana_cost": "{3}{U}",
+  "type_line": "Creature — Faerie Wizard",
+  "oracle": "Flash (You may cast this spell any time you could cast an instant.)\nFlying\nYou may cast spells as though they had flash.",
+  "power": "4",
+  "toughness": "2",
+  "keywords": [
+   "Flying",
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "28c1a4a0-f58c-4d07-a918-51ff8a74f050",
+  "scryfall_id": "7f1b93ea-1ec1-4010-9343-765742f5088b"
+ },
+ "Untimely Malfunction": {
+  "name": "Untimely Malfunction",
+  "full_name": "Untimely Malfunction",
+  "mana_cost": "{1}{R}",
+  "type_line": "Instant",
+  "oracle": "Choose one —\n• Destroy target artifact.\n• Change the target of target spell or ability with a single target.\n• One or two target creatures can't block this turn.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "2c49d24a-98a4-43c2-bb59-1ef13d4214c2",
+  "scryfall_id": "857bfb0e-17dc-4dda-bc37-3df927a9eae6"
+ },
+ "Vandalblast": {
+  "name": "Vandalblast",
+  "full_name": "Vandalblast",
+  "mana_cost": "{R}",
+  "type_line": "Sorcery",
+  "oracle": "Destroy target artifact you don't control.\nOverload {4}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Overload"
+  ],
+  "layout": "normal",
+  "oracle_id": "3567c3c8-b3c7-45b7-935b-b1fdbc973720",
+  "scryfall_id": "71067239-d46f-4201-a91c-6aa4c41fa8b1"
+ },
+ "Twinning Staff": {
+  "name": "Twinning Staff",
+  "full_name": "Twinning Staff",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "If you would copy a spell one or more times, instead copy it that many times plus an additional time. You may choose new targets for the additional copy.\n{7}, {T}: Copy target instant or sorcery spell you control. You may choose new targets for the copy.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "3ca8113b-f5b8-41a7-aae6-ebb32554dfe3",
+  "scryfall_id": "5cdcc324-1427-453c-9940-c21f5d04c997"
+ },
+ "Void Shatter": {
+  "name": "Void Shatter",
+  "full_name": "Void Shatter",
+  "mana_cost": "{1}{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Devoid (This card has no color.)\nCounter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Devoid"
+  ],
+  "layout": "normal",
+  "oracle_id": "3d9f854e-1ee5-4aa1-a33b-d3ae08f15dd0",
+  "scryfall_id": "4bf13c5e-3968-48ad-ba08-99ba58873223"
+ },
+ "Callidus Assassin": {
+  "name": "Callidus Assassin",
+  "full_name": "Callidus Assassin",
+  "mana_cost": "{4}{U}{B}",
+  "type_line": "Creature — Human Shapeshifter Assassin",
+  "oracle": "Flash\nPolymorphine — You may have this creature enter tapped as a copy of any creature on the battlefield, except it has \"When this creature enters, destroy up to one other target creature with the same name as this creature.\"",
+  "power": "3",
+  "toughness": "3",
+  "keywords": [
+   "Polymorphine",
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "4240dab9-ace7-490d-97c3-489a9fd52038",
+  "scryfall_id": "18a5e38a-6c8c-427f-9143-59212e711f1c"
+ },
+ "Blood Crypt": {
+  "name": "Blood Crypt",
+  "full_name": "Blood Crypt",
+  "mana_cost": "",
+  "type_line": "Land — Swamp Mountain",
+  "oracle": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "43985bbc-a0f6-4812-984e-392bc8562633",
+  "scryfall_id": "1b7eb998-3ec0-4cbc-a416-5a1e3e5a7316"
+ },
+ "Lightning Bolt": {
+  "name": "Lightning Bolt",
+  "full_name": "Lightning Bolt",
+  "mana_cost": "{R}",
+  "type_line": "Instant",
+  "oracle": "Lightning Bolt deals 3 damage to any target.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4457ed35-7c10-48c8-9776-456485fdf070",
+  "scryfall_id": "7673784e-db4b-43a1-8d55-1bb9fc1e284f"
+ },
+ "Necron Deathmark": {
+  "name": "Necron Deathmark",
+  "full_name": "Necron Deathmark",
+  "mana_cost": "{3}{B}{B}",
+  "type_line": "Artifact Creature — Necron",
+  "oracle": "Flash\nSynaptic Disintegrator — When this creature enters, destroy up to one target creature and target player mills three cards.",
+  "power": "5",
+  "toughness": "3",
+  "keywords": [
+   "Synaptic Disintegrator",
+   "Flash",
+   "Mill"
+  ],
+  "layout": "normal",
+  "oracle_id": "45866598-4ee4-46b6-ade2-ffcdbe98e58f",
+  "scryfall_id": "4129cb0d-eefe-4971-9db8-1196201ef353"
+ },
+ "Stormcarved Coast": {
+  "name": "Stormcarved Coast",
+  "full_name": "Stormcarved Coast",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4722105b-0085-4bb8-bca1-9de0d3eb5600",
+  "scryfall_id": "bd3ae4fa-4c97-410a-8c0a-bd203342595d"
+ },
+ "Valley Floodcaller": {
+  "name": "Valley Floodcaller",
+  "full_name": "Valley Floodcaller",
+  "mana_cost": "{2}{U}",
+  "type_line": "Creature — Otter Wizard",
+  "oracle": "Flash\nYou may cast noncreature spells as though they had flash.\nWhenever you cast a noncreature spell, Birds, Frogs, Otters, and Rats you control get +1/+1 until end of turn. Untap them.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "4879c8f0-8832-4290-bc71-9838940f75cd",
+  "scryfall_id": "90b12da0-f666-471d-95f5-15d8c9b31c92"
+ },
+ "Unexpected Windfall": {
+  "name": "Unexpected Windfall",
+  "full_name": "Unexpected Windfall",
+  "mana_cost": "{2}{R}{R}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, discard a card.\nDraw two cards and create two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Treasure"
+  ],
+  "layout": "normal",
+  "oracle_id": "498c10c9-253d-4b15-b48c-1509381b17e8",
+  "scryfall_id": "bae6a5fb-39f5-4cf8-85f7-661cb4570507"
+ },
+ "Electrodominance": {
+  "name": "Electrodominance",
+  "full_name": "Electrodominance",
+  "mana_cost": "{X}{R}{R}",
+  "type_line": "Instant",
+  "oracle": "Electrodominance deals X damage to any target. You may cast a spell with mana value X or less from your hand without paying its mana cost.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "4a59d86e-405d-4c70-b2a5-c64f5cecfd9e",
+  "scryfall_id": "85e29bdc-938e-4132-813e-70c5e922efaf"
+ },
+ "Sea Gate Restoration": {
+  "name": "Sea Gate Restoration",
+  "full_name": "Sea Gate Restoration // Sea Gate, Reborn",
+  "mana_cost": "{4}{U}{U}{U}",
+  "type_line": "Sorcery",
+  "oracle": "Draw cards equal to the number of cards in your hand plus one. You have no maximum hand size for the rest of the game.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "modal_dfc",
+  "oracle_id": "4a8d41fe-e04d-484b-a7d1-19be311e6ca7",
+  "scryfall_id": "193071fe-180b-4d35-ba78-9c16675c29fc",
+  "back": {
+   "name": "Sea Gate, Reborn",
+   "mana_cost": "",
+   "type_line": "Land",
+   "oracle": "As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  }
+ },
+ "Mysterious Stranger": {
+  "name": "Mysterious Stranger",
+  "full_name": "Mysterious Stranger",
+  "mana_cost": "{2}{R}{R}",
+  "type_line": "Creature — Human Rogue",
+  "oracle": "Flash\nWhen this creature enters, for each graveyard with an instant or sorcery card in it, exile target instant or sorcery card from that graveyard. If two or more cards are exiled this way, choose one of them at random and copy it. You may cast the copy without paying its mana cost.",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "4cd2e1c2-5f14-4ac9-9c88-899af6ad9f80",
+  "scryfall_id": "063ca0fa-1947-48da-86f9-76dd00dfb550"
+ },
+ "Mindsplice Apparatus": {
+  "name": "Mindsplice Apparatus",
+  "full_name": "Mindsplice Apparatus",
+  "mana_cost": "{3}{U}",
+  "type_line": "Artifact",
+  "oracle": "Flash\nAt the beginning of your upkeep, put an oil counter on this artifact.\nInstant and sorcery spells you cast cost {1} less to cast for each oil counter on this artifact.",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "4d0760fb-4e04-4f29-a268-14c13c30232d",
+  "scryfall_id": "7f4ad1cb-4bbb-4485-b322-0b003f06d034"
+ },
+ "Riverpyre Verge": {
+  "name": "Riverpyre Verge",
+  "full_name": "Riverpyre Verge",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {R}.\n{T}: Add {U}. Activate only if you control an Island or a Mountain.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "510a6ac5-f098-4145-ac07-771b1b6f7cdf",
+  "scryfall_id": "57a93a71-d77c-417f-85d0-cd420f573331"
+ },
+ "Rhystic Study": {
+  "name": "Rhystic Study",
+  "full_name": "Rhystic Study",
+  "mana_cost": "{2}{U}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "53236dd7-845a-444c-96d5-f41ed7325d8f",
+  "scryfall_id": "9f37c5b6-a59c-45cd-9a99-e9357fe9ea1b"
+ },
+ "Scarring Memories": {
+  "name": "Scarring Memories",
+  "full_name": "Scarring Memories",
+  "mana_cost": "{3}{B}",
+  "type_line": "Sorcery — Lesson",
+  "oracle": "You may cast this spell as though it had flash if you control an attacking legendary creature.\nTarget opponent sacrifices a creature of their choice, discards a card, and loses 3 life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "63957ec0-89e6-4be2-8740-846ca56ee48c",
+  "scryfall_id": "6fcab890-2ab0-4ab3-a8bb-884c836a253e"
+ },
+ "Arena of Glory": {
+  "name": "Arena of Glory",
+  "full_name": "Arena of Glory",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{R}, {T}, Exert this land: Add {R}{R}. If any of that mana is spent on a creature spell, it gains haste until end of turn. (An exerted permanent won't untap during your next untap step.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Exert"
+  ],
+  "layout": "normal",
+  "oracle_id": "63dfe794-5f56-41ec-9883-5523b41cc3e0",
+  "scryfall_id": "dd148edc-9e43-41aa-bb50-f912115d3e72"
+ },
+ "Sulfur Falls": {
+  "name": "Sulfur Falls",
+  "full_name": "Sulfur Falls",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control an Island or a Mountain.\n{T}: Add {U} or {R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "6a6c5e17-6465-4a1f-9d63-8a3ce2edc522",
+  "scryfall_id": "9ea843a3-3bed-4d34-ab23-967d8ff5b584"
+ },
+ "Crumbling Necropolis": {
+  "name": "Crumbling Necropolis",
+  "full_name": "Crumbling Necropolis",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped.\n{T}: Add {U}, {B}, or {R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7190debf-708b-4f41-9714-0d0a5bd5a74e",
+  "scryfall_id": "d28542af-936f-44e5-a4e3-119f23c9f0d6"
+ },
+ "Ozai, the Phoenix King": {
+  "name": "Ozai, the Phoenix King",
+  "full_name": "Ozai, the Phoenix King",
+  "mana_cost": "{2}{B}{B}{R}{R}",
+  "type_line": "Legendary Creature — Human Noble",
+  "oracle": "Trample, firebending 4, haste\nIf you would lose unspent mana, that mana becomes red instead.\nOzai has flying and indestructible as long as you have six or more unspent mana.",
+  "power": "7",
+  "toughness": "7",
+  "keywords": [
+   "Haste",
+   "Trample",
+   "Firebending"
+  ],
+  "layout": "normal",
+  "oracle_id": "7472af8e-2e93-43b2-bc32-a3741f6d7502",
+  "scryfall_id": "a98b1550-4609-4a2f-9371-4afe1cdc613e"
+ },
+ "Luxury Suite": {
+  "name": "Luxury Suite",
+  "full_name": "Luxury Suite",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "819e1765-8325-4e6f-89c1-63ea86de369f",
+  "scryfall_id": "3c409d1e-f634-44a2-8fcf-dcdcb0babc3f"
+ },
+ "Breath of Malfegor": {
+  "name": "Breath of Malfegor",
+  "full_name": "Breath of Malfegor",
+  "mana_cost": "{3}{B}{R}",
+  "type_line": "Instant",
+  "oracle": "Breath of Malfegor deals 5 damage to each opponent.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "81e6ade9-a38f-4655-b09c-9ca41a11face",
+  "scryfall_id": "7a12e4d0-8471-46ac-85e4-a2ea5be8bf8f"
+ },
+ "Xander's Lounge": {
+  "name": "Xander's Lounge",
+  "full_name": "Xander's Lounge",
+  "mana_cost": "",
+  "type_line": "Land — Island Swamp Mountain",
+  "oracle": "({T}: Add {U}, {B}, or {R}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Cycling"
+  ],
+  "layout": "normal",
+  "oracle_id": "8291543f-d086-48aa-b2b7-5481ca8c9198",
+  "scryfall_id": "54f449ff-4025-465e-9ec5-a5cf42c4c9d3"
+ },
+ "Minas Morgul, Dark Fortress": {
+  "name": "Minas Morgul, Dark Fortress",
+  "full_name": "Minas Morgul, Dark Fortress",
+  "mana_cost": "",
+  "type_line": "Legendary Land",
+  "oracle": "Minas Morgul enters tapped.\n{T}: Add {B}.\n{3}{B}, {T}: Put a shadow counter on target creature. For as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types. (A creature with shadow can block or be blocked by only creatures with shadow.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "867dbd5a-c3cf-41ce-980b-c9babc6f30f2",
+  "scryfall_id": "50f76652-15e7-4190-842e-db6db6d66e91"
+ },
+ "Decanter of Endless Water": {
+  "name": "Decanter of Endless Water",
+  "full_name": "Decanter of Endless Water",
+  "mana_cost": "{3}",
+  "type_line": "Artifact",
+  "oracle": "You have no maximum hand size.\n{T}: Add one mana of any color.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8ae98ef8-8f52-4877-a08c-1fae5514184e",
+  "scryfall_id": "518bbc36-58ea-44c4-a857-75a3aff058f5"
+ },
+ "Force of Will": {
+  "name": "Force of Will",
+  "full_name": "Force of Will",
+  "mana_cost": "{3}{U}{U}",
+  "type_line": "Instant",
+  "oracle": "You may pay 1 life and exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target spell.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "956381ba-6d37-4a8a-846c-bad79222dbee",
+  "scryfall_id": "89f612d6-7c59-4a7b-a87d-45f789e88ba5"
+ },
+ "Firebender Ascension": {
+  "name": "Firebender Ascension",
+  "full_name": "Firebender Ascension",
+  "mana_cost": "{1}{R}",
+  "type_line": "Enchantment",
+  "oracle": "When this enchantment enters, create a 2/2 red Soldier creature token with firebending 1.\nWhenever a creature you control attacking causes a triggered ability of that creature to trigger, put a quest counter on this enchantment. Then if it has four or more quest counters on it, you may copy that ability. You may choose new targets for the copy.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "96cc63af-69d1-4493-b241-0cb244a9e48a",
+  "scryfall_id": "2929b702-03c6-4cf0-a3f7-61b27f4803be"
+ },
+ "Whispersilk Cloak": {
+  "name": "Whispersilk Cloak",
+  "full_name": "Whispersilk Cloak",
+  "mana_cost": "{3}",
+  "type_line": "Artifact — Equipment",
+  "oracle": "Equipped creature can't be blocked and has shroud. (It can't be the target of spells or abilities.)\nEquip {2}",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Equip"
+  ],
+  "layout": "normal",
+  "oracle_id": "9ad4f730-a18e-4a7c-a468-a926c718c741",
+  "scryfall_id": "a3f31ac4-09ca-4712-a311-50d28824bfad"
+ },
+ "Leyline of Anticipation": {
+  "name": "Leyline of Anticipation",
+  "full_name": "Leyline of Anticipation",
+  "mana_cost": "{2}{U}{U}",
+  "type_line": "Enchantment",
+  "oracle": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nYou may cast spells as though they had flash.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "9dc65ffe-17fc-4280-b4bd-78073ac7e12b",
+  "scryfall_id": "f57bdaa1-ce8a-4103-8598-fee751e65a53"
+ },
+ "Storm-Kiln Artist": {
+  "name": "Storm-Kiln Artist",
+  "full_name": "Storm-Kiln Artist",
+  "mana_cost": "{3}{R}",
+  "type_line": "Creature — Dwarf Shaman",
+  "oracle": "This creature gets +1/+0 for each artifact you control.\nMagecraft — Whenever you cast or copy an instant or sorcery spell, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Treasure",
+   "Magecraft"
+  ],
+  "layout": "normal",
+  "oracle_id": "a145ff8c-5812-4bcb-bd16-9839dc25121d",
+  "scryfall_id": "da7ae8e0-cb6b-4386-8a30-9527d1af9be5"
+ },
+ "Reverberate": {
+  "name": "Reverberate",
+  "full_name": "Reverberate",
+  "mana_cost": "{R}{R}",
+  "type_line": "Instant",
+  "oracle": "Copy target instant or sorcery spell. You may choose new targets for the copy.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "a1f55890-31c5-4ed4-a2cd-7a4a9f05f8ca",
+  "scryfall_id": "5996feb4-02ac-45e8-a7f2-966cf74391dc"
+ },
+ "Isildur's Fateful Strike": {
+  "name": "Isildur's Fateful Strike",
+  "full_name": "Isildur's Fateful Strike",
+  "mana_cost": "{2}{B}{B}",
+  "type_line": "Legendary Instant",
+  "oracle": "(You may cast a legendary instant only if you control a legendary creature or planeswalker.)\nDestroy target creature. If its controller has more than four cards in hand, they exile cards from their hand equal to the difference.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "a43e98d1-684a-4198-bc7e-877b9f6d5357",
+  "scryfall_id": "4bf08071-fbf8-463e-9a57-59dbf0280dd8"
+ },
+ "Big Score": {
+  "name": "Big Score",
+  "full_name": "Big Score",
+  "mana_cost": "{3}{R}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, discard a card.\nDraw two cards and create two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Treasure"
+  ],
+  "layout": "normal",
+  "oracle_id": "a5cbd257-c836-493e-bb1a-76242619dea2",
+  "scryfall_id": "3383a939-4ab3-4546-9995-6c65cd3f4441"
+ },
+ "Torrential Gearhulk": {
+  "name": "Torrential Gearhulk",
+  "full_name": "Torrential Gearhulk",
+  "mana_cost": "{4}{U}{U}",
+  "type_line": "Artifact Creature — Construct",
+  "oracle": "Flash\nWhen this creature enters, you may cast target instant card from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead.",
+  "power": "5",
+  "toughness": "6",
+  "keywords": [
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "a6395447-677d-4c39-8eda-2d57e527c94e",
+  "scryfall_id": "92872fea-2fb4-4154-815e-cad9d966e60f"
+ },
+ "Faerie Mastermind": {
+  "name": "Faerie Mastermind",
+  "full_name": "Faerie Mastermind",
+  "mana_cost": "{1}{U}",
+  "type_line": "Creature — Faerie Rogue",
+  "oracle": "Flash\nFlying\nWhenever an opponent draws their second card each turn, you draw a card.\n{3}{U}: Each player draws a card.",
+  "power": "2",
+  "toughness": "1",
+  "keywords": [
+   "Flying",
+   "Flash"
+  ],
+  "layout": "normal",
+  "oracle_id": "a984db23-40ea-428d-829f-e944267280f8",
+  "scryfall_id": "bc9a7599-3c7d-4b83-bff3-e3d1f20f1b0f"
+ },
+ "Deflecting Swat": {
+  "name": "Deflecting Swat",
+  "full_name": "Deflecting Swat",
+  "mana_cost": "{2}{R}",
+  "type_line": "Instant",
+  "oracle": "If you control a commander, you may cast this spell without paying its mana cost.\nYou may choose new targets for target spell or ability.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ae120613-97d6-4393-b39d-c3e6c076f5d6",
+  "scryfall_id": "b4b36435-55b3-4615-8812-af41d4fc64d9"
+ },
+ "Sozin's Comet": {
+  "name": "Sozin's Comet",
+  "full_name": "Sozin's Comet",
+  "mana_cost": "{3}{R}{R}",
+  "type_line": "Sorcery",
+  "oracle": "Each creature you control gains firebending 5 until end of turn. (Whenever it attacks, add {R}{R}{R}{R}{R}. This mana lasts until end of combat.)\nForetell {2}{R} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Foretell"
+  ],
+  "layout": "normal",
+  "oracle_id": "bc0da02c-2b85-4ddc-9ce0-63934dd14164",
+  "scryfall_id": "649e50e5-299b-4191-87a8-36e9378795be"
+ },
+ "Sink into Stupor": {
+  "name": "Sink into Stupor",
+  "full_name": "Sink into Stupor // Soporific Springs",
+  "mana_cost": "{1}{U}{U}",
+  "type_line": "Instant",
+  "oracle": "Return target spell or nonland permanent an opponent controls to its owner's hand.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "modal_dfc",
+  "oracle_id": "bcc6eece-75ea-494c-b33a-d4477d504e0b",
+  "scryfall_id": "5358b87a-1a29-426d-b165-40c97da2c14d",
+  "back": {
+   "name": "Soporific Springs",
+   "mana_cost": "",
+   "type_line": "Land",
+   "oracle": "As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  }
+ },
+ "Demand Answers": {
+  "name": "Demand Answers",
+  "full_name": "Demand Answers",
+  "mana_cost": "{1}{R}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, sacrifice an artifact or discard a card.\nDraw two cards.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c11e84a1-dbda-429b-8cd6-fd0deaefc689",
+  "scryfall_id": "eca092fc-7c67-4a73-989e-5297bbaaea76"
+ },
+ "Redirect Lightning": {
+  "name": "Redirect Lightning",
+  "full_name": "Redirect Lightning",
+  "mana_cost": "{R}",
+  "type_line": "Instant — Lesson",
+  "oracle": "As an additional cost to cast this spell, pay 5 life or pay {2}.\nChange the target of target spell or ability with a single target.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c62b5c22-e058-436f-9575-a01cb2112829",
+  "scryfall_id": "2b5b14a7-1fdd-4efc-b197-cadfa7f7c860"
+ },
+ "Swiftfoot Boots": {
+  "name": "Swiftfoot Boots",
+  "full_name": "Swiftfoot Boots",
+  "mana_cost": "{2}",
+  "type_line": "Artifact — Equipment",
+  "oracle": "Equipped creature has hexproof and haste. (It can't be the target of spells or abilities your opponents control. It can attack and {T} no matter when it came under your control.)\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Equip"
+  ],
+  "layout": "normal",
+  "oracle_id": "c8b143ad-43ec-4e0d-a440-e348daa31391",
+  "scryfall_id": "3b69b12e-ef29-455c-8939-eacf44c6c3f6"
+ },
+ "Storm of Saruman": {
+  "name": "Storm of Saruman",
+  "full_name": "Storm of Saruman",
+  "mana_cost": "{4}{U}{U}",
+  "type_line": "Enchantment",
+  "oracle": "Ward {3}\nWhenever you cast your second spell each turn, copy it, except the copy isn't legendary. You may choose new targets for the copy. (A copy of a permanent spell becomes a token.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Ward"
+  ],
+  "layout": "normal",
+  "oracle_id": "cf5f4860-e805-46a3-9352-a2c583e33403",
+  "scryfall_id": "52884e67-c742-4799-9afd-55bc70b2cf40"
+ },
+ "Veyran, Voice of Duality": {
+  "name": "Veyran, Voice of Duality",
+  "full_name": "Veyran, Voice of Duality",
+  "mana_cost": "{1}{U}{R}",
+  "type_line": "Legendary Creature — Efreet Wizard",
+  "oracle": "Magecraft — Whenever you cast or copy an instant or sorcery spell, Veyran gets +1/+1 until end of turn.\nIf you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.",
+  "power": "2",
+  "toughness": "2",
+  "keywords": [
+   "Magecraft"
+  ],
+  "layout": "normal",
+  "oracle_id": "d57a6b19-bd06-4b07-8ee1-0b45612ba9e4",
+  "scryfall_id": "1cb06c70-7ff2-4c88-9931-1bfe8a3226d9"
+ },
+ "Gloomlake Verge": {
+  "name": "Gloomlake Verge",
+  "full_name": "Gloomlake Verge",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {U}.\n{T}: Add {B}. Activate only if you control an Island or a Swamp.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "d71bda4c-3dee-4398-8fd0-f77d8743b887",
+  "scryfall_id": "83f510b7-4cbd-4883-9c26-c8824bc668ac"
+ },
+ "Training Center": {
+  "name": "Training Center",
+  "full_name": "Training Center",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you have two or more opponents.\n{T}: Add {U} or {R}.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e3570ac7-c593-40e3-bbd6-ec3da6d8158d",
+  "scryfall_id": "4d7ade96-689e-46a8-9ee3-ac1852effca6"
+ },
+ "Mirror Room": {
+  "name": "Mirror Room",
+  "full_name": "Mirror Room // Fractured Realm",
+  "mana_cost": "{2}{U}",
+  "type_line": "Enchantment — Room",
+  "oracle": "When you unlock this door, create a token that's a copy of target creature you control, except it's a Reflection in addition to its other creature types.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "split",
+  "oracle_id": "e7a1c21b-5966-4ce0-a925-0b3cb3c3db00",
+  "scryfall_id": "c2e085dd-a448-4f5a-9cfa-5c2034234e7c",
+  "back": {
+   "name": "Fractured Realm",
+   "mana_cost": "{5}{U}{U}",
+   "type_line": "Enchantment — Room",
+   "oracle": "If a triggered ability of a permanent you control triggers, that ability triggers an additional time.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)"
+  }
+ },
+ "Polluted Delta": {
+  "name": "Polluted Delta",
+  "full_name": "Polluted Delta",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ef86989d-ce80-4e55-aece-7d11710eeffa",
+  "scryfall_id": "6e288374-2b71-4ace-b1d2-a19fee6cb4af"
+ },
+ "Fire Nation Palace": {
+  "name": "Fire Nation Palace",
+  "full_name": "Fire Nation Palace",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "This land enters tapped unless you control a basic land.\n{T}: Add {R}.\n{1}{R}, {T}: Target creature you control gains firebending 4 until end of turn. (Whenever it attacks, add {R}{R}{R}{R}. This mana lasts until end of combat.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "f2000fb8-39c6-4ad6-a020-5245faaa1eba",
+  "scryfall_id": "c91ac3f2-9fcd-4b41-a168-ae7f70b67d3c"
+ },
+ "Watery Grave": {
+  "name": "Watery Grave",
+  "full_name": "Watery Grave",
+  "mana_cost": "",
+  "type_line": "Land — Island Swamp",
+  "oracle": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "fc9ec820-4245-4a96-b009-5308a818ca58",
+  "scryfall_id": "5525d6a6-e532-4047-9da4-bfae7927fecc"
  }
 }

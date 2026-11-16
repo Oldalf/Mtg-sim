@@ -135,7 +135,7 @@ export class MikeGame extends GameWithoutKillSearch {
   drawTriggerMultiplier(): number {
     return this.countOnBattlefield(KRANG) > 0 ? 2 : 1;
   }
-  hasNoMaximumHandSize(): boolean {
+  override hasNoMaximumHandSize(): boolean {
     return (
       this.isOnBattlefield(VNWXT) ||
       this.isOnBattlefield('Thought Vessel') ||
