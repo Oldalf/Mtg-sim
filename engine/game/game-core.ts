@@ -414,9 +414,9 @@ export abstract class GameCore<S = unknown> {
     return this.hand.some((card) => Facts.COUNTERS.has(card.name));
   }
 
-  instantOrSorceryCostReduction(): number {
+  instantOrSorceryCostReduction(permanents = this.battlefield): number {
     let reduction = 0;
-    for (const permanent of this.battlefield) {
+    for (const permanent of permanents) {
       if (Facts.REDUCE_INSTANT_SORCERY_COST.has(permanent.card.name))
         reduction++;
       if (permanent.card.name === 'Curious Homunculus' && permanent.transformed)
@@ -449,14 +449,23 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ mana
-  manaSourceKind(permanent: Permanent, ignoreSick = false): string | null {
+  manaSourceKind(
+    permanent: Permanent,
+    ignoreSick = false,
+    ignoreEnergybending = false,
+  ): string | null {
     if (permanent.card === TREASURE)
       return this.isKeepingExpendableManaBack ? null : 'A';
     if (permanent.card === ELDRAZI_SPAWN)
       return this.isKeepingExpendableManaBack ? null : 'C';
     if (permanent.land !== null) {
       // Energybending: every land is also an Island and a Swamp, so it taps for either colour
-      if (this.isEnergybendingActive && permanent.land.mana) return 'A';
+      if (
+        this.isEnergybendingActive &&
+        !ignoreEnergybending &&
+        permanent.land.mana
+      )
+        return 'A';
       // "Activate only if you control a Swamp" (Tainted Wood): colourless without one
       const need = permanent.land.colourIf;
       if (
@@ -1248,8 +1257,11 @@ export abstract class GameCore<S = unknown> {
       case 'Brainstorm': {
         this.draw(3);
         for (let i = 0; i < Math.min(2, this.hand.length); i++) {
-          const card = firstMin(this.hand, (anotherCard) =>
-            this.cardValue(anotherCard),
+          const card = firstMin(
+            this.hand,
+            (anotherCard) =>
+              this.cardValue(anotherCard) +
+              (this.cardsTheKillLineNeeds.has(anotherCard.name) ? 1000 : 0),
           );
           this.takeCard(card, 'hand');
           this.putCardsOnTopOfLibrary([card]);

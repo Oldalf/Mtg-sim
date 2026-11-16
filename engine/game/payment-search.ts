@@ -90,6 +90,25 @@ export function couldOtherOrderHelp(
   );
 }
 
+/** The mana of a colour that tapping the sources adds on top of their own: High Tide's U from Islands, Bubbling
+ *  Muck's B from Swamps (whatever colour the land was tapped for). */
+function bonusMana(
+  game: GameCore<unknown>,
+  sources: Permanent[],
+  colour: Colour,
+): number {
+  if (colour === 'U')
+    return (
+      game.highTidesThisTurn *
+      sources.filter((source) => game.islandTyped(source)).length
+    );
+  if (colour === 'B')
+    return (
+      game.muck * sources.filter((source) => game.swampTyped(source)).length
+    );
+  return 0;
+}
+
 /** A quick count: is there enough mana in the pool and the untapped sources, in all and of each colour? */
 export function couldPayAtAll(
   game: GameCore<unknown>,
@@ -114,7 +133,11 @@ export function couldPayAtAll(
     const sourcesOfColour = sources.filter((source) =>
       canMake(game, source, colour),
     ).length;
-    if (pool[colour] + sourcesOfColour < pips) return false;
+    if (
+      pool[colour] + sourcesOfColour + bonusMana(game, sources, colour) <
+      pips
+    )
+      return false;
   }
   return true;
 }

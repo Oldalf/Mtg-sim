@@ -125,6 +125,13 @@ export class KillSearchState {
   reductionNoncreature = 0;
   reductionBlue = 0;
   reductionFromGraveyard = 0;
+  /** How much of each reduction above comes from creatures: Singularity Rupture destroys them. */
+  creatureReductions = {
+    instantSorcery: 0,
+    noncreature: 0,
+    blue: 0,
+    fromGraveyard: 0,
+  };
   opponentLife: number[] = [];
   opponentLibrary: number[] = [];
   opponentGraveyard: number[] = [];
@@ -172,6 +179,7 @@ export class KillSearchState {
     state.reductionNoncreature = this.reductionNoncreature;
     state.reductionBlue = this.reductionBlue;
     state.reductionFromGraveyard = this.reductionFromGraveyard;
+    state.creatureReductions = this.creatureReductions; // set once, never changed in place
     state.opponentLife = this.opponentLife.slice();
     state.opponentLibrary = this.opponentLibrary.slice();
     state.opponentGraveyard = this.opponentGraveyard.slice();
@@ -269,6 +277,21 @@ export class KillSearchState {
       this.hand.some(isBonusSpell) ||
       (this.hasGale && this.graveyardSpells.some(isBonusSpell))
     );
+  }
+
+  /** Our creatures are destroyed: the cost reducers among them go too. */
+  private loseReductionsFromCreatures(): void {
+    const lost = this.creatureReductions;
+    this.reductionInstantSorcery -= lost.instantSorcery;
+    this.reductionNoncreature -= lost.noncreature;
+    this.reductionBlue -= lost.blue;
+    this.reductionFromGraveyard -= lost.fromGraveyard;
+    this.creatureReductions = {
+      instantSorcery: 0,
+      noncreature: 0,
+      blue: 0,
+      fromGraveyard: 0,
+    };
   }
 
   untapLands(count: number): void {
@@ -577,6 +600,7 @@ export class KillSearchState {
       this.hasGale = this.hasEmetSelch = false; // creatures too
       this.mindskinnerCanAttack = false;
       this.creatureCount = this.sacrificeFodder = 0;
+      this.loseReductionsFromCreatures();
       this.millEach('half');
       if (hadKonrad && dead > 0) {
         this.hasKonrad = true; // LKI: triggers resolve with Konrad's damage, Konrad itself is gone

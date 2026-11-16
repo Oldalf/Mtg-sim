@@ -352,7 +352,7 @@ const zonesOfGame = (game: Game<unknown>) => {
     commandZone: names(game.command),
     battlefield: describeBattlefield(
       game.battlefield.map((permanent) => ({
-        name: permanent.card.name,
+        name: permanent.card.logName, // a marker token is logged as what it stands for
         isTapped: permanent.tapped,
         counters: permanent.counters,
       })),

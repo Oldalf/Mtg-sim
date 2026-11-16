@@ -66,7 +66,7 @@ Rules for every task:
 | 17 | B5 | DnD (done) | Opus 5.5 |
 | 18 | B6 | Azula (done) | Opus 5.5, after P |
 | 19 | Z1 | Step 7's loose ends | Sonnet 5.5 |
-| 20 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
+| 20 | D1 | Pontus's real lists (Gale, Aesi) become `decklist.txt` (checked: same cards) | Sonnet 5.5, after P |
 | 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
 | 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
 | 23 | F1 | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
@@ -343,6 +343,8 @@ Games end in round 9.3 on average. Teval is the deck to watch: its Zombie board 
 ### D1. The list he plays becomes `decklist.txt` (Sonnet 5.5, after P)
 
 Pontus has updated one of his decks in real life, partly from its `lists/proposed.txt`. Same as was done for Aesi (commit `e686967`): the current `decklist.txt` moves to `lists/original.txt`, his assembled list becomes `decklist.txt`, then results before and after with the same seeds, the baseline re-recorded (`--regress record`) and the deck's `PLAN.md` updated. Pontus gives the deck and the list.
+
+**Checked 2026-11-16 (Gale and Aesi).** The lists Pontus sent hold the same cards as the `decklist.txt` files, only in another order (Archidekt's export), so the files are left as they are. Trying them anyway changed the seeded shuffle and exposed bugs the old seeds did not hit; they are fixed, each for any list: (1) Gale's kill search misses 4 of 300 seeds -> 0. Energybending: a search records a land's own kind, but the game read it as "any colour" (`isSourceOfClass` now asks `manaSourceKind(..., ignoreEnergybending)`), so a planned Swamp was never found. Brainstorm's put-back ignored the cards the kill line still needs (`cardsTheKillLineNeeds`, as `discard` already did). `couldPayAtAll` ignored High Tide's / Bubbling Muck's bonus mana of a colour, so a payment search that would have found the B was never tried. Singularity Rupture destroys our creatures, and with them Nightscape Familiar, Geist of Saint Thalia and the other creature cost reducers (the search kept them: `creatureReductions`). (2) Aesi's log-board test compared the game's `Illusion army` with the log's `Illusion` (a marker token is logged as what it stands for): the test now uses `logName`. Gale's baselines (the goldfish and the pod run) were re-recorded: 2 to 5 of 600 seeds per list differ. 3,000 games, same seeds: average win turn 7.16 -> 7.16, win by T8 with backup 49.0% -> 49.1%. Pod run (200 games, same seeds): Gale 18.0% -> 19.0%, the others within 1 point.
 
 ---
 

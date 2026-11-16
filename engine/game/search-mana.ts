@@ -472,7 +472,9 @@ export function isSourceOfClass(
   permanent: Permanent,
   landClass: LandClass,
 ): boolean {
-  if (game.manaSourceKind(permanent) !== landClass.kind) return false;
+  // a search records a land's own kind, also while Energybending makes every land tap for either colour
+  if (game.manaSourceKind(permanent, false, true) !== landClass.kind)
+    return false;
   const land = permanent.land;
   return (
     (land !== null) === landClass.isLand &&

@@ -132,6 +132,23 @@ function addCostReductions(game: GaleGame, state: KillSearchState): void {
     game.battlefield.filter((permanent) =>
       Facts.REDUCE_FROM_GRAVEYARD_BY_2.has(permanent.card.name),
     ).length;
+  const creatures = game.battlefield.filter(
+    (permanent) => permanent.card.isCreature,
+  );
+  state.creatureReductions = {
+    instantSorcery: game.instantOrSorceryCostReduction(creatures),
+    noncreature: creatures.filter((permanent) =>
+      Facts.REDUCE_NONCREATURE.has(permanent.card.name),
+    ).length,
+    blue: creatures.filter((permanent) =>
+      Facts.REDUCE_BLUE.has(permanent.card.name),
+    ).length,
+    fromGraveyard:
+      2 *
+      creatures.filter((permanent) =>
+        Facts.REDUCE_FROM_GRAVEYARD_BY_2.has(permanent.card.name),
+      ).length,
+  };
 }
 
 /** The opponents' life, libraries, graveyards and poison, and what we assume about their decks. */
