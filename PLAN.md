@@ -14,7 +14,7 @@ Pontus plays a real pod with friends on 2026-11-16 and wants to simulate it befo
 | Friend 3 | Ardyn (`ardyn`) | Ardyn, the Usurper | 3 | Demon tribal: extra enter triggers (Roaming Throne), copied abilities, many value effects. Friend 3 mostly plays bracket 2; this deck is his exception |
 | Friend 4 | Teval (`teval`) | Teval, the Balanced Scale | strong 3 | ramps with the commander and self-mill; wins with Rise of the Dark Realms or a value engine that makes many Zombies that attack. The owner pilots it poorly |
 
-**The pod for game night** (Pontus, 2026-11-15, assuming the friends bring their simplest decks): **Meren, Edgar, Helga, Ardyn, Teval.** So Helga, Ardyn and Teval come first; Thantis, DnD and Azula come after game night.
+**The pod for game night** (Pontus, 2026-11-15, assuming the friends bring their simplest decks): **Meren, Edgar, Helga, Ardyn, Teval.** So Helga, Ardyn and Teval come first; Thantis, DnD and Azula come after game night. Azula may not be played in the pod at all (Pontus, 2026-11-16), so B7 is the last task.
 
 The new decks are **pod-only**: no goldfish tuning, no mulligan study, no swap tests, no primer, unless the owner asks (Pontus, 2026-11-15). Before so many decks arrive, the engine should take over what decks keep writing for themselves, so a new deck is mostly data. The lists also need mechanics the engine has none of yet (doubled enter triggers, forced attacks and goad, triggers on an opponent's spell, blink, dungeons and the initiative): tasks M1 to M5.
 
@@ -65,14 +65,14 @@ Rules for every task:
 | 16 | B4 | Thantis (done) | Sonnet 5.5 |
 | 17 | B5 | DnD (done) | Opus 5.5 |
 | 18 | B6 | Azula (done) | Opus 5.5, after P |
-| 19 | B7 | Azula plays its combos like a pilot: setup turns, digging, protection | Opus 5.5 |
-| 20 | Z1 | Step 7's loose ends | Sonnet 5.5 |
-| 21 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
-| 22 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
-| 23 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
-| 24 | F1 | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
-| 25 | F2 | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
-| 26 | F3 | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
+| 19 | Z1 | Step 7's loose ends | Sonnet 5.5 |
+| 20 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
+| 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
+| 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
+| 23 | F1 | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
+| 24 | F2 | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
+| 25 | F3 | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
+| 26 | B7 | Azula plays its combos like a pilot: setup turns, digging, protection | Opus 5.5, last; the deck may not be in the pod |
 
 **If time runs short before game night:** A2 moves only what Helga, Ardyn and Teval need, A3 waits, and a deck can go to the pod with fewer card rules, as long as its `PLAN.md` says what it does not model (C1 then says it next to its numbers).
 
@@ -333,7 +333,7 @@ Games end in round 9.3 on average. Teval is the deck to watch: its Zombie board 
 
 ### Z1. Check and fix (Sonnet 5.5)
 
-- D1's card pop-up was checked only at desktop width: check it at 390 px and with touch (tap opens, a second tap or a tap elsewhere closes).
+- (Done 2026-11-16) D1's card pop-up at 390 px and with touch: `card-zoom.spec.ts` (tap opens, a second tap or a tap elsewhere closes, another card takes over, touch's pointer-enter is ignored) and the phone case of `zoom-placement.spec.ts` (262 px card inside 390 px, never over the small card). Checked in jsdom, not in a real browser on a phone.
 - (Done 2026-11-15) The app test failed on "no primer or swap notes among the lists": `aesi/SUGGESTED_SWAPS.txt` was read as a decklist. Pontus had it removed; its swaps are `lists/suggested_affinity.txt` and `decklist.txt`.
 
 ---
