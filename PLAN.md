@@ -70,7 +70,7 @@ Rules for every task:
 | 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
 | 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) (done: none needed it; search copies moved to the engine) | Opus 5.5 |
 | 23 | F1 (done) | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
-| 24 | F2 | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
+| 24 | F2 (done) | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
 | 25 | F3 | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
 | 26 | B7 | Azula plays its combos like a pilot: setup turns, digging, protection | Opus 5.5, last; the deck may not be in the pod |
 
@@ -392,6 +392,19 @@ B6 added Mana Drain and Fierce Guardianship (free with a commander out) to `engi
 2. `git switch main`, run the same command, save the report.
 3. Write both under this task: each deck's win rate, Codie's "answers used" and "spells countered". Nothing to commit but this plan's lines.
 4. Also check that Codie's own `BACKUP` table (`decks/codie/cards.ts`: counterspells that make a win "backed up") still agrees with `answers.ts`: every counterspell in `BACKUP` that is in Codie's `decklist.txt` should be in `ANSWERS` too. List any that are not; do not add them (that is Pontus's call).
+
+**Done (2026-11-16, full power, 1000 pod games, codie meren edgar helga, `0ef7cf7` → `main`):**
+
+| deck | wins before → after | answers used | spells countered |
+|---|---|---|---|
+| codie | 20.8% → 20.5% | 0.09 → 0.12 | 0.00 → 0.00 |
+| meren | 31.2% → 32.0% | 0.00 → 0.00 | 0.04 → 0.05 |
+| edgar | 31.4% → 31.2% | 0.00 → 0.00 | 0.10 → 0.11 |
+| helga | 16.6% → 16.3% | 0.07 → 0.07 | 0.01 → 0.02 |
+
+Codie's own win ("declared") 22.6% → 21.0%. All changes are inside the ±3 point noise; Codie uses about a third more answers per game. Note: "answers used" for Helga is 0.07–0.08 (her own answers). The reports are in the scratchpad (`f2-before.txt`, `f2-after.txt`).
+
+`BACKUP` vs `ANSWERS` (Codie's decklist): in both are Counterspell, Mana Drain, Arcane Denial, An Offer You Can't Refuse, Fierce Guardianship. In `BACKUP`, in the decklist, but **not** in `ANSWERS`: Silence, Orim's Chant, Daze, Bilbo's Gambit, Autumn's Veil, Narset's Reversal. Nothing added (Pontus's call).
 
 ### F3. Every "no maximum hand size" card in the lists (Haiku 5.5, after F1)
 
