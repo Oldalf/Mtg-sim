@@ -22,20 +22,22 @@ import {
   EDGAR,
   EVERETH,
   LEGIONS_LANDING,
+  PITILESS_PONTIFF,
   TOKENS,
   VALUE,
   VAMPIRE_LORDS,
   VANQUISHERS_BANNER,
+  YAHENNI,
   isVampire,
 } from './cards';
 import { buildCandidates } from './candidates';
-import { findOutlets } from './actions';
+import { findOutlets, spareFodder } from './actions';
 import {
   onPermanentAttacks,
   onPermanentDied,
   onPermanentEntered,
 } from './triggers';
-import { CardDef } from '../../engine/cards/cards';
+import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
   Permanent,
@@ -192,6 +194,48 @@ export class EdgarGame extends CreatureDeckGame {
       this.isOnBattlefield(EDGAR) ||
       this.command.some((card) => card.name === EDGAR)
     );
+  }
+
+  // ================================================================ indestructible by sacrifice
+  /** Yahenni ("sacrifice another creature") and Pitiless Pontiff ({1}, sacrifice another creature) become indestructible
+   *  until end of turn: a destroy or damage effect misses them (exile and bounce do not). Only once a turn costs a
+   *  sacrifice. Returns what saved the creature, or null. */
+  override podShield(
+    permanent: Permanent,
+    answer: Answer | null = null,
+  ): string | null {
+    const shield = super.podShield(permanent, answer);
+    if (shield) return shield;
+    const isDestroyed =
+      answer !== null && (answer.how ?? 'destroy') === 'destroy';
+    return isDestroyed ? this.makeIndestructible(permanent) : null;
+  }
+
+  /** A wipe that destroys: the same, for Yahenni and Pontiff. A creature that dies anyway is the one sacrificed. */
+  override podAnswerWipe(dying: Permanent[], destroys: boolean): Permanent[] {
+    if (!destroys) return [];
+    return dying.filter((creature) => this.makeIndestructible(creature));
+  }
+
+  private makeIndestructible(permanent: Permanent): string | null {
+    const name = permanent.card.name;
+    if (name !== YAHENNI && name !== PITILESS_PONTIFF) return null;
+    if (!this.battlefield.includes(permanent)) return null;
+    if (this.podShielded.has(permanent)) return name; // already indestructible this turn
+    const pontiffCost = Cost.parse('{1}');
+    if (name === PITILESS_PONTIFF && !this.canPay(pontiffCost, true))
+      return null;
+    const creatureToSacrifice = spareFodder(this, [permanent], true).find(
+      (spare) => spare.card.isCreature,
+    );
+    if (!creatureToSacrifice) return null;
+    if (name === PITILESS_PONTIFF) this.pay(pontiffCost, true);
+    this.sacrifice(creatureToSacrifice);
+    this.podShielded.add(permanent);
+    this.say(
+      `  ${name}: sacrifice ${creatureToSacrifice.card.name}, indestructible`,
+    );
+    return name;
   }
 
   /** The +1/+1 the other Vampires give this Vampire: the lords, Vanquisher's Banner and Lord of Lineage. */

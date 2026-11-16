@@ -60,7 +60,7 @@ export function hitWithRemoval(
   permanent: Permanent,
   answer: Answer,
 ): void {
-  const shield = table.games[owner].podShield(permanent);
+  const shield = table.games[owner].podShield(permanent, answer);
   const ownerName = table.playerName(owner);
   if (shield) {
     table.stats.shields[owner]++;
@@ -504,13 +504,19 @@ function castBoardWipe(
     'answer',
     [card.name],
   );
-  for (const [owner, ownerGame] of table.games.entries())
-    ownerGame.podAnswerWipe(
-      dying
-        .filter((creature) => creature.owner === owner)
-        .map((creature) => creature.creature),
-    );
-  for (const creature of dying)
+  // (Toxic Deluge shrinks: indestructible does not help)
+  const destroys = !bounces && card.name !== 'Toxic Deluge';
+  const survivors = new Set<Permanent>();
+  for (const [owner, ownerGame] of table.games.entries()) {
+    const ownDying = dying
+      .filter((creature) => creature.owner === owner)
+      .map((creature) => creature.creature);
+    for (const survivor of ownerGame.podAnswerWipe(ownDying, destroys))
+      survivors.add(survivor);
+  }
+  for (const creature of dying.filter(
+    (creature) => !survivors.has(creature.creature),
+  ))
     table.games[creature.owner].podRemove(
       creature.creature,
       bounces ? 'bounce' : 'destroy',

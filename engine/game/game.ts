@@ -698,8 +698,11 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   podHold = true;
   /** An opponent aims a spell at this permanent of ours: do we counter it? Kira, Great Glass-Spinner (the first time each
    *  creature is targeted each turn), Soratami Rainshaper ({3} and a land back to hand: shroud), Siren Stormtamer ({U},
-   *  sacrifice it). Returns the card that did it. */
-  podShield(permanent: Permanent): string | null {
+   *  sacrifice it). `answer` is the removal, when there is one. Returns the card that did it. */
+  podShield(
+    permanent: Permanent,
+    _answer: Answer | null = null,
+  ): string | null {
     if (!permanent.card.isCreature || this.config.pod_legal === false)
       return null;
     if (
@@ -735,9 +738,12 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     }
     return null;
   }
-  /** A board wipe is about to take these creatures of ours (all that it kills, the caster's own wipe too). A deck may
-   *  answer at instant speed, e.g. by blinking them: what has left the battlefield is not hit. */
-  podAnswerWipe(_dying: Permanent[]): void {}
+  /** A board wipe is about to take these creatures of ours (all that it kills, the caster's own wipe too; `destroys`:
+   *  it destroys them, so indestructible helps). A deck may answer at instant speed, e.g. by blinking them (what has
+   *  left the battlefield is not hit). Returns the creatures that survive the wipe. */
+  podAnswerWipe(_dying: Permanent[], _destroys: boolean): Permanent[] {
+    return [];
+  }
   /** One of our permanents was removed by this answer: what we get for it (a 3/3, a basic land, life, a 2/2). */
   podGet(permanent: Permanent, answer: Answer): void {
     if (answer.gives === 'token3')

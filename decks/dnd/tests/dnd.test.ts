@@ -638,7 +638,7 @@ export function runDndTests(): boolean {
     );
     joinPod(game, null);
     const dying = game.creatures();
-    game.podAnswerWipe(dying);
+    game.podAnswerWipe(dying, true);
     const exiledNow = dying.map((creature) =>
       game.battlefield.includes(creature),
     );
@@ -657,7 +657,7 @@ export function runDndTests(): boolean {
   {
     const game = board(['Midnight Pathlighter'], ["Lae'zel's Acrobatics"]);
     joinPod(game, null);
-    game.podAnswerWipe(game.creatures());
+    game.podAnswerWipe(game.creatures(), true);
     check(
       'wipe: nothing with an enter trigger to save, the Acrobatics stays in hand',
       [game.hand.length, game.creatures().length],

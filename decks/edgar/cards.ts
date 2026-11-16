@@ -7,6 +7,8 @@ import {
 } from '../../engine/cards/cards';
 
 export const EDGAR = 'Edgar Markov';
+export const YAHENNI = 'Yahenni, Undying Partisan';
+export const PITILESS_PONTIFF = 'Pitiless Pontiff';
 export const EVERETH = 'Evereth, Viceroy of Plunder';
 export const BLOODLINE_KEEPER = 'Bloodline Keeper';
 export const VANQUISHERS_BANNER = "Vanquisher's Banner";

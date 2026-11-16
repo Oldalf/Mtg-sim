@@ -364,7 +364,7 @@ export class DndGame extends CreatureDeckGame {
 
   /** An opponent's board wipe will kill our creatures: Lae'zel's Acrobatics exiles them until the end step. Worth it
    *  for our commander, or when what we save has enter triggers worth blinking. */
-  override podAnswerWipe(dying: Permanent[]): void {
+  override podAnswerWipe(dying: Permanent[], _destroys: boolean): Permanent[] {
     const nontokens = dying.filter(
       (creature) => !creature.token && creature.owner === null,
     );
@@ -379,6 +379,7 @@ export class DndGame extends CreatureDeckGame {
         nontokens.some((creature) => this.isCommander(creature)))
     )
       this.castBlinkInAnswer(spell, nontokens);
+    return [];
   }
 
   /** Casts a blink spell from hand in an opponent's turn, blinking exactly these permanents. False if we can't pay. */

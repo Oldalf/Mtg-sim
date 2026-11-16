@@ -3,6 +3,7 @@ import { ELDRAZI_SPAWN, TREASURE } from '../../../engine/cards/tokens';
 import * as C from '../../../engine/cards/cards';
 import { Arena, Permanent } from '../../../engine/game/game-types';
 import { Rng } from '../../../engine/util/rng';
+import { ANSWERS } from '../../../engine/game/answers';
 import { CFG } from '../config';
 import { EdgarGame } from '../game';
 import {
@@ -435,6 +436,59 @@ export function runEdgarTests(): boolean {
       copy.battlefield.includes(permanent),
     ),
     true,
+  );
+
+  // ---- Yahenni and Pitiless Pontiff: sacrifice another creature, indestructible
+  game = board(['Yahenni, Undying Partisan']);
+  const yahenni = permanentNamed(game, 'Yahenni, Undying Partisan');
+  const spareToken = game.createTokens(TOKENS.vampire)[0];
+  check(
+    'a destroy effect on Yahenni: a token is sacrificed, Yahenni stays',
+    [
+      game.podShield(yahenni, ANSWERS['Swords to Plowshares']),
+      game.podShield(yahenni, ANSWERS['Infernal Grasp']),
+      game.battlefield.includes(yahenni),
+      game.battlefield.includes(spareToken),
+    ],
+    [null, 'Yahenni, Undying Partisan', true, false],
+  );
+  check(
+    'a second destroy effect the same turn costs nothing more',
+    [
+      game.podShield(yahenni, ANSWERS['Infernal Grasp']),
+      game.battlefield.filter((permanent) => permanent.token).length,
+    ],
+    ['Yahenni, Undying Partisan', 0],
+  );
+  game = board(['Yahenni, Undying Partisan']);
+  check(
+    'Yahenni with no other creature to sacrifice is not saved',
+    game.podShield(
+      permanentNamed(game, 'Yahenni, Undying Partisan'),
+      ANSWERS['Infernal Grasp'],
+    ),
+    null,
+  );
+  game = board(['Pitiless Pontiff', 'Legion Lieutenant'], [], [], []);
+  check(
+    'Pitiless Pontiff needs {1}: no mana, no protection',
+    game.podShield(
+      permanentNamed(game, 'Pitiless Pontiff'),
+      ANSWERS['Infernal Grasp'],
+    ),
+    null,
+  );
+  game = board(['Pitiless Pontiff']);
+  game.createTokens(TOKENS.vampire);
+  check(
+    'a wipe that destroys: Pontiff sacrifices a token and survives',
+    [
+      game
+        .podAnswerWipe(game.creatures(), true)
+        .map((creature) => creature.card.name),
+      game.creatures().map((creature) => creature.card.name),
+    ],
+    [['Pitiless Pontiff'], ['Pitiless Pontiff']],
   );
 
   return allPassed;
