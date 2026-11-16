@@ -29,7 +29,7 @@ Rules for every task:
 
 | # | Task | What | Model |
 |---|---|---|---|
-| 1 | G1 | DnD: map the deck from its owner's primer | Opus 5.5, after P (the primer) |
+| 1 | G1 | **Done.** DnD: map the deck from its owner's primer | Opus 5.5, after P (the primer) |
 | 2 | G2 | The pod report again, with the engine as it is now | Haiku 5.5 |
 | 3 | G3 | Helga: annihilator and the Eldrazi's removal | Sonnet 5.5 |
 | 4 | G4 | Codie's counterspells missing from `answers.ts` | Sonnet 5.5, after P |
