@@ -1,6 +1,6 @@
-﻿# Plan: step 9, after game night
+# Plan: step 10, after G14
 
-Written 2026-11-16. Tasks G1 to G11 are done; their steps and notes (among them G2's pod report of 2026-11-16) are in git: `PLAN.md` at commit `0308b6c`. Step 8's plan is at commit `c88cda4`.
+Written 2026-11-16. Tasks G1 to G11 and G14 are done; their steps and notes (among them G2's pod report and G14's blink in answer to removal and wipes) are in git: `PLAN.md` at commit `ff164f7`. Step 8's plan is at commit `c88cda4`.
 
 The friends' decks (Helga, Ardyn, Teval, Thantis, DnD, Azula) are **pod-only**: no goldfish tuning, no mulligan study, no swap tests, no primer of ours, unless the owner asks (Pontus, 2026-11-15). The table plays bracket 2-3. Each deck's own `PLAN.md` says how it wins and what it does not model.
 
@@ -29,19 +29,20 @@ Rules for every task:
 
 | # | Task | What | Model |
 |---|---|---|---|
-| 1-11 | G1-G11 | **Done** (see commit `0308b6c`) | |
-| 12 | G14 | **Done** (DnD: blink in answer to removal and wipes) | |
+| 1 | R1 | Gale: Rain of Filth against `lists/proposed.txt` | Sonnet 5.5 |
+
+Done on 2026-11-16 without a task: **Edgar's commander cast.** Edgar stays in the command zone (eminence works there) and is cast only with mana nothing else wants (`COMMANDER_CAST_SCORE` in `decks/edgar/candidates.ts`; it was the first play). Goldfish, 2,000 games: win by turn 10 65.0% against 66.2% before; never casting him is 43.9%, because his attack puts counters on every Vampire, so he is still cast late (in 76% of games). Pod with Meren, Gale and Helga (1,000 games): Edgar 26.2% against 24.9%. The regress and pod baselines were re-recorded.
 
 Azula's next task (B7) is not in this plan: it waits in `decks/azula/PLAN.md` ("Next task B7") until Pontus wants it, since Azula may not be played in the pod at all.
 
 ---
 
-## G14. Blink in answer to removal and wipes (Sonnet 5.5)
+## R1. Gale: Rain of Filth against the proposed list (Sonnet 5.5)
 
-DnD's primer: Kykar, Lae'zel's Acrobatics and Ephemerate "dodge boardwipes or removal". In a pod an opponent's removal (`hitWithRemoval`) asks the owner's `podShield` first; a wipe (`castBoardWipe`) asks nothing.
+Pontus's home deck is `decklist.txt`, but it is still missing four cards of `lists/proposed.txt` (Drain Power, Unearth, Muddle the Mixture, Thunderclap Drake), which he plans to add. So the comparison is **against `lists/proposed.txt`, not `decklist.txt`.** Rain of Filth (taps every land, then sacrifices them all for {B} each; kill turn only) was modelled in b5fc943 and is in no list yet. Pontus (2026-11-16) leaves the choice of what it replaces to us: try a few.
 
-1. Targeted removal: DnD overrides `podShield` to cast Ephemerate (or Ghostly Flicker) on the targeted creature when it has the mana open; the blink makes the removal miss. The blink must target that creature, not the best blink target.
-2. Wipes: a hook before `castBoardWipe` removes the creatures, so the owner can answer with Lae'zel's Acrobatics (all nontoken creatures exiled until the end step). A blink in an opponent's turn returns at that player's end step (`BlinkedCard.inOpponentTurn`, done in G5). Only DnD plays these now.
-3. Tests in `decks/dnd/tests` and `engine/pod/pod.test.ts`. Every other deck IDENTICAL; DnD's pod numbers before and after.
-
-**Done.** Engine: `Game.podAnswerWipe(dying)` (called by `castBoardWipe` for each player before the creatures die), `resolveBlinkSpell(game, spell, { targets })` (blink exactly those, back at the end of the opponent's turn), `isHoldingManaForAnswers()` split out of `podReserve`. DnD: `podShield` casts Ephemerate or Ghostly Flicker on a commander or a creature with an enter trigger; `podAnswerWipe` casts Lae'zel's Acrobatics; `podReserve` also keeps mana for Ephemerate or Flicker, not for the Acrobatics (four mana held all game cost DnD about 5 points). Tests: `decks/dnd/tests`, `engine/pod/pod-blink-answer.test.ts`. DnD in a pod with Meren, Edgar and Helga (1,000 games, eco): 24.6% before, 23.2% after (noise about 3 points); in 600 logged games the removal blink fired once, because the mana is rarely open. The log says "countered by Ephemerate".
+1. Baseline: `lists/proposed.txt`, 4,000 games (the numbers in `decks/gale/PLAN.md`: kill by turn 6 / 7 / 8 19.9 / 51.4 / 75.3% in 2026-11-14, before the step 8 engine changes; run it again, 16.5 / 45.8 / 70.9% on 2026-11-15). Same seeds for every list.
+2. Test lists, each `proposed.txt` with Rain of Filth in place of one card: **Mocking Sprite**; then 3 to 5 cards that look weak in the list. Pick them from `npm run sim -- gale --rank` on `proposed.txt` and from the cards `decks/gale/PLAN.md` calls dead weight or untested (a single engine card, a protection card, a creature that only blocks, an Island: Rain wants lands, so check that one too). Say why each was chosen.
+3. Report a table: kill by turn 6 / 7 / 8, counter backup by turn 8, average kill turn, difference to the baseline. Noise is about ±2.6 points at 3,000 games; call a difference real only above that.
+4. Put the lists in `decks/gale/lists/` while testing and remove them when done (the table goes in `decks/gale/PLAN.md`). Leave `decklist.txt` and `proposed.txt` as they are: Pontus decides what to swap. Add one line under this task here.
+5. Gale's regress baseline must stay IDENTICAL (no code changes in this task).

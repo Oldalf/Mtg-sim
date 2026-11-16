@@ -28,6 +28,9 @@ type AddCandidate = (
   rockCard?: CardDef,
 ) => void;
 
+/** Lower than any other play, so that Edgar is cast only when mana is left over. */
+const COMMANDER_CAST_SCORE = 1;
+
 /** Everything the AI may do now, with a score each (higher first). */
 export function buildCandidates(game: EdgarGame, main2: boolean): Candidate[] {
   const candidates: Candidate[] = [];
@@ -41,9 +44,11 @@ export function buildCandidates(game: EdgarGame, main2: boolean): Candidate[] {
       return true;
     });
 
+  // Edgar stays in the command zone: his eminence works there, no sorcery-speed removal or wipe reaches him and his
+  // tax stays low. He is cast only with mana nothing else wants.
   for (const commander of game.command.slice())
     add(
-      95,
+      COMMANDER_CAST_SCORE,
       game.commanderCost(commander, game.effectiveCost(commander)),
       false,
       () => game.castPerm(commander, true),
