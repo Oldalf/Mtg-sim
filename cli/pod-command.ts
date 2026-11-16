@@ -16,6 +16,7 @@ import { runBlinkTests } from '../engine/game/blink.test';
 import { runTreasureTests } from '../engine/game/treasure.test';
 import { runCommonCardTests } from '../engine/game/common-cards.test';
 import { runSearchManaTests } from '../engine/game/search-mana.test';
+import { runBlinkAnswerTests } from '../engine/pod/pod-blink-answer.test';
 import { runOpponentCastTests } from '../engine/pod/pod-opponent-cast.test';
 import {
   runPodExactMoveTests,
@@ -70,6 +71,7 @@ export async function runPodCommand(
     const isExchangeRight = runControlExchangeTests(decks);
     const areForcedAttacksRight = runForcedAttackTests(decks);
     const areOpponentCastTriggersRight = runOpponentCastTests(decks);
+    const areBlinkAnswersRight = runBlinkAnswerTests(decks);
     const isSearchManaRight = runSearchManaTests();
     const isBlinkRight = runBlinkTests(decks);
     const areDungeonsRight = runDungeonTests(decks);
@@ -86,6 +88,7 @@ export async function runPodCommand(
         isExchangeRight &&
         areForcedAttacksRight &&
         areOpponentCastTriggersRight &&
+        areBlinkAnswersRight &&
         isSearchManaRight &&
         isBlinkRight &&
         areDungeonsRight &&

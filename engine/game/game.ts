@@ -562,13 +562,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   /** Mana to leave untapped on our own turn for the cheapest instant-speed answer in hand (from round config.hold_from, default 5). */
   override podReserve(): number {
-    if (!this.podHold) return 0;
-    if (
-      !this.inArena() ||
-      this.config.pod_answers === false ||
-      this.turn < ((this.config.hold_from as number) ?? 5)
-    )
-      return 0;
+    if (!this.isHoldingManaForAnswers()) return 0;
     let best = 0;
     for (const card of this.hand) {
       const answer = this.answer(card);
@@ -577,6 +571,16 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       if (best === 0 || manaValue < best) best = manaValue;
     }
     return best;
+  }
+  /** Do we keep mana open on our own turn for an instant-speed answer? (Not in a goldfish game, not before round
+   *  config.hold_from.) */
+  isHoldingManaForAnswers(): boolean {
+    return (
+      this.podHold &&
+      this.inArena() &&
+      this.config.pod_answers !== false &&
+      this.turn >= ((this.config.hold_from as number) ?? 5)
+    );
   }
   /** Cast an answer from hand: pay for it, put it into the graveyard. False if we can't. */
   podCast(card: CardDef): boolean {
@@ -731,6 +735,9 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     }
     return null;
   }
+  /** A board wipe is about to take these creatures of ours (all that it kills, the caster's own wipe too). A deck may
+   *  answer at instant speed, e.g. by blinking them: what has left the battlefield is not hit. */
+  podAnswerWipe(_dying: Permanent[]): void {}
   /** One of our permanents was removed by this answer: what we get for it (a 3/3, a basic land, life, a 2/2). */
   podGet(permanent: Permanent, answer: Answer): void {
     if (answer.gives === 'token3')

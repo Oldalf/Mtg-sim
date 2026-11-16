@@ -504,6 +504,12 @@ function castBoardWipe(
     'answer',
     [card.name],
   );
+  for (const [owner, ownerGame] of table.games.entries())
+    ownerGame.podAnswerWipe(
+      dying
+        .filter((creature) => creature.owner === owner)
+        .map((creature) => creature.creature),
+    );
   for (const creature of dying)
     table.games[creature.owner].podRemove(
       creature.creature,

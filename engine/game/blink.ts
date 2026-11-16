@@ -158,11 +158,23 @@ export function blinkTargets(game: GameCore, spell: BlinkSpell): Permanent[] {
     .slice(0, spell.count);
 }
 
+/** A blink spell cast in answer to an opponent's removal or wipe: it exiles these permanents (not the best ones), in
+ *  the opponent's turn. */
+export interface BlinkAnswer {
+  targets: Permanent[];
+}
+
 /** Plays a blink spell. Returns false if the spell isn't one. */
-export function resolveBlinkSpell(game: GameCore, spell: CardDef): boolean {
+export function resolveBlinkSpell(
+  game: GameCore,
+  spell: CardDef,
+  answer: BlinkAnswer | null = null,
+): boolean {
   const spellInfo = BLINK_SPELLS[spell.name];
   if (!spellInfo) return false;
-  const targets = blinkTargets(game, spellInfo);
+  const targets = answer
+    ? answer.targets.filter((permanent) => game.battlefield.includes(permanent))
+    : blinkTargets(game, spellInfo);
   if (spell.name === "Lae'zel's Acrobatics") {
     const roll = 1 + Math.floor(game.rng.random() * 20);
     game.say(`  d20: ${roll}`);
@@ -175,6 +187,7 @@ export function resolveBlinkSpell(game: GameCore, spell: CardDef): boolean {
   for (const permanent of targets)
     blink(game, permanent, {
       returnsAtEndStep: spellInfo.returns === 'endStep',
+      inOpponentTurn: !!answer,
       tapped: spellInfo.tapped,
       counters: spellInfo.counters,
     });

@@ -29,12 +29,15 @@ import {
   DJINNI_WINDSEER,
   EMERITUS_OF_IDEATION,
   EPHARA,
+  EPHEMERATE,
   EQUIPPED_WITH_TORCH,
   FOX,
   GENKU,
+  GHOSTLY_FLICKER,
   HULLBREAKER_HORROR,
   KNIGHT_OF_THE_WHITE_ORCHID,
   KYKAR,
+  LAEZELS_ACROBATICS,
   LAND_TAX,
   MIDNIGHT_PATHLIGHTER,
   MOMO,
@@ -76,11 +79,20 @@ import {
   upkeepOfCommonCards,
 } from '../../engine/game/common-permanents';
 import { triggersOfCreatureEntering } from '../../engine/game/creature-enter-triggers';
-import { blink } from '../../engine/game/blink';
+import {
+  BLINK_SPELLS,
+  BlinkAnswer,
+  blink,
+  resolveBlinkSpell,
+} from '../../engine/game/blink';
 import { ventureIntoDungeon } from '../../engine/game/dungeons';
 import { fetchLand } from '../../engine/game/land-search';
 import { enterTriggerCount } from '../../engine/game/trigger-doublers';
 import { firstMax } from '../../engine/util/lists';
+
+/** The blink spells we keep mana open for, to save a creature from removal. (Lae'zel's Acrobatics, against a wipe, is
+ *  cast with whatever mana is left: four mana held all game costs more than the wipes it answers.) */
+const BLINK_DODGES = new Set([EPHEMERATE, GHOSTLY_FLICKER]);
 
 const NONLAND: Hit[] = ['creature', 'artifact', 'enchantment', 'planeswalker'];
 
@@ -125,6 +137,8 @@ export class DndGame extends CreatureDeckGame {
   hasCreatureEnteredSinceLastUpkeep = false;
   /** Morningtide's Light resolved: all damage to us is prevented until our next turn. */
   isDamagePreventedUntilOurTurn = false;
+  /** While we cast a blink spell in an opponent's turn: what it saves (the engine's blink then uses it). */
+  blinkAnswer: BlinkAnswer | null = null;
 
   override startTurn(): void {
     super.startTurn();
@@ -313,6 +327,71 @@ export class DndGame extends CreatureDeckGame {
     return true;
   }
 
+  /** Is this creature worth a blink spell to save it from removal? Our commander, or one with an enter trigger. */
+  isWorthSaving(creature: Permanent): boolean {
+    return this.isCommander(creature) || this.blinkValue(creature) > 0;
+  }
+
+  /** An opponent aims removal at one of our creatures: Ephemerate or Ghostly Flicker in hand, with the mana open,
+   *  blinks that creature and the removal misses it. */
+  override podShield(permanent: Permanent): string | null {
+    const shield = super.podShield(permanent);
+    if (shield) return shield;
+    if (
+      !permanent.card.isCreature ||
+      permanent.token ||
+      !this.isWorthSaving(permanent)
+    )
+      return null;
+    const spell = this.hand.find(
+      (card) => card.name === EPHEMERATE || card.name === GHOSTLY_FLICKER,
+    );
+    return spell && this.castBlinkInAnswer(spell, [permanent])
+      ? spell.name
+      : null;
+  }
+
+  /** Mana to keep open for an answer: also the cost of the cheapest blink spell in hand that can save a creature from removal. */
+  override podReserve(): number {
+    const answerReserve = super.podReserve();
+    if (!this.isHoldingManaForAnswers()) return answerReserve;
+    const costs = this.hand
+      .filter((card) => BLINK_DODGES.has(card.name))
+      .map((card) => this.effectiveCost(card).manaValue);
+    if (answerReserve > 0) costs.push(answerReserve);
+    return costs.length ? Math.min(...costs) : 0;
+  }
+
+  /** An opponent's board wipe will kill our creatures: Lae'zel's Acrobatics exiles them until the end step. Worth it
+   *  for our commander, or when what we save has enter triggers worth blinking. */
+  override podAnswerWipe(dying: Permanent[]): void {
+    const nontokens = dying.filter(
+      (creature) => !creature.token && creature.owner === null,
+    );
+    const valueSaved = nontokens.reduce(
+      (total, creature) => total + Math.max(0, this.blinkValue(creature)),
+      0,
+    );
+    const spell = this.hand.find((card) => card.name === LAEZELS_ACROBATICS);
+    if (
+      spell &&
+      (valueSaved >= SMALLEST_BLINK_WORTH_IT ||
+        nontokens.some((creature) => this.isCommander(creature)))
+    )
+      this.castBlinkInAnswer(spell, nontokens);
+  }
+
+  /** Casts a blink spell from hand in an opponent's turn, blinking exactly these permanents. False if we can't pay. */
+  castBlinkInAnswer(spell: CardDef, saved: Permanent[]): boolean {
+    if (!this.canPay(this.effectiveCost(spell), true)) return false;
+    this.blinkAnswer = { targets: saved };
+    try {
+      return this.castInstantOrSorcery(spell);
+    } finally {
+      this.blinkAnswer = null;
+    }
+  }
+
   /** Brago: each nonland permanent of ours worth blinking. */
   bragoBlinks(): void {
     const permanents = this.battlefield.filter(
@@ -374,7 +453,11 @@ export class DndGame extends CreatureDeckGame {
           this.blinkValue(other) >= SMALLEST_BLINK_WORTH_IT &&
           (!isBeforeCombat || !this.canAttack(other)),
       );
-      if (creature) blink(this, creature, { returnsAtEndStep: true });
+      if (creature)
+        blink(this, creature, {
+          returnsAtEndStep: true,
+          inOpponentTurn: !!this.blinkAnswer,
+        });
       else this.createTokens(SPIRIT);
     }
   }
@@ -418,6 +501,10 @@ export class DndGame extends CreatureDeckGame {
     fromGraveyard = false,
     mode: string | null = null,
   ): void {
+    if (this.blinkAnswer && BLINK_SPELLS[card.name]) {
+      resolveBlinkSpell(this, card, this.blinkAnswer);
+      return;
+    }
     if (card.name === MORNINGTIDES_LIGHT) {
       this.isDamagePreventedUntilOurTurn = true;
       this.say('  all damage to us is prevented until our next turn');

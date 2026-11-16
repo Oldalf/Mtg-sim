@@ -30,7 +30,7 @@ Rules for every task:
 | # | Task | What | Model |
 |---|---|---|---|
 | 1-11 | G1-G11 | **Done** (see commit `0308b6c`) | |
-| 12 | G14 | DnD: blink in answer to removal and wipes | Sonnet 5.5 |
+| 12 | G14 | **Done** (DnD: blink in answer to removal and wipes) | |
 
 Azula's next task (B7) is not in this plan: it waits in `decks/azula/PLAN.md` ("Next task B7") until Pontus wants it, since Azula may not be played in the pod at all.
 
@@ -43,3 +43,5 @@ DnD's primer: Kykar, Lae'zel's Acrobatics and Ephemerate "dodge boardwipes or re
 1. Targeted removal: DnD overrides `podShield` to cast Ephemerate (or Ghostly Flicker) on the targeted creature when it has the mana open; the blink makes the removal miss. The blink must target that creature, not the best blink target.
 2. Wipes: a hook before `castBoardWipe` removes the creatures, so the owner can answer with Lae'zel's Acrobatics (all nontoken creatures exiled until the end step). A blink in an opponent's turn returns at that player's end step (`BlinkedCard.inOpponentTurn`, done in G5). Only DnD plays these now.
 3. Tests in `decks/dnd/tests` and `engine/pod/pod.test.ts`. Every other deck IDENTICAL; DnD's pod numbers before and after.
+
+**Done.** Engine: `Game.podAnswerWipe(dying)` (called by `castBoardWipe` for each player before the creatures die), `resolveBlinkSpell(game, spell, { targets })` (blink exactly those, back at the end of the opponent's turn), `isHoldingManaForAnswers()` split out of `podReserve`. DnD: `podShield` casts Ephemerate or Ghostly Flicker on a commander or a creature with an enter trigger; `podAnswerWipe` casts Lae'zel's Acrobatics; `podReserve` also keeps mana for Ephemerate or Flicker, not for the Acrobatics (four mana held all game cost DnD about 5 points). Tests: `decks/dnd/tests`, `engine/pod/pod-blink-answer.test.ts`. DnD in a pod with Meren, Edgar and Helga (1,000 games, eco): 24.6% before, 23.2% after (noise about 3 points); in 600 logged games the removal blink fired once, because the mana is rarely open. The log says "countered by Ephemerate".

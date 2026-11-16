@@ -596,5 +596,74 @@ export function runDndTests(): boolean {
     );
   }
 
+  // ---------------------------------------------------------------- blink in answer to removal and wipes
+  {
+    const game = board(['Veteran Dungeoneer'], ['Ephemerate']);
+    joinPod(game, null);
+    const dungeoneer = game.findPermanent('Veteran Dungeoneer')!;
+    const shield = game.podShield(dungeoneer);
+    check(
+      'removal aimed at a creature with an enter trigger: Ephemerate blinks it, the removal misses',
+      [
+        shield,
+        game.battlefield.includes(dungeoneer),
+        namesOnBattlefield(game, 'Veteran Dungeoneer'),
+        game.dungeonPosition?.room,
+      ],
+      ['Ephemerate', false, 1, 'Cave Entrance'],
+    );
+  }
+  {
+    const game = board(['Veteran Dungeoneer'], ['Ephemerate'], []);
+    joinPod(game, null);
+    check(
+      'removal: no mana open, no blink',
+      game.podShield(game.findPermanent('Veteran Dungeoneer')!),
+      null,
+    );
+  }
+  {
+    const game = board(['Midnight Pathlighter'], ['Ephemerate']);
+    joinPod(game, null);
+    check(
+      'removal: a creature with no enter trigger is not worth Ephemerate',
+      game.podShield(game.findPermanent('Midnight Pathlighter')!),
+      null,
+    );
+  }
+  {
+    const game = board(
+      ['Veteran Dungeoneer', 'Brago, King Eternal', 'Midnight Pathlighter'],
+      ["Lae'zel's Acrobatics"],
+    );
+    joinPod(game, null);
+    const dying = game.creatures();
+    game.podAnswerWipe(dying);
+    const exiledNow = dying.map((creature) =>
+      game.battlefield.includes(creature),
+    );
+    game.returnBlinkedCardsAtOpponentEndStep();
+    check(
+      "wipe: Lae'zel's Acrobatics exiles the creatures, the end step of that turn brings them back",
+      [
+        exiledNow,
+        game.creatures().filter((creature) => !creature.token).length,
+        game.hand.length,
+        game.graveyard.map((card) => card.name),
+      ],
+      [[false, false, false], 3, 0, ["Lae'zel's Acrobatics"]],
+    );
+  }
+  {
+    const game = board(['Midnight Pathlighter'], ["Lae'zel's Acrobatics"]);
+    joinPod(game, null);
+    game.podAnswerWipe(game.creatures());
+    check(
+      'wipe: nothing with an enter trigger to save, the Acrobatics stays in hand',
+      [game.hand.length, game.creatures().length],
+      [1, 1],
+    );
+  }
+
   return allPassed;
 }
