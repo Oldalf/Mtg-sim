@@ -66,7 +66,7 @@ Rules for every task:
 | 17 | B5 | DnD (done) | Opus 5.5 |
 | 18 | B6 | Azula (done) | Opus 5.5, after P |
 | 19 | Z1 | Step 7's loose ends | Sonnet 5.5 |
-| 20 | D1 | Pontus's real lists (Gale, Aesi) become `decklist.txt` (checked: same cards) | Sonnet 5.5, after P |
+| 20 | D1 | Pontus's real lists (Gale, Aesi) become `decklist.txt` (done: same cards, bugs fixed) | Sonnet 5.5, after P |
 | 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
 | 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
 | 23 | F1 | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
