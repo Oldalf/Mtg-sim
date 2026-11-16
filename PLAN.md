@@ -69,6 +69,9 @@ Rules for every task:
 | 20 | D1 | Pontus's real list becomes `decklist.txt` | Sonnet 5.5, after P |
 | 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
 | 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) | Opus 5.5 |
+| 23 | F1 | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
+| 24 | F2 | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
+| 25 | F3 | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
 
 **If time runs short before game night:** A2 moves only what Helga, Ardyn and Teval need, A3 waits, and a deck can go to the pod with fewer card rules, as long as its `PLAN.md` says what it does not model (C1 then says it next to its numbers).
 
@@ -308,3 +311,37 @@ Pontus, 2026-11-15: wire the other decks into `engine/game/search-mana.ts` (E1),
 - First list which decks count mana on a copy of their own (a kill search, a solver, a loop: Codie's solver, Aesi's loops, Mike's, any other `KillSearchState`) and how each keeps its pool now.
 - Move them one deck at a time: the search keeps a `SearchMana` (`SearchMana.fromGame`), pays with `spendMana`, and its played line sets `plannedPayments` per step, as Gale's `kill-play.ts` does. What the engine's model lacks for a deck (another colour than U/B, a mana doubler) goes into `SearchMana` with a test, not into the deck.
 - Done when each moved deck has 0 kill misses over 300 seeds and `npm run verify` ends VERIFY OK. A deck whose results change: show Pontus the numbers before and after (and the speed), then re-record.
+
+---
+
+## F. Loose ends found in B6 (Azula)
+
+Small, mechanical tasks. Each one: read `CLAUDE.md` first, ask Pontus eco or full power before any run, `npm run format`, then `npm run verify` must end with VERIFY OK, one commit, and one line under the task saying what was done.
+
+### F1. Thought Vessel and Decanter of Endless Water in the engine (Haiku 5.5)
+
+Both say "You have no maximum hand size". The engine skips the discard to seven only for Reliquary Tower, so Ardyn and Helga (both play Thought Vessel) discard when they should not. Azula and Mike handle it themselves.
+
+1. Run `npm run pod -- ardyn helga meren edgar -n 1000 --no-log` and save the report (scratchpad).
+2. In `engine/game/game-core.ts`, `hasNoMaximumHandSize()` (near `endTurn`): return true for `'Thought Vessel'` and `'Decanter of Endless Water'` too, next to `'Reliquary Tower'`.
+3. In `decks/azula/game.ts`, `hasNoMaximumHandSize()`: drop the two lines for those cards (the engine has them now); keep Sea Gate Restoration and the `super` call. Leave Mike alone: it has its own `endTurn`.
+4. Add one check to `engine/game/common-cards.test.ts` (it runs in `npm run pod -- --test`): a game with Thought Vessel on the battlefield and 9 cards in hand keeps 9 after `endTurn()`. Copy the shape of the checks already there.
+5. Run step 1 again. Write both reports' win rates under this task. Ardyn and Helga are pod-only (no `--regress` baseline), so nothing is re-recorded; every deck with a baseline must stay IDENTICAL in `verify` (none of them plays these cards except Mike, which overrides).
+
+### F2. Codie's pod games with its counterspells as answers (Haiku 5.5)
+
+B6 added Mana Drain and Fierce Guardianship (free with a commander out) to `engine/game/answers.ts`. Codie plays both, so in a pod it now counters with them. Its goldfish results are unchanged (verify: IDENTICAL); only its pod games change. Pontus wants to see by how much.
+
+1. `git switch --detach 0ef7cf7` (the commit before B6), `npm run pod -- codie meren edgar helga -n 1000 --no-log`, save the report.
+2. `git switch main`, run the same command, save the report.
+3. Write both under this task: each deck's win rate, Codie's "answers used" and "spells countered". Nothing to commit but this plan's lines.
+4. Also check that Codie's own `BACKUP` table (`decks/codie/cards.ts`: counterspells that make a win "backed up") still agrees with `answers.ts`: every counterspell in `BACKUP` that is in Codie's `decklist.txt` should be in `ANSWERS` too. List any that are not; do not add them (that is Pontus's call).
+
+### F3. Every "no maximum hand size" card in the lists (Haiku 5.5, after F1)
+
+Find every card in any `decks/*/decklist.txt` whose text says "no maximum hand size", and check that the deck playing it skips the discard to seven.
+
+1. A one-off node script (in the scratchpad, not the repo) reads `data/cards.json`, picks the cards whose `oracle` contains "no maximum hand size", and prints which decklists have each.
+2. For each card: is it in the engine's `hasNoMaximumHandSize()` (after F1), or does the deck handle it itself (Mike's and Azula's own `hasNoMaximumHandSize`)? Write the table under this task.
+3. A card that is a permanent and in no one's rule: add it to the engine's list (same change as F1, same test idea). A card that is a spell or a condition (Sea Gate Restoration, Wizard Class): list it, do not change it.
+4. If a deck with a `--regress` baseline changes, stop and show Pontus the numbers before re-recording.
