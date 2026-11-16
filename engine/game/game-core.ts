@@ -2516,9 +2516,13 @@ export abstract class GameCore<S = unknown> {
       this.discard(this.hand.length - 7);
   }
 
-  /** Do we skip the discard to seven at the end of the turn? (Reliquary Tower; a deck adds its own cards.) */
+  /** Do we skip the discard to seven at the end of the turn? (A deck adds its own cards.) */
   hasNoMaximumHandSize(): boolean {
-    return this.isOnBattlefield('Reliquary Tower');
+    return (
+      this.isOnBattlefield('Reliquary Tower') ||
+      this.isOnBattlefield('Thought Vessel') ||
+      this.isOnBattlefield('Decanter of Endless Water')
+    );
   }
 
   /** Before the first turn: the opening hand and mulligans. */

@@ -69,7 +69,7 @@ Rules for every task:
 | 20 | D1 | Pontus's real lists (Gale, Aesi) become `decklist.txt` (done: same cards, bugs fixed) | Sonnet 5.5, after P |
 | 21 | E1 | Gale's kill search taps lands for real (`ROADMAP.md` step 9) (done) | Sonnet 5.5 |
 | 22 | E2 | The other decks' searches use the engine's land tapping (`SearchMana`) (done: none needed it; search copies moved to the engine) | Opus 5.5 |
-| 23 | F1 | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
+| 23 | F1 (done) | Thought Vessel and Decanter of Endless Water: no maximum hand size in the engine | Haiku 5.5 |
 | 24 | F2 | Codie's pod games with Mana Drain and Fierce Guardianship as answers: before and after | Haiku 5.5 |
 | 25 | F3 | Every "no maximum hand size" card in the lists: an audit | Haiku 5.5 |
 | 26 | B7 | Azula plays its combos like a pilot: setup turns, digging, protection | Opus 5.5, last; the deck may not be in the pod |
@@ -381,6 +381,8 @@ Both say "You have no maximum hand size". The engine skips the discard to seven 
 3. In `decks/azula/game.ts`, `hasNoMaximumHandSize()`: drop the two lines for those cards (the engine has them now); keep Sea Gate Restoration and the `super` call. Leave Mike alone: it has its own `endTurn`.
 4. Add one check to `engine/game/common-cards.test.ts` (it runs in `npm run pod -- --test`): a game with Thought Vessel on the battlefield and 9 cards in hand keeps 9 after `endTurn()`. Copy the shape of the checks already there.
 5. Run step 1 again. Write both reports' win rates under this task. Ardyn and Helga are pod-only (no `--regress` baseline), so nothing is re-recorded; every deck with a baseline must stay IDENTICAL in `verify` (none of them plays these cards except Mike, which overrides).
+
+**Done (2026-11-16):** the engine's `hasNoMaximumHandSize()` now covers Thought Vessel and Decanter; Azula keeps only Sea Gate Restoration; new check in `common-cards.test.ts`. Pod win rates (1000 games, ardyn/helga/meren/edgar), before → after: 24.5 → 24.2%, 16.9 → 17.2%, 29.6 → 29.7%, 28.8 → 28.7% (all within noise). Mike keeps its own override (Vnwxt, Thought Vessel, Reliquary Tower, Wizard Class, Body of Knowledge, Folio of Fancies). VERIFY OK.
 
 ### F2. Codie's pod games with its counterspells as answers (Haiku 5.5)
 

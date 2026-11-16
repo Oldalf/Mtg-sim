@@ -369,14 +369,9 @@ export class AzulaGame extends CreatureDeckGame {
     super.endTurn();
   }
 
-  /** Thought Vessel, Decanter of Endless Water and Sea Gate Restoration too. */
+  /** Sea Gate Restoration too. */
   override hasNoMaximumHandSize(): boolean {
-    return (
-      this.hasSeaGateRestorationResolved ||
-      this.isOnBattlefield('Thought Vessel') ||
-      this.isOnBattlefield('Decanter of Endless Water') ||
-      super.hasNoMaximumHandSize()
-    );
+    return this.hasSeaGateRestorationResolved || super.hasNoMaximumHandSize();
   }
 
   // ================================================================ combat

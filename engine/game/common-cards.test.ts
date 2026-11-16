@@ -48,6 +48,13 @@ export function runCommonCardTests(allDecks: Record<string, Deck>): boolean {
     game.enter(C.get('Wall of Omens'));
     check('Wall of Omens draws a card as it enters', game.hand.length, 1);
   }
+  for (const cardName of ['Thought Vessel', 'Decanter of Endless Water']) {
+    const game = newGame(allDecks, new Array(9).fill('Island'));
+    putOnBattlefield(game, cardName);
+    game.draw(9);
+    game.endTurn();
+    check(`${cardName}: no discard to seven`, game.hand.length, 9);
+  }
   {
     // a search's copy of our next turn: everything untapped, the pool empty, a new land drop; the game unchanged
     const game = newGame(allDecks);
