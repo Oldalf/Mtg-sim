@@ -77,7 +77,7 @@ import {
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import { enterTriggerCount } from './trigger-doublers';
 import { castInstantOrSorceryTriggers } from './spell-copies';
-import { addFirebendingMana } from './firebending';
+import { playGoldfishCombat } from './goldfish-combat';
 import {
   putOpeningHandLeylineOntoBattlefield,
   resolveFlashSpell,
@@ -1478,100 +1478,10 @@ export abstract class GameCore<S = unknown> {
     return [];
   }
 
-  /**
-   * Goldfish combat (rules agreed for creature decks):
-   * - flying attackers always connect; of the others, opponents block half (rounded down), the biggest ones;
-   * - crackback: we take back what we dealt, minus a third for each untapped creature kept home
-   *   (none if a fog creature such as Spore Frog stays home; it is sacrificed before our next turn);
-   * - if attacking with everything wins, do it; otherwise the biggest attack that keeps us above
-   *   config.combat_safety life (default 10).
-   * Damage goes to the opponent closest to dead first, the rest to the next one.
-   */
+  /** Goldfish combat for creature decks (goldfish-combat.ts): fliers connect, opponents block half of the others,
+   *  and the biggest attack that keeps us above config.combat_safety life after crackback; in a pod, arenaCombat. */
   creatureCombat(): void {
-    if (this.attacked) return;
-    const candidates = this.creatures().filter((permanent) =>
-      this.canAttack(permanent),
-    );
-    if (!candidates.length) return;
-    if (this.inArena()) {
-      this.arenaCombat(candidates);
-      return;
-    }
-    const fog = this.fogBlocker();
-    const pool = fog
-      ? candidates.filter((permanent) => permanent !== fog)
-      : candidates;
-    pool.sort((first, second) => this.power(second) - this.power(first));
-    const untappedOthers = (attacking: Set<Permanent>) =>
-      this.creatures().filter(
-        (permanent) => !permanent.tapped && !attacking.has(permanent),
-      ).length;
-    const connecting = (attackers: Permanent[]) => {
-      const fly = attackers.filter((permanent) => this.evasive(permanent)),
-        ground = attackers.filter((permanent) => !this.evasive(permanent));
-      const blocked = Math.floor(ground.length / 2);
-      // opponents block the biggest ground attackers
-      const permanents = ground
-        .slice()
-        .sort((first, second) => this.power(second) - this.power(first))
-        .slice(blocked);
-      return [...fly, ...permanents];
-    };
-    const deal = (attackers: Permanent[]) =>
-      connecting(attackers).reduce(
-        (total, permanent) => total + this.power(permanent),
-        0,
-      );
-    const crackback = (attackers: Permanent[], damage: number) => {
-      if (fog) return 0;
-      const home = untappedOthers(new Set(attackers));
-      return Math.round(damage * Math.max(0, 1 - home / 3));
-    };
-    const safety = (this.config.combat_safety as number) ?? 10;
-    let best: Permanent[] = [],
-      bestDmg = 0;
-    for (let attackerCount = 1; attackerCount <= pool.length; attackerCount++) {
-      const attackers = pool.slice(0, attackerCount);
-      const damage = deal(attackers);
-      if (this.winsWith(damage)) {
-        best = attackers;
-        bestDmg = damage;
-        break;
-      } // a winning attack: always take it
-      if (
-        this.myLife - crackback(attackers, damage) > safety &&
-        damage > bestDmg
-      ) {
-        best = attackers;
-        bestDmg = damage;
-      }
-    }
-    if (!best.length) return;
-    this.attacked = true;
-    for (const otherPermanent of best) otherPermanent.tapped = true;
-    addFirebendingMana(this, best);
-    const all = [...best, ...this.onAttack(best)].filter((permanent) =>
-      this.battlefield.includes(permanent),
-    );
-    let damage = deal(all);
-    const total = damage;
-    while (damage > 0) {
-      const targetIndex = this.chooseTargetOpponent();
-      if (targetIndex === null) break;
-      const hit = Math.min(damage, this.life[targetIndex]);
-      this.damageOpponent(targetIndex, hit);
-      damage -= hit;
-    }
-    this.onCombatDamage(connecting(all), total);
-    this.pendingCrackback += crackback(best, total);
-    if (fog) this.fogUsed = true;
-    this.sayEvent(
-      'attack',
-      `attack with ${all.length} creature(s): ${total} damage, ${this.describeOpponentLife()}` +
-        (fog
-          ? ` (${fog.card.name} stays home)`
-          : `, crackback ${crackback(best, total)}`),
-    );
+    playGoldfishCombat(this);
   }
 
   /** Can this attacker not be blocked (flying, shadow, "can't be blocked")? Decks override it. */
