@@ -147,6 +147,12 @@ export const REDUCE_INSTANT_SORCERY_COST = new Set([
   'Archmage of Runes',
 ]);
 export const REDUCE_NONCREATURE = new Set(['Geist of Saint Thalia']);
+/** Permanents that let us cast sorceries as though they had flash (engine/game/instant-speed.ts). */
+export const SORCERY_FLASH_PERMANENTS = new Set([
+  'Wizards of Thay',
+  'Leyline of Anticipation',
+  'Vedalken Orrery',
+]);
 export const REDUCE_BLUE = new Set([
   'Nightscape Familiar',
   'Sapphire Medallion',

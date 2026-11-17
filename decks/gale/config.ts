@@ -17,6 +17,8 @@ export const CFG: Config = {
   ramp_tutor_until: 4,
   ramp_tutor_below: 5,
   self_counter_dev: true,
+  opponents_end_step: false,
+  hold_counter: false,
 };
 
 /** What Gale's settings mean (the app's tooltips); the shared ones are in engine/run/setting-descriptions.ts. */
@@ -41,4 +43,6 @@ export const SETTING_DESCRIPTIONS: Record<string, string> = {
     'With ramp_tutor on: only while we have fewer mana sources than this.',
   self_counter_dev:
     'AI choice. On: counter our own cheap spell (Offer / Unwind) so Gale can cast a sorcery again.',
+  hold_counter:
+    "AI choice, goldfish games. On: once Gale is out, keep the mana for the cheapest counterspell in hand untapped on our turn (as at the table). With opponents_end_step on, that mana is spent at the end of the opponents' turns when nothing needed countering. In a pod Gale holds mana by the pod's rule (hold_from).",
 };

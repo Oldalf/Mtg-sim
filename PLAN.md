@@ -31,7 +31,7 @@ Rules for every task:
 |---|---|---|---|
 | 1 | R1 | Gale: Rain of Filth against `lists/proposed.txt` (done) | Sonnet 5.5 |
 | 2 | R2 | Gale: a `--diag` that shows what a slow game is missing (done) | Sonnet 5.5 |
-| 3 | R3 | Instant speed on the opponents' turns, and flash enablers | Opus 5.5 |
+| 3 | R3 | Instant speed on the opponents' turns, and flash enablers (done) | Opus 5.5 |
 | 4 | R4 | Gale: model Merchant Scroll, Mnemonic Wall, Aetherize | Sonnet 5.5 |
 | 5 | R5 | Gale: swap tests, budget about 15 € | Sonnet 5.5 |
 | 6 | R6 | Gale in a lower-bracket pod | Sonnet 5.5 |
@@ -99,13 +99,15 @@ The biggest change: an engine design task. Read `ENGINE.md` first.
 
 If the window does not fit the turn loop without a big rewrite, stop and write down why and what it would take.
 
+Done 2026-11-17 (Opus 5.5): `engine/game/instant-speed.ts` (the window, flash for sorceries, Quicken, Borne Upon a Wind, Emergence Zone, the opening-hand Leyline), the pod calls it for the next player, Gale's `hold_counter` (its `podReserve` in goldfish games) and `buildOpponentsEndStepCandidates`; 11 tests in `decks/gale/tests/instant-speed.test.ts`. Both settings are **off by default**, so every deck and the pod run are IDENTICAL (Gale's baseline was re-recorded for the new test lines only). Results in `decks/gale/PLAN.md`: holding a counter costs about 9 to 11 points by turn 7; the window wins back about 2 of them (0.4 spells per game); Emergence Zone, Borne Upon a Wind, Quicken and Leyline add nothing measurable. **P:** which settings Gale plays by default.
+
 ## R4. Gale: model Merchant Scroll, Mnemonic Wall, Aetherize (Sonnet 5.5)
 
 Merchant Scroll (choice in `tutoring.ts`: High Tide or a missing piece when a kill is near, a counterspell when the combo is assembled), Mnemonic Wall (enter trigger: the best instant or sorcery in the graveyard, like Gale's recast choice; a creature for the kill search's Unearth?), and check that Gale casts Aetherize in the pod when an attack would hurt (it is in the engine). Card facts in `engine/`, Gale's choices in `decks/gale/`. Every other deck stays IDENTICAL.
 
 ## R5. Gale: swap tests (Sonnet 5.5, after R3 and R4)
 
-Each candidate alone against `lists/proposed.txt` (after R3, so Wizards of Thay is worth what it is), 4,000 games, same seeds; then the best two or three together within 15 €. Slots to try: Mocking Sprite, Personal Tutor, Focus the Mind, Thespian's Stage, an Island (for Emergence Zone). Report by turn 5 / 6 / 7 / 8, **backup by turn 6 / 7 / 8** (Pontus goes off only with protection), average turn. Aetherize and Mnemonic Wall's blocking are worth nothing in goldfish: only check what they cost. Lists in `decks/gale/lists/` while testing, the table in `decks/gale/PLAN.md`, `proposed.txt` and `decklist.txt` untouched.
+Each candidate alone against `lists/proposed.txt`, played both with the default settings and with `--set hold_counter=1 --set opponents_end_step=1` (holding protection as at the table, R3), 4,000 games, same seeds; then the best two or three together within 15 €. Slots to try: Mocking Sprite, Personal Tutor, Focus the Mind, Thespian's Stage, an Island (for Emergence Zone). Report by turn 5 / 6 / 7 / 8, **backup by turn 6 / 7 / 8** (Pontus goes off only with protection), average turn. Aetherize and Mnemonic Wall's blocking are worth nothing in goldfish: only check what they cost. Lists in `decks/gale/lists/` while testing, the table in `decks/gale/PLAN.md`, `proposed.txt` and `decklist.txt` untouched.
 
 ## R6. Gale in a lower-bracket pod (Sonnet 5.5)
 

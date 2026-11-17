@@ -5,6 +5,7 @@ import { Rng } from '../../../engine/util/rng';
 import { CFG } from '../config';
 import { GaleGame } from '../game';
 import { search, finisherReachable } from '../kills';
+import { runInstantSpeedTests } from './instant-speed.test';
 
 const repeatName = (cardName: string, count: number) =>
   new Array(count).fill(cardName) as string[];
@@ -520,6 +521,7 @@ export function runKillTests(): boolean {
     0,
   );
   allPassed = runPlayedKillTests() && allPassed;
+  allPassed = runInstantSpeedTests() && allPassed;
   console.log(allPassed ? 'ALL OK' : 'SOME FAILED');
   return allPassed;
 }

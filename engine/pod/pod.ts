@@ -28,6 +28,10 @@ import { Config } from '../game/game-types';
 import { gamesFileName, writeGamesFile } from '../game-log/game-log-files';
 import { buildArena } from './pod-arena';
 import { useRemovalAfterTurn } from './pod-interaction';
+import {
+  playOpponentsEndStep,
+  usesOpponentsEndStep,
+} from '../game/instant-speed';
 import { PodTable } from './pod-table';
 import { PodGame, PodJob, PodJobResult, PodSpec } from '../../shared/pod-types';
 import { Deck, resolveList } from '../run/runner';
@@ -125,6 +129,13 @@ function playTurn(table: PodTable, player: number): PodGame | null {
       if (other !== player && table.isAlive[other])
         otherGame.returnBlinkedCardsAtOpponentEndStep();
   });
+  // the next player's window at the end of this turn: instant speed with the mana left from its own turn
+  // (engine/game/instant-speed.ts; only decks with opponents_end_step on use it)
+  const nextPlayer = table.opponentsOf[player].find(
+    (other) => table.isAlive[other],
+  );
+  if (nextPlayer !== undefined && usesOpponentsEndStep(table.games[nextPlayer]))
+    table.runOffTurn(() => playOpponentsEndStep(table.games[nextPlayer]));
   return null;
 }
 

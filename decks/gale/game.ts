@@ -37,7 +37,12 @@ import {
 import { playGaleKillStep } from './kill-play';
 import { finisherReachable, search } from './kills';
 import { chooseTutorTarget } from './tutoring';
-import { buildCandidates, castWithGaleRecast } from './candidates';
+import {
+  buildCandidates,
+  buildOpponentsEndStepCandidates,
+  castWithGaleRecast,
+} from './candidates';
+import { BORNE_UPON_A_WIND, QUICKEN } from '../../engine/game/instant-speed';
 import { buildKillSearchState } from './snapshot';
 import { resolveGaleSpell, resolveUnearth } from './spells';
 import { CardDef, Cost } from '../../engine/cards/cards';
@@ -151,6 +156,7 @@ export class GaleGame extends Game<KillSearchState> {
       );
       if (this.pay(gcost, true)) {
         this.takeCard(target, 'graveyard');
+        if (target.isSorcery) this.nextSorceryHasFlash = false; // Quicken's flash is for one sorcery
         this.say('  Gale recasts', target);
         this.spellsCast += 1;
         this.onCastInstantOrSorcery(true);
@@ -411,7 +417,9 @@ export class GaleGame extends Game<KillSearchState> {
     if (
       COMBO_SORC.has(name) ||
       Facts.COUNTERS.has(name) ||
-      Facts.RITUALS.has(name)
+      Facts.RITUALS.has(name) ||
+      name === QUICKEN ||
+      name === BORNE_UPON_A_WIND // kept to give a sorcery flash (instant-speed.ts)
     )
       return 0;
     if (name === 'See the Truth') return fromGraveyard ? 62 : 42;
@@ -452,6 +460,17 @@ export class GaleGame extends Game<KillSearchState> {
   }
   candidates(main2: boolean): Candidate[] {
     return buildCandidates(this, main2);
+  }
+  override opponentsEndStepCandidates(): Candidate[] {
+    return buildOpponentsEndStepCandidates(this);
+  }
+
+  /** Mana kept untapped on our turn: in a pod by the pod's rule; in a goldfish game with hold_counter on, the
+   *  cheapest counterspell's once Gale is out (a kill is still taken: develop looks for it first). */
+  override podReserve(): number {
+    if (this.inArena()) return super.podReserve();
+    if (!this.config.hold_counter || !this.isOnBattlefield(GALE)) return 0;
+    return this.cheapestAnswerManaValue();
   }
 
   override canTapForEnergy(permanent: Permanent): boolean {
@@ -559,6 +578,7 @@ export class GaleGame extends Game<KillSearchState> {
       untapped5: untappedOnTurn(5),
       untapped6: untappedOnTurn(6),
       missingAtTurn6: this.missingAtTurn6,
+      opponentsEndStepCasts: this.opponentsEndStepCasts,
     };
   }
 

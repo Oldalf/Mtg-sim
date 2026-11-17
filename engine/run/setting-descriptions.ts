@@ -14,6 +14,8 @@ export const SHARED_SETTING_DESCRIPTIONS: Record<string, string> = {
     "Cards in each goldfish opponent's library at the start (99 minus the opening 7); matters for mill wins. In a pod the real libraries are used.",
   on_play_chance:
     'The chance we play first and skip the first draw (0.25 = 1 in 4, as in a 4-player pod). In a pod the seat decides.',
+  opponents_end_step:
+    "On: at the end of the opponents' turns (the turn just before ours) the deck casts instants with the mana left from its turn, and sorceries when something gives them flash (Wizards of Thay, Leyline of Anticipation, Emergence Zone, Borne Upon a Wind, Quicken). Leyline of Anticipation then starts on the battlefield from the opening hand. Only decks with this setting.",
   search_budget:
     'How hard the AI looks for a winning line each time it checks: the most positions the kill search tries. 0 = no kill search (the deck checks its win its own way).',
   smart_mulligan:

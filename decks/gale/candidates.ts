@@ -15,6 +15,11 @@ import type { GaleGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Candidate } from '../../engine/game/game-types';
 import { firstMin } from '../../engine/util/lists';
+import {
+  canCastSorceriesNow,
+  gainSorceryFlash,
+  sorceryFlashCost,
+} from '../../engine/game/instant-speed';
 
 /** Best graveyard card of the other type for Gale, given we just paid for cd. */
 export function bestGaleRecastTarget(
@@ -28,7 +33,8 @@ export function bestGaleRecastTarget(
   for (const candidate of game.graveyard) {
     if (
       candidate === card ||
-      !(wantSorc ? candidate.isSorcery : candidate.isInstant)
+      !(wantSorc ? candidate.isSorcery : candidate.isInstant) ||
+      (candidate.isSorcery && !canCastSorceriesNow(game)) // the opponents' turns: a sorcery needs flash
     )
       continue;
     const score = game.instantOrSorceryDevValue(candidate, true);
@@ -69,6 +75,41 @@ export function buildCandidates(game: GaleGame, main2: boolean): Candidate[] {
   if (game.config.self_counter_dev ?? true)
     candidates.push(...selfCounterDevelopmentCandidates(game));
   if (main2) candidates.push(...manaSinkCandidates(game));
+  return candidates;
+}
+
+/** What Gale casts at the end of the opponents' turns (engine/game/instant-speed.ts): the draw spells and tutors it would
+ *  cast on its own turn, instants, and sorceries when it has flash or can get it (the enabler's cost is added). Not the
+ *  combo spells, counterspells or rituals: the kill comes on our own turn. Gale recasts from the graveyard as usual. */
+export function buildOpponentsEndStepCandidates(game: GaleGame): Candidate[] {
+  const candidates: Candidate[] = [];
+  const seenNames = new Set<string>();
+  for (const card of game.hand.slice()) {
+    if (seenNames.has(card.name) || !card.isInstantOrSorcery) continue;
+    seenNames.add(card.name);
+    const score = game.instantOrSorceryDevValue(card);
+    if (score <= 0) continue;
+    if (card.isInstant) {
+      candidates.push({
+        score,
+        cost: game.effectiveCost(card),
+        isInstantOrSorcery: true,
+        action: () => castWithGaleRecast(game, card),
+      });
+      continue;
+    }
+    const flashCost = sorceryFlashCost(game);
+    if (flashCost === null) continue;
+    candidates.push({
+      score,
+      cost: game.effectiveCost(card).plus(flashCost),
+      isInstantOrSorcery: true,
+      action: () =>
+        gainSorceryFlash(game, game.effectiveCost(card)) &&
+        game.hand.includes(card) &&
+        castWithGaleRecast(game, card),
+    });
+  }
   return candidates;
 }
 

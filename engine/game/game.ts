@@ -563,6 +563,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   /** Mana to leave untapped on our own turn for the cheapest instant-speed answer in hand (from round config.hold_from, default 5). */
   override podReserve(): number {
     if (!this.isHoldingManaForAnswers()) return 0;
+    return this.cheapestAnswerManaValue();
+  }
+  /** The mana value of the cheapest instant-speed answer in hand (not a wipe), or 0 without one. */
+  cheapestAnswerManaValue(): number {
     let best = 0;
     for (const card of this.hand) {
       const answer = this.answer(card);

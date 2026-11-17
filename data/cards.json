@@ -12241,5 +12241,44 @@
   "layout": "normal",
   "oracle_id": "fee680c6-afe2-4321-9d8a-8f81a612a53b",
   "scryfall_id": "219d3e48-e0b1-472d-ac45-11c14b292c9e"
+ },
+ "Emergence Zone": {
+  "name": "Emergence Zone",
+  "full_name": "Emergence Zone",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{1}, {T}, Sacrifice this land: You may cast spells this turn as though they had flash.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "7536eb66-959d-4dca-9b75-895572ef733c",
+  "scryfall_id": "ab95f6e7-b806-47fe-a071-6c38b3176d94"
+ },
+ "Borne Upon a Wind": {
+  "name": "Borne Upon a Wind",
+  "full_name": "Borne Upon a Wind",
+  "mana_cost": "{1}{U}",
+  "type_line": "Instant",
+  "oracle": "You may cast spells this turn as though they had flash.\nDraw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "ce19962d-94f9-4b2b-b668-963c0acce308",
+  "scryfall_id": "a9379675-1a32-4e2b-8aaf-5f908c595f31"
+ },
+ "Quicken": {
+  "name": "Quicken",
+  "full_name": "Quicken",
+  "mana_cost": "{U}",
+  "type_line": "Instant",
+  "oracle": "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)\nDraw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "cf188dd3-1927-481b-b8c0-93b1222dbf53",
+  "scryfall_id": "67751745-61c9-488f-b5b3-310c0bafdda7"
  }
 }

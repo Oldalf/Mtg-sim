@@ -123,6 +123,12 @@ export const deck = {
     missingAtTurn6(1, 'no Gale'),
     missingAtTurn6(2, 'Gale, but a package piece missing'),
     missingAtTurn6(3, 'Gale and a package, no line (mana)'),
+    {
+      label: "Spells cast at the end of the opponents' turns (per game)",
+      unit: 'n' as const,
+      measure: (rows: DiagRow[]) =>
+        averageOf(rows, (row) => (row.opponentsEndStepCasts as number) ?? 0),
+    },
   ],
   // --hands: what to look for in an opening hand
   handFeatures: [

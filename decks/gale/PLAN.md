@@ -66,6 +66,19 @@ Nothing is clearly real: only Wizards of Thay and Thespian's Stage reach +2.7 by
 
 Gale is rarely the problem. About two turns pass between having the pieces and killing, so mana on the kill turn (or Gale's recast fuel) matters more than R1's Rain of Filth result suggested, and finding the last piece is the other third. The AI taps out every turn, so in goldfish it never pays the price of holding a counterspell up: see R3 in the root `PLAN.md`.
 
+**Holding protection and instant speed** (task R3, 2026-11-17, `lists/proposed.txt`, 4,000 games, same seeds). `hold_counter`: once Gale is out, keep the mana for the cheapest counterspell in hand untapped on our turn. `opponents_end_step`: at the end of the turn before ours, cast instants (and sorceries with flash) with the mana left over. Both off by default.
+
+| Settings / list | By T6 | By T7 | By T8 | Backup T7 | Backup T8 | Avg turn |
+|---|---|---|---|---|---|---|
+| default | 18.5 | 48.8 | 74.1 | 29.2 | 54.3 | 7.04 |
+| hold_counter | 13.6 | 38.0 | 65.8 | 20.8 | 46.4 | 7.17 |
+| opponents_end_step | 18.5 | 48.8 | 74.1 | 29.2 | 54.7 | 7.04 |
+| both | 14.0 | 40.0 | 67.3 | 22.3 | 47.7 | 7.15 |
+| both, Emergence Zone for an Island | 13.6 | 39.3 | 66.7 | 21.6 | 46.7 | 7.16 |
+| both, Borne Upon a Wind / Quicken / Leyline for Mocking Sprite / Personal Tutor / Thespian's Stage | 13.3 | 39.3 | 65.8 | 21.8 | 47.5 | 7.15 |
+
+Keeping a counterspell up costs about 9 to 11 points by turn 7, and the backup measure drops with it (the setup comes later). The window alone changes nothing, since the AI taps out; with mana held up it casts 0.4 spells per game and wins back about 2 points. The flash enablers add nothing beyond noise: Wizards of Thay already gives flash and the deck has few sorceries worth casting at the end of a turn. So instant speed is not where Gale's speed is; the honest price of playing with protection up is. Not modelled: using the held counterspell (goldfish opponents do nothing), and a kill in the window.
+
 ## Pontus's real games (`logs/`)
 
 | Game | Result | What the analysis found |

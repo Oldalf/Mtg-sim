@@ -75,6 +75,11 @@ import { enterTriggerCount } from './trigger-doublers';
 import { castInstantOrSorceryTriggers } from './spell-copies';
 import { addFirebendingMana } from './firebending';
 import {
+  playOpponentsEndStep,
+  putOpeningHandLeylineOntoBattlefield,
+  resolveFlashSpell,
+} from './instant-speed';
+import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
@@ -232,6 +237,13 @@ export abstract class GameCore<S = unknown> {
   attacked = false;
   firstDrawDone = false;
   wallUsed = false;
+  /** Instant speed on the opponents' turns (engine/game/instant-speed.ts): we are in that window now, sorceries
+   *  have flash this turn (Borne Upon a Wind, Emergence Zone), the next sorcery has flash (Quicken), and how many
+   *  spells the windows cast in this game (for --diag). */
+  isInOpponentsTurn = false;
+  sorceriesHaveFlashThisTurn = false;
+  nextSorceryHasFlash = false;
+  opponentsEndStepCasts = 0;
   landPlayed = false;
   /** Pain damage of the lands tapped by the payment in progress (dealt when pay() commits). */
   painTaps = 0;
@@ -1250,6 +1262,7 @@ export abstract class GameCore<S = unknown> {
     if (resolveLandSearch(this, card)) return;
     if (resolveReanimationSpell(this, card)) return;
     if (resolveBlinkSpell(this, card)) return;
+    if (resolveFlashSpell(this, card)) return;
     this.resolveOther(card, fromGraveyard, mode);
   }
 
@@ -1727,6 +1740,7 @@ export abstract class GameCore<S = unknown> {
     const cost = this.effectiveCost(card, base, fromGraveyard);
     if (!this.pay(cost, true)) return false;
     this.takeCard(card, fromGraveyard ? 'graveyard' : 'hand');
+    if (card.isSorcery) this.nextSorceryHasFlash = false; // Quicken's flash is for one sorcery
     this.sayEvent(
       'cast',
       'cast',
@@ -2332,6 +2346,7 @@ export abstract class GameCore<S = unknown> {
     if (killResult !== null) return killResult;
     this.enterStep('end');
     this.endTurn();
+    if (!this.inArena()) playOpponentsEndStep(this);
     const valueAtTurnEnd = this.positionValue();
     if (this.turn >= (this.config.max_turn as number) + 1)
       return valueAtTurnEnd;
@@ -2499,6 +2514,7 @@ export abstract class GameCore<S = unknown> {
     this.landPlayed = false;
     this.wallUsed = false;
     this.lastKey = null;
+    this.sorceriesHaveFlashThisTurn = this.nextSorceryHasFlash = false;
   }
 
   /** A quiet copy of the game for a search to play moves on: no log, and it never plays kill lines of its own. */
@@ -2566,6 +2582,7 @@ export abstract class GameCore<S = unknown> {
     this.spellsCast = 0;
     this.mulligan();
     this.say('opening hand', formatList(this.hand.map((card) => card.name)));
+    putOpeningHandLeylineOntoBattlefield(this);
   }
 
   /** One full turn of ours. Returns true when the game ended in it (a win, or we lost). A pod plays the decks' turns in seat order. */
@@ -2601,6 +2618,7 @@ export abstract class GameCore<S = unknown> {
     if (this.inArena() && this.config.pod_defence !== false) this.podDefence();
     this.logCardMovesSoFar();
     this.endTurn();
+    if (!this.inArena()) playOpponentsEndStep(this);
     if (this.turn === 4) {
       // for the card ranking: every card seen by the end of turn 4
       this.seen4 = new Set(
@@ -2682,6 +2700,10 @@ export abstract class GameCore<S = unknown> {
   abstract killSearch(): KillSearcher<S>;
   /** Everything the AI may do now. */
   abstract candidates(main2: boolean): Candidate[];
+  /** What the AI may cast at instant speed at the end of the opponents' turns (engine/game/instant-speed.ts). */
+  opponentsEndStepCandidates(): Candidate[] {
+    return [];
+  }
 
   /** How much we want this card in hand (used for discards, scry, tutors, mulligans). */
   cardValue(card: CardDef): number {

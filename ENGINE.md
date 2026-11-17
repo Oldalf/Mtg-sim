@@ -48,7 +48,7 @@ Followed:
 Knowingly not followed:
 - Goldfish opponents never act, and in a pod they act only in answer windows. There is no full stack and no priority.
 - Combat's steps (506–511) are one step, `combat`.
-- No instant-speed plays on other players' turns except the pod's answers (see ideas below).
+- Instant-speed plays on other players' turns: only the pod's answers, and one window at the end of the turn just before ours for a deck with `opponents_end_step` on (`engine/game/instant-speed.ts`: instants, and sorceries with flash from Wizards of Thay, Leyline of Anticipation, Vedalken Orrery, Borne Upon a Wind, Quicken or Emergence Zone). No kill is looked for in that window. With it on, Leyline of Anticipation starts on the battlefield from the opening hand (Azula plays it without the window, so not yet for her).
 - A goldfish opponent's library is a number, not cards.
 - Filter lands, Hideaway and Bojuka Bog's exile are not modelled.
 - Loops are cut short after their first rounds, as rule 732 (Taking Shortcuts) lets a player do.
@@ -59,7 +59,7 @@ Knowingly not followed:
 | Folder | Files | What it is |
 |---|---|---|
 | `engine/cards/` | `cards`, `card-facts`, `land-text`, `scryfall`, `card-images` | Card data and facts that hold in any deck |
-| `engine/game/` | `game-core`, `game`, `game-types`, `mulligan`, `answers`, `search`, `kill-line`, `kill-line.test`, `payment-search`, `log-format` | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
+| `engine/game/` | `game-core`, `game`, `game-types`, `mulligan`, `answers`, `search`, `kill-line`, `kill-line.test`, `payment-search`, `log-format`, `instant-speed` | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
 | `engine/game-log/` | `game-log`, `game-log-moves`, `-text`, `-tags`, `-files`, `-run`, `-replay`, `-archidekt`, `logged-runs`, `game-log.test` | Logging a game and reading logs back |
 | `engine/pod/` | `pod`, `pod-arena`, `pod-table`, `pod-combat`, `pod-blocking`, `pod-interaction`, `pod-report`, `pod.test` | Decks playing each other |
 | `engine/run/` | `runner`, `worker-pool`, `worker-pool.test`, `power-save`, `setting-descriptions` | Running many games |
@@ -92,5 +92,4 @@ Knowingly not followed:
 ## Ideas for later
 
 - Game logs: Meren is about 30% slower with the log on (7.4 s against 5.7 s for 3,000 games; the other decks 1 to 7%), because the table is compared at every log line. The analyzer's `Board` in `tools/log-board.ts` and the log's board in `shared/game-log-board.ts` each have their own code for applying a move. A game that crashes keeps its log so far, but no game has crashed, so that path is untested.
-- Play at instant speed on opponents' turns (Gale's Wizards of Thay, end-of-turn draws and tutors).
 - Planner only when the top plays are close (about 40% of Gale's run time).
