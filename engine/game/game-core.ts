@@ -28,7 +28,8 @@ import * as Facts from '../cards/card-facts';
 import { Cost, CardDef } from '../cards/cards';
 import { ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
 import { Rng } from '../util/rng';
-import { MulliganRule, DEFAULT_MULLIGAN, keepsHand } from './mulligan';
+import { MulliganRule } from './mulligan';
+import { drawOpeningHand, playTurn } from './turn';
 import { formatLogPart, formatList } from './log-format';
 import {
   EventKind,
@@ -78,7 +79,6 @@ import { enterTriggerCount } from './trigger-doublers';
 import { castInstantOrSorceryTriggers } from './spell-copies';
 import { addFirebendingMana } from './firebending';
 import {
-  playOpponentsEndStep,
   putOpeningHandLeylineOntoBattlefield,
   resolveFlashSpell,
 } from './instant-speed';
@@ -1192,29 +1192,9 @@ export abstract class GameCore<S = unknown> {
     return null;
   }
 
+  /** Draws the opening hand with its mulligans (turn.ts). */
   mulligan(): void {
-    const rule = this.mulliganRule() ?? DEFAULT_MULLIGAN;
-    const sizes = [7, 7, 6, 5];
-    for (let attempt = 0; attempt < sizes.length; attempt++) {
-      const size = sizes[attempt];
-      for (const card of this.hand.slice())
-        this.moveCard(card, 'hand', 'library');
-      this.shuffle();
-      for (const card of this.takeTopCardsOfLibrary(7))
-        this.putCard(card, 'hand');
-      if (
-        size <= (rule.alwaysKeep ?? 5) ||
-        keepsHand(rule, attempt, this.hand)
-      ) {
-        for (let i = 0; i < 7 - size; i++) {
-          const card = firstMin(this.hand, (otherCard) =>
-            this.cardValue(otherCard),
-          );
-          this.moveCard(card, 'hand', 'library');
-        }
-        return;
-      }
-    }
+    drawOpeningHand(this);
   }
 
   startTurn(): void {
@@ -1328,54 +1308,7 @@ export abstract class GameCore<S = unknown> {
 
   /** One full turn of ours. Returns true when the game ended in it (a win, or we lost). A pod plays the decks' turns in seat order. */
   takeTurn(): boolean {
-    this.startTurn();
-    this.sayEvent('turn-start');
-    if (this.turn > 1 && !this.inArena()) this.opponentUpkeep();
-    this.enterStep('upkeep');
-    this.upkeep();
-    this.upkeepTriggersOfTheGame();
-    this.enterStep('draw');
-    if (!(this.turn === 1 && this.onPlay)) this.draw(1);
-    this.logCardMovesSoFar();
-    this.enterStep('main1');
-    this.playLand();
-    if (this.developWin()) return true;
-    this.logCardMovesSoFar();
-    this.enterStep('combat');
-    this.combat();
-    this.attackWithForcedCreatures();
-    this.logCardMovesSoFar();
-    if (this.areOpponentsBeaten()) {
-      if (this.unprotectedKillTurn === null)
-        this.unprotectedKillTurn = this.turn;
-      this.protectedKillTurn = this.turn;
-      this.sayEvent('win', 'Opponents beaten in combat');
-      return true;
-    }
-    this.lastKey = null;
-    this.enterStep('main2');
-    if (this.developWin(true)) return true;
-    this.enterStep('end');
-    if (this.inArena() && this.config.pod_defence !== false) this.podDefence();
-    this.logCardMovesSoFar();
-    this.endTurn();
-    if (!this.inArena()) playOpponentsEndStep(this);
-    if (this.turn === 4) {
-      // for the card ranking: every card seen by the end of turn 4
-      this.seen4 = new Set(
-        [...this.hand, ...this.graveyard, ...this.exile].map(
-          (card) => card.name,
-        ),
-      );
-      for (const permanent of this.battlefield)
-        this.seen4.add(permanent.card.name);
-    }
-    this.sayEvent(
-      'turn-end',
-      'end: hand',
-      formatList(this.hand.map((card) => card.name)),
-    );
-    return false;
+    return playTurn(this);
   }
 
   /** develop(), but in a pod a declared win may be answered: then the turn goes on without the card it was stopped at. */
