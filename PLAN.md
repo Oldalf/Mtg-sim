@@ -34,7 +34,7 @@ Rules for every task:
 | 3 | R3 | Instant speed on the opponents' turns, and flash enablers (done) | Opus 5.5 |
 | 4 | R4 | Gale: model Merchant Scroll, Mnemonic Wall, Aetherize (done in R5) | Sonnet 5.5 |
 | 5 | R5 | Gale: swap tests, budget about 15 € (done) | Sonnet 5.5 |
-| 6 | R6 | Gale in a lower-bracket pod | Sonnet 5.5 |
+| 6 | R6 | Gale in a lower-bracket pod (done) | Sonnet 5.5 |
 
 Done on 2026-11-16 without a task: **Edgar's commander cast.** Edgar stays in the command zone (eminence works there) and is cast only with mana nothing else wants (`COMMANDER_CAST_SCORE` in `decks/edgar/candidates.ts`; it was the first play). Goldfish, 2,000 games: win by turn 10 65.0% against 66.2% before; never casting him is 43.9%, because his attack puts counters on every Vampire, so he is still cast late (in 76% of games). Pod with Meren, Gale and Helga (1,000 games): Edgar 26.2% against 24.9%. The regress and pod baselines were re-recorded.
 
@@ -114,3 +114,5 @@ Done 2026-11-17 (Opus 5.5), with R4's modelling (Pontus: model them first): Merc
 ## R6. Gale in a lower-bracket pod (Sonnet 5.5)
 
 Gale's pod win rate with the friends' decks (for example `npm run pod -- gale helga ardyn teval -n 1000`): `proposed.txt` against `lists/speed.txt` (R5), and `speed.txt` with Mocking Sprite back for Aetherize. Report the win rate and the turn Gale dies when it loses. Pontus decides the swaps.
+
+Done 2026-11-17 (Opus 5.5), `decklist.txt` added (Pontus): win rate with Helga, Ardyn, Teval / with Helga, Thantis, DnD (4,000 games each): decklist.txt 31.4 / 26.5%, proposed.txt 34.9 / 31.3%, speed.txt 38.9 / 35.2%; Aetherize or Mocking Sprite makes no difference. Gale is the first one out in about half its games. Table in `decks/gale/PLAN.md`. No code changed. **P:** whether to adopt `speed.txt`.

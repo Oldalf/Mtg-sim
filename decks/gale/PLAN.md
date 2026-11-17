@@ -94,6 +94,17 @@ Keeping a counterspell up costs about 9 to 11 points by turn 7, and the backup m
 
 **The pick: `lists/speed.txt`** = `proposed.txt` with Merchant Scroll for Personal Tutor, Rain of Filth for Wizards of Thay and Aetherize for Mocking Sprite (about 9.25 €). At 16,000 games (noise ±1.1): kill by turn 6 / 7 / 8 21.6 / 52.7 / 76.5% against 17.9 / 48.0 / 73.7%, **with backup by turn 8 58.9% against 53.7%**, average turn 6.97 against 7.06. Merchant Scroll finds High Tide or a counterspell, so it lifts the protected kills most; Rain of Filth lifts the speed; Aetherize costs nothing in goldfish and is there for the creature decks. Sapphire Medallion and Mnemonic Wall add nothing. With Wizards of Thay out the flash window has nothing to give sorceries flash; R3 showed that is worth little.
 
+**In the pod** (task R6, 2026-11-17, 4,000 games per run, noise about ±1.6 points; 25% is an even share in a 4-player pod). Gale's win rate, and in brackets the share of its games where it was the first player out.
+
+| Gale's list | With Helga, Ardyn, Teval | With Helga, Thantis, DnD |
+|---|---|---|
+| `decklist.txt` (home) | 31.4% (51.9%) | 26.5% (56.7%) |
+| `lists/proposed.txt` | 34.9% (49.1%) | 31.3% (54.0%) |
+| `lists/speed.txt` | **38.9%** (47.2%) | **35.2%** (50.8%) |
+| `speed.txt` with Mocking Sprite instead of Aetherize | 38.5% (47.7%) | 35.2% (51.1%) |
+
+Each step is worth about 4 points in both pods: home list to proposed, proposed to speed. Gale wins when it is fast (average win turn 6.9 to 7.4) and is otherwise often the first one out (about half its games, nearly all to life loss). Aetherize changes nothing measurable: the pod casts it only against a lethal or big attack (`engine/game/game.ts`), which is rare, so its slot is a free choice. The DnD / Helga / Thantis pod stops a third of Gale's win attempts (against about 11% with Ardyn and Teval).
+
 ## Pontus's real games (`logs/`)
 
 | Game | Result | What the analysis found |
