@@ -97,6 +97,12 @@ import {
   whatPoolIsShortOf,
 } from './mana-payment';
 import { entersTappedByItsText, playBestLand } from './land-play';
+import {
+  developTurn,
+  moveRockFirst,
+  planBestOption,
+  ritualCandidatesThatHelp,
+} from './planner';
 
 /** The pool, which permanents are tapped, and how many payments the log has noted (an undone payment is not logged). */
 type Snap = [ManaPool, boolean[], number];
@@ -1183,55 +1189,8 @@ export abstract class GameCore<S = unknown> {
    *  pays for real and restores a snapshot.) */
   ritualCandidates(candidates: Candidate[]): Candidate[] {
     return this.withoutExpendableMana(() =>
-      this.ritualCandidatesTested(candidates),
+      ritualCandidatesThatHelp(this, candidates),
     );
-  }
-
-  private ritualCandidatesTested(candidates: Candidate[]): Candidate[] {
-    const out: Candidate[] = [];
-    const bestAffordable = () =>
-      Math.max(
-        0,
-        ...candidates
-          .filter((candidate) =>
-            this.canPay(candidate.cost, candidate.isInstantOrSorcery),
-          )
-          .map((candidate) => candidate.score),
-      );
-    let affordableBest: number | null = null; // (worked out only if there is a ritual in hand)
-    for (const card of this.hand) {
-      const cardName = card.name;
-      if (
-        cardName !== 'Dark Ritual' &&
-        cardName !== 'High Tide' &&
-        cardName !== 'Cabal Ritual' &&
-        cardName !== 'Drain Power' &&
-        cardName !== 'Energy Tap'
-      )
-        continue;
-      if (affordableBest === null) affordableBest = bestAffordable();
-      const snapshot = this.takeSnapshot();
-      if (!this.pay(this.effectiveCost(card), true)) {
-        this.restore(snapshot);
-        continue;
-      }
-      if (cardName === 'Dark Ritual') this.pool.B += 3;
-      else if (cardName === 'High Tide') this.highTidesThisTurn += 1;
-      else if (cardName === 'Cabal Ritual') this.pool.B += this.cabalMana();
-      else if (cardName === 'Drain Power') this.pool.C += this.drainPowerMana();
-      else this.pool.C += this.energyTapTarget()?.card.manaValue ?? 0;
-      const gain = bestAffordable();
-      if (cardName === 'High Tide') this.highTidesThisTurn -= 1;
-      this.restore(snapshot);
-      if (gain >= 60 && gain > affordableBest!)
-        out.push({
-          score: gain - 1,
-          cost: this.effectiveCost(card),
-          isInstantOrSorcery: true,
-          action: () => this.castRitual(card),
-        });
-    }
-    return out;
   }
 
   /** Cabal Ritual: {B}{B}{B}, or five with threshold (seven or more cards in the graveyard). */
@@ -1273,43 +1232,11 @@ export abstract class GameCore<S = unknown> {
     return this.castInstantOrSorcery(card);
   }
 
-  /** If casting a mana rock first still leaves enough (with the rock's own mana) for the best play,
-   *  move the rock to the front: e.g. Waterskin, tap it, then Scion with the rest. */
-  rockFirst(candidates: Candidate[]): void {
-    const top = candidates.find(
-      (candidate) =>
-        candidate.score > 0 &&
-        this.canPay(candidate.cost, candidate.isInstantOrSorcery),
-    );
-    if (!top) return;
-    for (let i = 0; i < candidates.length; i++) {
-      const candidate = candidates[i];
-      if (candidate.score < 50 || !candidate.rock || candidate === top)
-        continue;
-      const snapshot = this.takeSnapshot();
-      let topSpellPayable = false;
-      this.withoutExpendableMana(() => {
-        if (this.pay(candidate.cost, false)) {
-          const permanent = new Permanent(candidate.rock!);
-          this.battlefield.push(permanent);
-          topSpellPayable = this.canPay(top.cost, top.isInstantOrSorcery);
-          this.battlefield.pop();
-        }
-      });
-      this.restore(snapshot);
-      if (topSpellPayable) {
-        candidates.splice(i, 1);
-        candidates.unshift(candidate);
-        return;
-      }
-    }
-  }
-
   orderedCandidates(main2: boolean): Candidate[] {
     const candidates = this.candidates(main2);
     candidates.push(...this.ritualCandidates(candidates));
     sortDesc(candidates, (candidate) => candidate.score);
-    this.rockFirst(candidates);
+    moveRockFirst(this, candidates);
     return candidates;
   }
 
@@ -1317,159 +1244,13 @@ export abstract class GameCore<S = unknown> {
   /** Try each option on a copy of the game (library re-shuffled, so no peeking at draws), finish the
    *  turn greedily, and score where it ends up. Returns the best index. */
   plan(options: number[], main2: boolean): number {
-    let best = options[0];
-    let bestValue: number | null = null;
-    const rolloutCount = (this.config.planner_rollouts as number) ?? 2;
-    for (const index of options) {
-      let totalValue: number | null = 0;
-      for (let rolloutIndex = 0; rolloutIndex < rolloutCount; rolloutIndex++) {
-        const rolloutCopy = this.clone();
-        rolloutCopy.verbose = false;
-        rolloutCopy.inRollout = true;
-        rolloutCopy.mode = 'any';
-        rolloutCopy.killNow = false;
-        rolloutCopy.config = {
-          ...this.config,
-          search_budget: (this.config.planner_budget as number) ?? 600,
-        };
-        rolloutCopy.rng = new Rng(Math.floor(this.rng.random() * 4294967296));
-        rolloutCopy.rng.shuffle(rolloutCopy.library);
-        if (rolloutCopy.orderedCandidates(main2)[index].action() === false) {
-          totalValue = null;
-          break;
-        }
-        totalValue += rolloutCopy.rolloutValue(main2);
-      }
-      if (totalValue === null) continue;
-      if (bestValue === null || totalValue > bestValue) {
-        best = index;
-        bestValue = totalValue;
-      }
-    }
-    return best;
+    return planBestOption(this, options, main2);
   }
 
-  /** Finish this turn greedily, then play the next turn greedily (with random draws). Rollouts always
-   *  play in "any" mode and score kills the same way in both modes, so the "any" and "protected"
-   *  games make identical choices until the first kill appears (that's what lets the runner get both
-   *  results from one game). */
-  rolloutValue(main2: boolean): number {
-    const killScore = (): number | null => {
-      if (this.protectedKillTurn !== null) return 10000;
-      if (this.unprotectedKillTurn !== null) return 9000;
-      if (this.areOpponentsBeaten()) return 10000; // e.g. Mindskinner combat kill
-      return null;
-    };
-    let won = this.develop(main2);
-    if (!won && !main2) {
-      this.enterStep('combat');
-      this.combat();
-      if (!this.areOpponentsBeaten()) {
-        this.enterStep('main2');
-        this.develop(true);
-      }
-    }
-    let killResult = killScore();
-    if (killResult !== null) return killResult;
-    this.enterStep('end');
-    this.endTurn();
-    if (!this.inArena()) playOpponentsEndStep(this);
-    const valueAtTurnEnd = this.positionValue();
-    if (this.turn >= (this.config.max_turn as number) + 1)
-      return valueAtTurnEnd;
-    this.startTurn();
-    this.opponentUpkeep();
-    this.enterStep('upkeep');
-    this.upkeep();
-    this.upkeepTriggersOfTheGame();
-    this.enterStep('draw');
-    this.draw(1);
-    this.enterStep('main1');
-    this.playLand();
-    won = this.develop();
-    if (!won) {
-      this.enterStep('combat');
-      this.combat();
-      if (!this.areOpponentsBeaten()) {
-        this.enterStep('main2');
-        this.develop(true);
-      }
-    }
-    killResult = killScore();
-    if (killResult !== null) return killResult / 2 + 0.2 * valueAtTurnEnd;
-    return valueAtTurnEnd + 0.3 * this.positionValue();
-  }
-
+  /** Do the best thing we can pay for, again and again, checking for a kill before each (planner.ts). Returns true
+   *  when the game is won. */
   develop(main2 = false): boolean {
-    for (let step = 0; step < 40; step++) {
-      this.logCardMovesSoFar();
-      if (this.checkKill() === 2) return true;
-      const candidates = this.orderedCandidates(main2);
-      const afford: number[] = [];
-      const reserve = this.podReserve();
-      candidates.forEach((candidate, i) => {
-        if (
-          candidate.score > 0 &&
-          this.canPay(candidate.cost, candidate.isInstantOrSorcery) &&
-          (reserve === 0 ||
-            this.openMana() - candidate.cost.manaValue >= reserve)
-        )
-          afford.push(i);
-      });
-      if (!afford.length) return false;
-      if (this.mode === 'protected' && this.killNow) {
-        let done = false;
-        for (const index of afford) {
-          // try the action on a copy; keep it only if the kill survives
-          const rolloutCopy = this.clone();
-          // this copy becomes the game if the kill survives, so its moves are recorded
-          rolloutCopy.moveRecorder =
-            this.moveRecorder?.copy(
-              this.battlefield,
-              rolloutCopy.battlefield,
-            ) ?? null;
-          if (rolloutCopy.orderedCandidates(main2)[index].action() === false)
-            continue;
-          if (
-            this.killSearch().search(
-              rolloutCopy.buildKillSearchState(),
-              this.config.search_budget as number,
-            ) === 0
-          )
-            continue;
-          const log = this.log;
-          Object.assign(this, rolloutCopy);
-          this.log = [...log, ...rolloutCopy.log.slice(log.length)];
-          done = true;
-          break;
-        }
-        if (!done) return false;
-        continue;
-      }
-      let order = afford;
-      if (
-        this.config.planner &&
-        !this.inRollout &&
-        afford.length > 1 &&
-        this.turn >= 2
-      ) {
-        const options = afford.slice(
-          0,
-          (this.config.planner_width as number) ?? 4,
-        );
-        const pick = this.plan(options, main2);
-        order = [pick, ...afford.filter((i) => i !== pick)];
-      }
-      let done = false;
-      for (const index of order) {
-        if (candidates[index].action() !== false) {
-          done = true;
-          break;
-        }
-      }
-      if (!done) return false;
-    }
-    return false;
+    return developTurn(this, main2);
   }
 
   // ================================================================ turn
