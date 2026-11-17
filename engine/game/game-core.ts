@@ -26,7 +26,6 @@
 import * as C from '../cards/cards';
 import * as Facts from '../cards/card-facts';
 import { Cost, CardDef } from '../cards/cards';
-import { LandInfo } from '../cards/card-facts';
 import { ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
 import { Rng } from '../util/rng';
 import { MulliganRule, DEFAULT_MULLIGAN, keepsHand } from './mulligan';
@@ -92,20 +91,13 @@ import {
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
 import {
-  COLOURS,
   manaSourceKindOf,
   payCost,
   tapForMana,
   whatPoolIsShortOf,
 } from './mana-payment';
+import { entersTappedByItsText, playBestLand } from './land-play';
 
-const BASIC_OF: Record<string, string> = {
-  W: 'Plains',
-  U: 'Island',
-  B: 'Swamp',
-  R: 'Mountain',
-  G: 'Forest',
-};
 /** The pool, which permanents are tapped, and how many payments the log has noted (an undone payment is not logged). */
 type Snap = [ManaPool, boolean[], number];
 /** The steps of a turn the engine tells apart (untap has no step: nothing happens in it; cleanup is part of endTurn). */
@@ -118,23 +110,6 @@ const LOG_ZONE: Record<CardListZone, CardZone> = {
   exile: 'exile',
   command: 'commandZone',
 };
-
-/** How good a land that makes this kind of mana is to play (A = any colour, UB = blue and black, F = fetch land). */
-const LAND_MANA_SCORE: Record<string, number> = {
-  A: 6,
-  UB: 7,
-  F: 4,
-  U: 5,
-  B: 5,
-  G: 5,
-  W: 5,
-  R: 5,
-  C: 3,
-  '': 4,
-};
-
-/** A land card's land side (a modal double-faced card has it on the back). */
-const landInfoOf = (card: CardDef): LandInfo => (card.land ?? card.mdfcLand)!;
 
 export abstract class GameCore<S = unknown> {
   killNow = false;
@@ -1147,268 +1122,12 @@ export abstract class GameCore<S = unknown> {
    *  (two or fewer other lands); slow lands (two or more other lands); battle lands and Sunken Hollow (two or
    *  more basic lands). Evaluate it before the land is on the battlefield; a land in hand doesn't count itself. */
   entersTapped(card: CardDef): boolean {
-    const landInfo = (card.land ?? card.mdfcLand)!;
-    const etbRule = landInfo.etb ?? 'untapped';
-    if (etbRule === 'tapped') return true;
-    const flag = (land: LandInfo | null, landType: string) =>
-      !!(land && (land as unknown as Record<string, boolean>)[landType]);
-    const lands = this.landsOnBattlefield();
-    if (etbRule === 'catacomb')
-      return !lands.some(
-        (permanent) =>
-          permanent.land && (permanent.land.island || permanent.land.swamp),
-      );
-    if (etbRule === 'hollow')
-      return (
-        lands.filter((permanent) => permanent.land && permanent.land.basic)
-          .length < 2
-      );
-    if (etbRule.startsWith('reveal:')) {
-      const types = etbRule.slice(7).split(',');
-      return !this.hand.some(
-        (otherCard) =>
-          otherCard !== card &&
-          otherCard.land !== null &&
-          types.some((landType) => flag(otherCard.land, landType)),
-      );
-    }
-    const cond = landInfo.cond;
-    if (!cond) return false;
-    if (cond.startsWith('check:')) {
-      const types = cond.slice(6).split(',');
-      return !lands.some((permanent) =>
-        types.some((landType) => flag(permanent.land, landType)),
-      );
-    }
-    if (cond === 'fast') return lands.length > 2;
-    if (cond === 'slow') return lands.length < 2;
-    if (cond === 'basics2')
-      return (
-        lands.filter((permanent) => permanent.land && permanent.land.basic)
-          .length < 2
-      );
-    return false;
+    return entersTappedByItsText(this, card);
   }
 
   /** Plays the best land from hand, if we haven't played one this turn. */
   playLand(): void {
-    if (this.landPlayed) return;
-    const lands = this.landsWeCouldPlay();
-    if (!lands.length) return;
-    const landsOnBattlefield = this.landsOnBattlefield().length;
-    const needManaNow = this.needsManaThisTurn();
-
-    const land = firstMax(lands, (candidate) =>
-      this.scoreLandToPlay(candidate, landsOnBattlefield, needManaNow),
-    );
-    this.takeCard(land, 'hand');
-    this.landPlayed = true;
-    const landInfo = { ...landInfoOf(land) };
-    if (landInfo.special === 'wilds') {
-      this.crackEvolvingWilds(land, landInfo);
-      return;
-    }
-    const permanent = new Permanent(
-      land,
-      landInfo,
-      this.landEntersTapped(land),
-    );
-    permanent.sick = false;
-    this.sayEvent(
-      'land',
-      'play land',
-      land.land !== null ? land : 'Inundated Archive (MDFC)',
-      permanent.tapped ? '(tapped)' : '',
-    );
-    if (landInfo.special === 'bounce') this.returnLandToHand();
-    this.putOntoBattlefield(permanent);
-    this.onLandEnter(permanent, false);
-  }
-
-  /** The lands in hand. A land-on-the-back-side card counts only when we have no real land and few lands out. */
-  private landsWeCouldPlay(): CardDef[] {
-    const lands = this.hand.filter((card) => card.land !== null);
-    const mdfcLands = this.hand.filter((card) => card.mdfcLand);
-    if (
-      !lands.length &&
-      mdfcLands.length &&
-      this.landsOnBattlefield().length < 5
-    )
-      return mdfcLands;
-    return lands;
-  }
-
-  private landEntersTapped(land: CardDef): boolean {
-    return this.entersTapped(land) || landInfoOf(land).special === 'wilds';
-  }
-
-  /** Would a land that enters untapped let us cast a spell we want this turn? (Then a tapped land is bad.) */
-  private needsManaThisTurn(): boolean {
-    const manaAvailable =
-      this.battlefield.filter(
-        (permanent) => !permanent.tapped && this.manaSourceKind(permanent),
-      ).length +
-      this.pool.U +
-      this.pool.B +
-      this.pool.C +
-      this.pool.S;
-    for (const card of [...this.hand, ...this.command]) {
-      if (card.land !== null) continue;
-      // only spells the AI would actually cast proactively (not counters, rituals, combo sorceries)
-      const [wantScore, cost] = this.landWant(card);
-      if (wantScore >= 50 && cost.manaValue === manaAvailable + 1) return true;
-    }
-    return false;
-  }
-
-  /** How good a land is to play now (higher is better): its mana, the colour we need, and whether it enters tapped. */
-  private scoreLandToPlay(
-    land: CardDef,
-    landsOnBattlefield: number,
-    needManaNow: boolean,
-  ): number {
-    const info = landInfoOf(land);
-    let score =
-      LAND_MANA_SCORE[
-        info.mana.length === 3 && info.mana[1] === '/' ? 'A' : (info.mana ?? '')
-      ] ?? 3;
-    if (
-      info.mana.length === 1 &&
-      COLOURS.includes(info.mana) &&
-      info.mana === this.colourNeededFromNewLand()
-    )
-      score += 1.5;
-    if (info.special === 'bounce') score = landsOnBattlefield >= 1 ? 8 : -5;
-    if (this.landEntersTapped(land)) score += needManaNow ? -6 : 4;
-    if (land.mdfcLand) score -= 3;
-    score += this.landBias(land);
-    return score;
-  }
-
-  /** The colour we most want the next land to make. */
-  private colourNeededFromNewLand(): string {
-    if (
-      this.colors.length === 2 &&
-      this.colors[0] === 'U' &&
-      this.colors[1] === 'B'
-    )
-      return this.colourNeededByBlueBlackDeck();
-    return this.colourNeededByOtherDeck();
-  }
-
-  private colourNeededByBlueBlackDeck(): string {
-    const sourcesOf = (kinds: string[]) =>
-      this.battlefield.filter((permanent) =>
-        kinds.includes(this.manaSourceKind(permanent, true) ?? ''),
-      ).length;
-    const blueSources = sourcesOf(['U', 'A', 'UB', 'F']);
-    const blackSources = sourcesOf(['B', 'A', 'UB', 'F']);
-    const blackNeeded = this.hand.some((card) => card.cost.black);
-    return (blackSources === 0 && blackNeeded) ||
-      (blueSources >= blackSources + 3 && blackNeeded)
-      ? 'B'
-      : 'U';
-  }
-
-  /** First, a colour that lets us cast a spell this turn with the new land (e.g. a turn-1 Llanowar Elves);
-   *  otherwise the colour with the most pips in hand per source we already have. */
-  private colourNeededByOtherDeck(): string {
-    const pipsOf: Record<string, (card: CardDef) => number> = {
-      W: (card) => card.cost.white,
-      U: (card) => card.cost.blue,
-      B: (card) => card.cost.black,
-      R: (card) => card.cost.red,
-      G: (card) => card.cost.green,
-    };
-    const makesColour = (permanent: Permanent, colour: string) => {
-      const kind = this.manaSourceKind(permanent, true) ?? '';
-      return kind === colour || kind === 'A';
-    };
-    const manaWithNewLand =
-      this.battlefield.filter(
-        (permanent) => !permanent.tapped && this.manaSourceKind(permanent),
-      ).length + 1;
-    const castable = this.hand
-      .filter(
-        (card) =>
-          card.land === null &&
-          card.manaValue > 0 &&
-          card.manaValue <= manaWithNewLand,
-      )
-      .sort(
-        (first, second) =>
-          second.manaValue - first.manaValue ||
-          this.cardValue(second) - this.cardValue(first),
-      );
-    for (const spell of castable) {
-      const coloursNeeded = this.colors.filter(
-        (colour) => pipsOf[colour](spell) > 0,
-      );
-      const missing = coloursNeeded.filter(
-        (colour) =>
-          !this.battlefield.some((permanent) => makesColour(permanent, colour)),
-      );
-      if (missing.length === 1) return missing[0];
-    }
-    let bestColour = this.colors[0];
-    let bestPipsPerSource = -1;
-    for (const colour of this.colors) {
-      const pips = this.hand.reduce(
-        (sum, card) => sum + pipsOf[colour](card),
-        0,
-      );
-      const sources = this.battlefield.filter((permanent) => {
-        const kind = this.manaSourceKind(permanent, true) ?? '';
-        return (
-          makesColour(permanent, colour) ||
-          (kind.length === 2 && kind.includes(colour))
-        );
-      }).length;
-      const pipsPerSource = pips / (sources + 1);
-      if (pipsPerSource > bestPipsPerSource) {
-        bestColour = colour;
-        bestPipsPerSource = pipsPerSource;
-      }
-    }
-    return bestColour;
-  }
-
-  /** Evolving Wilds: sacrifice it and put a basic land onto the battlefield tapped. */
-  private crackEvolvingWilds(wilds: CardDef, wildsInfo: LandInfo): void {
-    const colour = this.colourNeededFromNewLand();
-    const basic =
-      this.library.find((card) => card.name === BASIC_OF[colour]) ??
-      this.library.find((card) => card.land && card.land.basic) ??
-      null;
-    this.putCard(wilds, 'graveyard');
-    if (basic) {
-      this.takeCard(basic, 'library');
-      this.shuffle();
-      const basicPermanent = new Permanent(basic, basic.land, true);
-      this.putOntoBattlefield(basicPermanent);
-      this.onLandEnter(new Permanent(wilds, wildsInfo), true);
-      this.onLandEnter(basicPermanent, false);
-    }
-    this.sayEvent('land', 'play Evolving Wilds -> crack for', basic ?? 'None');
-  }
-
-  /** A land that returns another land to hand (a bounce land): returns the best one, preferring a nonbasic and a tapped
-   *  one. An untapped one is tapped for mana first, so the mana isn't lost. */
-  private returnLandToHand(): void {
-    const others = this.battlefield.filter(
-      (permanent) => permanent.land !== null,
-    );
-    if (!others.length) return;
-    others.sort(
-      (first, second) =>
-        +!first.land!.basic - +!second.land!.basic ||
-        +!first.tapped - +!second.tapped,
-    );
-    const returned = others[0];
-    if (!returned.tapped && this.manaSourceKind(returned))
-      this.tap(returned, 'N');
-    this.takeFromBattlefield(returned);
-    this.putCard(returned.card, 'hand');
+    playBestLand(this);
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */
