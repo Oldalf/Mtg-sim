@@ -9,6 +9,9 @@
  * Reading order (one section per banner below):
  *   state and helpers -> mana -> zones and drawing -> effects of common cards -> creatures -> life and damage
  *   -> casting -> lands -> choosing what to do (candidates, the turn planner) -> the turn -> deck hooks -> combat.
+ * This class keeps the state, the hooks and every method a deck calls; the larger bodies live in topic files as
+ * functions that take the game (ENGINE.md, "How the game class is split"): mana-payment.ts, common-spells.ts,
+ * land-play.ts, planner.ts, kill-line.ts (checkKill), turn.ts, goldfish-combat.ts.
  *
  * A turn (takeTurn): startTurn, upkeep, draw, playLand, developWin (cast things until nothing is worth doing; each
  * step first checks for a kill), combat, developWin again (second main phase), endTurn.

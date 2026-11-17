@@ -91,7 +91,7 @@ export interface Candidate {
   cost: Cost;
   isInstantOrSorcery: boolean;
   action: () => boolean;
-  rock?: CardDef; // the mana rock this casts from hand (see rockFirst)
+  rock?: CardDef; // the mana rock this casts from hand (see moveRockFirst in planner.ts)
 }
 
 /** One step of a kill line a search found. The game plays it for real (GameCore.playKillStep); a deck's steps may carry
