@@ -53,6 +53,8 @@ Step 10 did the same steps by hand three times (R1, R3, R5). Write `.claude/skil
 4. Reporting: one table in the deck's `PLAN.md` (by turn, with backup when the deck has it, average turn, difference and noise), prices from `data/scryfall/oracle-cards.jsonl.gz` (`prices.eur`, dated) when Pontus has a budget, a plain verdict ("within noise" below the noise line). Remove the test lists, leave `decklist.txt` and `proposed.txt` alone; Pontus decides.
 5. Try it on one real request and fix what the skill missed. List the skill in `CLAUDE.md` / `README.md` where `/add-deck` is.
 
+Done 2026-11-17 (Opus 5.5): `.claude/skills/test-swap/SKILL.md`, listed in `CLAUDE.md` and `README.md`. Tried on R5's Merchant Scroll for Personal Tutor (4,000 then 16,000 games, both settings): the base rows matched R5 to the decimal, backup by T8 +3.9 / +3.7 (line under R5's table in `decks/gale/PLAN.md`). The trial added: check the base row against the old table, run times for the eco question, which settings get the 16,000 run, a re-run goes as one line under the old table. No price tool exists: the skill has a `node -e` one-liner over the Scryfall bulk file.
+
 ## T2. Split `engine/game/game-core.ts` by topic (Opus 5.5)
 
 3,095 lines against the guide's 800 (`engine/game/game.ts` 978, `decks/aesi/game.ts` 1,192 and `decks/mike/game.ts` 962 are over too; leave those for later). The file's header already names its sections: state and helpers, mana, zones and drawing, effects of common cards, creatures, life and damage, casting, lands, choosing what to do (candidates, the planner), the turn, deck hooks, combat.

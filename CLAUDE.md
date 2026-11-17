@@ -8,6 +8,7 @@ A goldfish simulator for Commander decks, written in TypeScript and run on Node.
 - `decks/<name>/`: one folder per deck (its AI, card rules, config, lists, logs, tests).
 - `sim.ts` and `cli/`: the command line. `decks/index.ts` lists the decks.
 - `README.md` has the commands. `ENGINE.md` has the engine notes (read its rules before changing `engine/`). `PLAN.md` has the plan for the roadmap step in progress. Each deck has its own `PLAN.md`. `ROADMAP.md` has the next steps.
+- Skills in `.claude/skills/`: `/add-deck` (add a deck), `/test-swap` (test a card swap in a deck).
 
 ## Commands
 

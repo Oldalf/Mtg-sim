@@ -92,6 +92,8 @@ Keeping a counterspell up costs about 9 to 11 points by turn 7, and the backup m
 | ... + Aetherize for Mocking Sprite (9.23) | +5.6 / +5.1 | +5.4 / +5.3 | 6.96 / 7.08 |
 | ... + Sapphire Medallion for Mocking Sprite, Aetherize for Focus the Mind (15.26) | +5.6 / +5.2 | +3.5 / +4.2 | 6.92 / 7.06 |
 
+Merchant Scroll for Personal Tutor alone at 16,000 games (2026-11-17, the trial run of `/test-swap`, noise ±1.1): by T7 +1.5 / +1.3, **backup by T8 +3.9 / +3.7**, average turn 7.05 / 7.15. The by-turn columns are just above noise; the backup gain is real.
+
 **The pick: `lists/speed.txt`** = `proposed.txt` with Merchant Scroll for Personal Tutor, Rain of Filth for Wizards of Thay and Aetherize for Mocking Sprite (about 9.25 €). At 16,000 games (noise ±1.1): kill by turn 6 / 7 / 8 21.6 / 52.7 / 76.5% against 17.9 / 48.0 / 73.7%, **with backup by turn 8 58.9% against 53.7%**, average turn 6.97 against 7.06. Merchant Scroll finds High Tide or a counterspell, so it lifts the protected kills most; Rain of Filth lifts the speed; Aetherize costs nothing in goldfish and is there for the creature decks. Sapphire Medallion and Mnemonic Wall add nothing. With Wizards of Thay out the flash window has nothing to give sorceries flash; R3 showed that is worth little.
 
 **In the pod** (task R6, 2026-11-17, 4,000 games per run, noise about ±1.6 points; 25% is an even share in a 4-player pod). Gale's win rate, and in brackets the share of its games where it was the first player out.
