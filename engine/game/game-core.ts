@@ -87,13 +87,13 @@ import {
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
 import {
-  couldOtherOrderHelp,
-  couldPayAtAll,
-  manaAdded,
-  payBySearch,
-} from './payment-search';
+  COLOURS,
+  manaSourceKindOf,
+  payCost,
+  tapForMana,
+  whatPoolIsShortOf,
+} from './mana-payment';
 
-const COLOURS: readonly string[] = ['W', 'U', 'B', 'R', 'G'];
 const BASIC_OF: Record<string, string> = {
   W: 'Plains',
   U: 'Island',
@@ -130,51 +130,6 @@ const LAND_MANA_SCORE: Record<string, number> = {
 
 /** A land card's land side (a modal double-faced card has it on the back). */
 const landInfoOf = (card: CardDef): LandInfo => (card.land ?? card.mdfcLand)!;
-
-/** Which mana source to tap first for what we're short of (a colour, H = hybrid, N = generic). */
-const RANK: Record<string, Record<string, number>> = {
-  U: { U: 0, UB: 1, A: 2, F: 3, FGU: 3 },
-  B: { B: 0, UB: 1, A: 2, F: 3 },
-  W: { W: 0, A: 2 },
-  R: { R: 0, A: 2 },
-  G: { G: 0, A: 2, FGU: 3 },
-  H: { U: 0, B: 0, UB: 1, A: 2, F: 3 },
-  N: {
-    S: 0,
-    C2: 1,
-    C: 2,
-    B: 3,
-    U: 4,
-    G: 4,
-    W: 4,
-    R: 4,
-    UB: 5,
-    A: 6,
-    F: 7,
-    FGU: 7,
-  },
-};
-
-/** Ranks for source kinds not in RANK: a two-colour land ("G/W"), n colourless ("C3"), {G}{U} ("GU"). */
-function extraRank(short: string, sourceKind: string): number | null {
-  if (sourceKind.length === 3 && sourceKind[1] === '/') {
-    if (short === 'N') return 5.5;
-    if (short === 'H')
-      return sourceKind.includes('U') || sourceKind.includes('B') ? 1.5 : null;
-    return sourceKind.includes(short) ? 1 : null;
-  }
-  if (/^[WUBRG](\/[WUBRG]){2}$/.test(sourceKind)) {
-    // a three-colour land ("W/U/B")
-    if (short === 'N') return 5.6;
-    if (short === 'H')
-      return sourceKind.includes('U') || sourceKind.includes('B') ? 1.6 : null;
-    return sourceKind.includes(short) ? 1.2 : null;
-  }
-  if (/^C\d+$/.test(sourceKind)) return short === 'N' ? 0.5 : null;
-  if (sourceKind === 'GU')
-    return short === 'G' || short === 'U' ? 1 : short === 'N' ? 5 : null; // Simic Growth Chamber: both
-  return null;
-}
 
 export abstract class GameCore<S = unknown> {
   killNow = false;
@@ -465,54 +420,14 @@ export abstract class GameCore<S = unknown> {
     return cost.withGeneric(Math.max(0, cost.generic - reduction));
   }
 
-  // ================================================================ mana
+  // ================================================================ mana (mana-payment.ts)
+  /** What kind of mana a permanent makes now (a colour, A = either of the deck's colours, C<n>, ...), or null. */
   manaSourceKind(
     permanent: Permanent,
     ignoreSick = false,
     ignoreEnergybending = false,
   ): string | null {
-    if (permanent.card === TREASURE)
-      return this.isKeepingExpendableManaBack ? null : 'A';
-    if (permanent.card === ELDRAZI_SPAWN)
-      return this.isKeepingExpendableManaBack ? null : 'C';
-    if (permanent.land !== null) {
-      // Energybending: every land is also an Island and a Swamp, so it taps for either colour
-      if (
-        this.isEnergybendingActive &&
-        !ignoreEnergybending &&
-        permanent.land.mana
-      )
-        return 'A';
-      // "Activate only if you control a Swamp" (Tainted Wood): colourless without one
-      const need = permanent.land.colourIf;
-      if (
-        need &&
-        !this.battlefield.some(
-          (otherPermanent) =>
-            otherPermanent !== permanent &&
-            otherPermanent.land !== null &&
-            (otherPermanent.land as unknown as Record<string, boolean>)[need],
-        )
-      )
-        return 'C';
-      const landMana = permanent.land.mana;
-      if (landMana.length === 3 && landMana[1] === '/')
-        return this.colors.length <= 2 ? 'A' : landMana; // a two-colour land
-      return landMana || null;
-    }
-    if (permanent.card.name === "Sarevok's Tome" && this.hasInitiative)
-      return 'C2';
-    if (permanent.card.rock) return permanent.card.rock;
-    if (
-      permanent.card.name === 'Curious Homunculus' &&
-      !permanent.transformed &&
-      (ignoreSick || !permanent.sick)
-    )
-      return 'S';
-    const manaCreatureKind = Facts.MANA_CREATURES[permanent.card.name];
-    if (manaCreatureKind && (ignoreSick || !permanent.sick))
-      return manaCreatureKind;
-    return null;
+    return manaSourceKindOf(this, permanent, ignoreSick, ignoreEnergybending);
   }
 
   islandTyped(permanent: Permanent): boolean {
@@ -535,39 +450,7 @@ export abstract class GameCore<S = unknown> {
     isInstantOrSorcery: boolean,
     mutate = false,
   ): string | null {
-    const poolLeft = mutate ? this.pool : { ...this.pool };
-    if (poolLeft.U < cost.blue) return 'U';
-    poolLeft.U -= cost.blue;
-    if (poolLeft.B < cost.black) return 'B';
-    poolLeft.B -= cost.black;
-    if (poolLeft.G < cost.green) return 'G';
-    poolLeft.G -= cost.green;
-    if (poolLeft.W < cost.white) return 'W';
-    poolLeft.W -= cost.white;
-    if (poolLeft.R < cost.red) return 'R';
-    poolLeft.R -= cost.red;
-    for (let hybridPip = 0; hybridPip < cost.hybrid; hybridPip++) {
-      if (poolLeft.U >= poolLeft.B && poolLeft.U > 0) poolLeft.U -= 1;
-      else if (poolLeft.B > 0) poolLeft.B -= 1;
-      else return 'H';
-    }
-    let genericLeft = cost.generic;
-    const order: (keyof ManaPool)[] = [
-      ...(isInstantOrSorcery ? ['S' as const] : []),
-      'C',
-      ...(poolLeft.B >= poolLeft.U
-        ? (['B', 'U'] as const)
-        : (['U', 'B'] as const)),
-      'G',
-      'W',
-      'R',
-    ];
-    for (const manaType of order) {
-      const spent = Math.min(poolLeft[manaType], genericLeft);
-      poolLeft[manaType] -= spent;
-      genericLeft -= spent;
-    }
-    return genericLeft > 0 ? 'N' : null;
+    return whatPoolIsShortOf(this, cost, isInstantOrSorcery, mutate);
   }
 
   /** Which source to tap first for a generic cost (N) can be adjusted by a deck: lower = tapped first. */
@@ -575,167 +458,14 @@ export abstract class GameCore<S = unknown> {
     return rank;
   }
 
-  /** While a kill line is played (kill-line.ts): how much later than its rank a source is tapped. A source the deck
-   *  keeps back (avoidsSource) comes last; with one of the shuffled tapping orders (after the deck's own) each source
-   *  gets a fixed small change (0 to 4), the same for the same order, source and need. */
-  private killLineRankChange(permanent: Permanent, short: string): number {
-    let change = this.avoidsSource(permanent) ? 10 : 0;
-    const shuffledOrder =
-      this.killLineTappingOrder - this.killLineTappingOrders() + 1;
-    if (shuffledOrder > 0) {
-      const sourceIndex = this.battlefield.indexOf(permanent);
-      const hash =
-        (shuffledOrder * 7919 +
-          sourceIndex * 104729 +
-          short.charCodeAt(0) * 31) %
-        1000;
-      change += hash / 250;
-    }
-    return change;
-  }
-
   /** While a kill line is played, a deck may keep a source for later: it is tapped only when no other will do. */
   avoidsSource(_permanent: Permanent): boolean {
     return false;
   }
 
-  private pick(short: string, isInstantOrSorcery: boolean): Permanent | null {
-    const rank = RANK[short];
-    let best: Permanent | null = null,
-      bestRank = 99;
-    // what can feed a filter source: not the colour we are short of (it would only trade it for itself)
-    const feed =
-      this.pool.C +
-      (short === 'U' ? 0 : this.pool.U) +
-      (short === 'B' ? 0 : this.pool.B) +
-      (short === 'G' ? 0 : this.pool.G);
-    for (const permanent of this.battlefield) {
-      if (permanent.tapped) continue;
-      const sourceKind = this.manaSourceKind(permanent);
-      if (sourceKind === null) continue;
-      if (!(sourceKind in rank)) {
-        let fallbackRank = extraRank(short, sourceKind);
-        if (fallbackRank === null) continue;
-        if (this.isPlayingKillLine)
-          fallbackRank += this.killLineRankChange(permanent, short);
-        if (fallbackRank < bestRank) {
-          best = permanent;
-          bestRank = fallbackRank;
-        }
-        continue;
-      }
-      if (sourceKind === 'S' && !isInstantOrSorcery) continue;
-      if (Facts.isFilterKind(sourceKind) && feed < 1) continue;
-      let adjustedRank = this.rankAdjust(short, sourceKind, rank[sourceKind]);
-      if (this.isPlayingKillLine)
-        adjustedRank += this.killLineRankChange(permanent, short);
-      if (
-        this.highTidesThisTurn &&
-        this.islandTyped(permanent) &&
-        (short === 'U' || short === 'N' || short === 'H')
-      )
-        adjustedRank -= 0.5;
-      if (adjustedRank < bestRank) {
-        best = permanent;
-        bestRank = adjustedRank;
-      }
-    }
-    return best;
-  }
-
-  /** A pain land: the colour we need costs 1 life, {C} (for generic costs) is free. The engine taps lands to test a
-   *  payment and then undoes it, so the damage is only counted here (painTaps) and dealt when pay() commits. */
-  private tapPain(permanent: Permanent, short: string): void {
-    permanent.tapped = true;
-    const land = permanent.land!;
-    const pain = land.pain ?? '';
-    const makes = (colour: string) => C.landMakes(permanent.card, colour);
-    let colour: string | null = null;
-    if (COLOURS.includes(short) && makes(short)) colour = short;
-    else if (short === 'H') colour = ['U', 'B'].find(makes) ?? null;
-    else {
-      // a generic cost: colourless if the land can, else a colour that costs no life, else any
-      if (land.colourless) {
-        this.pool.C += 1;
-        return;
-      }
-      colour =
-        this.colors.find((colour) => makes(colour) && !pain.includes(colour)) ??
-        this.colors.find(makes) ??
-        null;
-    }
-    if (colour === null) {
-      this.pool.C += 1;
-      return;
-    }
-    this.pool[colour as keyof ManaPool] += 1;
-    if (pain.includes(colour)) this.painTaps += 1;
-  }
-
+  /** Taps a source for the mana we are short of (a colour, H = hybrid, N = generic) and adds it to the pool. */
   tap(permanent: Permanent, short: string): void {
-    if (permanent.land?.pain) {
-      this.tapPain(permanent, short);
-      return;
-    }
-    const sourceKind = this.manaSourceKind(permanent);
-    permanent.tapped = true;
-    const pool = this.pool;
-    if (sourceKind === 'U') pool.U += 1;
-    else if (sourceKind === 'B') pool.B += 1;
-    else if (sourceKind === 'G') pool.G += 1;
-    else if (sourceKind === 'W') pool.W += 1;
-    else if (sourceKind === 'R') pool.R += 1;
-    else if (sourceKind === 'A') {
-      // either of the deck's colours: the one we're short of; for generic, black if the deck plays it
-      if (COLOURS.includes(short)) pool[short as keyof ManaPool] += 1;
-      else if (short === 'N')
-        pool[
-          (this.colors.includes('B') ? 'B' : this.colors[0]) as keyof ManaPool
-        ] += 1;
-      else
-        pool[
-          (this.colors.includes('U') ? 'U' : this.colors[0]) as keyof ManaPool
-        ] += 1;
-    } else if (sourceKind === 'UB') {
-      pool.U += 1;
-      pool.B += 1;
-    } else if (sourceKind === 'GU') {
-      pool.G += 1;
-      pool.U += 1;
-    } else if (sourceKind === 'C') pool.C += 1;
-    else if (sourceKind === 'C2') pool.C += 2;
-    else if (sourceKind !== null && /^C\d+$/.test(sourceKind))
-      pool.C += parseInt(sourceKind.slice(1), 10);
-    else if (sourceKind !== null && sourceKind.includes('/')) {
-      // a two- or three-colour land ("G/W", "W/U/B"): the colour we're short of if it makes it, else its first colour
-      const colour =
-        sourceKind.includes(short) && COLOURS.includes(short)
-          ? short
-          : short === 'H' && sourceKind.includes('B')
-            ? 'B'
-            : sourceKind[0];
-      pool[colour as keyof ManaPool] += 1;
-    } else if (sourceKind === 'S') pool.S += 1;
-    else if (sourceKind !== null && Facts.isFilterKind(sourceKind)) {
-      // it is fed a mana from the pool: colourless first, never the colour we are short of if another will do
-      const [firstColour, secondColour] = Facts.FILTER_COLOURS[sourceKind];
-      const feedOrder =
-        short === secondColour
-          ? (['C', firstColour, secondColour] as const)
-          : (['C', secondColour, firstColour] as const);
-      for (const manaType of feedOrder)
-        if (pool[manaType as keyof ManaPool] > 0) {
-          pool[manaType as keyof ManaPool] -= 1;
-          break;
-        }
-      pool[firstColour as keyof ManaPool] += 1;
-      pool[secondColour as keyof ManaPool] += 1;
-    }
-    if (permanent.land !== null) {
-      if (this.highTidesThisTurn && this.islandTyped(permanent))
-        pool.U += this.highTidesThisTurn;
-      if (this.muck && this.swampTyped(permanent)) pool.B += this.muck;
-    }
+    tapForMana(this, permanent, short);
   }
 
   takeSnapshot(): Snap {
@@ -780,151 +510,10 @@ export abstract class GameCore<S = unknown> {
     }
   }
 
-  /** Pays a cost (payFromSources). Treasures and Eldrazi Spawn are spent last: only when lands, rocks and mana
-   *  creatures are not enough. A committed payment sacrifices the ones it tapped; a tested one keeps them. */
+  /** Pays a cost (mana-payment.ts): taps sources into the pool and pays from it. Treasures and Eldrazi Spawn are
+   *  spent last. commit = false only tests it (everything is undone). */
   pay(cost: Cost, isInstantOrSorcery = false, commit = true): boolean {
-    if (
-      this.isKeepingExpendableManaBack ||
-      !this.battlefield.some(
-        (permanent) =>
-          !permanent.tapped && this.isExpendableManaSource(permanent),
-      )
-    )
-      return this.payFromSources(cost, isInstantOrSorcery, commit);
-    const plannedPaymentsBefore = this.plannedPayments.slice();
-    const isPaidWithoutThem = this.withoutExpendableMana(() =>
-      this.payFromSources(cost, isInstantOrSorcery, commit),
-    );
-    if (isPaidWithoutThem) return true;
-    this.plannedPayments = plannedPaymentsBefore; // the failed try used up this cost's plan
-    const untappedBefore = this.battlefield.filter(
-      (permanent) =>
-        !permanent.tapped && this.isExpendableManaSource(permanent),
-    );
-    if (!this.payFromSources(cost, isInstantOrSorcery, commit)) return false;
-    if (commit)
-      for (const source of untappedBefore)
-        if (source.tapped) this.sacrifice(source);
-    return true;
-  }
-
-  /** Pays a cost: taps sources one by one into the pool (rules 601.2g-h, 605), then pays from the pool. The greedy
-   *  order comes first (the best source for what we are short of); if it fails while the sources could pay at all,
-   *  payment-search.ts tries other orders and colours. commit = false only tests it (everything is undone). */
-  private payFromSources(
-    cost: Cost,
-    isInstantOrSorcery: boolean,
-    commit: boolean,
-  ): boolean {
-    // undo = untap what this payment tapped and restore the pool (cheaper than a snapshot of a big board)
-    const poolBefore = { ...this.pool };
-    const tapped: Permanent[] = [];
-    const made: string[] = [];
-    const undo = () => {
-      this.pool = poolBefore;
-      for (const permanent of tapped) permanent.tapped = false;
-      tapped.length = 0;
-      made.length = 0;
-      this.painTaps = 0;
-    };
-    this.painTaps = 0;
-    const shortAtTheEnd = this.payGreedily(
-      cost,
-      isInstantOrSorcery,
-      tapped,
-      made,
-      commit,
-    );
-    let isPaid = shortAtTheEnd === null;
-    // Another order can only help when a source the greedy order tapped could have made the colour still missing
-    // (short of generic mana, it has tapped every source it could).
-    if (
-      !isPaid &&
-      shortAtTheEnd !== 'N' &&
-      couldOtherOrderHelp(this, tapped, shortAtTheEnd!)
-    ) {
-      undo();
-      this.pool = { ...poolBefore }; // the search changes the pool: keep poolBefore as it was
-      isPaid =
-        couldPayAtAll(this, cost, isInstantOrSorcery) &&
-        payBySearch(this, cost, isInstantOrSorcery, tapped, made);
-    }
-    if (!isPaid) {
-      undo();
-      return false;
-    }
-    this.short(cost, isInstantOrSorcery, true);
-    if (!commit) undo();
-    else {
-      this.spent += cost.manaValue;
-      if (this.painTaps) this.loseLife(this.painTaps);
-      this.lastPayment = tapped.map((source, i) => ({
-        source,
-        made: made[i],
-      }));
-      if (this.verbose)
-        for (const part of this.lastPayment)
-          this.paymentsForLog.push({
-            card: part.source.card.logName,
-            made: part.made,
-          });
-    }
-    this.painTaps = 0;
-    return true;
-  }
-
-  /** The greedy order: tap the best source for what we are short of until the pool holds the cost. Returns null when
-   *  it does, else what it is still short of. What each source made is only noted for a payment that commits (the
-   *  log reads it). */
-  private payGreedily(
-    cost: Cost,
-    isInstantOrSorcery: boolean,
-    tapped: Permanent[],
-    made: string[],
-    commit: boolean,
-  ): string | null {
-    const plannedSources = commit ? this.sourcesPlannedFor(cost) : [];
-    for (;;) {
-      const short = this.short(cost, isInstantOrSorcery);
-      if (short === null) return null;
-      let plannedSource: Permanent | undefined;
-      while (plannedSources.length && !plannedSource) {
-        const candidate = plannedSources.shift()!;
-        if (!candidate.tapped) plannedSource = candidate;
-      }
-      const source =
-        plannedSource ??
-        this.pick(short, isInstantOrSorcery) ??
-        this.filterSignetFeeder(short, isInstantOrSorcery);
-      if (source === null) return short;
-      if (commit) {
-        const poolBefore = { ...this.pool };
-        this.tap(source, short);
-        made.push(manaAdded(poolBefore, this.pool));
-      } else this.tap(source, short);
-      tapped.push(source);
-    }
-  }
-
-  /** A search that planned this payment (a kill line it paid for) names the sources to tap first, in order.
-   *  Only the greedy order uses them; what is still short is paid the usual way. */
-  sourcesPlannedFor(cost: Cost): Permanent[] {
-    const index = this.plannedPayments.findIndex(
-      (payment) => payment.cost === `${cost}`,
-    );
-    if (index < 0) return [];
-    const [payment] = this.plannedPayments.splice(index, 1);
-    const sources: Permanent[] = [];
-    for (const landClass of payment.taps) {
-      const source = this.battlefield.find(
-        (permanent) =>
-          !permanent.tapped &&
-          !sources.includes(permanent) &&
-          isSourceOfClass(this, permanent, landClass),
-      );
-      if (source) sources.push(source);
-    }
-    return sources;
+    return payCost(this, cost, isInstantOrSorcery, commit);
   }
 
   /** What a search planned for the step being played: the sources it tapped for each cost, in order, and the lands
@@ -933,29 +522,6 @@ export abstract class GameCore<S = unknown> {
 
   /** What the last committed payment tapped, and what each source added to the pool ("U", "UB"). */
   lastPayment: { source: Permanent; made: string }[] = [];
-
-  /** Nothing can make what we are short of, but an untapped filter Signet could (it turns {1} into {U}{B}) if a mana
-   *  were in the pool to feed it: the source to tap for that mana (as for a generic cost), or null. */
-  private filterSignetFeeder(
-    short: string,
-    isInstantOrSorcery: boolean,
-  ): Permanent | null {
-    if (!['U', 'B', 'G', 'H', 'N'].includes(short)) return null;
-    const canMakeShort = (kind: string) =>
-      short === 'H' || short === 'N'
-        ? kind === 'F'
-        : Facts.FILTER_COLOURS[kind].includes(short);
-    const hasUntappedFilterSignet = this.battlefield.some((permanent) => {
-      const kind = this.manaSourceKind(permanent);
-      return (
-        !permanent.tapped &&
-        kind !== null &&
-        Facts.isFilterKind(kind) &&
-        canMakeShort(kind)
-      );
-    });
-    return hasUntappedFilterSignet ? this.pick('N', isInstantOrSorcery) : null;
-  }
 
   canPay(cost: Cost, isInstantOrSorcery = false): boolean {
     return this.pay(cost, isInstantOrSorcery, false);
