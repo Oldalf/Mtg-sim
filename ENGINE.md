@@ -66,6 +66,24 @@ Knowingly not followed:
 | `engine/tools/` | `report`, `ranking`, `regress`, `analyze`, `log-board`, `diag-metrics` | Reports and the command line tools (`--rank`, `--cut`, `--analyze`, `--diag`, `--regress`) |
 | `engine/util/` | `lists`, `rng` | Small helpers with no imports |
 
+## How the game class is split
+
+`GameCore` (`engine/game/game-core.ts`) is the class a deck subclasses. It keeps its state (the fields), the constructor, `clone`, the log lines (`say`, `sayEvent`), the hooks a deck fills in, and every method a deck calls on the game (`this.pay(...)`, `game.draw(...)`), under the same names, so no deck changes when code moves. Methods of a few lines stay as they are.
+
+A large method body lives in a topic file as a plain function that takes the game first, as `blink.ts`, `instant-speed.ts` and `common-permanents.ts` already did. The method stays as one line that calls it (`pay(cost, ...) { return payCost(this, cost, ...); }`); a private helper moves with no method left. Inside a topic file the game's own methods are called on the game (`game.tap(...)`, `game.manaSourceKind(...)`), never as the topic file's function, so a deck's override still runs wherever it ran before. Moving code changes no logic: every deck stays IDENTICAL.
+
+| File | What lives there |
+|---|---|
+| `mana-payment.ts` | What a mana source makes (`manaSourceKind`), what the pool is short of, which source to tap, tapping (`tap`), paying (`pay`), and the taps and untaps a kill search planned |
+| `common-spells.ts` | The draw, scry, ritual, untap and tutor spells the engine knows (`resolve` asks it first), and untapping lands (`untapLands`) |
+| `land-play.ts` | Whether a land enters tapped (`entersTapped`), which land to play and playing it (`playLand`, Evolving Wilds, bounce lands) |
+| `planner.ts` | What to do next: the deck's candidates in order (rituals that help, a rock first), `develop`, and the turn planner with its rollouts |
+| `kill-line.ts` | `checkKill` (the kill search at each step of the turn) and playing a found line on a copy |
+| `turn.ts` | The mulligan and one turn of ours (`takeTurn`) |
+| `goldfish-combat.ts` | Goldfish combat for creature decks (`creatureCombat`) |
+
+Two other ways were left out. A chain of classes (`GameMana extends GameZones extends ...`) would need every method one layer uses from a later one declared abstract in the earlier one, and all fields would still sit in the first class (a subclass's fields are set after the base constructor runs). Calling functions from the decks (`pay(game, cost)` for `game.pay(cost)`) would change hundreds of lines in every deck and make them harder to read.
+
 ## What the engine provides
 
 - **Cards** (`engine/cards/cards.ts`): data from Scryfall, with facts that hold in any deck (lands, rocks, cost reducers, counters, tutors, draw spells). Unknown lands are read from their text (colours, "enters tapped", `LandInfo.cond` / `pain` / `colourless` / `colourIf`). **Lands play by their real text for every deck** (`Game.entersTapped`): always-tapped lands, snarls (reveal a card of the types from the hand), check lands (control a land of those types, battle lands count), fast lands (two or fewer other lands), slow lands and battle lands (two or more basic lands), Sunken Hollow. Pain lands deal 1 damage only when tapped for a pain colour (a generic cost uses the free {C}, or the free colour of Murmuring Bosk), dealt when a payment is made, not when it is only tested. Tainted Wood makes coloured mana only with a Swamp. Not modelled: filter lands (Twilight Mire is played as a dual), Hideaway, Bojuka Bog's exile. Mana kinds: a colour, `A` (either of the deck's colours), `UB` / `GU`-style pairs, `C<n>` (n colourless).
