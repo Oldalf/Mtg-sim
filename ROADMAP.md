@@ -66,20 +66,37 @@ The plan and its notes per task are in git (`PLAN.md` at commit `ed1a598`).
 - The Games tab has a stats page per run (the report is stored with the run).
 - Gale's kill search misses 0 of 300 seeds (step 9 done, see `PLAN.md` E1).
 
-## 8. The friends' decks for game night, then Gale (in progress)
+## 8. The friends' decks for game night, and Gale's kill search (done 2026-11-15)
 
-The plan is in `PLAN.md`: first the engine takes over the card rules decks keep writing for themselves and a deck is registered in one place, then the friends' decks are added as pod-only decks, then the pods expected on 2026-11-16 are run. After game night: Pontus's real list as a deck's `decklist.txt`, then step 9.
+The plan and its notes per task are in git (`PLAN.md` at commit `c88cda4`).
 
-## 9. Gale's kill search taps lands and counts mana for real (planned, the last task of step 8)
+- The engine took over card rules the decks kept writing for themselves (land search, reanimation, common permanents, doubled triggers), and a deck is registered in one place (`decks/index.ts`); a pod-only deck has a light path (`/add-deck`).
+- The friends' decks were added as pod-only decks: Helga, Ardyn, Teval (then Thantis, DnD and Azula), and the game-night pod was run.
+- Gale's kill search taps lands and counts mana for real (task E1, the old step 9): 0 kill misses in 300 seeds.
 
-Pontus, 2026-11-15: do this after step 7's other tasks. Step 7's B3 plays every kill line for real, and 9 of 300 Gale seeds still have a kill miss (`KILL_MISS_SEEDS_SHOWN=100 npm run sim -- gale --test` lists them; until then Gale's `--test`, and so `npm run verify`, fails on them). The cause: `KillSearchState` keeps all its mana in one pool, lands and rocks and rituals together, as if every land were already tapped. So it can't tell which lands are still untapped when a High Tide or Bubbling Muck resolves or an untap spell comes (seed 199: Gale recasts Dark Ritual before the Muck resolves, so a Swamp is tapped for it and loses the bonus).
+## 9. After game night (done 2026-11-16)
 
-The idea: the search keeps its untapped lands as counts by kind (Islands, Swamps, Island-Swamps, others, filter lands) and its rocks apart, and taps them as a payment needs them, the way the real game's `pay` does, with floating mana as the pool. High Tide and Muck then count the lands really untapped, untaps put back real lands, and `payBonusSpell` and the `...FromOutsideLands` counters go away. Opus 5.5, with a design first (`PLAN.md` B3b part 2, at commit `e686967`, has the details), the speed measured (Gale's search is most of its 25 s; it must stay fast) and Pontus's yes. Done when Gale's `--test` has no kill miss.
+The plan and its notes per task are in git (`PLAN.md` at commit `ff164f7`), tasks G1 to G14.
+
+- DnD mapped from its owner's primer; Helga's annihilator and the Eldrazi's removal in a pod; Daze, Bilbo's Gambit and Silence-type protection; Codie's wins can be answered; a blink in an opponent's turn returns at the end of that turn; the initiative passes on; spells cast through a deck's own code trigger the opponents' cast triggers.
+- More card rules moved to the engine (black tutors, land search, no maximum hand size), and Meren, Edgar and Sam & Frodo run on the shared `CreatureDeckGame`.
+- DnD blinks in answer to removal and wipes (G14). Azula's pilot task (B7) is parked in `decks/azula/PLAN.md`.
+
+## 10. Gale faster and safer, within about 15 € (done 2026-11-17)
+
+The plan and its notes per task are in git (`PLAN.md` at commit `6791b01`), tasks R1 to R6; the results are in `decks/gale/PLAN.md`.
+
+- Gale has a `--diag` (what a slow game is missing). The engine has an opt-in window at the end of the opponents' turns with flash for sorceries (`engine/game/instant-speed.ts`, setting `opponents_end_step`), and Gale a `hold_counter` setting; both are off by default. Holding a counterspell up costs Gale about 9 to 11 points by turn 7; the window wins back about 2.
+- Merchant Scroll and Mnemonic Wall are engine card rules.
+- The pick is `decks/gale/lists/speed.txt` (Merchant Scroll, Rain of Filth and Aetherize for Personal Tutor, Wizards of Thay and Mocking Sprite, about 9 €): +4.7 points by turn 7 in goldfish, and about +4 points of win rate in lower-bracket pods. Pontus decides whether to adopt it.
+
+## 11. Engine split, a swap skill, and deck follow-ups (in progress)
+
+The plan is in `PLAN.md` (tasks T1 to T7): split `engine/game/game-core.ts` by topic, a skill for testing a swap, card rules shared between decks (Thunderclap Drake, Codie's missing cards), pod gaps, Gale's leftovers, Meren's "no meaningful impact" with Pontus's ideas, and Sam & Frodo's logs.
 
 ## Ideas not decided (Pontus picks)
 
-Each names the model it would need. Pontus dropped the others on 2026-11-15 (shorter engine file names, a rule for test lists, the app knowing the adopted list, step 1's leftovers, a "watch" button). Registering a deck in one place is now task A3 of step 8.
+Each names the model it would need. Pontus dropped the others on 2026-11-15 (shorter engine file names, a rule for test lists, the app knowing the adopted list, step 1's leftovers, a "watch" button). Splitting `game-core.ts` and the swap skill are now tasks of step 11.
 
-1. **Split `engine/game/game-core.ts`** (Opus 5.5). 2,628 lines, the size guide says about 800: one file per topic (zones, mana and payment, casting, creatures and combat, turn loop, planner). Must be IDENTICAL. `decks/aesi/game.ts` (1,186) and `decks/mike/game.ts` (961) are over the guide too. Step 8's A2 starts it: new engine card rules go in their own files.
-2. **A skill for testing a swap** (Opus 5.5). Build the list, run 16,000 games against the base with the same seeds, read `--diag`, write the result into the deck's `PLAN.md` and `SWAPS.txt`.
-3. **One board, not two** (Sonnet 5.5). `engine/tools/log-board.ts` (the analyzer and `npm run logs`) and `shared/game-log-board.ts` (the viewer) each rebuild the board from the logged card moves with their own code, so a fix in one can be missed in the other. Pontus is unsure it is needed.
+1. **One board, not two** (Sonnet 5.5). `engine/tools/log-board.ts` (the analyzer and `npm run logs`) and `shared/game-log-board.ts` (the viewer) each rebuild the board from the logged card moves with their own code, so a fix in one can be missed in the other. Pontus is unsure it is needed.
+2. **Azula plays its combos like a pilot** (Opus 5.5): task B7 in `decks/azula/PLAN.md`, parked until Pontus wants Azula in the pod.

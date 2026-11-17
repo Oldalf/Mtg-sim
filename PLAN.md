@@ -1,6 +1,8 @@
-# Plan: step 10, after G14
+# Plan: step 11, engine split, a swap skill and deck follow-ups
 
-Written 2026-11-16. Tasks G1 to G11 and G14 are done; their steps and notes (among them G2's pod report and G14's blink in answer to removal and wipes) are in git: `PLAN.md` at commit `ff164f7`. Step 8's plan is at commit `c88cda4`.
+Written 2026-11-17. Step 10 (Gale faster and safer, tasks R1 to R6) is done; its steps and notes are in git: `PLAN.md` at commit `6791b01`, the results in `decks/gale/PLAN.md`. `ROADMAP.md` has the steps before it.
+
+Waiting on Pontus from step 10: whether to adopt `decks/gale/lists/speed.txt` (and to update `decklist.txt` once the cards are on the table).
 
 The friends' decks (Helga, Ardyn, Teval, Thantis, DnD, Azula) are **pod-only**: no goldfish tuning, no mulligan study, no swap tests, no primer of ours, unless the owner asks (Pontus, 2026-11-15). The table plays bracket 2-3. Each deck's own `PLAN.md` says how it wins and what it does not model.
 
@@ -18,7 +20,7 @@ Each task names a model. Give it to that model or a stronger one.
 Rules for every task:
 
 - Read `CLAUDE.md` first (rule 0 names, KISS). For the engine also `ENGINE.md`, for the page also `app/web/CLAUDE.md`, for a new deck `/add-deck`.
-- One task is one commit, straight on `main`. `npm run format`, then `npm run verify` must end with VERIFY OK.
+- One task is one commit, straight on `main` (a big task may be a few commits, each one passing). `npm run format`, then `npm run verify` must end with VERIFY OK.
 - Ask Pontus eco or full power before any task that runs simulations (`verify` with regress checks counts).
 - Before changing pod code, save a fixed-seed pod run (`npm run pod -- gale meren samfrodo aesi edgar -n 200 --no-log`) and compare it afterwards; `--regress check` does not cover pod mode. `verify` also compares that run with `regress_baseline/pod.txt`; re-record it (`node scripts/verify.mjs --eco --record-pod`) only for a change Pontus accepted.
 - An engine change must leave every existing deck IDENTICAL (goldfish and the pod run). A task that would change them stops and asks.
@@ -29,90 +31,68 @@ Rules for every task:
 
 | # | Task | What | Model |
 |---|---|---|---|
-| 1 | R1 | Gale: Rain of Filth against `lists/proposed.txt` (done) | Sonnet 5.5 |
-| 2 | R2 | Gale: a `--diag` that shows what a slow game is missing (done) | Sonnet 5.5 |
-| 3 | R3 | Instant speed on the opponents' turns, and flash enablers (done) | Opus 5.5 |
-| 4 | R4 | Gale: model Merchant Scroll, Mnemonic Wall, Aetherize (done in R5) | Sonnet 5.5 |
-| 5 | R5 | Gale: swap tests, budget about 15 € (done) | Sonnet 5.5 |
-| 6 | R6 | Gale in a lower-bracket pod (done) | Sonnet 5.5 |
+| 1 | T1 | A skill for testing a swap | Opus 5.5 |
+| 2 | T2 | Split `engine/game/game-core.ts` by topic | Opus 5.5 |
+| 3 | T3 | Card rules shared between decks: Thunderclap Drake, Codie's missing cards | Opus 5.5 |
+| 4 | T4 | Pod: why Gale is the first one out, and the cards not wired yet | Opus 5.5 |
+| 5 | T5 | Gale's leftovers: planner speed, kill-search mana leftovers | Opus 5.5 |
+| 6 | T6 | Meren: "no meaningful impact" and Pontus's changes (after P) | Sonnet 5.5 |
+| 7 | T7 | Sam & Frodo: analyze Pontus's logs (after P) | Sonnet 5.5 |
 
-Done on 2026-11-16 without a task: **Edgar's commander cast.** Edgar stays in the command zone (eminence works there) and is cast only with mana nothing else wants (`COMMANDER_CAST_SCORE` in `decks/edgar/candidates.ts`; it was the first play). Goldfish, 2,000 games: win by turn 10 65.0% against 66.2% before; never casting him is 43.9%, because his attack puts counters on every Vampire, so he is still cast late (in 76% of games). Pod with Meren, Gale and Helga (1,000 games): Edgar 26.2% against 24.9%. The regress and pod baselines were re-recorded.
-
-Azula's next task (B7) is not in this plan: it waits in `decks/azula/PLAN.md` ("Next task B7") until Pontus wants it, since Azula may not be played in the pod at all.
-
----
-
-## R1. Gale: Rain of Filth against the proposed list (Sonnet 5.5)
-
-Pontus's home deck is `decklist.txt`, but it is still missing four cards of `lists/proposed.txt` (Drain Power, Unearth, Muddle the Mixture, Thunderclap Drake), which he plans to add. So the comparison is **against `lists/proposed.txt`, not `decklist.txt`.** Rain of Filth (taps every land, then sacrifices them all for {B} each; kill turn only) was modelled in b5fc943 and is in no list yet. Pontus (2026-11-16) leaves the choice of what it replaces to us: try a few.
-
-1. Baseline: `lists/proposed.txt`, 4,000 games (the numbers in `decks/gale/PLAN.md`: kill by turn 6 / 7 / 8 19.9 / 51.4 / 75.3% in 2026-11-14, before the step 8 engine changes; run it again, 16.5 / 45.8 / 70.9% on 2026-11-15). Same seeds for every list.
-2. Test lists, each `proposed.txt` with Rain of Filth in place of one card: **Mocking Sprite**; then 3 to 5 cards that look weak in the list. Pick them from `npm run sim -- gale --rank` on `proposed.txt` and from the cards `decks/gale/PLAN.md` calls dead weight or untested (a single engine card, a protection card, a creature that only blocks, an Island: Rain wants lands, so check that one too). Say why each was chosen.
-3. Report a table: kill by turn 6 / 7 / 8, counter backup by turn 8, average kill turn, difference to the baseline. Noise is about ±2.6 points at 3,000 games; call a difference real only above that.
-4. Put the lists in `decks/gale/lists/` while testing and remove them when done (the table goes in `decks/gale/PLAN.md`). Leave `decklist.txt` and `proposed.txt` as they are: Pontus decides what to swap. Add one line under this task here.
-5. Gale's regress baseline must stay IDENTICAL (no code changes in this task).
-
-Done 2026-11-17 (Sonnet 5.5, full power): six lists, 4,000 games each, none clearly better than `proposed.txt` (best: Wizards of Thay out, +3.0 / +2.7 / +0.8 by turn 6 / 7 / 8, backup by turn 8 +1.5, all within about 2 points of noise). Table in `decks/gale/PLAN.md`. Pontus: Rain must come with at least one protection spell; the backup columns measure that and show no real gain. The test lists are removed; no code changed.
+T1 comes first because T3 to T6 all compare lists or settings; T2 before T3 so new engine rules land in the split files. T6 and T7 can run whenever Pontus's input arrives.
 
 ---
 
-## Gale: faster and safer, within about 15 € (R2 to R6)
+## T1. A skill for testing a swap (Opus 5.5)
 
-Pontus (2026-11-17): Gale should take about 20% of the games in a 4-player pod with a deck like Codie (which wins around turn 5 with protection at the table). In lower-bracket pods Gale is too slow to win before the creature decks beat it down, yet too busy combo-ing to keep protection up. Budget for new cards: about 15 € in total. Codie stays out of the pod for now (its model is too far off).
+Step 10 did the same steps by hand three times (R1, R3, R5). Write `.claude/skills/test-swap/SKILL.md` so any model can do them from one request ("test X for Y in gale").
 
-**Where the speed is not:** more kill-turn mana. Cabal Ritual was tested twice (before 2026-11-14) and one ritual captured the whole gain; Rain of Filth (R1) confirms it. The time goes before the kill turn: getting Gale out with mana to spare and finding the missing piece.
+1. What to ask first: the deck, the base list (`decklist.txt` or `lists/proposed.txt`), the swaps (one card out, one in, or several), the settings to run under (a deck may have more than one mode, as Gale's `hold_counter`), eco or full power. No cut tests until Pontus names the cards (the memory rule "cuts wait for the user's ideas").
+2. Building the list: copy the base and replace the line in place (a different order deals different hands, see `ENGINE.md` "Noise"; never re-sort the list); check the card count; a card not in `data/cards.json` is added on the first run; say when a new card is played generically (the run prints a note) and stop if that card matters.
+3. Running: 4,000 games per list on the same seeds to screen, 16,000 to decide (`ENGINE.md`); `--diag` where the deck has one; a pod run only when the swap is about interaction or defence.
+4. Reporting: one table in the deck's `PLAN.md` (by turn, with backup when the deck has it, average turn, difference and noise), prices from `data/scryfall/oracle-cards.jsonl.gz` (`prices.eur`, dated) when Pontus has a budget, a plain verdict ("within noise" below the noise line). Remove the test lists, leave `decklist.txt` and `proposed.txt` alone; Pontus decides.
+5. Try it on one real request and fix what the skill missed. List the skill in `CLAUDE.md` / `README.md` where `/add-deck` is.
 
-**Where it may be: instant speed.** The goldfish never plays on the opponents' turns, so the mana Gale holds up for a counterspell is simply lost in the simulator. At the table that mana goes into instants at the end of the turn before Gale's, and with a flash enabler into sorceries too (Windfall, Night's Whisper, the tutors). That is exactly Pontus's problem: Gale could keep protection up and still develop. Wizards of Thay ranks last in `--rank` because its flash is not modelled; people run Emergence Zone in Gale for the same reason. R3 models this.
+## T2. Split `engine/game/game-core.ts` by topic (Opus 5.5)
 
-**Candidates.** Prices are the Scryfall bulk data of 2026-11-13 (one printing, euro): check Cardmarket before buying. Mox Amber (65 €), Lotus Petal (no price; expensive), Mystical Tutor (13 €), Vedalken Orrery (8 €) and Basalt Monolith (Pontus: it doesn't feel right) are out.
+3,095 lines against the guide's 800 (`engine/game/game.ts` 978, `decks/aesi/game.ts` 1,192 and `decks/mike/game.ts` 962 are over too; leave those for later). The file's header already names its sections: state and helpers, mana, zones and drawing, effects of common cards, creatures, life and damage, casting, lands, choosing what to do (candidates, the planner), the turn, deck hooks, combat.
 
-| Card | € | Kind | Notes |
-|---|---|---|---|
-| Wizards of Thay | in the list | flash | Sorceries as though they had flash, and instants and sorceries cost {1} less. |
-| Emergence Zone | 2.43 | flash | A land: replaces an Island, so it costs no spell slot. Sacrifice for one turn of flash. |
-| Borne Upon a Wind | 2.42 | flash | {1}{U} instant: flash this turn, draw a card. Gale can recast it. |
-| Quicken | 0.25 | flash | {U}: the next sorcery has flash, draw a card. |
-| Leyline of Anticipation | 5.08 | flash | Flash for everything; free on turn 0 from the opening hand. |
-| Merchant Scroll | 4.23 | tutor | Finds a blue instant: High Tide or a counterspell, speed or protection, whichever the hand lacks. |
-| Sapphire Medallion | 6.03 | speed | Every blue spell costs {1} less from turn 2. Already a known reducer in the engine, so it can be tested now. |
-| Mnemonic Wall | 0.24 | speed + defence | Returns an instant or sorcery (Cacophony, High Tide) and blocks as a 0/4. |
-| Rain of Filth | in R1 | kill-turn mana | Pontus keeps it in the tests: R1 found it within noise, but with flash it may matter. Only cast with protection. |
-| Aetherize | 0.53 | defence | Pontus played it before. One instant bounces a whole attack; Gale can recast it. |
+1. Design first: which sections become their own files, and how. `blink.ts`, `instant-speed.ts` and `common-permanents.ts` show the pattern already used: functions that take the game. Methods a deck overrides (the hooks) stay on the class; plain helpers move out. Write the design in `ENGINE.md` before moving code.
+2. Move one topic per commit, each one IDENTICAL (`npm run verify`: every deck, the pod run, the logs). No renames or behaviour changes on the way; a fix found on the way is a separate commit.
+3. Done when `game-core.ts` is the class, its state and its hooks, about 800 lines or a short list of why not; `ENGINE.md`'s folder table and "What the engine provides" name the new files.
 
-Tested before, not repeated: Rewind, Peregrine Drake, Cloud of Faeries (`decks/gale/PLAN.md`).
+## T3. Card rules shared between decks (Opus 5.5)
 
-## R2. Gale: a `--diag` for slow games (Sonnet 5.5)
+1. **Thunderclap Drake:** its sacrifice (copy the next instant or sorcery once per time the commander was cast) is modelled in Mike's folder (`drakeCopies` in `decks/mike/game.ts`, its use in `decks/mike/candidates.ts`) and listed as open for Gale. Move the card rule to the engine (the copies through `engine/game/spell-copies.ts`), keep the choice of when to sacrifice in each deck. Mike stays IDENTICAL; Gale's use in its kill search is a Gale change: report before / after on `lists/proposed.txt` and `lists/speed.txt` (T1's skill) and ask before re-recording.
+2. **Codie's missing cards** (`decks/codie/PLAN.md` "Open"): its free-spell trigger (each activation: the next spell makes a random cheaper instant or sorcery free), then Mizzix's Mastery, flashback, Mana Drain, Bring to Light, Crop Rotation, Scapeshift and the land cards. Card facts go in the engine, Codie's choices in its folder. This is the road to Codie in the pod (Pontus, 2026-11-17: not yet, it is too far off). Pontus said Codie wins around turn 5 with protection at the table; compare with the simulator after each card and stop to ask when the gap stays big. Codie's baseline changes: ask before re-recording.
 
-Aesi and Meren have `--diag`; Gale has none. Add one that prints per list: the turn Gale is cast (average, % by turn 3 / 4), the turn the first combo package is in hand, the mana left unused at the end of each of our turns (what instant speed could use), and for games with no kill by turn 6 what was missing on turn 6: Gale, a package piece, mana, or protection (a kill without backup). Run it on `lists/proposed.txt` and add the output to `decks/gale/PLAN.md`. No change to results (`--regress check` IDENTICAL).
+## T4. Pod: why Gale is the first one out, and the cards not wired yet (Opus 5.5)
 
-Done 2026-11-17 (Opus 5.5): `npm run sim -- gale --diag` (measures in `GaleGame.recordEndOfTurnMeasures`, metrics in `decks/gale/index.ts`; `fewestMissingPackagePieces` was pulled out of `positionValue`). Regress IDENTICAL. Output for `proposed.txt` in `decks/gale/PLAN.md`: Gale is out early (92% by turn 4), so the gap is between the package (average turn 4.9) and the kill (7.0). At turn 6 without a kill: 36% of games miss a package piece (tutors), 45% have Gale and a package but no line (mana, or graveyard spells for Gale).
+R6: Gale is the first player out in about half its pod games (nearly all to life), and wins only when fast.
 
-## R3. Instant speed on the opponents' turns, and flash enablers (Opus 5.5)
+1. Trace 200 pod games where Gale goes out first (`npm run pod -- gale:lists/speed.txt helga ardyn teval --trace ...`, or the logged run): who attacks it, when, with what, what Gale held (blockers, Aetherize, mana). Write what you find in `decks/gale/PLAN.md` before changing anything.
+2. Propose the fix to Pontus (for example: blockers or a fog cast earlier, `podDefence` for a combo deck, the attackers' threat rule) and build what he picks. A behaviour change in the pod: save the fixed-seed pod run first, report before / after, and re-record only when Pontus accepts.
+3. The cards `POD_PLAN.md` lists as not wired in a pod (Diversion Unit, Siren Stormtamer's own ability, Soratami Savant, Mirror-Mage, Wash Out, Shire Shirriff, Vindictive Lich's sacrifice mode, Insidious Fungus, Bushwhack's fight, Crypt Incursion): wire the ones still in a current list, each with a pod test.
 
-The biggest change: an engine design task. Read `ENGINE.md` first.
+## T5. Gale's leftovers (Opus 5.5)
 
-1. A window at the end of the turn before ours (one window per round is enough: the three goldfish opponents do nothing). There a deck may cast instants with its untapped lands, and sorceries if something gives them flash. A deck hook, off by default, so every other deck stays IDENTICAL (goldfish and the pod run).
-2. Gale uses it: cantrips and draw first, keeping the mana for a counterspell when a kill is set up for its next turn; the turn planner and the kill finder must see the window (a kill there is a kill on that round; say in `decks/gale/PLAN.md` how it is counted). **R2 found that the goldfish AI taps out every turn** (0.2 to 1.75 untapped lands and rocks at the end of turns 3 to 6), so a window alone gains almost nothing in goldfish: the mana it would use is already spent at sorcery speed. Flash is worth something only when Gale also holds a counterspell up, as at the table. So add a Gale rule (a setting, so the two can be compared): from Gale's turn on, keep the mana for the cheapest counterspell in hand untapped at the end of the turn, and spend it in the window if nothing needed answering. Report goldfish with that rule, with and without the flash enablers: that is the honest cost of holding protection, and what flash wins back.
-3. Flash enablers as card facts in `engine/`: Wizards of Thay, Leyline of Anticipation (also the turn-0 start), Emergence Zone, Borne Upon a Wind, Quicken. Azula has a combat-only version in `decks/azula/game.ts` (`canCastNow`); reuse what fits.
-4. The pod: Gale may use the same window there. Save a fixed-seed pod run first; the other decks must not change.
-5. Tests in `decks/gale/tests/`. Gale's results will change (that is the point): record the new regress baseline only after Pontus has seen the before / after numbers for `proposed.txt`.
+From `decks/gale/PLAN.md` "Open":
 
-If the window does not fit the turn loop without a big rewrite, stop and write down why and what it would take.
+1. **Planner speed:** the planner is about 40% of Gale's run time. Run it only when the top plays are close in score (a setting, so both can be compared). Not IDENTICAL by nature: within noise at 16,000 games, and say how much faster. Ask before making it the default.
+2. **Kill-search mana leftovers:** outside mana isn't used up by other spells; a dual that pays for High Tide still counts for Bubbling Muck; the AI doesn't save a rock to pay for High Tide. Each as a kill test first (`decks/gale/tests/kills.test.ts`), then the fix, then the numbers. Kill misses must stay 0 in 300 seeds.
+3. Update Gale's "Open" list: drop what step 10 did (instant speed), keep what is left.
 
-Done 2026-11-17 (Opus 5.5): `engine/game/instant-speed.ts` (the window, flash for sorceries, Quicken, Borne Upon a Wind, Emergence Zone, the opening-hand Leyline), the pod calls it for the next player, Gale's `hold_counter` (its `podReserve` in goldfish games) and `buildOpponentsEndStepCandidates`; 11 tests in `decks/gale/tests/instant-speed.test.ts`. Both settings are **off by default**, so every deck and the pod run are IDENTICAL (Gale's baseline was re-recorded for the new test lines only). Results in `decks/gale/PLAN.md`: holding a counter costs about 9 to 11 points by turn 7; the window wins back about 2 of them (0.4 spells per game); Emergence Zone, Borne Upon a Wind, Quicken and Leyline add nothing measurable. **P:** which settings Gale plays by default.
+## T6. Meren: "no meaningful impact" and Pontus's changes (Sonnet 5.5, after P)
 
-## R4. Gale: model Merchant Scroll, Mnemonic Wall, Aetherize (Sonnet 5.5)
+Meren's `--diag` has a first definition of a game with no meaningful impact (`noImpact` in `decks/meren/index.ts`: by the end of turn 5 / 6 nothing came back from a graveyard and the board has under 3 nonland permanents; 15.9% / 4.3% of games, `decks/meren/PLAN.md`). Pontus will say what counts as impact for this deck and which changes he wants to look at.
 
-Merchant Scroll (choice in `tutoring.ts`: High Tide or a missing piece when a kill is near, a counterspell when the combo is assembled), Mnemonic Wall (enter trigger: the best instant or sorcery in the graveyard, like Gale's recast choice; a creature for the kill search's Unearth?), and check that Gale casts Aetherize in the pod when an attack would hurt (it is in the engine). Card facts in `engine/`, Gale's choices in `decks/gale/`. Every other deck stays IDENTICAL.
+1. Ask Pontus for his definition and his changes (cards, AI choices or both). Change `noImpact` to match, with the old numbers next to the new.
+2. Test his changes with T1's skill, judged by the new measure as well as the win turns. No cut tests beyond what he names.
 
-## R5. Gale: swap tests (Sonnet 5.5, after R3 and R4)
+## T7. Sam & Frodo: analyze Pontus's logs (Sonnet 5.5, after P)
 
-Each candidate alone against `lists/proposed.txt`, played both with the default settings and with `--set hold_counter=1 --set opponents_end_step=1` (holding protection as at the table, R3), 4,000 games, same seeds; then the best two or three together within 15 €. Slots to try: Mocking Sprite, Personal Tutor, Focus the Mind, Thespian's Stage, an Island (for Emergence Zone). Report by turn 5 / 6 / 7 / 8, **backup by turn 6 / 7 / 8** (Pontus goes off only with protection), average turn. Aetherize and Mnemonic Wall's blocking are worth nothing in goldfish: only check what they cost. Lists in `decks/gale/lists/` while testing, the table in `decks/gale/PLAN.md`, `proposed.txt` and `decklist.txt` untouched.
+Pontus will add real games to `decks/samfrodo/logs/` (one so far, `game1_t8_pippin_alpha.txt`, already analyzed in `decks/samfrodo/PLAN.md`).
 
-Done 2026-11-17 (Opus 5.5), with R4's modelling (Pontus: model them first): Merchant Scroll is an engine card fact now (moved from Codie's folder, Codie IDENTICAL), Mnemonic Wall's enter trigger is in `engine/game/common-permanents.ts`, Gale scores the Wall by what it brings back; `hold_counter` keeps one mana less up with Bender's Waterskin out (it untaps on the others' turns, Pontus). Table in `decks/gale/PLAN.md`. The pick is `lists/speed.txt`: Merchant Scroll, Rain of Filth and Aetherize for Personal Tutor, Wizards of Thay and Mocking Sprite (about 9.25 €): +4.7 by turn 7 and +5.3 with backup by turn 8 at 16,000 games. Still open from R4: does Gale cast Aetherize in the pod when an attack would hurt (R6 checks it).
-
-## R6. Gale in a lower-bracket pod (Sonnet 5.5)
-
-Gale's pod win rate with the friends' decks (for example `npm run pod -- gale helga ardyn teval -n 1000`): `proposed.txt` against `lists/speed.txt` (R5), and `speed.txt` with Mocking Sprite back for Aetherize. Report the win rate and the turn Gale dies when it loses. Pontus decides the swaps.
-
-Done 2026-11-17 (Opus 5.5), `decklist.txt` added (Pontus): win rate with Helga, Ardyn, Teval / with Helga, Thantis, DnD (4,000 games each): decklist.txt 31.4 / 26.5%, proposed.txt 34.9 / 31.3%, speed.txt 38.9 / 35.2%; Aetherize or Mocking Sprite makes no difference. Gale is the first one out in about half its games. Table in `decks/gale/PLAN.md`. No code changed. **P:** whether to adopt `speed.txt`.
+1. Run `npm run sim -- samfrodo --analyze logs/<file>.txt` on each new log. The analyzer may need token names from the logs (`logToken` in `decks/samfrodo/game.ts`); add what is missing.
+2. For each game: a row in `decks/samfrodo/PLAN.md` ("Pontus's games"), as Gale's table does: the result, missed kills, and AI fixes it led to. Logs contain misplays: use them for draws and the board, flag missed triggers, don't copy mistakes into the AI.
+3. Add each log to the deck's regress (`regress.logLists` in `decks/samfrodo/index.ts` if the list differs) and re-record the baseline for the new log only.
