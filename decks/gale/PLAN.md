@@ -2,7 +2,7 @@
 
 Dimir spellslinger mill combo (Gale, Waterdeep Prodigy + Scion of Halaster). Wins in one big turn by milling all three opponents. Run it with `npm run sim -- gale` (see the root README). How the deck plays, win lines and tutor targets for the table: `PRIMER.txt`. What the simulator models and its settings: `README.md`. This file keeps the AI's rules, why the list looks as it does, and what is still open (it used to be the root `PLAN.md`).
 
-**Lists:** `decklist.txt` is the physical deck Pontus has at home (since 2026-11-15): `lists/proposed.txt` minus Drain Power, Unearth, Muddle the Mixture and Thunderclap Drake (not owned yet), replaced by Zombify (played as Unearth for now) and Reliquary Tower, Archmage's Charm and Secrets of the Dead from the original (the last two are the Secret Lair Gale print, easy to find). `lists/original.txt` is the list as first given. Keep `decklist.txt` equal to what is on the table. **`lists/proposed.txt` is the adopted list** (Pontus, 2026-11-04). The other test lists from the rounds below were removed on 2026-11-14 (they are in git history); `logs/` holds Pontus's real games.
+**Lists:** `decklist.txt` is the physical deck Pontus has at home (since 2026-11-15): `lists/proposed.txt` minus Drain Power, Unearth, Muddle the Mixture and Thunderclap Drake (not owned yet), replaced by Zombify (played as Unearth for now) and Reliquary Tower, Archmage's Charm and Secrets of the Dead from the original (the last two are the Secret Lair Gale print, easy to find). `lists/original.txt` is the list as first given. `lists/speed.txt` is the R5 pick (2026-11-17): `proposed.txt` with Merchant Scroll, Rain of Filth and Aetherize, for Pontus to decide on. Keep `decklist.txt` equal to what is on the table. **`lists/proposed.txt` is the adopted list** (Pontus, 2026-11-04). The other test lists from the rounds below were removed on 2026-11-14 (they are in git history); `logs/` holds Pontus's real games.
 
 ## Simulation rules
 
@@ -78,6 +78,21 @@ Gale is rarely the problem. About two turns pass between having the pieces and k
 | both, Borne Upon a Wind / Quicken / Leyline for Mocking Sprite / Personal Tutor / Thespian's Stage | 13.3 | 39.3 | 65.8 | 21.8 | 47.5 | 7.15 |
 
 Keeping a counterspell up costs about 9 to 11 points by turn 7, and the backup measure drops with it (the setup comes later). The window alone changes nothing, since the AI taps out; with mana held up it casts 0.4 spells per game and wins back about 2 points. The flash enablers add nothing beyond noise: Wizards of Thay already gives flash and the deck has few sorceries worth casting at the end of a turn. So instant speed is not where Gale's speed is; the honest price of playing with protection up is. Not modelled: using the held counterspell (goldfish opponents do nothing), and a kill in the window.
+
+**Speed swaps within about 15 €** (task R5, 2026-11-17, against `lists/proposed.txt`, 4,000 games, same seeds, noise about ±2.2; the second number is with `hold_counter` and `opponents_end_step` on, as at the table; prices from Scryfall's data of 2026-11-13).
+
+| Swap (€) | By T7 | Backup T8 | Avg turn |
+|---|---|---|---|
+| Merchant Scroll for Personal Tutor (4.23) | +2.0 / +1.8 | +3.6 / +3.9 | 7.02 / 7.15 |
+| Rain of Filth for Wizards of Thay (4.47) | +3.3 / +3.4 | +1.3 / +1.9 | 6.97 / 7.08 |
+| Sapphire Medallion for Mocking Sprite (6.03) | +1.2 / +1.2 | +1.3 / +1.0 | 7.03 / 7.14 |
+| Aetherize for Wizards of Thay (0.53) | +0.2 / +0.1 | -0.2 / -0.4 | 7.04 / 7.15 |
+| Mnemonic Wall for Focus the Mind (0.24) | -0.8 / -1.3 | -1.3 / -2.2 | 7.04 / 7.14 |
+| Merchant Scroll + Rain of Filth (8.70) | +5.6 / +5.2 | +4.9 / +5.9 | 6.94 / 7.08 |
+| ... + Aetherize for Mocking Sprite (9.23) | +5.6 / +5.1 | +5.4 / +5.3 | 6.96 / 7.08 |
+| ... + Sapphire Medallion for Mocking Sprite, Aetherize for Focus the Mind (15.26) | +5.6 / +5.2 | +3.5 / +4.2 | 6.92 / 7.06 |
+
+**The pick: `lists/speed.txt`** = `proposed.txt` with Merchant Scroll for Personal Tutor, Rain of Filth for Wizards of Thay and Aetherize for Mocking Sprite (about 9.25 €). At 16,000 games (noise ±1.1): kill by turn 6 / 7 / 8 21.6 / 52.7 / 76.5% against 17.9 / 48.0 / 73.7%, **with backup by turn 8 58.9% against 53.7%**, average turn 6.97 against 7.06. Merchant Scroll finds High Tide or a counterspell, so it lifts the protected kills most; Rain of Filth lifts the speed; Aetherize costs nothing in goldfish and is there for the creature decks. Sapphire Medallion and Mnemonic Wall add nothing. With Wizards of Thay out the flash window has nothing to give sorceries flash; R3 showed that is worth little.
 
 ## Pontus's real games (`logs/`)
 

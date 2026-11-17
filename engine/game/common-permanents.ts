@@ -5,6 +5,7 @@
  */
 import type { GameCore } from './game-core';
 import { Permanent } from './game-types';
+import { CardDef } from '../cards/cards';
 import { fetchLand } from './land-search';
 import { firstMax } from '../util/lists';
 import {
@@ -38,6 +39,9 @@ export function enterTriggerOfCommonCard(
     case 'Timeless Witness':
       returnBestCardToHand(game);
       return true;
+    case 'Mnemonic Wall':
+      returnBestCardToHand(game, (card) => card.isInstantOrSorcery);
+      return true;
     // "When this creature enters, draw a card." (Baleful Strix draws in GameCore.enter)
     case 'Wall of Omens':
     case 'Spirited Companion':
@@ -68,9 +72,13 @@ export function upkeepOfCommonCards(game: GameCore): void {
 }
 
 /** Eternal Witness: the card in our graveyard we want most goes to our hand. */
-function returnBestCardToHand(game: GameCore): void {
-  if (!game.graveyard.length) return;
-  const best = firstMax(game.graveyard, (card) => game.returnToHandValue(card));
+function returnBestCardToHand(
+  game: GameCore,
+  isAllowed: (card: CardDef) => boolean = () => true,
+): void {
+  const allowed = game.graveyard.filter(isAllowed);
+  if (!allowed.length) return;
+  const best = firstMax(allowed, (card) => game.returnToHandValue(card));
   game.takeCardIfThere(best, 'graveyard');
   game.putCard(best, 'hand');
 }

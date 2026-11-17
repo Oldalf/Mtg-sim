@@ -32,8 +32,8 @@ Rules for every task:
 | 1 | R1 | Gale: Rain of Filth against `lists/proposed.txt` (done) | Sonnet 5.5 |
 | 2 | R2 | Gale: a `--diag` that shows what a slow game is missing (done) | Sonnet 5.5 |
 | 3 | R3 | Instant speed on the opponents' turns, and flash enablers (done) | Opus 5.5 |
-| 4 | R4 | Gale: model Merchant Scroll, Mnemonic Wall, Aetherize | Sonnet 5.5 |
-| 5 | R5 | Gale: swap tests, budget about 15 € | Sonnet 5.5 |
+| 4 | R4 | Gale: model Merchant Scroll, Mnemonic Wall, Aetherize (done in R5) | Sonnet 5.5 |
+| 5 | R5 | Gale: swap tests, budget about 15 € (done) | Sonnet 5.5 |
 | 6 | R6 | Gale in a lower-bracket pod | Sonnet 5.5 |
 
 Done on 2026-11-16 without a task: **Edgar's commander cast.** Edgar stays in the command zone (eminence works there) and is cast only with mana nothing else wants (`COMMANDER_CAST_SCORE` in `decks/edgar/candidates.ts`; it was the first play). Goldfish, 2,000 games: win by turn 10 65.0% against 66.2% before; never casting him is 43.9%, because his attack puts counters on every Vampire, so he is still cast late (in 76% of games). Pod with Meren, Gale and Helga (1,000 games): Edgar 26.2% against 24.9%. The regress and pod baselines were re-recorded.
@@ -109,6 +109,8 @@ Merchant Scroll (choice in `tutoring.ts`: High Tide or a missing piece when a ki
 
 Each candidate alone against `lists/proposed.txt`, played both with the default settings and with `--set hold_counter=1 --set opponents_end_step=1` (holding protection as at the table, R3), 4,000 games, same seeds; then the best two or three together within 15 €. Slots to try: Mocking Sprite, Personal Tutor, Focus the Mind, Thespian's Stage, an Island (for Emergence Zone). Report by turn 5 / 6 / 7 / 8, **backup by turn 6 / 7 / 8** (Pontus goes off only with protection), average turn. Aetherize and Mnemonic Wall's blocking are worth nothing in goldfish: only check what they cost. Lists in `decks/gale/lists/` while testing, the table in `decks/gale/PLAN.md`, `proposed.txt` and `decklist.txt` untouched.
 
+Done 2026-11-17 (Opus 5.5), with R4's modelling (Pontus: model them first): Merchant Scroll is an engine card fact now (moved from Codie's folder, Codie IDENTICAL), Mnemonic Wall's enter trigger is in `engine/game/common-permanents.ts`, Gale scores the Wall by what it brings back; `hold_counter` keeps one mana less up with Bender's Waterskin out (it untaps on the others' turns, Pontus). Table in `decks/gale/PLAN.md`. The pick is `lists/speed.txt`: Merchant Scroll, Rain of Filth and Aetherize for Personal Tutor, Wizards of Thay and Mocking Sprite (about 9.25 €): +4.7 by turn 7 and +5.3 with backup by turn 8 at 16,000 games. Still open from R4: does Gale cast Aetherize in the pod when an attack would hurt (R6 checks it).
+
 ## R6. Gale in a lower-bracket pod (Sonnet 5.5)
 
-Gale's pod win rate with the friends' decks (for example `npm run pod -- gale helga ardyn teval -n 1000`): `proposed.txt` against the best R5 list, with and without Aetherize. Report the win rate and the turn Gale dies when it loses. Pontus decides the swaps.
+Gale's pod win rate with the friends' decks (for example `npm run pod -- gale helga ardyn teval -n 1000`): `proposed.txt` against `lists/speed.txt` (R5), and `speed.txt` with Mocking Sprite back for Aetherize. Report the win rate and the turn Gale dies when it loses. Pontus decides the swaps.

@@ -6,6 +6,7 @@ import { CFG } from '../config';
 import { GaleGame } from '../game';
 import { search, finisherReachable } from '../kills';
 import { runInstantSpeedTests } from './instant-speed.test';
+import { runNewCardTests } from './new-cards.test';
 
 const repeatName = (cardName: string, count: number) =>
   new Array(count).fill(cardName) as string[];
@@ -522,6 +523,7 @@ export function runKillTests(): boolean {
   );
   allPassed = runPlayedKillTests() && allPassed;
   allPassed = runInstantSpeedTests() && allPassed;
+  allPassed = runNewCardTests() && allPassed;
   console.log(allPassed ? 'ALL OK' : 'SOME FAILED');
   return allPassed;
 }

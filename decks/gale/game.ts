@@ -470,7 +470,10 @@ export class GaleGame extends Game<KillSearchState> {
   override podReserve(): number {
     if (this.inArena()) return super.podReserve();
     if (!this.config.hold_counter || !this.isOnBattlefield(GALE)) return 0;
-    return this.cheapestAnswerManaValue();
+    // Bender's Waterskin untaps in each other player's untap step: it pays for one mana of the counterspell even
+    // when we tapped it on our own turn (Pontus)
+    const waterskinMana = this.isOnBattlefield("Bender's Waterskin") ? 1 : 0;
+    return Math.max(0, this.cheapestAnswerManaValue() - waterskinMana);
   }
 
   override canTapForEnergy(permanent: Permanent): boolean {

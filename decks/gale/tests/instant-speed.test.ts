@@ -158,6 +158,16 @@ export function runInstantSpeedTests(): boolean {
     2,
   );
   check(
+    "hold_counter: Bender's Waterskin untaps on the others' turns -> keep 1 up for Counterspell",
+    windowBoard({
+      lands: ['Island', 'Island'],
+      battlefieldNames: ['Gale, Waterdeep Prodigy', "Bender's Waterskin"],
+      hand: ['Counterspell'],
+      isHoldingCounter: true,
+    }).podReserve(),
+    1,
+  );
+  check(
     'hold_counter: no Gale yet -> keep nothing up',
     windowBoard({
       lands: ['Island', 'Island'],

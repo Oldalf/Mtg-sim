@@ -64,7 +64,14 @@ export const COMBO_SORC = new Set([
   'Rain of Filth',
 ]);
 
-C.registerKnown([...COMBO_PERMS, ...COMBO_SPELLS, ...ENGINES, GALE, SCION]);
+C.registerKnown([
+  ...COMBO_PERMS,
+  ...COMBO_SPELLS,
+  ...ENGINES,
+  GALE,
+  SCION,
+  'Mnemonic Wall', // its enter trigger is the engine's (common-permanents.ts)
+]);
 
 export const PACKAGES: Set<string>[][] = [
   [

@@ -121,9 +121,6 @@ function resolveTutor(game: CodieGame, spell: CardDef): boolean {
     case LIM_DUL_VAULT:
       stackLibraryWithVault(game);
       return true;
-    case 'Merchant Scroll':
-      game.doTutor((card) => card.isInstant && card.isBlue, false);
-      return true;
     default:
       return false;
   }

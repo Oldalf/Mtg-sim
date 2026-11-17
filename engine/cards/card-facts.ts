@@ -197,6 +197,7 @@ export const TUTORS = new Set([
   'Solve the Equation',
   'Waterlogged Teachings',
   'Wishclaw Talisman',
+  'Merchant Scroll', // a blue instant
 ]);
 export const RITUALS = new Set([
   'Dark Ritual',

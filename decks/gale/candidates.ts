@@ -154,6 +154,7 @@ function addPermanentCandidate(
     const missing = missingPackagePieces(game, name);
     score = missing === 0 ? 88 : missing === 1 && game.turn >= 4 ? 78 : score;
   }
+  if (name === MNEMONIC_WALL) score = mnemonicWallScore(game);
   if (card.rock && name !== 'Sol Ring' && game.manaSources() >= 7) score = 30;
   if (game.isOnBattlefield(name) && name in PERM_SCORE) score = 5; // legendary / redundant
   candidates.push({
@@ -163,6 +164,17 @@ function addPermanentCandidate(
     action: () => game.castPerm(card),
     rock: card.rock ? card : undefined,
   });
+}
+
+const MNEMONIC_WALL = 'Mnemonic Wall';
+
+/** Mnemonic Wall is worth casting for the instant or sorcery it brings back (a combo spell most); a body alone is
+ *  worth little to Gale in a goldfish game. */
+function mnemonicWallScore(game: GaleGame): number {
+  const returnable = game.graveyard.filter((card) => card.isInstantOrSorcery);
+  if (!returnable.length) return 10;
+  const best = Math.max(...returnable.map((card) => game.cardValue(card)));
+  return Math.max(20, best - 5);
 }
 
 /** Casting an instant or sorcery from hand (with a Gale recast if one is possible). */

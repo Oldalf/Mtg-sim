@@ -1464,6 +1464,12 @@ export abstract class GameCore<S = unknown> {
       case 'Waterlogged Teachings':
         this.doTutor((otherCard) => otherCard.isInstant, false);
         return true;
+      case 'Merchant Scroll':
+        this.doTutor(
+          (otherCard) => otherCard.isInstant && otherCard.isBlue,
+          false,
+        );
+        return true;
       case 'Insatiable Avarice':
         if (mode === 'tutor' || mode === 'both') this.doTutor(() => true, true);
         if (mode === 'draw' || mode === 'both') {
