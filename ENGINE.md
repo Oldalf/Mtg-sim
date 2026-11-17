@@ -84,7 +84,7 @@ A large method body lives in a topic file as a plain function that takes the gam
 
 Two other ways were left out. A chain of classes (`GameMana extends GameZones extends ...`) would need every method one layer uses from a later one declared abstract in the earlier one, and all fields would still sit in the first class (a subclass's fields are set after the base constructor runs). Calling functions from the decks (`pay(game, cost)` for `game.pay(cost)`) would change hundreds of lines in every deck and make them harder to read.
 
-`game-core.ts` is still about 1,500 lines after the split (3,095 before), against the guide's 800, for these reasons:
+`game-core.ts` is still about 1,680 lines after the split (3,095 before), against the guide's 800, for these reasons:
 - About 200 lines of state: some 80 fields with their comments, the constructor and `clone`.
 - About 300 lines of hooks with their default bodies (the deck hooks, the combat hooks, the pod hooks `game.ts` fills in). A hook must be on the class so that a deck can override it.
 - About 200 lines of zone changes (`takeCard`, `putCard`, `draw`, ...) and about 140 of creatures, life and damage. Decks call these hundreds of times, and most are a few lines long, so moving them would only add a one-line method for each.
