@@ -8,13 +8,14 @@
  * average, and the real cards fell short).
  */
 import type { GameCore } from './game-core';
-import { KILL_STEP_NEXT_TURN, KillStep } from './game-types';
+import { KILL_STEP_NEXT_TURN, KillStep, describeKillStep } from './game-types';
+import { formatList, formatPool } from './log-format';
 
 /** A run of the same step (a loop: Konrad's mill, a Guildmage activation) is logged for this many rounds, then summed up. */
 const ROUNDS_SHOWN = 3;
 /** After the deck's own tapping orders, a failed line is tried with this many orders that shuffle the sources'
- *  ranks a little (GameCore.killLineRankChange): a payment puzzle (tap the dual land now so an untap gets it back)
- *  that no fixed rule finds. */
+ *  ranks a little (killLineRankChange in mana-payment.ts): a payment puzzle (tap the dual land now so an untap gets
+ *  it back) that no fixed rule finds. */
 const SHUFFLED_TAPPING_ORDERS = 12;
 
 /** Plays the line on a copy of the game. Returns the copy if the line wins, or null if it fails (then the miss is
@@ -143,4 +144,70 @@ function isSameStep(first: KillStep | undefined, second: KillStep): boolean {
     first.kind === second.kind &&
     first.text === second.text
   );
+}
+
+/** Looks for a kill at this step of the turn (see GameCore.checkKill). Returns 2 when we win now (or already won),
+ *  1 when a kill was found that we don't take (no counter backup, or the pod's policy says wait), 0 when none. */
+export function checkForKill(game: GameCore): number {
+  if (
+    game.protectedKillTurn !== null ||
+    (game.mode === 'any' && game.unprotectedKillTurn !== null)
+  )
+    return 2;
+  const killState = game.buildKillSearchState();
+  const stateKey = game.killSearchStateKey(killState);
+  if (stateKey === game.lastKey) return 0;
+  game.lastKey = stateKey;
+  if (!game.killReachable(killState)) return 0;
+  const search = game.killSearch();
+  let killLevel = search.search(killState, game.config.search_budget as number);
+  const isNewKill = game.unprotectedKillTurn === null || killLevel === 2;
+  if (killLevel >= 1 && game.verbose && isNewKill) {
+    game.say(
+      `--- state: mana ${formatPool(game.killSearchStatePool(game.buildKillSearchState()))}, hand ${formatList(game.hand.map((card) => card.name))}`,
+    );
+    game.say(
+      `--- battlefield ${formatList(game.battlefield.filter((permanent) => permanent.land === null).map((permanent) => permanent.name))}, ` +
+        `lands ${game.landsOnBattlefield().length}, graveyard ${formatList(game.graveyard.map((card) => card.name))}`,
+    );
+    for (const step of search.lastLine ?? [])
+      game.say('      > ' + describeKillStep(step));
+  }
+  game.killLineCopy = null;
+  if (killLevel >= 1 && isNewKill && game.playsKillLines() && !game.inRollout) {
+    // the line is played for real on a copy; it only counts if it wins there
+    game.killLineLogLength = game.log.length;
+    game.killLineCopy = playKillLineOnCopy(
+      game,
+      search.lastLine ?? [],
+      search.lastLineProbability !== null,
+    );
+    if (game.killLineCopy === null) killLevel = 0;
+  }
+  if (killLevel >= 1)
+    game.lastKillLine = (search.lastLine ?? []).map(describeKillStep);
+  if (killLevel >= 1 && game.unprotectedKillTurn === null)
+    game.unprotectedKillTurn = game.turn;
+  if (killLevel === 2) game.protectedKillTurn = game.turn;
+  game.killNow = killLevel >= 1;
+  if (
+    killLevel === 2 ||
+    (killLevel === 1 && game.mode === 'any' && game.podAllowsKill())
+  ) {
+    // with a played line, the win is logged after its plays (on the copy that becomes the game)
+    (game.killLineCopy ?? game).sayEvent(
+      'win',
+      'KILL -> WIN' +
+        (killLevel === 2 ? ' (with counter backup)' : ' (no counter backup)'),
+    );
+    return 2;
+  }
+  game.killLineCopy = null;
+  if (killLevel === 1) {
+    game.podWaits++;
+    game.sayHighlight(
+      'kill available but no counter backup: keep the kill intact and look for protection',
+    );
+  }
+  return killLevel;
 }

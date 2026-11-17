@@ -29,7 +29,7 @@ import { Cost, CardDef } from '../cards/cards';
 import { ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
 import { Rng } from '../util/rng';
 import { MulliganRule, DEFAULT_MULLIGAN, keepsHand } from './mulligan';
-import { formatLogPart, formatList, formatPool } from './log-format';
+import { formatLogPart, formatList } from './log-format';
 import {
   EventKind,
   GameEvent,
@@ -51,10 +51,9 @@ import {
   ManaPool,
   Permanent,
   Zone,
-  describeKillStep,
   emptyPool,
 } from './game-types';
-import { playKillLineOnCopy } from './kill-line';
+import { checkForKill } from './kill-line';
 import {
   BlinkedCard,
   resolveBlinkSpell,
@@ -524,76 +523,10 @@ export abstract class GameCore<S = unknown> {
     return true;
   }
 
+  /** Looks for a kill at this step of the turn and, for a deck that plays its lines, plays the one found on a copy
+   *  (kill-line.ts). Returns 2 when we win now, 1 when a kill was found that we don't take yet, 0 when none. */
   checkKill(): number {
-    if (
-      this.protectedKillTurn !== null ||
-      (this.mode === 'any' && this.unprotectedKillTurn !== null)
-    )
-      return 2;
-    const killState = this.buildKillSearchState();
-    const stateKey = this.killSearchStateKey(killState);
-    if (stateKey === this.lastKey) return 0;
-    this.lastKey = stateKey;
-    if (!this.killReachable(killState)) return 0;
-    const search = this.killSearch();
-    let killLevel = search.search(
-      killState,
-      this.config.search_budget as number,
-    );
-    const isNewKill = this.unprotectedKillTurn === null || killLevel === 2;
-    if (killLevel >= 1 && this.verbose && isNewKill) {
-      this.say(
-        `--- state: mana ${formatPool(this.killSearchStatePool(this.buildKillSearchState()))}, hand ${formatList(this.hand.map((card) => card.name))}`,
-      );
-      this.say(
-        `--- battlefield ${formatList(this.battlefield.filter((permanent) => permanent.land === null).map((permanent) => permanent.name))}, ` +
-          `lands ${this.landsOnBattlefield().length}, graveyard ${formatList(this.graveyard.map((card) => card.name))}`,
-      );
-      for (const step of search.lastLine ?? [])
-        this.say('      > ' + describeKillStep(step));
-    }
-    this.killLineCopy = null;
-    if (
-      killLevel >= 1 &&
-      isNewKill &&
-      this.playsKillLines() &&
-      !this.inRollout
-    ) {
-      // the line is played for real on a copy; it only counts if it wins there
-      this.killLineLogLength = this.log.length;
-      this.killLineCopy = playKillLineOnCopy(
-        this,
-        search.lastLine ?? [],
-        search.lastLineProbability !== null,
-      );
-      if (this.killLineCopy === null) killLevel = 0;
-    }
-    if (killLevel >= 1)
-      this.lastKillLine = (search.lastLine ?? []).map(describeKillStep);
-    if (killLevel >= 1 && this.unprotectedKillTurn === null)
-      this.unprotectedKillTurn = this.turn;
-    if (killLevel === 2) this.protectedKillTurn = this.turn;
-    this.killNow = killLevel >= 1;
-    if (
-      killLevel === 2 ||
-      (killLevel === 1 && this.mode === 'any' && this.podAllowsKill())
-    ) {
-      // with a played line, the win is logged after its plays (on the copy that becomes the game)
-      (this.killLineCopy ?? this).sayEvent(
-        'win',
-        'KILL -> WIN' +
-          (killLevel === 2 ? ' (with counter backup)' : ' (no counter backup)'),
-      );
-      return 2;
-    }
-    this.killLineCopy = null;
-    if (killLevel === 1) {
-      this.podWaits++;
-      this.sayHighlight(
-        'kill available but no counter backup: keep the kill intact and look for protection',
-      );
-    }
-    return killLevel;
+    return checkForKill(this);
   }
 
   // ================================================================ zones / drawing
