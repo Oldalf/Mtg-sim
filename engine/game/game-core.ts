@@ -69,7 +69,12 @@ import {
   bestRoom,
   ventureIntoDungeon,
 } from './dungeons';
-import { PaymentRecord, UNTAP, isSourceOfClass } from './search-mana';
+import { PaymentRecord } from './search-mana';
+import {
+  resolveCardSelection,
+  resolveManaOrTutor,
+  untapBestLands,
+} from './common-spells';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import { enterTriggerCount } from './trigger-doublers';
 import { castInstantOrSorceryTriggers } from './spell-copies';
@@ -823,8 +828,8 @@ export abstract class GameCore<S = unknown> {
     fromGraveyard = false,
     mode: string | null = null,
   ): void {
-    if (this.resolveCardSelection(card, fromGraveyard)) return;
-    if (this.resolveManaOrTutor(card, mode)) return;
+    if (resolveCardSelection(this, card, fromGraveyard)) return;
+    if (resolveManaOrTutor(this, card, mode)) return;
     if (resolveLandSearch(this, card)) return;
     if (resolveReanimationSpell(this, card)) return;
     if (resolveBlinkSpell(this, card)) return;
@@ -832,278 +837,9 @@ export abstract class GameCore<S = unknown> {
     this.resolveOther(card, fromGraveyard, mode);
   }
 
-  /** Draw, scry and "look at the top cards" spells. Returns false if this isn't one of them. */
-  private resolveCardSelection(
-    otherCard: CardDef,
-    fromGraveyard: boolean,
-  ): boolean {
-    switch (otherCard.name) {
-      case 'Brainstorm': {
-        this.draw(3);
-        for (let i = 0; i < Math.min(2, this.hand.length); i++) {
-          const card = firstMin(
-            this.hand,
-            (anotherCard) =>
-              this.cardValue(anotherCard) +
-              (this.cardsTheKillLineNeeds.has(anotherCard.name) ? 1000 : 0),
-          );
-          this.takeCard(card, 'hand');
-          this.putCardsOnTopOfLibrary([card]);
-        }
-        return true;
-      }
-      case 'Consider':
-        this.scry(1, true);
-        this.draw(1);
-        return true;
-      case 'Opt':
-        this.scry(1);
-        this.draw(1);
-        return true;
-      case 'Chart a Course':
-        this.draw(2);
-        if (!this.attacked) this.discard(1);
-        return true;
-      case 'Read the Bones':
-        this.scry(2);
-        this.draw(2);
-        this.myLife -= 2;
-        return true;
-      case 'Pieces of the Puzzle':
-      case 'Fact or Fiction':
-        this.resolveTopFiveSplit(otherCard.name);
-        return true;
-      case 'Ponder':
-        this.ponder();
-        return true;
-      case 'Preordain':
-        this.scry(2);
-        this.draw(1);
-        return true;
-      case 'Deep Analysis':
-      case "Night's Whisper":
-      case "Archmage's Charm":
-        this.draw(2);
-        return true;
-      case 'Diresight':
-        this.scry(2, true);
-        this.draw(2);
-        return true;
-      case 'Stock Up':
-        this.stockUp();
-        return true;
-      case 'See the Truth':
-        this.seeTheTruth(fromGraveyard);
-        return true;
-      case 'Energybending':
-        this.isEnergybendingActive = true;
-        this.draw(1);
-        return true;
-      case 'Focus the Mind':
-        this.draw(3);
-        this.discard(1);
-        return true;
-      case 'Frantic Search':
-        this.draw(2);
-        this.discard(2);
-        this.untapLands(3);
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  /** Look at the top three: shuffle them away if none is good, otherwise put them back best first. Then draw. */
-  private ponder(): void {
-    const top = this.library.slice(0, 3);
-    if (top.length && Math.max(...top.map((card) => this.cardValue(card))) < 40)
-      this.shuffle();
-    else {
-      this.takeTopCardsOfLibrary(3);
-      sortDesc(top, (card) => this.cardValue(card));
-      this.putCardsOnTopOfLibrary(top);
-    }
-    this.draw(1);
-  }
-
-  /** Take the two best of the top five; the rest go to the bottom. */
-  private stockUp(): void {
-    const top = this.takeTopCardsOfLibrary(5);
-    sortDesc(top, (card) => this.cardValue(card));
-    for (const card of top.slice(0, 2)) this.putCard(card, 'hand');
-    for (const card of top.slice(2)) this.putCard(card, 'library');
-  }
-
-  /** Look at the top three: from the graveyard all go to hand, otherwise the best one does and the rest go to the bottom. */
-  private seeTheTruth(fromGraveyard: boolean): void {
-    const top = this.takeTopCardsOfLibrary(3);
-    if (fromGraveyard || !top.length)
-      for (const card of top) this.putCard(card, 'hand');
-    else {
-      sortDesc(top, (card) => this.cardValue(card));
-      this.putCard(top[0], 'hand');
-      for (const card of top.slice(1)) this.putCard(card, 'library');
-    }
-  }
-
-  /** Looks at the top five cards and keeps some in hand, the rest go to the graveyard. */
-  private resolveTopFiveSplit(
-    spell: 'Pieces of the Puzzle' | 'Fact or Fiction',
-  ): void {
-    const top = this.takeTopCardsOfLibrary(5);
-    let keep: CardDef[];
-    if (spell === 'Pieces of the Puzzle') {
-      // up to two instants/sorceries to hand, the rest to the graveyard
-      keep = sortDesc(
-        top.filter((card) => card.isInstantOrSorcery),
-        (card) => this.cardValue(card),
-      ).slice(0, 2);
-    } else {
-      // opponent splits: the best card alone vs the other four
-      sortDesc(top, (card) => this.cardValue(card));
-      const rest = top.slice(1);
-      keep =
-        top.length &&
-        this.cardValue(top[0]) >
-          rest.reduce((total, card) => total + this.cardValue(card), 0) * 0.6
-          ? top.slice(0, 1)
-          : rest;
-    }
-    for (const card of top) {
-      if (keep.includes(card)) this.putCard(card, 'hand');
-      else this.toGraveyard(card, true);
-    }
-  }
-
-  /** Rituals, untap spells and tutors. Returns false if this isn't one of them. */
-  private resolveManaOrTutor(card: CardDef, mode: string | null): boolean {
-    switch (card.name) {
-      case 'Snap':
-        this.untapLands(2);
-        return true;
-      case 'Dark Ritual':
-        this.pool.B += 3;
-        return true;
-      case 'Cabal Ritual':
-        this.pool.B += this.cabalMana();
-        return true;
-      case 'Drain Power':
-        this.pool.C += this.drainPowerMana();
-        return true;
-      case 'Energy Tap': {
-        const target = this.energyTapTarget();
-        if (target) {
-          target.tapped = true;
-          this.pool.C += target.card.manaValue;
-        }
-        return true;
-      }
-      case 'Rain of Filth':
-        this.sacrificeAllLandsForMana();
-        return true;
-      case 'High Tide':
-        this.highTidesThisTurn += 1;
-        return true;
-      case 'Bubbling Muck':
-        this.muck += 1;
-        return true;
-      case 'Diabolic Tutor':
-      case 'Demonic Tutor':
-        this.doTutor(() => true, false);
-        return true;
-      case 'Vampiric Tutor':
-        this.doTutor(() => true, true);
-        this.loseLife(2);
-        return true;
-      case 'Demonic Counsel':
-        this.doTutor(
-          (otherCard) => C.hasCreatureType(otherCard, 'Demon'),
-          false,
-        );
-        return true;
-      case 'Solve the Equation':
-        this.doTutor((otherCard) => otherCard.isInstantOrSorcery, false);
-        return true;
-      case 'Personal Tutor':
-        this.doTutor((otherCard) => otherCard.isSorcery, true);
-        return true;
-      case 'Waterlogged Teachings':
-        this.doTutor((otherCard) => otherCard.isInstant, false);
-        return true;
-      case 'Merchant Scroll':
-        this.doTutor(
-          (otherCard) => otherCard.isInstant && otherCard.isBlue,
-          false,
-        );
-        return true;
-      case 'Insatiable Avarice':
-        if (mode === 'tutor' || mode === 'both') this.doTutor(() => true, true);
-        if (mode === 'draw' || mode === 'both') {
-          this.draw(3);
-          this.myLife -= 3;
-        }
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  /** Rain of Filth: tap each untapped land for its mana, then sacrifice every land for {B}. */
-  private sacrificeAllLandsForMana(): void {
-    for (const land of this.landsOnBattlefield()) {
-      if (!land.tapped) this.tap(land, 'B');
-      this.sacrifice(land);
-      this.pool.B += 1;
-    }
-  }
-
+  /** Untaps up to count tapped lands, the ones that make the most mana first (common-spells.ts). */
   untapLands(count: number): void {
-    const tapped = this.battlefield.filter(
-      (permanent) => permanent.land !== null && permanent.tapped,
-    );
-    // the lands that make the most first (High Tide's and Bubbling Muck's bonus), then one that makes two colours
-    const manaMade = (permanent: Permanent) =>
-      1 +
-      (this.islandTyped(permanent) ? this.highTidesThisTurn : 0) +
-      (this.swampTyped(permanent) ? this.muck : 0);
-    const makesTwoColours = (permanent: Permanent) => {
-      const kind = this.manaSourceKind(permanent) ?? '';
-      return (
-        kind === 'A' || kind === 'UB' || kind === 'GU' || kind.includes('/')
-      );
-    };
-    const key = (permanent: Permanent) =>
-      -2 * manaMade(permanent) + (makesTwoColours(permanent) ? 0 : 1);
-    tapped.sort((first, second) => key(first) - key(second));
-    for (const otherPermanent of this.landsToUntap(tapped, count))
-      otherPermanent.tapped = false;
-  }
-
-  /** The lands an untap effect untaps, from the tapped ones best first. A deck that planned the untap (a kill line the
-   *  search found) may name others. */
-  landsToUntap(tappedLandsBestFirst: Permanent[], count: number): Permanent[] {
-    const index = this.plannedPayments.findIndex(
-      (payment) => payment.cost === UNTAP,
-    );
-    if (index < 0) return tappedLandsBestFirst.slice(0, count);
-    const [payment] = this.plannedPayments.splice(index, 1);
-    const chosen: Permanent[] = [];
-    for (const landClass of payment.taps) {
-      const land = tappedLandsBestFirst.find(
-        (permanent) =>
-          !chosen.includes(permanent) &&
-          isSourceOfClass(this, permanent, landClass),
-      );
-      if (land) chosen.push(land);
-    }
-    // anything the plan didn't cover (the real game has other tapped lands) is untapped the usual way
-    for (const land of tappedLandsBestFirst)
-      if (
-        chosen.length < Math.min(count, payment.taps.length) &&
-        !chosen.includes(land)
-      )
-        chosen.push(land);
-    return chosen;
+    untapBestLands(this, count);
   }
 
   enter(
