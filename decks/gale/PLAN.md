@@ -39,6 +39,33 @@ Dimir spellslinger mill combo (Gale, Waterdeep Prodigy + Scion of Halaster). Win
 - **The Case of the Ransacked Lab slot** doesn't affect goldfish speed (all replacements within ±1). Pieces of the Puzzle was chosen: a sorcery Gale can recast, and it puts instants and sorceries in the graveyard.
 - **Protection** can't be measured: it is dead in a goldfish game, expect about 1–2 points by turn 8 per slot. Peregrine Drake / Cloud of Faeries as flying blockers cost about 0.5–1 point against Rewind.
 
+**Rain of Filth (task R1, 2026-11-17)**, in place of one card of `lists/proposed.txt`, 4,000 games per list, same seeds, noise about ±2.2 points. Rain taps every land, then sacrifices them all for {B} each, so after it only floating mana is left for a counterspell: judge it by the backup columns, since a kill that a counter cannot protect is a coin flip against any one answer.
+
+| Replaces (why) | By T6 | By T7 | By T8 | Backup T7 | Backup T8 | Avg turn |
+|---|---|---|---|---|---|---|
+| nothing (`proposed.txt`) | 18.5 | 48.8 | 74.1 | 29.2 | 54.3 | 7.04 |
+| Mocking Sprite (asked) | +2.4 | +2.0 | +1.0 | +0.1 | +0.6 | 6.99 |
+| Wizards of Thay (worst `--rank`, flash not modelled) | +3.0 | +2.7 | +0.8 | +1.0 | +1.5 | 6.97 |
+| Personal Tutor (second worst tutor in `--rank`) | +2.2 | +1.9 | +0.4 | +1.2 | +1.4 | 6.98 |
+| Focus the Mind (bad in `--rank`) | +1.8 | +2.0 | -0.2 | +0.2 | -1.2 | 6.98 |
+| Thespian's Stage (bad in `--rank`) | +2.1 | +2.7 | +0.9 | +0.3 | +0.8 | 6.98 |
+| an Island (Rain wants lands, so the land count is the test) | +1.9 | +2.2 | +0.2 | -0.9 | -0.4 | 6.98 |
+
+Nothing is clearly real: only Wizards of Thay and Thespian's Stage reach +2.7 by turn 7, just above the noise, and every list gains less by turn 8 and almost nothing in the backup columns, which is the measure that matters for Rain. So Rain is a small speed-up on turns 6 and 7, not a protected win. If Pontus adds it, Wizards of Thay is the best card to give up (its value here is the flash, which is not modelled). Rain without a counterspell in hand is the part to avoid at the table.
+
+**What a slow game misses** (`--diag`, task R2, `lists/proposed.txt`, 4,000 games, 2026-11-17):
+
+| Measure | Value |
+|---|---|
+| Gale out by the end of turn 3 / 4 | 71.6 / 92.3% (average turn 3.24) |
+| A whole combo package at hand by the end of turn 5 | 50.1% (average turn 4.88) |
+| Untapped lands and rocks at the end of turn 3 / 4 / 5 / 6 | 0.21 / 0.51 / 0.98 / 1.75 |
+| No kill by turn 6: no Gale | 0.7% |
+| No kill by turn 6: Gale, but a package piece missing | 35.5% |
+| No kill by turn 6: Gale and a package, but no line | 45.3% |
+
+Gale is rarely the problem. About two turns pass between having the pieces and killing, so mana on the kill turn (or Gale's recast fuel) matters more than R1's Rain of Filth result suggested, and finding the last piece is the other third. The AI taps out every turn, so in goldfish it never pays the price of holding a counterspell up: see R3 in the root `PLAN.md`.
+
 ## Pontus's real games (`logs/`)
 
 | Game | Result | What the analysis found |

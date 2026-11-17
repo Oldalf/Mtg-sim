@@ -257,6 +257,7 @@ export class GaleGame extends Game<KillSearchState> {
   }
 
   override startTurn(): void {
+    if (this.turn > 0) this.recordEndOfTurnMeasures();
     super.startTurn();
     this.guildmageActivations = 0;
     this.emetSelchUsed = false;
@@ -487,18 +488,8 @@ export class GaleGame extends Game<KillSearchState> {
             this.instantOrSorceryDevValue(card, true) > 0,
         ).length;
     }
-    const have = new Set([
-      ...this.hand.map((card) => card.name),
-      ...this.battlefield.map((permanent) => permanent.card.name),
-    ]);
-    if (state.hasGale || this.command.length)
-      for (const candidate of this.graveyard)
-        if (candidate.isInstantOrSorcery) have.add(candidate.name);
-    const miss = Math.min(
-      ...PACKAGES.map(
-        (pkg) =>
-          pkg.filter((req) => ![...req].some((name) => have.has(name))).length,
-      ),
+    const miss = this.fewestMissingPackagePieces(
+      state.hasGale || this.command.length > 0,
     );
     value += miss === 0 ? 450 : miss === 1 ? 220 : miss === 2 ? 70 : 0;
     // engines / creatures on the battlefield are worth at least as much as in hand
@@ -514,6 +505,61 @@ export class GaleGame extends Game<KillSearchState> {
       0.4 * this.hand.reduce((total, card) => total + this.cardValue(card), 0);
     if (this.hasCounterInHand()) value += 40;
     return value;
+  }
+
+  /** How many pieces the closest combo package still lacks (hand and battlefield; the graveyard's instants and sorceries
+   *  too when Gale can recast them). */
+  fewestMissingPackagePieces(countsGraveyard: boolean): number {
+    const have = new Set([
+      ...this.hand.map((card) => card.name),
+      ...this.battlefield.map((permanent) => permanent.card.name),
+    ]);
+    if (countsGraveyard)
+      for (const candidate of this.graveyard)
+        if (candidate.isInstantOrSorcery) have.add(candidate.name);
+    return Math.min(
+      ...PACKAGES.map(
+        (pkg) =>
+          pkg.filter((req) => ![...req].some((name) => have.has(name))).length,
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------- measures for --diag (they change nothing in the game)
+  galeOutTurn: number | null = null; // the first turn that ended with Gale on the battlefield
+  packageReadyTurn: number | null = null; // the first turn that ended with a whole combo package at hand
+  untappedManaSourcesByTurn: number[] = []; // lands and rocks left untapped at the end of each turn (instant-speed mana)
+  missingAtTurn6: number | null = null; // no kill by the end of turn 6: 1 no Gale, 2 Gale but a package piece missing, 3 both there
+
+  private recordEndOfTurnMeasures(): void {
+    const hasGale = this.isOnBattlefield(GALE);
+    const isPackageReady =
+      this.fewestMissingPackagePieces(hasGale || this.command.length > 0) === 0;
+    if (hasGale && this.galeOutTurn === null) this.galeOutTurn = this.turn;
+    if (isPackageReady && this.packageReadyTurn === null)
+      this.packageReadyTurn = this.turn;
+    this.untappedManaSourcesByTurn[this.turn] = this.battlefield.filter(
+      (permanent) =>
+        !permanent.tapped && this.manaSourceKind(permanent) !== null,
+    ).length;
+    if (this.turn === 6 && this.unprotectedKillTurn === null)
+      this.missingAtTurn6 = !hasGale ? 1 : !isPackageReady ? 2 : 3;
+  }
+
+  override diag(): Record<string, number | null> {
+    // the game stops on the turn it wins, before that turn's end is recorded
+    if (this.turn > 0) this.recordEndOfTurnMeasures();
+    const untappedOnTurn = (turn: number) =>
+      this.untappedManaSourcesByTurn[turn] ?? null;
+    return {
+      galeOut: this.galeOutTurn,
+      packageReady: this.packageReadyTurn,
+      untapped3: untappedOnTurn(3),
+      untapped4: untappedOnTurn(4),
+      untapped5: untappedOnTurn(5),
+      untapped6: untappedOnTurn(6),
+      missingAtTurn6: this.missingAtTurn6,
+    };
   }
 
   override combat(): void {

@@ -4,6 +4,48 @@ import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { GaleGame } from './game';
 import { runKillTests } from './tests/kills.test';
+import { DiagRow } from '../../engine/run/runner';
+import {
+  averageOf,
+  percentOf,
+  winByTurnMetrics,
+} from '../../engine/tools/diag-metrics';
+
+/** A turn from a --diag row; a game where it never happened counts as turn 99. */
+const turnOf = (row: DiagRow, key: string) => (row[key] as number | null) ?? 99;
+const win = (row: DiagRow) => turnOf(row, 'win');
+
+/** Average of a turn over the games where it happened. */
+const averageTurnOf = (rows: DiagRow[], key: string) =>
+  averageOf(
+    rows.filter((row) => row[key] !== null),
+    (row) => row[key] as number,
+  );
+
+/** Lands and rocks left untapped at the end of a turn, in the games still going after it. */
+function untappedAtEndOfTurn(turn: number) {
+  return {
+    label: `Untapped lands and rocks at the end of turn ${turn} (games still going)`,
+    unit: 'n' as const,
+    measure: (rows: DiagRow[]) =>
+      averageOf(
+        rows.filter(
+          (row) => win(row) > turn && row[`untapped${turn}`] !== null,
+        ),
+        (row) => row[`untapped${turn}`] as number,
+      ),
+  };
+}
+
+/** No kill by the end of turn 6, and what was missing then (see GaleGame.missingAtTurn6). */
+function missingAtTurn6(code: number, what: string) {
+  return {
+    label: `No kill by turn 6: ${what} (%)`,
+    unit: '%' as const,
+    measure: (rows: DiagRow[]) =>
+      percentOf(rows, (row) => row.missingAtTurn6 === code),
+  };
+}
 
 const anyOf = (names: string[]) => {
   const set = new Set(names);
@@ -43,6 +85,45 @@ export const deck = {
   config: CFG,
   settingDescriptions: SETTING_DESCRIPTIONS,
   Game: GaleGame,
+  // --diag: what a slow game is missing (task R2, 2026-11-17)
+  diagMetrics: [
+    ...winByTurnMetrics([5, 6, 7, 8], win),
+    {
+      label: 'Gale out by the end of turn 3 (%)',
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => turnOf(row, 'galeOut') <= 3),
+    },
+    {
+      label: 'Gale out by the end of turn 4 (%)',
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => turnOf(row, 'galeOut') <= 4),
+    },
+    {
+      label: 'Average turn Gale is out (games where he is)',
+      unit: 'turn' as const,
+      measure: (rows: DiagRow[]) => averageTurnOf(rows, 'galeOut'),
+    },
+    {
+      label: 'A whole combo package at hand by the end of turn 5 (%)',
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => turnOf(row, 'packageReady') <= 5),
+    },
+    {
+      label: 'Average turn a whole combo package is at hand',
+      unit: 'turn' as const,
+      measure: (rows: DiagRow[]) => averageTurnOf(rows, 'packageReady'),
+    },
+    untappedAtEndOfTurn(3),
+    untappedAtEndOfTurn(4),
+    untappedAtEndOfTurn(5),
+    untappedAtEndOfTurn(6),
+    missingAtTurn6(1, 'no Gale'),
+    missingAtTurn6(2, 'Gale, but a package piece missing'),
+    missingAtTurn6(3, 'Gale and a package, no line (mana)'),
+  ],
   // --hands: what to look for in an opening hand
   handFeatures: [
     {

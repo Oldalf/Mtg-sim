@@ -35,7 +35,7 @@ npm run sim -- gale --no-log                         # don't write the games to 
 npm run sim -- gale --rank                           # rank cards by how much seeing them by turn 4 helps
 npm run sim -- gale --cut "Card A" "Card B"          # cut each card for an Island (--replace Swamp) and compare
 npm run sim -- gale --analyze logs/game6.txt -d lists/proposed.txt   # check a real game for missed kills
-npm run sim -- aesi decklist.txt lists/proposed.txt --diag   # a deck's own consistency measures per list (Aesi, Meren: slow starts, when the commander comes down)
+npm run sim -- aesi decklist.txt lists/proposed.txt --diag   # a deck's own consistency measures per list (Aesi, Meren: slow starts, when the commander comes down; Gale: what a slow game is missing)
 npm run sim -- gale --eco                            # power-save mode: for long runs in the background while you play (see below)
 npm run sim -- aesi --hands -n 8000                  # how opening hands do, by land count and contents (for mulligan advice)
 npm run cards                                       # when the Scryfall data was downloaded, and its latest set
