@@ -2,7 +2,7 @@
  * Checks of single card rules in the engine that the DnD deck brought: "enters, draw a card" (Wall of Omens), Peregrine
  * Drake's untap doubled by Panharmonicon, Theros gods that aren't creatures below their devotion (Thassa, Ephara),
  * the rocks (Azorius Signet, Midnight Clock, Sarevok's Tome with the initiative), a Plains search, and Day of
- * Judgment as a pod answer, Cathars' Crusade and Radiant Solar. Also a search's copy of our next turn (copyAtNextTurn).
+ * Judgment as a pod answer, Cathars' Crusade and Radiant Solar, Thunderclap Drake's copies. Also a search's copy of our next turn (copyAtNextTurn).
  * Run: npm run pod -- --test
  */
 import * as C from '../cards/cards';
@@ -12,6 +12,7 @@ import { ANSWERS } from './answers';
 import { triggersOfCreatureEntering } from './creature-enter-triggers';
 import { Permanent } from './game-types';
 import { fetchLand } from './land-search';
+import { THUNDERCLAP_DRAKE, activateThunderclapDrake } from './spell-copies';
 
 function newGame(allDecks: Record<string, Deck>, library: string[] = []) {
   const deck = allDecks.goldfish;
@@ -161,6 +162,30 @@ export function runCommonCardTests(allDecks: Record<string, Deck>): boolean {
         game.dungeonPosition?.room,
       ],
       [2, 2, 1, 'Cave Entrance', 'Cave Entrance'],
+    );
+  }
+  {
+    // Thunderclap Drake: with the commander cast twice, the next instant or sorcery is copied twice (only that one)
+    const game = newGame(allDecks);
+    game.putCards([C.get('Opt'), C.get('Opt')], 'hand');
+    game.commandCasts = ['Gale', 'Gale'];
+    for (let i = 0; i < 5; i++) putOnBattlefield(game, 'Island');
+    const drake = putOnBattlefield(game, THUNDERCLAP_DRAKE);
+    const isActivated = activateThunderclapDrake(game, drake);
+    const [firstOpt, secondOpt] = game.hand;
+    game.castInstantOrSorcery(firstOpt);
+    const handAfterFirstOpt = game.hand.length;
+    game.castInstantOrSorcery(secondOpt);
+    check(
+      'Thunderclap Drake: sacrificed for {2}{U}; the next Opt draws three cards (two copies), the one after draws one',
+      [
+        isActivated,
+        game.isOnBattlefield(THUNDERCLAP_DRAKE),
+        game.graveyard.some((card) => card.name === THUNDERCLAP_DRAKE),
+        handAfterFirstOpt,
+        game.hand.length,
+      ],
+      [true, false, true, 4, 4],
     );
   }
   check(

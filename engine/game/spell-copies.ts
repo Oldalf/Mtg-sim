@@ -8,10 +8,13 @@
  * - copySpell: a copy of an instant or sorcery resolves (it is not cast: no cast triggers, rule 707.10); a copy of a
  *   permanent spell becomes a token (a legendary one is skipped: the legend rule would put one away at once).
  *   Twinning Staff adds one copy each time we copy a spell.
+ * - Thunderclap Drake's sacrifice: the next instant or sorcery we cast this turn is copied once per commander cast
+ *   (activateThunderclapDrake; the copies are made as the spell is cast, copyNextInstantOrSorcery).
  */
-import { CardDef } from '../cards/cards';
+import { CardDef, Cost } from '../cards/cards';
 import { TREASURE } from '../cards/tokens';
 import type { GameCore } from './game-core';
+import { Permanent } from './game-types';
 
 export const ARCHMAGE_EMERITUS = 'Archmage Emeritus';
 export const ARCHMAGE_OF_RUNES = 'Archmage of Runes';
@@ -60,6 +63,7 @@ export function copySpell(
   game: GameCore<unknown>,
   card: CardDef,
   count = 1,
+  mode: string | null = null,
 ): void {
   // counted once: a token copy of Twinning Staff doesn't add to the copies being made
   const copies = copiesMade(game, count);
@@ -67,10 +71,43 @@ export function copySpell(
     if (card.isInstantOrSorcery) {
       game.say('  copy of', card);
       copyInstantOrSorceryTriggers(game);
-      game.resolve(card);
+      game.resolve(card, false, mode);
     } else if (!card.types.has('legendary')) {
       game.say('  token copy of', card);
       game.enter(card, 'token', { token: true });
     }
   }
+}
+
+export const THUNDERCLAP_DRAKE = 'Thunderclap Drake';
+const THUNDERCLAP_DRAKE_ABILITY_COST = Cost.parse('{2}{U}');
+
+/** Thunderclap Drake's ability ({2}{U}, sacrifice it): when we next cast an instant or sorcery this turn, it is
+ *  copied once for each time we cast our commander from the command zone this game. When to use it is the deck's
+ *  choice. Returns false when the ability can't be paid. */
+export function activateThunderclapDrake(
+  game: GameCore<unknown>,
+  drake: Permanent,
+): boolean {
+  if (!game.pay(THUNDERCLAP_DRAKE_ABILITY_COST)) return false;
+  game.sacrifice(drake);
+  game.copiesOfNextInstantOrSorcery += game.commandCasts.length;
+  return true;
+}
+
+/** We cast an instant or sorcery: the copies waiting for it (Thunderclap Drake) are made now and resolve before
+ *  it, as their trigger goes on the stack above it. `mode` is the spell's mode or X, which the copies keep. */
+export function copyNextInstantOrSorcery(
+  game: GameCore<unknown>,
+  card: CardDef,
+  mode: string | null,
+): void {
+  const count = game.copiesOfNextInstantOrSorcery;
+  if (count === 0) return;
+  game.copiesOfNextInstantOrSorcery = 0;
+  game.say(
+    `${THUNDERCLAP_DRAKE}: ${count} cop${count > 1 ? 'ies' : 'y'} of`,
+    card,
+  );
+  copySpell(game, card, count, mode);
 }

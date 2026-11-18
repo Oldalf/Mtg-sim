@@ -4,6 +4,7 @@ import { Permanent } from '../../../engine/game/game-types';
 import { Rng } from '../../../engine/util/rng';
 import { CFG } from '../config';
 import { GaleGame } from '../game';
+import { GALE } from '../roles';
 import { search, finisherReachable } from '../kills';
 import { runInstantSpeedTests } from './instant-speed.test';
 import { runNewCardTests } from './new-cards.test';
@@ -41,6 +42,17 @@ function board({
   return game;
 }
 
+/** Thunderclap Drake on the battlefield, Cacophony in hand, opponents with 16 cards left, the commander cast as given. */
+function drakeBoard(commanderCasts: string[]): GaleGame {
+  const game = board({
+    battlefieldNames: ['Thunderclap Drake'],
+    hand: ['Maddening Cacophony'],
+  });
+  game.commandCasts = commanderCasts;
+  game.opponentLibrarySizes = game.opponentLibrarySizes.map(() => 16);
+  return game;
+}
+
 export function runKillTests(): boolean {
   let allPassed = true;
   const check = (label: string, game: GaleGame, expect: number) => {
@@ -53,6 +65,19 @@ export function runKillTests(): boolean {
   };
   const islands = (count: number) => repeatName('Island', count),
     swamps = (count: number) => repeatName('Swamp', count);
+
+  // Thunderclap Drake: sacrificed ({2}{U}), the next spell is copied once per Gale cast. Opponents with 16 cards
+  // left: one Cacophony mills 8, its copy the other 8.
+  check(
+    'Thunderclap Drake (Gale cast once): Cacophony and its copy mill 16 each',
+    drakeBoard([GALE]),
+    1,
+  );
+  check(
+    '... Gale never cast: the sacrifice copies nothing -> no',
+    drakeBoard([]),
+    0,
+  );
 
   check(
     'Guildmage+Mindcrank on board, Cacophony in hand (5 mana)',
@@ -548,6 +573,10 @@ function runPlayedKillTests(): boolean {
     );
     allPassed = allPassed && isGood;
   };
+  checkPlayed(
+    'Thunderclap Drake sacrificed, Cacophony and its copy mill 16 each',
+    drakeBoard([GALE]),
+  );
   checkPlayed(
     'Guildmage + Mindcrank, Cacophony cast from hand (5 lands)',
     board({

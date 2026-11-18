@@ -14,6 +14,7 @@ import * as C from '../../engine/cards/cards';
 import { COMBO_SPELLS, isUnearthLike } from './roles';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { KillStep } from '../../engine/game/game-types';
+import { THUNDERCLAP_DRAKE } from '../../engine/game/spell-copies';
 import { PaymentRecord, Pool, SearchMana } from '../../engine/game/search-mana';
 
 export const FODDER_EXCLUDE = new Set([
@@ -31,6 +32,25 @@ export const RELEVANT = new Set([
   'Overture',
 ]);
 export const relevantSpell = (name: string): boolean => RELEVANT.has(name);
+
+/** The spells the search lets Thunderclap Drake copy: a copy resolves exactly as the spell does here, with the same
+ *  variant (a kicked Cacophony's copy is kicked too). Not casualty (a copy pays no extra cost), not a spell with a
+ *  creature target (Unearth, Snap, Extended Absence: a copy needs another one), and no spell whose copy the search
+ *  doesn't count (Windfall, Energy Tap). */
+const COPYABLE_BY_DRAKE = new Set([
+  'Maddening Cacophony',
+  'Traumatize',
+  'Cut Your Losses',
+  'Dark Ritual',
+  'Cabal Ritual',
+  'High Tide',
+  'Bubbling Muck',
+  'Turnabout',
+  'Frantic Search',
+  'Drain Power',
+]);
+export const isCopyableByDrake = (name: string, variant: string): boolean =>
+  COPYABLE_BY_DRAKE.has(name) && variant !== 'casualty';
 
 // opponent events: [kind, opponent index (-1 = none / us), amount] on a flat number stack
 const MILL = 0,
@@ -58,7 +78,8 @@ export type GaleAbility =
   | 'guildmageMill'
   | 'konradMill'
   | 'monumentExhaust'
-  | 'monumentMill';
+  | 'monumentMill'
+  | 'thunderclapDrake';
 
 /** One step of a Gale kill line, as data the real game plays (kill-play.ts). */
 export interface GaleKillStep extends KillStep {
@@ -118,6 +139,12 @@ export class KillSearchState {
   monumentCanExhaust = false;
   hasEmetSelch = false;
   emetSelchUsed = false;
+  /** Thunderclap Drake is on the battlefield (its sacrifice copies the next instant or sorcery). */
+  hasThunderclapDrake = false;
+  /** Times we cast a commander from the command zone this game: the copies the Drake's sacrifice makes. */
+  commanderCasts = 0;
+  /** Copies waiting for the next instant or sorcery cast from hand (the Drake was sacrificed). */
+  pendingSpellCopies = 0;
   opponentLostLife = false;
   sacrificeFodder = 0;
   creatureCount = 0;
@@ -172,6 +199,9 @@ export class KillSearchState {
     state.monumentCanExhaust = this.monumentCanExhaust;
     state.hasEmetSelch = this.hasEmetSelch;
     state.emetSelchUsed = this.emetSelchUsed;
+    state.hasThunderclapDrake = this.hasThunderclapDrake;
+    state.commanderCasts = this.commanderCasts;
+    state.pendingSpellCopies = this.pendingSpellCopies;
     state.opponentLostLife = this.opponentLostLife;
     state.sacrificeFodder = this.sacrificeFodder;
     state.creatureCount = this.creatureCount;
@@ -225,7 +255,7 @@ export class KillSearchState {
     return (
       `${this.mana.key()}|${this.hand}|${this.graveyardSpells}|${this.graveyardCreatures}|` +
       `${+this.hasGuildmage}${this.guildmageActivations}${+this.hasMindcrank}${+this.hasKonrad}${+this.hasMindskinner}${+this.mindskinnerCanAttack}${+this.hasMonument}` +
-      `${+this.monumentCanExhaust}${+this.emetSelchUsed}${+this.opponentLostLife},${this.sacrificeFodder}|${this.opponentLife}|${this.opponentLibrary}|${this.opponentPoison}|${this.energyTapTargets}`
+      `${+this.monumentCanExhaust}${+this.emetSelchUsed}${+this.opponentLostLife}${+this.hasThunderclapDrake}${this.pendingSpellCopies},${this.sacrificeFodder}|${this.opponentLife}|${this.opponentLibrary}|${this.opponentPoison}|${this.energyTapTargets}`
     );
   }
 
@@ -233,7 +263,7 @@ export class KillSearchState {
   fullKey(): string {
     return (
       this.searchKey() +
-      `|${+this.hasGale}${+this.hasEmetSelch},${this.creatureCount},${this.reductionInstantSorcery},${this.reductionNoncreature},${this.reductionBlue},` +
+      `|${+this.hasGale}${+this.hasEmetSelch},${this.commanderCasts},${this.creatureCount},${this.reductionInstantSorcery},${this.reductionNoncreature},${this.reductionBlue},` +
       `${this.reductionFromGraveyard}|${this.opponentGraveyard}|${this.opponentCreatureAccumulator}|${this.ownLibrarySize},${this.ownCreatureAccumulator},${this.ownCreatureDensity},${this.opponentCreatureDensity},` +
       `${this.opponentHandSize},${this.opponentCreaturesOnBoard}|${this.opponentLandCount},${this.graveyardNonSpellCount}`
     );
@@ -296,6 +326,28 @@ export class KillSearchState {
 
   untapLands(count: number): void {
     this.mana.untapLands(count);
+  }
+
+  /** Thunderclap Drake's ability, paid already: the Drake dies (its cost reduction goes, Konrad sees it) and the next
+   *  instant or sorcery cast from hand is copied once per commander cast. */
+  sacrificeThunderclapDrake(): void {
+    this.hasThunderclapDrake = false;
+    this.pendingSpellCopies = this.commanderCasts;
+    this.creatureCount -= 1;
+    this.reductionInstantSorcery -= 1;
+    this.creatureReductions = {
+      ...this.creatureReductions,
+      instantSorcery: this.creatureReductions.instantSorcery - 1,
+    };
+    if (this.sacrificeFodder > 0) this.sacrificeFodder -= 1; // a 2/1 counts as fodder
+    const drakeTargetIndex = this.energyTapTargets.indexOf(
+      C.get(THUNDERCLAP_DRAKE).manaValue,
+    );
+    if (drakeTargetIndex >= 0)
+      this.energyTapTargets = this.energyTapTargets.filter(
+        (_manaValue, i) => i !== drakeTargetIndex,
+      );
+    if (this.hasKonrad) this.recordOpponentStep('events', [KONRAD, -1, 1]);
   }
 
   payForSpell(

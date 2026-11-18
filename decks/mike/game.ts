@@ -98,7 +98,6 @@ export class MikeGame extends GameWithoutKillSearch {
   winHow: string | null = null;
   emptiedTurn: number | null = null; // the turn our library first hit zero
   emptiedSafe = false; // ...with a win piece, Conundrum or Ormos out
-  drakeCopies = 0; // Thunderclap Drake: copies of the next instant or sorcery this turn
   crawlerDrain = 0; // life drained by Psychosis Crawler triggers
   commanderCasts = 0;
   // ---- measures for --diag (they change nothing in the game)
@@ -679,7 +678,6 @@ export class MikeGame extends GameWithoutKillSearch {
     this.purgeSpawns();
     super.startTurn();
     this.speedUpTurn = false;
-    this.drakeCopies = 0;
     this.opponentLostLifeThisTurn = false;
     this.drawsThisTurn = 0;
     this.drawStepOpen = true;
@@ -897,21 +895,7 @@ export class MikeGame extends GameWithoutKillSearch {
       )
     )
       return false;
-    if (DRAW_SPELLS_WORTH_COPYING.has(card.name)) {
-      for (let i = 0; i < this.drakeCopies; i++)
-        this.resolve(card, false, mode);
-      if (this.drakeCopies)
-        this.say(
-          'Thunderclap Drake: ' +
-            this.drakeCopies +
-            ' cop' +
-            (this.drakeCopies > 1 ? 'ies' : 'y') +
-            ' of',
-          card,
-        );
-      this.drakeCopies = 0;
-      this.imitate(card, mode);
-    }
+    if (DRAW_SPELLS_WORTH_COPYING.has(card.name)) this.imitate(card, mode);
     return true;
   }
   override castPerm(card: CardDef, fromCommand = false): boolean {

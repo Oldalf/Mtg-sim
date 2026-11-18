@@ -16,6 +16,11 @@ import {
   OVERTURE_COST,
 } from './kill-moves';
 import { GaleAbility, GaleKillStep, OPPONENT_EVENT } from './kill-state';
+import {
+  THUNDERCLAP_DRAKE,
+  activateThunderclapDrake,
+  copyInstantOrSorceryTriggers,
+} from '../../engine/game/spell-copies';
 import type { GaleGame } from './game';
 
 const JIDOOR = 'Jidoor, Aristocratic Capital';
@@ -88,6 +93,13 @@ function activateAbility(game: GaleGame, ability: GaleAbility): string | null {
     case 'monumentExhaust':
     case 'monumentMill':
       return activateMonument(game, ability === 'monumentExhaust');
+    case 'thunderclapDrake': {
+      const drake = game.findPermanent(THUNDERCLAP_DRAKE);
+      if (!drake) return `no ${THUNDERCLAP_DRAKE}`;
+      return activateThunderclapDrake(game, drake)
+        ? null
+        : `cannot pay {2}{U} for ${THUNDERCLAP_DRAKE}`;
+    }
   }
 }
 
@@ -180,6 +192,11 @@ function castSpellFromHand(game: GaleGame, step: GaleKillStep): string | null {
     const failure = activateAbility(game, 'guildmageDrain');
     if (failure !== null) return failure;
   }
+  // (Overture is an ability, not a spell: nothing copies it)
+  const copiesFailure = isOverture
+    ? null
+    : resolveThunderclapDrakeCopies(game, name, card, variant);
+  if (copiesFailure !== null) return copiesFailure;
   const failure = resolveKillSpell(
     game,
     isOverture ? 'Overture' : name,
@@ -188,6 +205,25 @@ function castSpellFromHand(game: GaleGame, step: GaleKillStep): string | null {
   );
   game.putCard(card, 'graveyard');
   return failure;
+}
+
+/** Thunderclap Drake's copies of the spell cast from hand resolve before it, as the search counts them (the search
+ *  casts only a spell it can copy next, isCopyableByDrake). Twinning Staff is not counted: Gale doesn't play it. */
+function resolveThunderclapDrakeCopies(
+  game: GaleGame,
+  name: string,
+  card: CardDef,
+  variant: string,
+): string | null {
+  const copies = game.copiesOfNextInstantOrSorcery;
+  game.copiesOfNextInstantOrSorcery = 0;
+  for (let copy = 0; copy < copies; copy++) {
+    game.say(`  ${THUNDERCLAP_DRAKE}: copy of`, card);
+    copyInstantOrSorceryTriggers(game);
+    const failure = resolveKillSpell(game, name, card, variant);
+    if (failure !== null) return failure;
+  }
+  return null;
 }
 
 /** Gale's trigger: cast an instant or sorcery from the graveyard (it is exiled afterwards). */

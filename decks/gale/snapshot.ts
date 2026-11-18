@@ -3,6 +3,7 @@ import * as Facts from '../../engine/cards/card-facts';
 import { GALE } from './roles';
 import { FODDER_EXCLUDE, KillSearchState } from './kill-state';
 import { SearchMana } from '../../engine/game/search-mana';
+import { THUNDERCLAP_DRAKE } from '../../engine/game/spell-copies';
 import type { GaleGame } from './game';
 
 // ---------------------------------------------------------------- the kill search's snapshot
@@ -93,6 +94,9 @@ function addBoard(
   state.monumentCanExhaust = monument !== null && !monument.exhausted;
   state.hasEmetSelch = game.isOnBattlefield('Emet-Selch of the Third Seat');
   state.emetSelchUsed = nextTurn ? false : game.emetSelchUsed;
+  state.hasThunderclapDrake = game.isOnBattlefield(THUNDERCLAP_DRAKE);
+  state.commanderCasts = game.commandCasts.length;
+  state.pendingSpellCopies = nextTurn ? 0 : game.copiesOfNextInstantOrSorcery;
   state.opponentLostLife = false;
   const creatures = game.battlefield.filter(
     (permanent) => permanent.card.isCreature,

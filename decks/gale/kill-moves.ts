@@ -7,6 +7,7 @@ import {
   Path,
   RELEVANT,
   addSorted,
+  isCopyableByDrake,
   remove1,
   uniqSorted,
 } from './kill-state';
@@ -53,6 +54,7 @@ export const COST_KONRAD_MILL = new Cost(1, 0, 1);
 export const COST_MONUMENT_EXHAUST = new Cost(2, 2);
 export const COST_MONUMENT = new Cost(1);
 export const OVERTURE_COST = Cost.parse('{4}{U}{U}');
+export const COST_THUNDERCLAP_DRAKE = Cost.parse('{2}{U}');
 
 /** Every state reachable from this one with one more move. */
 export function children(state: KillSearchState): KillSearchState[] {
@@ -209,6 +211,23 @@ function addAbilityMoves(
       );
     }
   }
+  if (
+    state.hasThunderclapDrake &&
+    state.commanderCasts > 0 &&
+    state.pendingSpellCopies === 0
+  ) {
+    const next = state.copy();
+    if (next.spendMana(COST_THUNDERCLAP_DRAKE)) {
+      next.sacrificeThunderclapDrake();
+      moves.push(
+        labelled(next, {
+          kind: 'ability',
+          ability: 'thunderclapDrake',
+          text: `sacrifice Thunderclap Drake {2}{U}: the next spell is copied ${next.pendingSpellCopies} time(s)`,
+        }),
+      );
+    }
+  }
   if (state.mindskinnerCanAttack) {
     const next = state.copy();
     next.mindskinnerCanAttack = false;
@@ -274,6 +293,12 @@ function addHandSpellMoves(
     const handSpell = describeHandSpell(state, name);
     if (handSpell === null) continue;
     for (const [variant, baseCost] of handSpell.variants) {
+      // with Thunderclap Drake's copies waiting, only a spell whose copies the search counts is cast next
+      if (
+        state.pendingSpellCopies > 0 &&
+        !isCopyableByDrake(handSpell.spell, variant)
+      )
+        continue;
       const afterPaying = state.copy();
       if (!afterPaying.payForSpell(handSpell.card, baseCost)) continue;
       afterPaying.hand = remove1(afterPaying.hand, name);
@@ -360,6 +385,14 @@ function addResponseMoves(
         ' from graveyard';
     if (responseCount)
       description += ` -> in response activate Guildmage x${responseCount}`;
+    // Thunderclap Drake's copies resolve before the spell (their trigger is above it on the stack)
+    const drakeCopies = responseState.pendingSpellCopies;
+    if (drakeCopies) {
+      description += ` -> Thunderclap Drake: ${drakeCopies} cop${drakeCopies > 1 ? 'ies' : 'y'}`;
+      for (let copy = 0; copy < drakeCopies; copy++)
+        responseState.resolveSpell(handSpell.spell, variant);
+      responseState.pendingSpellCopies = 0;
+    }
     if (variant !== 'enabler')
       responseState.resolveSpell(handSpell.spell, variant);
     if (handSpell.spell !== 'Overture')
@@ -389,6 +422,7 @@ function addEmetSelchMoves(
 ): void {
   if (!(state.hasEmetSelch && state.opponentLostLife && !state.emetSelchUsed))
     return;
+  if (state.pendingSpellCopies > 0) return; // the Drake's copies wait for a spell from hand
   for (const name of uniqSorted(state.graveyardSpells)) {
     if (!RELEVANT.has(name)) continue;
     for (const [variant, baseCost] of state.castVariants(name, true)) {
@@ -494,6 +528,7 @@ function selfCounterTargets(
 /** Cast a cheap spell from hand, then counter it with your own counterspell from hand. Both casts
  *  can trigger Gale; An Offer You Can't Refuse gives you two Treasures and Unwind untaps three lands. */
 function selfCounterMoves(state: KillSearchState): KillSearchState[] {
+  if (state.pendingSpellCopies > 0) return []; // the Drake's copies wait for a spell from hand
   const moves: KillSearchState[] = [];
   const handNames = uniqSorted(state.hand);
   for (const counterName of handNames) {

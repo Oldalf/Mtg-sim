@@ -72,7 +72,7 @@ Pontus is considering it for more card draw. Swapped for each of seven draw card
 
 ## Not modelled / open
 
-- Thunderclap Drake's sacrifice (copy the next instant or sorcery once per time the commander was cast), Atomic Microsizer's trigger, Amonkhet Raceway's haste, Castle Vantress's scry, The Water Crystal's mill, Folio of Fancies's opponents drawing too, Pensive Professor's increment, Body of Knowledge's damage draw, Volatile Stormdrake's exchange in a goldfish game (no creature to take: it is a plain 3/2 flyer; in a pod it takes a creature, see `POD_PLAN.md`), Harmonized Trio's prepared state (modelled as: tap Trio and two creatures, cast a copy of Brainstorm for {U}).
+- Atomic Microsizer's trigger, Amonkhet Raceway's haste, Castle Vantress's scry, The Water Crystal's mill, Folio of Fancies's opponents drawing too, Pensive Professor's increment, Body of Knowledge's damage draw, Volatile Stormdrake's exchange in a goldfish game (no creature to take: it is a plain 3/2 flyer; in a pod it takes a creature, see `POD_PLAN.md`), Harmonized Trio's prepared state (modelled as: tap Trio and two creatures, cast a copy of Brainstorm for {U}).
 - Interaction is held and never cast. Judge counterspells and bounce yourself.
 - Whether Laboratory Maniac / Jace should be held until the library is low (safer against removal, about 4 points slower here).
 - Mulligan rule is in `mulligan.ts`; cut ideas from Pontus: none yet (no cut tests before he names them).
@@ -82,7 +82,7 @@ Pontus is considering it for more card draw. Swapped for each of seven draw card
 Pontus's real games often end in a mill, and the first version milled only about 14% of the time. Changes:
 - **Slick Imitator** now also copies Windfall and Flux (it already copied Pull from Tomorrow, Treasure Cruise and Brainstorm). A Windfall with 14 other cards at max speed draws 28, and the copy discards those and draws 56 (test in `mike.test.ts`).
 - **Windfall / Flux** are no longer blocked by the "stop drawing at 3 cards left" rule when a win piece, Conundrum or Ormos is out: a refill that draws the library out is now the plan (score 99 with Maniac / Jace out). Flux discards the whole hand when that empties the library.
-- **Thunderclap Drake**'s sacrifice (one copy of the next draw spell per time the commander was cast) is modelled; it fires rarely (no change in the numbers).
+- **Thunderclap Drake**'s sacrifice (one copy of the next draw spell per time the commander was cast) is modelled; it fires rarely (no change in the numbers). Since 2026-11-18 (step 11, T3) the rule is the engine's (`activateThunderclapDrake` in `engine/game/spell-copies.ts`): the copies resolve before the spell, as the rules say, and the next instant or sorcery of any kind is copied. Mike still chooses when (before Windfall, Flux, Pull from Tomorrow or Treasure Cruise). 16,000 games, same seeds, eco: every turn within 0.1 point, average turn 9.18 both; 3 of the 600 regress seeds differ.
 - New diag lines: library emptied (%), and emptied with a protector out (%).
 
 Result (default settings): win by turn 9 / 10 / 11 **62.5 / 85.1 / 95.0%** (before: 59.6 / 83.3 / 94.5). Wins by milling **32%** (before 14%), Toad 28%, damage 40%. The library empties in 33% of games, and in 33.1% of them a protector is out; we still never deck ourselves. `keep_library=0` (no safety margin at all) changes nothing: the safety rule is not what holds the mill back, the other wins simply come first or at the same time.

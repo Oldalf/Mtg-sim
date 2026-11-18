@@ -120,9 +120,24 @@ Each step is worth about 4 points in both pods: home list to proposed, proposed 
 
 More logs help most when they show a line the simulator hasn't seen, or a stalled game (turn 9+). A sixth game with the same line adds little. Run `npm run sim -- gale --analyze logs/<file>.txt -d lists/proposed.txt` on each.
 
+## Thunderclap Drake in the kill search (step 11, T3, 2026-11-18)
+
+The kill search can sacrifice Thunderclap Drake ({2}{U}) when Gale has been cast: the next spell from hand is copied once per Gale cast, the copies resolving before it (after Gale's recast). Only spells whose copy resolves exactly as the search counts it are copied (Cacophony, Traumatize, Cut Your Losses without casualty, the rituals, High Tide, Muck, Turnabout, Frantic Search, Drain Power); nothing else is cast while copies wait. The rule is the engine's (`engine/game/spell-copies.ts`); kill-play makes the copies with the search's rules (`resolveThunderclapDrakeCopies`). Tests: two kill checks and one line played for real (`tests/kills.test.ts`).
+
+16,000 games each, same seeds, default settings, eco; before / after the change (noise about ±1.1, but on the same seeds the change only moves games where a Drake line is found):
+
+| list | by T6 | by T7 | by T8 | backup T7 | backup T8 | avg turn |
+|---|---|---|---|---|---|---|
+| `proposed.txt` | 17.9 / 18.0 | 48.0 / 48.1 | 73.7 / 73.9 | 28.2 / 28.2 | 53.7 / 53.8 | 7.06 / 7.06 |
+| `speed.txt` | 21.6 / 21.7 | 52.7 / 52.8 | 76.5 / 76.7 | 33.1 / 33.1 | 58.9 / 58.9 | 6.97 / 6.97 |
+
+Verdict: within noise; the Drake is a cost reducer first. Its sacrifice costs {3} in all ({2}{U} plus the {1} it no longer saves), so a copy pays off only when it finishes a kill (a second Cacophony against small libraries). `decklist.txt` doesn't play the Drake, so its results don't change.
+
+Found on the way (for T5): `--test` checks kill misses on `decklist.txt` only. On `proposed.txt` and `speed.txt` there were already 12 and 22 kill misses in 2,000 games before this change (9 and 23 after; none of them in a line that sacrifices the Drake): Singularity Rupture or Expansion Algorithm short of mana after Signets, Fellwar Stone or Rain of Filth, the "kill-search mana leftovers" below.
+
 ## Open
 
 - Pontus's goldfish feedback on the adopted list; whether to add a protection card, and for what.
-- Ideas, none started: play at instant speed on opponents' turns (Wizards of Thay, end-of-turn draw and tutors);  Thunderclap Drake's copy ability; Mana Sculpt's mana; kill-finder mana leftovers (outside mana isn't used up by other spells, a dual paying for High Tide still counts for Muck, the AI doesn't save a rock to pay for High Tide).
+- Ideas, none started: play at instant speed on opponents' turns (Wizards of Thay, end-of-turn draw and tutors); Mana Sculpt's mana; kill-finder mana leftovers (outside mana isn't used up by other spells, a dual paying for High Tide still counts for Muck, the AI doesn't save a rock to pay for High Tide).
 - Speed: the planner is about 40% of the run time. Running it only when the top plays are close in score would be the next saving. 4,000 games take about 1 minute.
 - Housekeeping (2026-11-14): `lists/` holds only `proposed.txt`; the test lists and the cut tests were removed (in git history before that date).

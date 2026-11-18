@@ -38,6 +38,7 @@ import {
 import type { MikeGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Candidate, Permanent } from '../../engine/game/game-types';
+import { activateThunderclapDrake } from '../../engine/game/spell-copies';
 
 // ================================================================ what to do
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
@@ -577,12 +578,9 @@ function addCombatAbilityCandidate(
     ) &&
     (game.hasMillWinPiece() || game.isSafeToEmptyLibrary())
   )
-    add(88, Cost.parse('{2}{U}'), () => {
-      if (!game.pay(Cost.parse('{2}{U}'))) return false;
-      game.dies(permanent);
-      game.drakeCopies = game.commanderCasts;
-      return true;
-    });
+    add(88, Cost.parse('{2}{U}'), () =>
+      activateThunderclapDrake(game, permanent),
+    );
   else if (name === ROGUES_PASSAGE && isReady && context.isMain2 === false) {
     const bigCreatures = game
       .creatures()

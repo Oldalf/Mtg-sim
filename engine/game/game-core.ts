@@ -79,7 +79,10 @@ import {
 } from './common-spells';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import { enterTriggerCount } from './trigger-doublers';
-import { castInstantOrSorceryTriggers } from './spell-copies';
+import {
+  castInstantOrSorceryTriggers,
+  copyNextInstantOrSorcery,
+} from './spell-copies';
 import { playGoldfishCombat } from './goldfish-combat';
 import {
   putOpeningHandLeylineOntoBattlefield,
@@ -187,6 +190,8 @@ export abstract class GameCore<S = unknown> {
   sorceriesHaveFlashThisTurn = false;
   nextSorceryHasFlash = false;
   opponentsEndStepCasts = 0;
+  /** Copies to make of the next instant or sorcery we cast this turn (Thunderclap Drake, spell-copies.ts). */
+  copiesOfNextInstantOrSorcery = 0;
   landPlayed = false;
   /** Pain damage of the lands tapped by the payment in progress (dealt when pay() commits). */
   painTaps = 0;
@@ -976,6 +981,7 @@ export abstract class GameCore<S = unknown> {
     this.spellsCast += 1;
     this.onCastInstantOrSorcery(fromGraveyard);
     this.castTriggers(card, fromGraveyard, triggerOptions);
+    copyNextInstantOrSorcery(this, card, mode);
     this.podAnnounceCast(card);
     if (this.podCounters(card)) {
       this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
@@ -1016,6 +1022,7 @@ export abstract class GameCore<S = unknown> {
       this.sayEvent('cast', 'cast', card, '(rebound, free)');
       this.spellsCast += 1;
       this.onCastInstantOrSorcery(false);
+      copyNextInstantOrSorcery(this, card, null);
       this.podAnnounceCast(card);
       this.resolve(card);
       this.putCard(card, 'graveyard');
@@ -1044,6 +1051,7 @@ export abstract class GameCore<S = unknown> {
     if (!this.pay(cost, false)) return false;
     if (fromCommand) {
       this.takeCard(card, 'command');
+      this.commandCasts.push(card.name);
       this.onCommanderCast(card);
     } else this.takeCard(card, 'hand');
     this.spellsCast += 1;
@@ -1084,6 +1092,7 @@ export abstract class GameCore<S = unknown> {
     this.sayEvent('cast', 'flashback', card);
     this.spellsCast += 1;
     this.onCastInstantOrSorcery(true);
+    copyNextInstantOrSorcery(this, card, null);
     this.podAnnounceCast(card);
     this.resolve(card, true);
     this.putCard(card, 'exile');
@@ -1239,6 +1248,7 @@ export abstract class GameCore<S = unknown> {
     this.wallUsed = false;
     this.lastKey = null;
     this.sorceriesHaveFlashThisTurn = this.nextSorceryHasFlash = false;
+    this.copiesOfNextInstantOrSorcery = 0;
   }
 
   /** A quiet copy of the game for a search to play moves on: no log, and it never plays kill lines of its own. */
@@ -1646,9 +1656,9 @@ export abstract class GameCore<S = unknown> {
     const castCount = this.commandCasts.filter((x) => x === card.name).length;
     return castCount ? cost.withGeneric(cost.generic + 2 * castCount) : cost;
   }
-  onCommanderCast(card: CardDef): void {
-    this.commandCasts.push(card.name);
-  }
+  /** We cast a commander from the command zone (castPerm has already added it to commandCasts). */
+  onCommanderCast(_card: CardDef): void {}
+  /** The commanders we cast from the command zone this game, one entry per cast (castPerm adds them). */
   commandCasts: string[] = [];
   /** [how much we want to cast c, its cost], to decide if a tapped land costs us mana now. */
   landWant(card: CardDef): [number, Cost] {
