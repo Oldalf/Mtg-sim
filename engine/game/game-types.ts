@@ -68,6 +68,7 @@ export const BASE_CONFIG: Config = {
   planner_width: 4, // how many plays it compares at each decision
   planner_rollouts: 2, // random futures per play (library re-shuffled: no peeking)
   planner_budget: 0, // kill-search effort when scoring a position
+  planner_close: 0, // 0 = always plan; else only compare plays within this score of the best
 };
 
 /** A zone that is a list of cards (the battlefield holds permanents and has its own functions). */

@@ -28,6 +28,8 @@ export const SHARED_SETTING_DESCRIPTIONS: Record<string, string> = {
     'How many random futures the planner plays out for each play it compares (the library is shuffled, so no peeking).',
   planner_budget:
     'How hard the planner looks for a kill when it scores a position (the kill search budget inside the planner). 0 = it does not look.',
+  planner_close:
+    'Speed. 0 = the planner compares the best few plays every time. Above 0: it compares only the plays whose score is within this much of the best one, and when only one is that close it just plays it (faster).',
   max_turn:
     'The last turn played. A game not won by then counts as no win. Shown as "Turns" in the Simulate form.',
   combat_safety:

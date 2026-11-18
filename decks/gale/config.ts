@@ -11,6 +11,7 @@ export const CFG: Config = {
   max_turn: 8,
   search_budget: 2500,
   planner_budget: 300,
+  planner_close: 25, // about 21% faster, within noise (step 11, T5)
   gifts_budget: 120,
   gifts_shortlist: 5,
   ramp_tutor: false,

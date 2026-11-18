@@ -32,13 +32,40 @@ const TREASURE_SOURCE: LandClass = {
   isLand: false,
 };
 
+/** A source whose mana only pays for instants and sorceries (Curious Homunculus): the search counts it in the pool
+ *  from the start, and a payment that spends it records a tap of one, so the game taps it too. */
+const INSTANT_ONLY_SOURCE: LandClass = {
+  kind: 'S',
+  isIsland: false,
+  isSwamp: false,
+  isLand: false,
+};
+
 /** The cost text of a PaymentRecord that is an untap effect: its `taps` are the lands it untapped. */
 export const UNTAP = 'untap';
 
-/** How the search paid for one cost: the lands (kinds) it tapped, in order. The real game taps the same ones. */
+/** How the search paid for one cost: the lands (kinds) it tapped, in order. The real game taps the same ones.
+ *  colours (payments only, one per tap): the colour a flexible source made ('U' or 'B'; for a filter, the colour it
+ *  was short of, which decides what it eats), '' for the others, so the game makes the same. */
 export interface PaymentRecord {
   cost: string;
   taps: LandClass[];
+  colours?: string[];
+}
+
+/** The colour a source of this class makes when tapped short of shortOf (see SearchMana.tapLand), or '' when it has
+ *  no choice. */
+function colourChosen(
+  landClass: LandClass,
+  shortOf: 'U' | 'B' | 'any',
+  isEnergybent: boolean,
+): string {
+  if (landClass.kind === 'F') return shortOf === 'B' ? 'B' : 'U';
+  const isFlexible =
+    (isEnergybent && landClass.isLand) ||
+    !['U', 'B', 'UB', 'C', 'C2', 'S'].includes(landClass.kind);
+  if (!isFlexible) return '';
+  return shortOf === 'U' ? 'U' : 'B';
 }
 
 /** Pays a cost from a pool (changing it). Returns null if paid, else what the pool is short of:
@@ -86,6 +113,11 @@ function spendFromPool(
     genericLeft -= take;
   }
   return genericLeft === 0 ? null : 'any';
+}
+
+/** The mana in a pool that can pay for an ability, such as a filter's {1} (all but instant-only mana). */
+function ordinaryManaIn(pool: Pool): number {
+  return pool.U + pool.B + pool.A + pool.C;
 }
 
 /** Can this kind of land tap for this colour? */
@@ -155,7 +187,8 @@ export class SearchMana {
     mana.bubblingMucks = nextTurn ? 0 : game.muck;
     mana.isEnergybent = game.isEnergybendingActive && !nextTurn;
     for (const permanent of game.battlefield) {
-      const kind = game.manaSourceKind(permanent, nextTurn);
+      // the land's own kind: isEnergybent adds Energybending's colours when it is tapped (as isSourceOfClass expects)
+      const kind = game.manaSourceKind(permanent, nextTurn, true);
       if (kind === null) continue;
       const isUntapped = nextTurn || !permanent.tapped;
       if (permanent.card === TREASURE) {
@@ -260,12 +293,18 @@ export class SearchMana {
     mayUseTreasures: boolean,
   ): boolean {
     const taps: LandClass[] = [];
+    const colours: string[] = [];
     for (;;) {
       const poolAfterPaying = { ...this.pool };
       const shortOf = spendFromPool(poolAfterPaying, cost, isInstantOrSorcery);
       if (shortOf === null) {
+        const instantOnlyManaSpent = this.pool.S - poolAfterPaying.S;
+        for (let i = 0; i < instantOnlyManaSpent; i++) {
+          taps.unshift(INSTANT_ONLY_SOURCE);
+          colours.unshift('');
+        }
         this.pool = poolAfterPaying;
-        this.payments = [...this.payments, { cost: `${cost}`, taps }];
+        this.payments = [...this.payments, { cost: `${cost}`, taps, colours }];
         return true;
       }
       if (
@@ -274,6 +313,7 @@ export class SearchMana {
           poolAfterPaying,
           false,
           taps,
+          colours,
           keepTypedLandsBack,
           mayUseTreasures,
         )
@@ -327,6 +367,7 @@ export class SearchMana {
     poolAfterPaying: Pool,
     skipFilters: boolean,
     taps: LandClass[],
+    colours: string[],
     keepTypedLandsBack: boolean,
     mayUseTreasures: boolean,
   ): boolean {
@@ -377,40 +418,40 @@ export class SearchMana {
       this.treasures -= 1;
       this.tapLand(TREASURE_SOURCE, shortOf);
       taps.push(TREASURE_SOURCE);
+      colours.push(colourChosen(TREASURE_SOURCE, shortOf, false));
       return true;
     }
-    if (this.landClasses[bestClass].kind === 'F') {
-      // fed with a mana the payment doesn't need; if there is none, tap something else for it first
-      const leftover =
-        poolAfterPaying.U +
-        poolAfterPaying.B +
-        poolAfterPaying.A +
-        poolAfterPaying.C +
-        poolAfterPaying.S;
-      if (leftover === 0)
+    const landClass = this.landClasses[bestClass];
+    if (landClass.kind === 'F') {
+      // fed with a mana the payment doesn't need; if there is none, tap something else for it first (never with
+      // instant-only mana: the filter's {1} is an ability)
+      if (ordinaryManaIn(poolAfterPaying) === 0)
         return this.tapAnotherLand(
           'any',
           poolAfterPaying,
           true,
           taps,
+          colours,
           keepTypedLandsBack,
           mayUseTreasures,
         );
       this.feedFilterSource(poolAfterPaying, shortOf);
     }
     this.untappedLands[bestClass] -= 1;
-    this.tapLand(this.landClasses[bestClass], shortOf);
-    taps.push(this.landClasses[bestClass]);
+    this.tapLand(landClass, shortOf);
+    taps.push(landClass);
+    colours.push(colourChosen(landClass, shortOf, this.isEnergybent));
     return true;
   }
 
-  /** The mana a filter source eats from the pool: colourless first, never the colour we are short of if another will do. */
+  /** The mana a filter source eats from the pool: colourless first, never the colour we are short of if another will
+   *  do, never instant-only mana. */
   private feedFilterSource(
     poolAfterPaying: Pool,
     shortOf: 'U' | 'B' | 'any',
   ): void {
     const order: PoolKey[] =
-      shortOf === 'B' ? ['C', 'U', 'B', 'S', 'A'] : ['C', 'B', 'U', 'S', 'A'];
+      shortOf === 'B' ? ['C', 'U', 'B', 'A'] : ['C', 'B', 'U', 'A'];
     for (const kind of order)
       if (poolAfterPaying[kind] > 0) {
         this.pool[kind] -= 1;
@@ -456,18 +497,38 @@ export class SearchMana {
    *  the rest of the turn, so an untap spell cast after this finds nothing to untap. */
   sacrificeAllLands(): void {
     let landCount = 0;
+    const filterLandIndexes: number[] = [];
     for (let index = 0; index < this.landClasses.length; index++) {
       if (!this.landClasses[index].isLand) continue;
+      landCount += this.allLands[index];
+      if (this.landClasses[index].kind === 'F') {
+        filterLandIndexes.push(index);
+        continue;
+      }
       while (this.untappedLands[index] > 0) {
         this.untappedLands[index] -= 1;
         this.tapLand(this.landClasses[index]);
       }
-      landCount += this.allLands[index];
     }
+    // a filter land is tapped last, fed a mana the others made (none left: it stays untapped and is sacrificed)
+    for (const index of filterLandIndexes)
+      while (this.untappedLands[index] > 0 && this.ordinaryManaInPool() > 0) {
+        this.untappedLands[index] -= 1;
+        this.feedFilterSource({ ...this.pool }, 'any');
+        this.tapLand(this.landClasses[index]);
+      }
     this.pool.B += landCount;
     this.allLands = this.allLands.map((count, index) =>
       this.landClasses[index].isLand ? 0 : count,
     );
+    this.untappedLands = this.untappedLands.map((count, index) =>
+      this.landClasses[index].isLand ? 0 : count,
+    );
+  }
+
+  /** The mana in the pool that can feed a filter source (not instant-only mana). */
+  private ordinaryManaInPool(): number {
+    return ordinaryManaIn(this.pool);
   }
 
   /** The pool if every untapped land were tapped now (how much mana we could have: for scoring and the log). */

@@ -3,6 +3,7 @@
  * tutors. GameCore.resolve asks these first; a card they don't know goes on to the other topic files and then to the
  * deck's resolveOther. Which card to keep or fetch is the deck's choice (cardValue, discardValue, tutorTarget).
  */
+import * as Facts from '../cards/card-facts';
 import * as C from '../cards/cards';
 import { CardDef } from '../cards/cards';
 import type { GameCore } from './game-core';
@@ -231,8 +232,23 @@ export function resolveManaOrTutor(
 
 /** Rain of Filth: tap each untapped land for its mana, then sacrifice every land for {B}. */
 function sacrificeAllLandsForMana(game: GameCore): void {
-  for (const land of game.landsOnBattlefield()) {
-    if (!land.tapped) game.tap(land, 'B');
+  const lands = game.landsOnBattlefield();
+  const filterKindOf = (land: Permanent): string | null => {
+    const kind = game.manaSourceKind(land);
+    return Facts.isFilterKind(kind) ? kind : null;
+  };
+  for (const land of lands)
+    if (!land.tapped && filterKindOf(land) === null) game.tap(land, 'B');
+  // a filter land last, fed a mana the others made (colourless, then its second colour, as the kill search counts)
+  for (const land of lands) {
+    const filterKind = filterKindOf(land);
+    if (land.tapped || filterKind === null) continue;
+    const [firstColour, secondColour] = Facts.FILTER_COLOURS[filterKind];
+    const pool = game.pool as unknown as Record<string, number>;
+    if (pool.C + pool[firstColour] + pool[secondColour] > 0)
+      game.tap(land, firstColour);
+  }
+  for (const land of lands) {
     game.sacrifice(land);
     game.pool.B += 1;
   }

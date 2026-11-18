@@ -345,6 +345,36 @@ export function runKillTests(): boolean {
     }),
     1,
   );
+  // T5's "kill-search mana leftovers" (from the old outside-mana counters; SearchMana taps a source once).
+  check(
+    'Arcane Signet pays High Tide, 4 Islands and no Swamp: its mana is spent, 8 -> no',
+    board({
+      battlefieldNames: ['Arcane Signet', ...GUILDMAGE_ONLY],
+      hand: ['High Tide', 'Maddening Cacophony'],
+      lands: islands(4),
+    }),
+    0,
+  );
+  // Sunken Hollow (Island Swamp) makes 3 after High Tide and Muck, but 1 if it paid for High Tide. Best: an Island
+  // pays High Tide, the Swamp pays Muck, then the dual makes 3 and the 2 Islands left 2 each: 7.
+  check(
+    'Sunken Hollow + 3 Islands + Swamp, High Tide and Muck: a dual that paid for High Tide adds nothing later, 7 -> no',
+    board({
+      battlefieldNames: GUILDMAGE_ONLY,
+      hand: ['High Tide', 'Bubbling Muck', 'Maddening Cacophony'],
+      lands: ['Sunken Hollow', ...islands(3), 'Swamp'],
+    }),
+    0,
+  );
+  check(
+    '... with a 4th Island: 9 (the Island pays High Tide, the Swamp pays Muck, the dual makes 3)',
+    board({
+      battlefieldNames: GUILDMAGE_ONLY,
+      hand: ['High Tide', 'Bubbling Muck', 'Maddening Cacophony'],
+      lands: ['Sunken Hollow', ...islands(4), 'Swamp'],
+    }),
+    1,
+  );
   // Konrad chains are checked with real shuffles: about 68% / 100% / 45% in a separate random-deal check (the old Python tool, since removed)
   const KONRAD_AND_MINDCRANK = ['Syr Konrad, the Grim', 'Mindcrank'];
   game = board({
@@ -591,5 +621,41 @@ function runPlayedKillTests(): boolean {
       lands: [...repeatName('Island', 9), ...repeatName('Swamp', 3)],
     }),
   );
-  return allPassed;
+  // the game must tap what the search tapped: the Signet for High Tide, so every Island keeps its bonus
+  checkPlayed(
+    'Arcane Signet pays High Tide, 4 Islands + Swamp: Guildmage + kicked Cacophony (9)',
+    board({
+      battlefieldNames: ['Arcane Signet', 'Duskmantle Guildmage'],
+      hand: ['High Tide', 'Maddening Cacophony'],
+      lands: [...repeatName('Island', 4), 'Swamp'],
+    }),
+  );
+  checkPlayed(
+    'Rain of Filth with a filter land: the others feed it, then all 7 are sacrificed (Guildmage + kicked Cacophony)',
+    board({
+      battlefieldNames: ['Duskmantle Guildmage'],
+      hand: ['Rain of Filth', 'Maddening Cacophony'],
+      lands: [...repeatName('Island', 4), 'Swamp', 'Darkwater Catacombs'],
+    }),
+  );
+  checkPlayed(
+    'Sunken Hollow + 4 Islands + Swamp, High Tide and Muck: an Island pays High Tide, the dual makes 3 (9)',
+    board({
+      battlefieldNames: ['Duskmantle Guildmage'],
+      hand: ['High Tide', 'Bubbling Muck', 'Maddening Cacophony'],
+      lands: ['Sunken Hollow', ...repeatName('Island', 4), 'Swamp'],
+    }),
+  );
+  // Windfall in the real game: the opponents discard their 5 cards and draw 5, as the kill search counts it
+  // (proposed.txt seed 1416: the game had them discard only, so a line ending in Windfall missed)
+  const windfallGame = board({ hand: ['Windfall'] });
+  windfallGame.opponentLibrarySizes = [20, 20, 20];
+  windfallGame.castInstantOrSorcery(C.get('Windfall'));
+  const isWindfallGood =
+    JSON.stringify(windfallGame.opponentLibrarySizes) ===
+    JSON.stringify([15, 15, 15]);
+  console.log(
+    `${isWindfallGood ? 'OK ' : 'BAD'} Windfall: each opponent draws 5: libraries ${JSON.stringify(windfallGame.opponentLibrarySizes)}, expected [15,15,15]`,
+  );
+  return allPassed && isWindfallGood;
 }

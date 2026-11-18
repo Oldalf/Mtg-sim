@@ -25,6 +25,14 @@ const DIMIR_SIGNET: LandClass = {
   isLand: false,
 };
 
+const FILTER_LAND: LandClass = { ...DIMIR_SIGNET, isLand: true };
+const ANY_COLOUR_LAND: LandClass = {
+  kind: 'A',
+  isIsland: false,
+  isSwamp: false,
+  isLand: true,
+};
+
 function manaOf(...sources: LandClass[]): SearchMana {
   const mana = new SearchMana();
   for (const source of sources) mana.addLand(source);
@@ -116,6 +124,65 @@ export function runSearchManaTests(): boolean {
         ['{0}U', ['U']],
         ['{0}B', ['B']],
       ],
+    );
+  }
+  {
+    // Curious Homunculus's mana is in the pool from the start; a payment that spends it records a tap of it, so the
+    // real game taps the Homunculus for the instant and keeps the Island for what follows (Gale proposed.txt seed 332)
+    const mana = manaOf(ISLAND, ISLAND);
+    mana.pool.S = 1;
+    mana.spendMana(new Cost(1, 1), true, false);
+    check(
+      'Homunculus mana spent on an instant is recorded as a tap',
+      mana.payments[0].taps.map((tap) => tap.kind),
+      ['S', 'U'],
+    );
+  }
+  {
+    // a filter land's {1} is an ability: Homunculus's mana can't feed it (Gale proposed.txt seed 1847: Swamp,
+    // Darkwater Catacombs, 2 Islands and a Homunculus make 4 for Syr Konrad, not 5)
+    const mana = manaOf(SWAMP, FILTER_LAND, ISLAND, ISLAND);
+    mana.pool.S = 1;
+    check(
+      'instant-only mana does not feed a filter land',
+      pay(mana, new Cost(3, 0, 2)),
+      false,
+    );
+  }
+  {
+    // Rain of Filth taps every land, then sacrifices it for {B}: a filter land must be fed (Gale speed.txt seed 874)
+    const mana = manaOf(SWAMP, FILTER_LAND);
+    mana.sacrificeAllLands();
+    check('Rain of Filth: Swamp + filter land make 4', mana.pool, {
+      U: 1,
+      B: 3,
+      A: 0,
+      C: 0,
+      S: 0,
+    });
+    const alone = manaOf(FILTER_LAND);
+    alone.sacrificeAllLands();
+    check('Rain of Filth: a filter land alone is only sacrificed', alone.pool, {
+      U: 0,
+      B: 1,
+      A: 0,
+      C: 0,
+      S: 0,
+    });
+    check(
+      'Rain of Filth: the sacrificed filter land cannot be tapped later',
+      alone.spendMana(new Cost(0, 1), false, false),
+      false,
+    );
+  }
+  {
+    // the colour a flexible source made is recorded, so the game makes the same (Gale proposed.txt seed 856)
+    const mana = manaOf(ANY_COLOUR_LAND, ISLAND);
+    pay(mana, new Cost(0, 1, 1));
+    check(
+      'the colours flexible sources made are recorded',
+      mana.payments[0].colours,
+      ['', 'B'],
     );
   }
   {

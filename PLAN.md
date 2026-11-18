@@ -38,6 +38,7 @@ Rules for every task:
 | 5 | T5 | Gale's leftovers: planner speed, kill-search mana leftovers | Opus 5.5 |
 | 6 | T6 | Meren: "no meaningful impact" and Pontus's changes (after P) | Sonnet 5.5 |
 | 7 | T7 | Sam & Frodo: analyze Pontus's logs (after P) | Sonnet 5.5 |
+| 8 | T8 | Faster tests and `verify` | Opus 5.5 |
 
 T1 comes first because T3 to T6 all compare lists or settings; T2 before T3 so new engine rules land in the split files. T6 and T7 can run whenever Pontus's input arrives.
 
@@ -93,6 +94,8 @@ From `decks/gale/PLAN.md` "Open":
 2. **Kill-search mana leftovers:** outside mana isn't used up by other spells; a dual that pays for High Tide still counts for Bubbling Muck; the AI doesn't save a rock to pay for High Tide. Each as a kill test first (`decks/gale/tests/kills.test.ts`), then the fix, then the numbers. Kill misses must stay 0 in 300 seeds.
 3. Update Gale's "Open" list: drop what step 10 did (instant speed), keep what is left.
 
+Done 2026-11-18 (Opus 5.5), details in `decks/gale/PLAN.md`, "Planner speed and kill-search mana". 1: engine setting `planner_close` (default 0 = off, every other deck IDENTICAL); for Gale, 25 is about 21% faster and within noise at 16,000 games, and Pontus made it Gale's default. 2: the three leftovers were already fixed by `SearchMana` (tests added). Pontus then asked for every remaining kill miss on `proposed.txt` and `speed.txt` to be fixed: seven causes in the search's mana and the game's payments (Homunculus, filter lands, Rain of Filth, Energybending pain lands, the colours of flexible sources, Windfall's draws). Kill misses 11 and 32 in 2,000 games -> 0 and 0 in 4,000. Gale's results and so `regress_baseline/gale.json` and `pod.txt` change; every other deck IDENTICAL. Still true: `--test` checks kill misses on `decklist.txt` only (a T8 question). 3: done.
+
 ## T6. Meren: "no meaningful impact" and Pontus's changes (Sonnet 5.5, after P)
 
 Meren's `--diag` has a first definition of a game with no meaningful impact (`noImpact` in `decks/meren/index.ts`: by the end of turn 5 / 6 nothing came back from a graveyard and the board has under 3 nonland permanents; 15.9% / 4.3% of games, `decks/meren/PLAN.md`). Pontus will say what counts as impact for this deck and which changes he wants to look at.
@@ -107,3 +110,13 @@ Pontus will add real games to `decks/samfrodo/logs/` (one so far, `game1_t8_pipp
 1. Run `npm run sim -- samfrodo --analyze logs/<file>.txt` on each new log. The analyzer may need token names from the logs (`logToken` in `decks/samfrodo/game.ts`); add what is missing.
 2. For each game: a row in `decks/samfrodo/PLAN.md` ("Pontus's games"), as Gale's table does: the result, missed kills, and AI fixes it led to. Logs contain misplays: use them for draws and the board, flag missed triggers, don't copy mistakes into the AI.
 3. Add each log to the deck's regress (`regress.logLists` in `decks/samfrodo/index.ts` if the list differs) and re-record the baseline for the new log only.
+
+## T8. Faster tests and `verify` (Opus 5.5)
+
+Pontus (2026-11-18): a large share of development time goes to verifying after each change. Not everything needs every test; some things certainly do. Make the checks cheaper without losing what they protect.
+
+A full-power `verify` after an engine change took 311 s (2026-11-18, T5). The slowest parts: Codie's `--regress check` 272 s, Sam & Frodo's `--test` 112 s and regress 81 s, Gale's regress 79 s, Aesi's `--test` 50 s, Codie's `--test` 51 s; formatting check 31 s.
+
+1. Measure: the time of every step of `verify` (eco and full power), and inside the slow ones, which part costs (seeds, lists, logs, the 300-seed kill-miss check, the planner).
+2. Propose to Pontus, with the time each saves and what it would stop catching: fewer seeds where the extra ones never caught anything; running steps in parallel; a quick mode for the edit-test loop (type-check, the changed deck's tests, a small regress) with the full `verify` before a commit; finer rules for which decks a changed file can affect.
+3. Build what he picks. `verify` keeps catching what it catches today: show that a deliberate change in the engine still makes it fail.

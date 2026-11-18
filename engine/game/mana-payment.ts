@@ -272,6 +272,7 @@ export function tapForMana(
 ): void {
   if (permanent.land?.pain) {
     tapPainLand(game, permanent, short);
+    addLandTypeBonus(game, permanent); // (an Island or Swamp only under Energybending)
     return;
   }
   const sourceKind = game.manaSourceKind(permanent);
@@ -328,11 +329,15 @@ export function tapForMana(
     pool[firstColour as keyof ManaPool] += 1;
     pool[secondColour as keyof ManaPool] += 1;
   }
-  if (permanent.land !== null) {
-    if (game.highTidesThisTurn && game.islandTyped(permanent))
-      pool.U += game.highTidesThisTurn;
-    if (game.muck && game.swampTyped(permanent)) pool.B += game.muck;
-  }
+  addLandTypeBonus(game, permanent);
+}
+
+/** High Tide's {U} for a tapped Island and Bubbling Muck's {B} for a tapped Swamp. */
+function addLandTypeBonus(game: GameCore, permanent: Permanent): void {
+  if (permanent.land === null) return;
+  if (game.highTidesThisTurn && game.islandTyped(permanent))
+    game.pool.U += game.highTidesThisTurn;
+  if (game.muck && game.swampTyped(permanent)) game.pool.B += game.muck;
 }
 
 /** Pays a cost (payFromSources). Treasures and Eldrazi Spawn are spent last: only when lands, rocks and mana
@@ -445,48 +450,67 @@ function payGreedily(
   made: string[],
   commit: boolean,
 ): string | null {
-  const plannedSources = commit ? sourcesPlannedFor(game, cost) : [];
+  const plannedTaps = commit ? tapsPlannedFor(game, cost) : [];
   for (;;) {
     const short = game.short(cost, isInstantOrSorcery);
-    if (short === null) return null;
-    let plannedSource: Permanent | undefined;
-    while (plannedSources.length && !plannedSource) {
-      const candidate = plannedSources.shift()!;
-      if (!candidate.tapped) plannedSource = candidate;
+    // every source the search tapped is tapped, also when the cost is paid already: what it made more floats
+    if (short === null && !plannedTaps.some((tap) => !tap.source.tapped))
+      return null;
+    let plannedTap: PlannedTap | undefined;
+    while (plannedTaps.length && !plannedTap) {
+      const candidate = plannedTaps.shift()!;
+      if (!candidate.source.tapped) plannedTap = candidate;
     }
+    const shortOrGeneric = short ?? 'N'; // (paid already: only planned sources are left to tap)
     const source =
-      plannedSource ??
-      pickSource(game, short, isInstantOrSorcery) ??
-      filterSignetFeeder(game, short, isInstantOrSorcery);
-    if (source === null) return short;
+      plannedTap?.source ??
+      pickSource(game, shortOrGeneric, isInstantOrSorcery) ??
+      filterSignetFeeder(game, shortOrGeneric, isInstantOrSorcery);
+    if (source === null) return shortOrGeneric;
+    // a planned flexible source makes the colour the search counted
+    const colourToMake = plannedTap?.colour || shortOrGeneric;
     if (commit) {
       const poolBefore = { ...game.pool };
-      game.tap(source, short);
+      game.tap(source, colourToMake);
       made.push(manaAdded(poolBefore, game.pool));
-    } else game.tap(source, short);
+    } else game.tap(source, colourToMake);
     tapped.push(source);
   }
 }
 
-/** A search that planned this payment (a kill line it paid for) names the sources to tap first, in order
+/** A source a search tapped for a payment, and the colour it made there ('' = no choice, see PaymentRecord). */
+interface PlannedTap {
+  source: Permanent;
+  colour: string;
+}
+
+/** A search that planned this payment (a kill line it paid for) names the sources to tap first
  *  (GameCore.plannedPayments). Only the greedy order uses them; what is still short is paid the usual way. */
-function sourcesPlannedFor(game: GameCore, cost: Cost): Permanent[] {
+function tapsPlannedFor(game: GameCore, cost: Cost): PlannedTap[] {
   const index = game.plannedPayments.findIndex(
     (payment) => payment.cost === `${cost}`,
   );
   if (index < 0) return [];
   const [payment] = game.plannedPayments.splice(index, 1);
-  const sources: Permanent[] = [];
-  for (const landClass of payment.taps) {
+  const plannedTaps: PlannedTap[] = [];
+  payment.taps.forEach((landClass, tapIndex) => {
     const source = game.battlefield.find(
       (permanent) =>
         !permanent.tapped &&
-        !sources.includes(permanent) &&
+        !plannedTaps.some((plannedTap) => plannedTap.source === permanent) &&
         isSourceOfClass(game, permanent, landClass),
     );
-    if (source) sources.push(source);
-  }
-  return sources;
+    if (source)
+      plannedTaps.push({ source, colour: payment.colours?.[tapIndex] ?? '' });
+  });
+  // a filter is tapped last, so the others' mana is in the pool to feed it (the search may have fed it from
+  // mana it had floating)
+  const isFilter = (plannedTap: PlannedTap) =>
+    Facts.isFilterKind(game.manaSourceKind(plannedTap.source, false, true));
+  return [
+    ...plannedTaps.filter((plannedTap) => !isFilter(plannedTap)),
+    ...plannedTaps.filter(isFilter),
+  ];
 }
 
 /** Nothing can make what we are short of, but an untapped filter Signet could (it turns {1} into {U}{B}) if a mana

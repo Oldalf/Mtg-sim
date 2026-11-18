@@ -181,6 +181,18 @@ function rolloutValue(game: GameCore, main2: boolean): number {
   return valueAtTurnEnd + 0.3 * game.positionValue();
 }
 
+/** The plays worth comparing (planner_close): those whose score is within maxScoreGap of the best one. A clear
+ *  favourite is played without rollouts, which saves most of the planner's time. 0 keeps them all. */
+function closePlays(
+  candidates: Candidate[],
+  options: number[],
+  maxScoreGap: number,
+): number[] {
+  if (maxScoreGap <= 0) return options;
+  const bestScore = Math.max(...options.map((i) => candidates[i].score));
+  return options.filter((i) => bestScore - candidates[i].score <= maxScoreGap);
+}
+
 /** Do the best thing we can pay for, again and again (see GameCore.develop). Returns true when the game is won. */
 export function developTurn(game: GameCore, main2: boolean): boolean {
   for (let step = 0; step < 40; step++) {
@@ -234,11 +246,12 @@ export function developTurn(game: GameCore, main2: boolean): boolean {
       afford.length > 1 &&
       game.turn >= 2
     ) {
-      const options = afford.slice(
-        0,
-        (game.config.planner_width as number) ?? 4,
+      const options = closePlays(
+        candidates,
+        afford.slice(0, (game.config.planner_width as number) ?? 4),
+        (game.config.planner_close as number) ?? 0,
       );
-      const pick = game.plan(options, main2);
+      const pick = options.length > 1 ? game.plan(options, main2) : options[0];
       order = [pick, ...afford.filter((i) => i !== pick)];
     }
     let done = false;

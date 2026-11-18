@@ -57,15 +57,19 @@ function resolveWindfall(game: GaleGame): void {
     game.takeCard(card, 'hand');
     game.toGraveyard(card);
   }
-  const events: number[] = [];
-  for (let i = 0; i < game.life.length; i++)
-    events.push(OPPONENT_EVENT.PUTGY, i, game.config.opp_hand_size as number);
-  game.applyOpponentEvents(events);
-  game.draw(
-    game.inArena()
-      ? game.arena!.wheel(game, handSize)
-      : Math.max(handSize, game.config.opp_hand_size as number),
-  );
+  const opponentHandSize = game.config.opp_hand_size as number;
+  if (game.inArena()) {
+    const events: number[] = [];
+    for (let i = 0; i < game.life.length; i++)
+      events.push(OPPONENT_EVENT.PUTGY, i, opponentHandSize);
+    game.applyOpponentEvents(events);
+    game.draw(game.arena!.wheel(game, handSize));
+    return;
+  }
+  // the goldfish opponents discard their hands and draw as many as the biggest hand, as the kill search counts it
+  const cardsDrawn = Math.max(handSize, opponentHandSize);
+  game.applyOpponentStep(['windfall', opponentHandSize, cardsDrawn]);
+  game.draw(cardsDrawn);
 }
 
 /** Return the best creature the spell allows (Unearth: mana value 3 or less) from the graveyard to the battlefield. */

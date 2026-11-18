@@ -162,9 +162,44 @@ So Gale dies because it is slow in those games and is the open target, not becau
 
 Which part does it (Helga, Ardyn, Teval; each part turned off on its own): without the counters 50.2% (30.9%), without the Aetherize changes 50.1% (31.1%), with Gale attacking again 39.4% (46.0%), with all three off (only `chump_life` 20 left) 38.7% (47.4%). **Nearly all of it is not attacking:** Gale's attacks tapped its few creatures, so it had no blockers and was everyone's best target. The counters (0.35 answers per game, from 0.22) and Aetherize happen, but rarely enough to change little.
 
+## Planner speed and kill-search mana (step 11, T5, 2026-11-18)
+
+**Planner speed.** New engine setting `planner_close` (0 = off, the default for every deck): the planner only compares plays whose score is within this much of the best one, and when only one is that close it plays it without rollouts. Scores run 0 to 100. 16,000 games, same seeds, `decklist.txt`, full power (noise about ±1.1); time is the whole run on 16 cores:
+
+| setting | by T6 | by T7 | by T8 | backup T7 | backup T8 | avg turn | time |
+|---|---|---|---|---|---|---|---|
+| default (planner always) | 14.7 | 42.6 | 69.1 | 25.2 | 50.6 | 7.13 | 224 s |
+| `planner_close=10` | 13.3 | 43.6 | 70.5 | 25.8 | 52.0 | 7.16 | about 159 s (−29%) |
+| `planner_close=25` | 14.6 | 43.1 | 69.8 | 25.4 | 51.4 | 7.13 | about 178 s (−21%) |
+
+(The `--set` runs play the default games first; their time is the total minus the default's 224 s.) Both are within noise; 10 sits at the edge on by T6 (−1.3) and by T8 (+1.4). **Pontus chose 25 (2026-11-18): Gale's default** (`config.ts`; the engine default stays 0).
+
+**Kill-search mana leftovers.** The three in the old Open list came from the outside-mana counters that `SearchMana` (`engine/game/search-mana.ts`) replaced: it taps each source once, when a payment needs it. Tests show all three hold now (`tests/kills.test.ts`: a Signet's mana spent on High Tide is gone; a Sunken Hollow that paid for High Tide adds nothing after Muck, 7 -> no and 9 with a 4th Island; and two lines played for real, where the game taps what the search tapped). No change was needed.
+
+**The kill misses on `proposed.txt` and `speed.txt`, all fixed.** With `planner_close` 25 there were 11 and 32 in 2,000 games; now 0 and 0 in 4,000 (and 0 in 300 seeds on `decklist.txt`). Each was a place where the search counted mana the game could not make, or the game tapped differently from what the search planned:
+
+1. Curious Homunculus's instant-only mana sits in the search's pool from the start, so spending it recorded no tap; the game paid from the recorded lands and kept the Homunculus, short later (seeds 332, 371). Now the payment records a tap of an instant-only source.
+2. The search fed that mana to a filter land's {1} (an ability): Konrad "paid" from 4 lands + Homunculus (seed 1847). A filter is never fed instant-only mana now.
+3. Rain of Filth in the search tapped a filter land without feeding it (a phantom mana, seed 874), and left an unfed one untapped after sacrificing it. Now the others are tapped first and feed it; every land is gone after.
+4. Rain of Filth in the game tapped lands in battlefield order with "short of {B}": a filter could be tapped with an empty pool, or eat the blue the line needed (seed 360). Now it matches the search: other lands first, then the filter fed colourless, black, blue.
+5. Under Energybending, a pain land (Underground River) got no High Tide / Muck bonus in the game (seed 565); and the search recorded every land as "any colour", so the game could not find the planned land. The bonus now applies to pain lands too; the search records a land's own kind.
+6. The colours of flexible sources (Command Tower, Arcane Signet, Sunken Hollow, an Energybent land, a filter) were chosen anew by the game, often differently from the search (seeds 856, 1250, 1459, 1704). The search now records the colour each one made (`PaymentRecord.colours`) and the game makes the same; it taps every planned source, also when the cost is paid already (the search floats the rest, seed 1698), filters last.
+7. Windfall in the goldfish game made the opponents discard but never draw (seed 1416). They now draw as many as the biggest hand, as the search counts it (pods unchanged: the arena handles that).
+
+Tests: `engine/game/search-mana.test.ts` (Homunculus tap, filter feeding, Rain of Filth, recorded colours), `tests/kills.test.ts` (Rain of Filth with a filter land played for real, Windfall's draws). Every other deck IDENTICAL; the pod run changes only through Gale's games (with `planner_close` 0: Gale 34.5% -> 35.0% wins in 200 games). Without the planner change, the fixes alone change 12 / 7 / 14 of 600 regress seeds on `decklist.txt` / `original.txt` / `proposed.txt`.
+
+**Gale's results after T5** (`planner_close` 25 and the fixes), 16,000 games, same seeds, full power; before / after (before: `decklist.txt` from the planner table above, the other two from the Thunderclap Drake table, both the code before T5):
+
+| list | by T6 | by T7 | by T8 | backup T7 | backup T8 | avg turn |
+|---|---|---|---|---|---|---|
+| `decklist.txt` | 14.7 / 14.7 | 42.6 / 43.1 | 69.1 / 69.7 | 25.2 / 25.3 | 50.6 / 51.3 | 7.13 / 7.13 |
+| `proposed.txt` | 18.0 / 17.2 | 48.1 / 47.6 | 73.9 / 73.5 | 28.2 / 28.1 | 53.8 / 54.5 | 7.06 / 7.08 |
+| `speed.txt` | 21.7 / 20.9 | 52.8 / 52.9 | 76.7 / 77.0 | 33.1 / 32.9 | 58.9 / 59.8 | 6.97 / 6.99 |
+
+All within noise; the win with counter backup by T8 is up about 0.7 to 0.9 everywhere (lines that missed before now win). `decklist.txt` took 193 s instead of 224 s.
+
 ## Open
 
 - Pontus's goldfish feedback on the adopted list; whether to add a protection card, and for what.
-- Ideas, none started: play at instant speed on opponents' turns (Wizards of Thay, end-of-turn draw and tutors); Mana Sculpt's mana; kill-finder mana leftovers (outside mana isn't used up by other spells, a dual paying for High Tide still counts for Muck, the AI doesn't save a rock to pay for High Tide).
-- Speed: the planner is about 40% of the run time. Running it only when the top plays are close in score would be the next saving. 4,000 games take about 1 minute.
-- Housekeeping (2026-11-14): `lists/` holds only `proposed.txt`; the test lists and the cut tests were removed (in git history before that date).
+- Ideas, none started: Mana Sculpt's mana.
+- Housekeeping: `lists/` holds `original.txt`, `proposed.txt` and `speed.txt`; older test lists and cut tests are in git history.
