@@ -856,6 +856,7 @@ export abstract class GameCore<S = unknown> {
     return (
       permanent.card.toughness +
       permanent.counters +
+      permanent.toughnessMod +
       this.toughnessBonus(permanent)
     );
   }
@@ -1531,6 +1532,17 @@ export abstract class GameCore<S = unknown> {
   podGoadBestCreature(): void {}
   podWeakenBestCreature(_powerLoss: number): void {}
   podStopBestCreatureAttackingUs(): void {}
+  /** -X/-X until end of turn to the opponents' creatures (ours too if `includeOwn`), a pod only. */
+  podShrinkCreatures(
+    _amount: number,
+    _includeOwn: boolean,
+    _except: Permanent | null,
+    _sourceName: string,
+  ): void {}
+  /** How many opposing creatures a -X/-X would kill now (0 in a goldfish game). */
+  podCreaturesShrinkWouldKill(_amount: number): number {
+    return 0;
+  }
   /** We cast this spell: tell the opponents, so their "whenever an opponent casts a spell" cards trigger (before
    *  any counterspell, as the trigger goes on the stack above the spell). */
   podAnnounceCast(_card: CardDef): void {}

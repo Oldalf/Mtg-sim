@@ -15,12 +15,15 @@
  */
 import {
   DEATH_VALUE,
+  DGHOR_BLOODLETTER,
+  DGHOR_BLOODLETTER_MANA_VALUE,
   EDICT_ETB,
   FREE_OUTLETS,
   GRAY_MERCHANT,
   HOLD,
   MANA_ELVES,
   MEREN,
+  SHRINK_KILLS_AT_LEAST,
   TOKENS,
   VALUE,
 } from './cards';
@@ -52,6 +55,7 @@ export class MerenGame extends CreatureDeckGame {
   reanimated = 0; // creature cards that came back from a graveyard to the battlefield (Meren, Unearth, Reanimate...)
   reanimatedAtTurnEnd: number[] = []; // ... at the end of turns 4-6
   experienceAtTurnEnd: number[] = []; // Meren's experience at the end of turns 4-6
+  merenOnBattlefieldAtTurnEnd: boolean[] = []; // ... and whether Meren was on the battlefield then
   override diag(): Record<string, number | null> {
     return {
       merenOut: this.merenOut,
@@ -63,6 +67,8 @@ export class MerenGame extends CreatureDeckGame {
       reanim6: this.reanimatedAtTurnEnd[6] ?? null,
       exp5: this.experienceAtTurnEnd[5] ?? null,
       exp6: this.experienceAtTurnEnd[6] ?? null,
+      merenOn5: Number(this.merenOnBattlefieldAtTurnEnd[5] ?? false),
+      merenOn6: Number(this.merenOnBattlefieldAtTurnEnd[6] ?? false),
     };
   }
   morbidUsed = false; // Morbid Opportunist: once each turn
@@ -260,6 +266,24 @@ export class MerenGame extends CreatureDeckGame {
     );
   }
 
+  /** D'Ghor Bloodletter's mode in a pod: -1/-1 to all other creatures (true) or the edict. The -1/-1 when it kills
+   *  enough opposing creatures now, or when Meren can bring it back at our end step for a second -1/-1 that would. */
+  shouldShrinkWithBloodletter(): boolean {
+    if (this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST)
+      return true;
+    // the outlet must live through the first -1/-1 (Viscera Seer and Carrion Feeder are 1/1s)
+    const outlet = this.findFreeSacrificeOutlet();
+    const canLoopAtEndStep =
+      this.isOnBattlefield(MEREN) &&
+      outlet !== null &&
+      this.toughness(outlet) > 1 &&
+      this.experienceCounters + 1 >= DGHOR_BLOODLETTER_MANA_VALUE;
+    return (
+      canLoopAtEndStep &&
+      this.podCreaturesShrinkWouldKill(2) >= SHRINK_KILLS_AT_LEAST
+    );
+  }
+
   findFreeSacrificeOutlet(): Permanent | null {
     for (const name of FREE_OUTLETS) {
       const permanent = this.findPermanent(name);
@@ -296,6 +320,7 @@ export class MerenGame extends CreatureDeckGame {
       ).length;
       this.reanimatedAtTurnEnd[this.turn] = this.reanimated;
       this.experienceAtTurnEnd[this.turn] = this.experienceCounters;
+      this.merenOnBattlefieldAtTurnEnd[this.turn] = this.isOnBattlefield(MEREN);
     }
     super.startTurn();
     this.morbidUsed =
@@ -379,13 +404,25 @@ export class MerenGame extends CreatureDeckGame {
         this.experienceCounters + 1 >= 5
       )
         this.sacrifice(grayMerchant);
+      // a pod: sacrifice D'Ghor Bloodletter so Meren brings it back for a second -1/-1 (it stacks this turn)
+      const bloodletter = this.findPermanent(DGHOR_BLOODLETTER);
+      if (
+        bloodletter &&
+        !bloodletter.token &&
+        this.experienceCounters + 1 >= bloodletter.card.manaValue &&
+        this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
+      )
+        this.sacrifice(bloodletter);
     }
     const candidates = this.graveyard.filter((card) => card.isCreature);
     if (!candidates.length) return;
     const score = (card: CardDef) =>
-      card.manaValue <= this.experienceCounters
-        ? this.battlefieldValue(card)
-        : this.battlefieldValue(card) * 0.4;
+      card.manaValue > this.experienceCounters
+        ? this.battlefieldValue(card) * 0.4
+        : card.name === DGHOR_BLOODLETTER &&
+            this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
+          ? 1000 // a pod: wipes the wide board
+          : this.battlefieldValue(card);
     const best = firstMax(candidates, score);
     if (best.manaValue <= this.experienceCounters) {
       this.say(`Meren (${this.experienceCounters} experience) returns`, best);

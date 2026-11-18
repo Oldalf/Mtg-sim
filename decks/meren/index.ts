@@ -21,13 +21,18 @@ const lands = (hand: CardDef[]) =>
 /** A turn the game never reached counts as turn 13 (the horizon is turn 12). */
 const turnOf = (row: DiagRow, key: string) => (row[key] ?? 13) as number;
 const win = (row: DiagRow) => turnOf(row, 'win');
-// "No meaningful impact" (a first definition, change it here): by the end of turn 5 / 6 nothing has come back from a
-// graveyard (Meren's end step, Unearth, Reanimate...) and the board has fewer than THIN nonland permanents.
 const THIN = 3;
+// "No meaningful impact" (Pontus, 2026-11-18): the game is still going at the end of turn 5 / 6 and Meren's engine
+// isn't running: Meren isn't on the battlefield, or nothing has come back from a graveyard and she has fewer than
+// ENGINE_EXPERIENCE experience counters. (The first definition was: nothing reanimated and under THIN nonland
+// permanents.)
+const ENGINE_EXPERIENCE = 2;
+const isEngineRunning = (row: DiagRow, turn: 5 | 6) =>
+  (row['merenOn' + turn] ?? 0) === 1 &&
+  ((row['reanim' + turn] ?? 0) > 0 ||
+    (row['exp' + turn] ?? 0) >= ENGINE_EXPERIENCE);
 const noImpact = (row: DiagRow, turn: 5 | 6) =>
-  win(row) > turn &&
-  (row['reanim' + turn] ?? 0) === 0 &&
-  (row['perms' + turn] ?? 0) < THIN;
+  win(row) > turn && !isEngineRunning(row, turn);
 const slow5 = (row: DiagRow) => win(row) > 5 && (row.spent5 ?? 0) < 9;
 const slow6 = (row: DiagRow) => win(row) > 6 && (row.spent6 ?? 0) < 13;
 
@@ -165,7 +170,10 @@ export const deck = {
         ),
     },
     {
-      label: 'No impact by turn 5: nothing reanimated and a thin board (%)',
+      label:
+        'No impact by turn 5: Meren not out, or nothing reanimated and under ' +
+        ENGINE_EXPERIENCE +
+        ' experience (%)',
       unit: '%' as const,
       measure: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 5)),
     },

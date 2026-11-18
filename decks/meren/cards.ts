@@ -3,6 +3,10 @@ import * as C from '../../engine/cards/cards';
 import { makeToken } from '../../engine/cards/cards';
 
 export const MEREN = 'Meren of Clan Nel Toth';
+export const DGHOR_BLOODLETTER = "D'Ghor Bloodletter";
+export const DGHOR_BLOODLETTER_MANA_VALUE = 3;
+/** D'Ghor Bloodletter shrinks (all other creatures -1/-1) instead of the edict when it kills this many opposing creatures. */
+export const SHRINK_KILLS_AT_LEAST = 2;
 export const GRAY_MERCHANT = 'Gray Merchant of Asphodel';
 
 export const TOKENS = {
@@ -70,6 +74,8 @@ export const VALUE: Record<string, number> = {
   'Reassembling Skeleton': 35,
   Gravedigger: 48,
   'Fleshbag Marauder': 40,
+  [DGHOR_BLOODLETTER]: 45,
+  'Massacre Wurm': 60,
 };
 export const MANA_ELVES = new Set([
   'Llanowar Elves',
@@ -103,6 +109,7 @@ export const EDICT_ETB = new Set([
   "Demon's Disciple",
   'Accursed Marauder',
   'Fleshbag Marauder',
+  DGHOR_BLOODLETTER, // its other mode, -1/-1 to all other creatures, only in a pod (triggers.ts)
 ]);
 // Solemn Simulacrum, Wood Elves and the Witnesses are engine cards (engine/game/common-permanents.ts)
 export const HOLD = new Set(['Heartless Act', 'Infernal Grasp']); // removal: no targets in a goldfish game

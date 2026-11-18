@@ -103,6 +103,8 @@ Meren's `--diag` has a first definition of a game with no meaningful impact (`no
 1. Ask Pontus for his definition and his changes (cards, AI choices or both). Change `noImpact` to match, with the old numbers next to the new.
 2. Test his changes with T1's skill, judged by the new measure as well as the win turns. No cut tests beyond what he names.
 
+Done (2026-11-18): `noImpact` is now Pontus's "Meren out and the engine running" (68.9 / 43.5%, was 15.9 / 4.3%). D'Ghor Bloodletter and Massacre Wurm got rules (engine: -X/-X until end of turn in the pod, the Wurm's drain; Meren: the Bloodletter's mode and end-step loop) and were tested for Decode Transmissions / Junji on both lists: all within noise (table in `decks/meren/PLAN.md`). The meaningful-impact work for the deck goes on from there.
+
 ## T7. Sam & Frodo: analyze Pontus's logs (Sonnet 5.5, after P)
 
 Pontus will add real games to `decks/samfrodo/logs/` (one so far, `game1_t8_pippin_alpha.txt`, already analyzed in `decks/samfrodo/PLAN.md`).

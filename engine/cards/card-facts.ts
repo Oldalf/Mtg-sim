@@ -314,6 +314,7 @@ export const COMMON_PERMANENTS = [
   'Eternal Witness',
   'Timeless Witness',
   'Phyrexian Arena',
+  'Massacre Wurm',
 ];
 
 export const KNOWN = new Set<string>([

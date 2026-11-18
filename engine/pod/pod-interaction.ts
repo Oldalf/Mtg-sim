@@ -976,3 +976,85 @@ export function bounceEveryPermanentOfColour(
   );
   return lost;
 }
+
+// ================================================================ -X/-X until end of turn
+
+/** The opponents' creatures that a -`amount`/-`amount` would kill now. */
+export function creaturesShrinkWouldKill(
+  table: PodTable,
+  game: Game<unknown>,
+  amount: number,
+): number {
+  return table
+    .livingOpponents(table.playerOf(game))
+    .reduce(
+      (killed, opponent) =>
+        killed +
+        table.games[opponent]
+          .creatures()
+          .filter(
+            (creature) =>
+              table.games[opponent].toughness(creature) - amount <= 0,
+          ).length,
+      0,
+    );
+}
+
+/**
+ * Massacre Wurm, D'Ghor Bloodletter: creatures get -`amount`/-`amount` until end of turn (the opponents', ours too if
+ * `includeOwn`, never `except`). Those left with toughness 0 or less die; indestructible does not help. The change
+ * ends when the next player's turn starts.
+ */
+export function shrinkCreatures(
+  table: PodTable,
+  game: Game<unknown>,
+  amount: number,
+  includeOwn: boolean,
+  except: Permanent | null,
+  sourceName: string,
+): void {
+  const player = table.playerOf(game);
+  const owners = includeOwn
+    ? [player, ...table.livingOpponents(player)]
+    : table.livingOpponents(player);
+  const activePlayer = table.currentPlayer >= 0 ? table.currentPlayer : player;
+  const nextPlayer =
+    table.opponentsOf[activePlayer].find((other) => table.isAlive[other]) ??
+    activePlayer;
+  const dyingByOwner = owners.map((owner) => {
+    const ownerGame = table.games[owner];
+    const shrunk = ownerGame
+      .creatures()
+      .filter((creature) => creature !== except);
+    for (const creature of shrunk) {
+      creature.powerMod -= amount;
+      creature.toughnessMod -= amount;
+    }
+    table.endAtNextTurnOf(nextPlayer, () => {
+      for (const creature of shrunk) {
+        creature.powerMod += amount;
+        creature.toughnessMod += amount;
+      }
+    });
+    return {
+      owner,
+      dying: shrunk.filter((creature) => ownerGame.toughness(creature) <= 0),
+    };
+  });
+  const dyingCount = dyingByOwner.reduce(
+    (total, { dying }) => total + dying.length,
+    0,
+  );
+  table.sayAs(
+    player,
+    `${sourceName}: -${amount}/-${amount}, ${dyingCount} creature(s) die`,
+    'answer',
+    [sourceName],
+  );
+  for (const { owner, dying } of dyingByOwner) {
+    const ownerGame = table.games[owner];
+    const survivors = new Set(ownerGame.podAnswerWipe(dying, false));
+    for (const creature of dying)
+      if (!survivors.has(creature)) ownerGame.podRemove(creature, 'destroy');
+  }
+}

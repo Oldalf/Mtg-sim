@@ -14,6 +14,8 @@ import {
   venturesOnEnter,
 } from './dungeons';
 
+export const MASSACRE_WURM = 'Massacre Wurm';
+
 /** The enter trigger of a common card. Returns false if the permanent has none here. */
 export function enterTriggerOfCommonCard(
   game: GameCore,
@@ -38,6 +40,10 @@ export function enterTriggerOfCommonCard(
     case 'Eternal Witness':
     case 'Timeless Witness':
       returnBestCardToHand(game);
+      return true;
+    case MASSACRE_WURM:
+      // creatures your opponents control get -2/-2 until end of turn (its drain: engine/pod/pod-arena.ts)
+      game.podShrinkCreatures(2, false, null, MASSACRE_WURM);
       return true;
     case 'Mnemonic Wall':
       returnBestCardToHand(game, (card) => card.isInstantOrSorcery);

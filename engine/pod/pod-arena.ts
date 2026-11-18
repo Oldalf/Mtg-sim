@@ -4,6 +4,7 @@
  */
 import { Arena } from '../game/game-types';
 import { coloursOf } from '../cards/cards';
+import { MASSACRE_WURM } from '../game/common-permanents';
 import { Game } from '../game/game';
 import { fightOpponent } from './pod-combat';
 import {
@@ -21,6 +22,8 @@ import {
   goadBestCreature,
   makeDefenderSacrifice,
   makeOpponentsSacrifice,
+  creaturesShrinkWouldKill,
+  shrinkCreatures,
   shouldGoForKill,
   snipeBestTarget,
   stopBestCreatureAttackingUs,
@@ -73,8 +76,11 @@ export function buildArena(table: PodTable): Arena {
       }),
     announceDeath: (game, permanent) =>
       table.runOffTurn(() => {
-        for (const opponent of table.livingOpponents(table.playerOf(game)))
+        const dyingPlayer = table.playerOf(game);
+        for (const opponent of table.livingOpponents(dyingPlayer)) {
           table.games[opponent].onOtherPlayersCreatureDies(permanent);
+          loseLifeToMassacreWurms(table, opponent, dyingPlayer);
+        }
       }),
     prefer: (game, slot) => attackPreference(table, game, slot),
     mustAttack: (_game, creature) => table.mustAttack(creature),
@@ -93,6 +99,12 @@ export function buildArena(table: PodTable): Arena {
     },
     goadBestCreature: (game) =>
       table.runOffTurn(() => goadBestCreature(table, game)),
+    shrinkCreatures: (game, amount, includeOwn, except, sourceName) =>
+      table.runOffTurn(() =>
+        shrinkCreatures(table, game, amount, includeOwn, except, sourceName),
+      ),
+    creaturesShrinkWouldKill: (game, amount) =>
+      creaturesShrinkWouldKill(table, game, amount),
     weakenBestCreature: (game, powerLoss) =>
       table.runOffTurn(() => weakenBestCreature(table, game, powerLoss)),
     stopBestCreatureAttackingUs: (game) =>
@@ -166,4 +178,23 @@ function everyOpponentDiscardsAndDraws(
     `every other player discards its hand and draws ${cardsToDraw}`,
   );
   return cardsToDraw;
+}
+
+/** Massacre Wurm: "Whenever a creature an opponent controls dies, that player loses 2 life." */
+function loseLifeToMassacreWurms(
+  table: PodTable,
+  wurmPlayer: number,
+  dyingPlayer: number,
+): void {
+  const wurmGame = table.games[wurmPlayer];
+  const wurms = wurmGame.countOnBattlefield(MASSACRE_WURM);
+  if (!wurms) return;
+  const slot = table.opponentsOf[wurmPlayer].indexOf(dyingPlayer);
+  wurmGame.damageOpponent(slot, 2 * wurms);
+  table.sayAs(
+    wurmPlayer,
+    `Massacre Wurm: ${table.playerName(dyingPlayer)} loses ${2 * wurms}`,
+    'note',
+    [MASSACRE_WURM],
+  );
 }

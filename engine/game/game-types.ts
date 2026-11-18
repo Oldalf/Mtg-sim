@@ -19,6 +19,8 @@ export class Permanent {
   counters = 0;
   /** Power changes that aren't counters (e.g. Saw in Half copies at half power). */
   powerMod = 0;
+  /** Toughness changes that aren't counters (-X/-X until end of turn: Massacre Wurm, D'Ghor Bloodletter). */
+  toughnessMod = 0;
   /** Free bit flags a deck may use for attachments and the like (copied with the permanent). */
   marks = 0;
   /** In a pod, the game of the player who owns it while another player controls it (Volatile Stormdrake's
@@ -50,6 +52,7 @@ export class Permanent {
     permanent.token = this.token;
     permanent.counters = this.counters;
     permanent.powerMod = this.powerMod;
+    permanent.toughnessMod = this.toughnessMod;
     permanent.marks = this.marks;
     permanent.owner = this.owner;
     return permanent;
@@ -259,6 +262,17 @@ export interface Arena {
   goadBestCreature(game: Game<unknown>): void;
   /** Fungi Cavern: the best creature of the biggest threat gets -`powerLoss`/-0 until our next turn. */
   weakenBestCreature(game: Game<unknown>, powerLoss: number): void;
+  /** Creatures get -`amount`/-`amount` until end of turn: every opponent's, ours too if `includeOwn`, never
+   *  `except` (the source: "all other creatures"). Those left with toughness 0 or less die. */
+  shrinkCreatures(
+    game: Game<unknown>,
+    amount: number,
+    includeOwn: boolean,
+    except: Permanent | null,
+    sourceName: string,
+  ): void;
+  /** How many of the opponents' creatures a -`amount`/-`amount` would kill now. */
+  creaturesShrinkWouldKill(game: Game<unknown>, amount: number): number;
   /** Twisted Caverns: the best creature of the biggest threat can't attack us until our next turn. */
   stopBestCreatureAttackingUs(game: Game<unknown>): void;
   /** The opponents (slots) this creature of ours can't attack (Twisted Caverns). */

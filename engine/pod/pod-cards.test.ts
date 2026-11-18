@@ -1,7 +1,8 @@
 /**
  * Checks of the cards wired into the pod in step 11 (T4), on a hand-built table: the counter abilities of Diversion
  * Unit and Soratami Savant, Shire Shirriff's exile, Vindictive Lich's three modes, Insidious Fungus's destroy mode,
- * Bushwhack's fight, Crypt Incursion on an opponent's graveyard, Wash Out and Soratami Mirror-Mage's bounce.
+ * Bushwhack's fight, Crypt Incursion on an opponent's graveyard, Wash Out and Soratami Mirror-Mage's bounce; Massacre
+ * Wurm and D'Ghor Bloodletter (T6: -X/-X until end of turn, the Wurm's drain, the Bloodletter's modes and Meren loop).
  * Run: npm run pod -- --test
  */
 import * as C from '../cards/cards';
@@ -253,6 +254,93 @@ export function runPodCardTests(allDecks: Record<string, Deck>): boolean {
         aesi.hand.length,
       ],
       [true, ['Grave Titan'], 1, 3],
+    );
+  }
+  {
+    // Massacre Wurm: the opponents' creatures get -2/-2 until end of turn, each one that dies costs its owner 2 life
+    const table = newTable(allDecks);
+    const meren = table.games[MEREN];
+    const mike = table.games[MIKE];
+    putOnBattlefield(mike, 'Llanowar Elves');
+    const titan = putOnBattlefield(mike, 'Grave Titan');
+    const ownElves = putOnBattlefield(meren, 'Llanowar Elves');
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    meren.enter(C.get('Massacre Wurm'));
+    table.applyChangesFrom(MEREN);
+    const toughnessThisTurn = mike.toughness(titan);
+    table.prepareTurn(table.opponentsOf[MEREN][0]);
+    check(
+      'Massacre Wurm: the Elves die and Mike loses 2, the Titan is a 4/4 until the next turn, our Elves are untouched',
+      [
+        names(mike.battlefield),
+        mike.myLife,
+        toughnessThisTurn,
+        mike.toughness(titan),
+        meren.battlefield.includes(ownElves),
+      ],
+      [['Grave Titan'], 38, 4, 6, true],
+    );
+  }
+  {
+    // D'Ghor Bloodletter, two opposing 1/1s: all other creatures get -1/-1 (our Elves die too: experience)
+    const table = newTable(allDecks);
+    const meren = table.games[MEREN] as MerenGame;
+    putOnBattlefield(table.games[MIKE], 'Llanowar Elves');
+    putOnBattlefield(table.games[SAM_AND_FRODO], 'Llanowar Elves');
+    putOnBattlefield(meren, 'Meren of Clan Nel Toth');
+    putOnBattlefield(meren, 'Llanowar Elves');
+    meren.experienceCounters = 0;
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    meren.enter(C.get("D'Ghor Bloodletter"));
+    check(
+      "D'Ghor Bloodletter: the -1/-1 kills both opposing Elves and ours, Meren gets an experience counter",
+      [
+        names(table.games[MIKE].battlefield),
+        names(table.games[SAM_AND_FRODO].battlefield),
+        names(meren.battlefield),
+        meren.experienceCounters,
+      ],
+      [[], [], ["D'Ghor Bloodletter", 'Meren of Clan Nel Toth'], 1],
+    );
+  }
+  {
+    // D'Ghor Bloodletter, one big creature: the edict (each player sacrifices; it is our only creature)
+    const table = newTable(allDecks);
+    const meren = table.games[MEREN];
+    putOnBattlefield(table.games[MIKE], 'Grave Titan');
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    meren.enter(C.get("D'Ghor Bloodletter"));
+    check(
+      "D'Ghor Bloodletter: the edict takes Mike's Titan, the Bloodletter sacrifices itself",
+      [names(table.games[MIKE].battlefield), cardNames(meren.graveyard)],
+      [[], ["D'Ghor Bloodletter"]],
+    );
+  }
+  {
+    // the Meren loop: two 2/2s, cast it for -1/-1, sacrifice it at the end step, Meren returns it for a second -1/-1
+    const table = newTable(allDecks);
+    const meren = table.games[MEREN] as MerenGame;
+    const mike = table.games[MIKE];
+    for (let i = 0; i < 2; i++) {
+      const zombie = new Permanent(C.makeToken('Zombie', 2, 2, 'black'));
+      zombie.token = true;
+      mike.putOntoBattlefield(zombie);
+    }
+    putOnBattlefield(meren, 'Meren of Clan Nel Toth');
+    putOnBattlefield(meren, 'Woe Strider');
+    meren.experienceCounters = 2;
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    meren.enter(C.get("D'Ghor Bloodletter"));
+    const zombiesAfterCast = mike.creatures().length;
+    meren.feedMerenAtEndStep();
+    check(
+      "D'Ghor Bloodletter with Meren: the first -1/-1 kills nothing, the second at the end step kills both 2/2s (and Woe Strider: experience 2 + Bloodletter + Strider)",
+      [zombiesAfterCast, mike.creatures().length, meren.experienceCounters],
+      [2, 0, 4],
     );
   }
 

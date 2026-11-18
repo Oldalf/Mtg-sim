@@ -62,6 +62,20 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   override podWeakenBestCreature(powerLoss: number): void {
     if (this.inArena()) this.arena!.weakenBestCreature(this, powerLoss);
   }
+  override podShrinkCreatures(
+    amount: number,
+    includeOwn: boolean,
+    except: Permanent | null,
+    sourceName: string,
+  ): void {
+    if (this.inArena())
+      this.arena!.shrinkCreatures(this, amount, includeOwn, except, sourceName);
+  }
+  override podCreaturesShrinkWouldKill(amount: number): number {
+    return this.inArena()
+      ? this.arena!.creaturesShrinkWouldKill(this, amount)
+      : 0;
+  }
   override podStopBestCreatureAttackingUs(): void {
     if (this.inArena()) this.arena!.stopBestCreatureAttackingUs(this);
   }

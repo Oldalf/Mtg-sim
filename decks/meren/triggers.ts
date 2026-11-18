@@ -1,5 +1,11 @@
 /** What happens when a permanent enters the battlefield or dies: the triggers of Meren's creatures. */
-import { EDICT_ETB, GRAY_MERCHANT, MEREN, TOKENS } from './cards';
+import {
+  DGHOR_BLOODLETTER,
+  EDICT_ETB,
+  GRAY_MERCHANT,
+  MEREN,
+  TOKENS,
+} from './cards';
 import type { MerenGame } from './game';
 import { Permanent, Zone } from '../../engine/game/game-types';
 import { firstMax } from '../../engine/util/lists';
@@ -171,6 +177,9 @@ function resolveRemovalOnEnter(game: MerenGame, permanent: Permanent): void {
   if (name === 'Shriekmaw') {
     // a pod: destroy the biggest threat's best creature (nonartifact, nonblack isn't checked)
     if (game.inArena()) game.arena!.snipe(game, SHRIEKMAW, name);
+  } else if (name === DGHOR_BLOODLETTER && game.shouldShrinkWithBloodletter()) {
+    // a pod with a wide board: all other creatures get -1/-1 (ours die too: Meren's experience)
+    game.podShrinkCreatures(1, true, permanent, name);
   } else if (EDICT_ETB.has(name)) {
     if (game.inArena()) game.arena!.edict(game, name === 'Accursed Marauder'); // a pod: the opponents sacrifice too
     // each player sacrifices: we lose our worst creature (Accursed Marauder: a nontoken one)
@@ -179,7 +188,9 @@ function resolveRemovalOnEnter(game: MerenGame, permanent: Permanent): void {
       .filter((candidate) => name !== 'Accursed Marauder' || !candidate.token);
     const sacrificed =
       choices[0] ??
-      (name === 'Accursed Marauder' || name === 'Fleshbag Marauder'
+      (name === 'Accursed Marauder' ||
+      name === 'Fleshbag Marauder' ||
+      name === DGHOR_BLOODLETTER
         ? permanent
         : null);
     if (sacrificed) game.sacrifice(sacrificed);
