@@ -62,7 +62,11 @@ Win by turn 5 / 6 / 7 / 8 / 10: **0.7 / 3.9 / 8.6 / 16.2 / 32.7%** (any win); 16
 
 Win by turn 5 / 6 / 7 / 8 / 10: **0.2 / 0.6 / 1.4 / 2.4 / 6.1%** (any win), almost all of them through a Reiterate loop (5.6%). In 13% of games Reiterate, a loop piece and a finisher are all seen by turn 7, but there are only about 6.5 lands on turn 7 and the loop needs 9 mana (11 for Mana Geyser, 13 for Brass's Bounty). The deck is mana-starved in a goldfish game: about 36 lands + 24 ramp spells, one draw a turn, and the cantrips are few.
 
+## Mizzix's Mastery (step 11, T3, 2026-11-18)
+
+The engine casts Mizzix's Mastery (`engine/game/spell-copies.ts`): it exiles an instant or sorcery card from our graveyard (overloaded: all of them) and casts a free copy of each (a cast: Codie's trigger and the cast triggers see it), then exiles itself. Codie casts only the copies of its mana spells and Demonic Tutor (`wantsToCastCopy`). The solver may cast it on a mana spell in the graveyard ({3}{R}), or overloaded ({5}{R}{R}{R}) when two or more are there. 4,000 games, same seeds, full power: win by turn 5 / 6 / 8 / 10 **2.6 / 8.8 / 27.2 / 47.5%** (before 2.2 / 8.4 / 26.5 / 46.5); with backup 0.8 / 4.0 / 17.5 / 37.2 (before 0.7 / 3.8 / 16.8 / 36.3); average turn 8.92 (8.94). Small, as expected for one card. Baseline re-recorded (Pontus).
+
 ## Open
 
-- Codie's free-spell trigger (each activation: the next spell cast makes a random cheaper instant or sorcery free) is not modelled; nor Mizzix's Mastery (overload), Flashback, Bala Ged Recovery, Spelltwine, Narset's Reversal, Mana Drain, Bring to Light, Crop Rotation, Scapeshift, Splendid Reclamation, Field of the Dead.
+- Not modelled yet (held, never cast): Bring to Light, Crop Rotation, Scapeshift, Splendid Reclamation, Spelltwine, Bala Ged Recovery, Narset's Reversal, Mana Drain (in a goldfish game; a counter in a pod), and the lands Field of the Dead, Mistrise Village and Vesuva (played as plain lands). Codie's free-spell trigger and the Flashback card are modelled (see above); this line said otherwise until 2026-11-18.
 - Whether the AI's slow mana development is the deck or the AI (no human comparison, no logs).

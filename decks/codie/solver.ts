@@ -43,6 +43,11 @@ import {
   Permanent,
 } from '../../engine/game/game-types';
 import { removeIfPresent } from '../../engine/util/lists';
+import {
+  MIZZIXS_MASTERY,
+  MIZZIXS_MASTERY_OVERLOAD_COST,
+  OVERLOAD,
+} from '../../engine/game/spell-copies';
 
 /** One step of a Codie kill line. A solver move keeps how it was done (`play`), so the real game can do it again;
  *  the finisher is cast for real (finishers.ts castFinisher). */
@@ -130,6 +135,7 @@ export function possibleMoves(game: CodieGame): SolverMove[] {
   addSpiritGuideMoves(game, moves);
   addReiterateLoopMoves(game, moves);
   addFlashbackMoves(game, moves);
+  addMizzixsMasteryMoves(game, moves);
   addManaMoves(game, moves);
   addTutorMoves(game, moves);
   addStackedLibraryMoves(game, moves);
@@ -191,6 +197,31 @@ function addFlashbackMoves(game: CodieGame, moves: SolverMove[]): void {
           `loop: Flashback ${spell} + Reiterate`,
           (copy) => tryReiterateLoop(copy, spell, true),
         ]);
+}
+
+/** Mizzix's Mastery: a free copy of a mana spell in the graveyard ({3}{R}), or of every one (overload, {5}{R}{R}{R}). */
+function addMizzixsMasteryMoves(game: CodieGame, moves: SolverMove[]): void {
+  if (!game.inHand(MIZZIXS_MASTERY)) return;
+  const manaSpellsInGraveyard = MANA_SPELLS.filter((spell) =>
+    game.graveyard.some((card) => card.name === spell),
+  );
+  const castMastery = (copy: CodieGame, mode: string, overload: boolean) =>
+    copy.castInstantOrSorcery(
+      copy.cardInHand(MIZZIXS_MASTERY)!,
+      false,
+      overload ? MIZZIXS_MASTERY_OVERLOAD_COST : null,
+      mode,
+    );
+  for (const spell of manaSpellsInGraveyard)
+    moves.push([
+      `${MIZZIXS_MASTERY} -> ${spell}`,
+      (copy) => castMastery(copy, spell, false),
+    ]);
+  if (manaSpellsInGraveyard.length >= 2)
+    moves.push([
+      `${MIZZIXS_MASTERY} overloaded: ${manaSpellsInGraveyard.join(', ')}`,
+      (copy) => castMastery(copy, OVERLOAD, true),
+    ]);
 }
 
 /** Rituals and mana spells (alone or with one Reiterate copy), Manamorphose, Frantic Search and Codie. */

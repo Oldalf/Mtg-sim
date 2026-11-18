@@ -15,6 +15,7 @@ import { CardDef, Cost } from '../cards/cards';
 import { TREASURE } from '../cards/tokens';
 import type { GameCore } from './game-core';
 import { Permanent } from './game-types';
+import { firstMax } from '../util/lists';
 
 export const ARCHMAGE_EMERITUS = 'Archmage Emeritus';
 export const ARCHMAGE_OF_RUNES = 'Archmage of Runes';
@@ -110,4 +111,53 @@ export function copyNextInstantOrSorcery(
     card,
   );
   copySpell(game, card, count, mode);
+}
+
+export const MIZZIXS_MASTERY = "Mizzix's Mastery";
+/** Mizzix's Mastery cast for its overload cost (as the spell's mode): every instant and sorcery in our graveyard. */
+export const OVERLOAD = 'overload';
+export const MIZZIXS_MASTERY_OVERLOAD_COST = Cost.parse('{5}{R}{R}{R}');
+/** Spells that exile themselves as they resolve (instead of going to the graveyard). */
+export const EXILES_ITSELF = new Set([MIZZIXS_MASTERY]);
+
+/** Mizzix's Mastery resolves: it exiles its target, an instant or sorcery card in our graveyard (`mode` names it; the
+ *  best by cardValue when it doesn't), or with overload every one of them, then casts a copy of each for free. Each
+ *  copy is optional (the deck's wantsToCastCopy). Returns false for any other spell. */
+export function resolveGraveyardCopySpell(
+  game: GameCore<unknown>,
+  card: CardDef,
+  mode: string | null,
+): boolean {
+  if (card.name !== MIZZIXS_MASTERY) return false;
+  const inGraveyard = game.graveyard.filter(
+    (graveyardCard) => graveyardCard.isInstantOrSorcery,
+  );
+  let targets: CardDef[];
+  if (mode === OVERLOAD) targets = inGraveyard;
+  else if (!inGraveyard.length) targets = [];
+  else
+    targets = [
+      inGraveyard.find((graveyardCard) => graveyardCard.name === mode) ??
+        firstMax(inGraveyard, (graveyardCard) => game.cardValue(graveyardCard)),
+    ];
+  for (const target of targets) game.moveCard(target, 'graveyard', 'exile');
+  for (const target of targets)
+    if (game.wantsToCastCopy(target)) castCopyWithoutPaying(game, target);
+  return true;
+}
+
+/** Casts a copy of a spell without paying its mana cost (Mizzix's Mastery): it is cast, so the cast triggers fire
+ *  (rule 707.12), and it resolves. An X in its cost is 0. */
+export function castCopyWithoutPaying(
+  game: GameCore<unknown>,
+  card: CardDef,
+): void {
+  game.sayEvent('cast', 'cast a copy of', card, '(free)');
+  game.spellsCast += 1;
+  game.onCastInstantOrSorcery(false);
+  game.castTriggers(card, false, {});
+  copyNextInstantOrSorcery(game, card, null);
+  game.podAnnounceCast(card);
+  if (game.podCounters(card)) return;
+  game.resolve(card, false, null);
 }

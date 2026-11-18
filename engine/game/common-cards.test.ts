@@ -2,7 +2,7 @@
  * Checks of single card rules in the engine that the DnD deck brought: "enters, draw a card" (Wall of Omens), Peregrine
  * Drake's untap doubled by Panharmonicon, Theros gods that aren't creatures below their devotion (Thassa, Ephara),
  * the rocks (Azorius Signet, Midnight Clock, Sarevok's Tome with the initiative), a Plains search, and Day of
- * Judgment as a pod answer, Cathars' Crusade and Radiant Solar, Thunderclap Drake's copies. Also a search's copy of our next turn (copyAtNextTurn).
+ * Judgment as a pod answer, Cathars' Crusade and Radiant Solar, Thunderclap Drake's copies, Mizzix's Mastery. Also a search's copy of our next turn (copyAtNextTurn).
  * Run: npm run pod -- --test
  */
 import * as C from '../cards/cards';
@@ -12,7 +12,13 @@ import { ANSWERS } from './answers';
 import { triggersOfCreatureEntering } from './creature-enter-triggers';
 import { Permanent } from './game-types';
 import { fetchLand } from './land-search';
-import { THUNDERCLAP_DRAKE, activateThunderclapDrake } from './spell-copies';
+import {
+  MIZZIXS_MASTERY,
+  MIZZIXS_MASTERY_OVERLOAD_COST,
+  OVERLOAD,
+  THUNDERCLAP_DRAKE,
+  activateThunderclapDrake,
+} from './spell-copies';
 
 function newGame(allDecks: Record<string, Deck>, library: string[] = []) {
   const deck = allDecks.goldfish;
@@ -186,6 +192,46 @@ export function runCommonCardTests(allDecks: Record<string, Deck>): boolean {
         game.hand.length,
       ],
       [true, false, true, 4, 4],
+    );
+  }
+  {
+    // Mizzix's Mastery: a free copy of the named card (exiled), or of every instant and sorcery with overload
+    const castMastery = (
+      graveyard: string[],
+      mountains: number,
+      mode: string,
+      overload: boolean,
+    ) => {
+      const game = newGame(allDecks);
+      game.putCards(
+        graveyard.map((name) => C.get(name)),
+        'graveyard',
+      );
+      for (let i = 0; i < mountains; i++) putOnBattlefield(game, 'Mountain');
+      const mastery = C.get(MIZZIXS_MASTERY);
+      game.putCard(mastery, 'hand');
+      const isCast = game.castInstantOrSorcery(
+        mastery,
+        false,
+        overload ? MIZZIXS_MASTERY_OVERLOAD_COST : null,
+        mode,
+      );
+      return [
+        isCast,
+        game.pool.B,
+        game.graveyard.map((card) => card.name),
+        game.exile.map((card) => card.name).sort(),
+      ];
+    };
+    check(
+      "Mizzix's Mastery on Dark Ritual: BBB; the Ritual and the Mastery are exiled, Opt stays",
+      castMastery(['Dark Ritual', 'Opt'], 4, 'Dark Ritual', false),
+      [true, 3, ['Opt'], ['Dark Ritual', MIZZIXS_MASTERY]],
+    );
+    check(
+      "Mizzix's Mastery overloaded on two Dark Rituals: six B",
+      castMastery(['Dark Ritual', 'Dark Ritual'], 8, OVERLOAD, true),
+      [true, 6, [], ['Dark Ritual', 'Dark Ritual', MIZZIXS_MASTERY]],
     );
   }
   check(

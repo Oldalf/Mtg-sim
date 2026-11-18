@@ -81,7 +81,9 @@ import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import { enterTriggerCount } from './trigger-doublers';
 import {
   castInstantOrSorceryTriggers,
+  EXILES_ITSELF,
   copyNextInstantOrSorcery,
+  resolveGraveyardCopySpell,
 } from './spell-copies';
 import { playGoldfishCombat } from './goldfish-combat';
 import {
@@ -756,6 +758,7 @@ export abstract class GameCore<S = unknown> {
     if (resolveReanimationSpell(this, card)) return;
     if (resolveBlinkSpell(this, card)) return;
     if (resolveFlashSpell(this, card)) return;
+    if (resolveGraveyardCopySpell(this, card, mode)) return;
     this.resolveOther(card, fromGraveyard, mode);
   }
 
@@ -992,7 +995,11 @@ export abstract class GameCore<S = unknown> {
       // rebound: exiled as it resolves, cast again for free at our next upkeep
       this.putCard(card, 'exile');
       this.reboundCards = [...this.reboundCards, card];
-    } else this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
+    } else
+      this.putCard(
+        card,
+        fromGraveyard || EXILES_ITSELF.has(card.name) ? 'exile' : 'graveyard',
+      );
     return true;
   }
 
@@ -1634,6 +1641,11 @@ export abstract class GameCore<S = unknown> {
   /** How much we want this card back from the graveyard to the hand (Eternal Witness). */
   returnToHandValue(card: CardDef): number {
     return this.cardValue(card);
+  }
+  /** Do we cast this free copy (Mizzix's Mastery: "you may cast the copy")? A deck says no to a copy that would hurt
+   *  it (a Windfall that throws away the hand). */
+  wantsToCastCopy(_card: CardDef): boolean {
+    return true;
   }
   /** How much we want this creature back from the graveyard (reanimation spells). */
   reanimationValue(card: CardDef): number {

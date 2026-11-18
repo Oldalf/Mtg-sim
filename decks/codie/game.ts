@@ -227,6 +227,11 @@ export class CodieGame extends Game<CodieGame> {
     if (!resolveCodieSpell(this, card))
       super.resolve(card, fromGraveyard, mode);
   }
+  /** Free copies (Mizzix's Mastery): only the mana spells and Demonic Tutor; a free Windfall would throw the hand
+   *  away, and a free X spell has X = 0. */
+  override wantsToCastCopy(card: CardDef): boolean {
+    return MANA_SPELLS.includes(card.name) || card.name === DEMONIC_TUTOR;
+  }
   override tutorTarget(allowed: (card: CardDef) => boolean): CardDef | null {
     return chooseTutorTarget(this, allowed);
   }
