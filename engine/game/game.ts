@@ -467,20 +467,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
    *  goldfish opponents never do this on their own). */
   override podDefence(): void {
     for (let round = 0; round < 4; round++) {
-      const mine = this.creatures().filter(
-        (permanent) => !permanent.tapped,
-      ).length;
-      let worst = 0;
-      for (let i = 0; i < this.life.length; i++) {
-        if (!this.isOpponentAlive(i)) continue;
-        const opponentPowers = this.arena!.board(this, i)
-          .sort((first, second) => second - first)
-          .slice(mine);
-        worst = Math.max(
-          worst,
-          opponentPowers.reduce((total, value) => total + value, 0),
-        );
-      }
+      const worst = this.biggestAttackNextTurn();
       if (
         worst <= 0 ||
         this.myLife - worst > ((this.config.chump_life as number) ?? 10)
@@ -503,6 +490,43 @@ export abstract class Game<S = unknown> extends GameCore<S> {
         'life)',
       );
     }
+  }
+
+  /** A pod: the damage the biggest opposing board could deal us next turn, each untapped creature of ours blocking one
+   *  of its biggest attackers. */
+  biggestAttackNextTurn(): number {
+    const mine = this.creatures().filter(
+      (permanent) => !permanent.tapped,
+    ).length;
+    let worst = 0;
+    for (let i = 0; i < this.life.length; i++) {
+      if (!this.isOpponentAlive(i)) continue;
+      const opponentPowers = this.arena!.board(this, i)
+        .sort((first, second) => second - first)
+        .slice(mine);
+      worst = Math.max(
+        worst,
+        opponentPowers.reduce((total, value) => total + value, 0),
+      );
+    }
+    return worst;
+  }
+
+  /** An opponent cast this spell and we hold a counterspell for it: do we counter it? By default, a spell worth
+   *  counterAnyWeight always, one worth counterAtWeight when its caster is the biggest threat and we hold two
+   *  counterspells. A deck may counter more (Gale, when it is in danger). */
+  podWantsToCounter(
+    _spell: CardDef,
+    weight: number,
+    casterIsBiggestThreat: boolean,
+    counterspellsHeld: number,
+    settings: { counterAtWeight: number; counterAnyWeight: number },
+  ): boolean {
+    if (weight < settings.counterAtWeight) return false;
+    return (
+      weight >= settings.counterAnyWeight ||
+      (casterIsBiggestThreat && counterspellsHeld >= 2)
+    );
   }
 
   // ================================================================ pod interaction (answers; see engine/game/answers.ts and engine/pod/pod.ts)

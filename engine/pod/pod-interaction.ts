@@ -677,7 +677,6 @@ export function counterSpell(
   if (!table.answersEnabled) return false;
   const caster = table.playerOf(game);
   const weight = game.podWeight(spell);
-  if (weight < table.settings.counterAtWeight) return false;
   for (const opponent of table.opponentsOf[caster]) {
     if (!table.isAlive[opponent]) continue;
     const opponentGame = table.games[opponent];
@@ -692,10 +691,16 @@ export function counterSpell(
     const counterspellsHeld = opponentGame.hand.filter(
       (card) => opponentGame.answer(card)?.kind === 'counter',
     ).length;
-    const worthCountering =
-      weight >= table.settings.counterAnyWeight ||
-      (casterIsBiggestThreat && counterspellsHeld >= 2);
-    if (!worthCountering) continue;
+    if (
+      !opponentGame.podWantsToCounter(
+        spell,
+        weight,
+        casterIsBiggestThreat,
+        counterspellsHeld,
+        table.settings,
+      )
+    )
+      continue;
 
     const counter = possibleCounters[0];
     opponentGame.podCast(counter);
