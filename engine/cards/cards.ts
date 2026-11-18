@@ -136,6 +136,19 @@ export interface CardData {
   };
 }
 
+/** A modal double-faced card's land side, read from the back face's text (Bala Ged Recovery // Bala Ged Sanctuary),
+ *  or null when the back is not a land. MDFC_LAND_BACK overrides it for the cards it names. */
+function landOnBackFace(cardData: CardData): LandInfo | null {
+  const back = cardData.back;
+  if (
+    cardData.layout !== 'modal_dfc' ||
+    !back ||
+    !/\bLand\b/.test(back.type_line)
+  )
+    return null;
+  return readLandFromText(back.oracle, back.type_line);
+}
+
 const TYPE_WORDS = [
   'land',
   'creature',
@@ -213,7 +226,7 @@ export class CardDef {
     if (land === null && this.types.has('land'))
       land = readLandFromText(this.oracle, typeLine); // unknown land -> generic
     this.land = land;
-    this.mdfcLand = MDFC_LAND_BACK[name] ?? null;
+    this.mdfcLand = MDFC_LAND_BACK[name] ?? landOnBackFace(cardData);
     this.adventure = ADVENTURE[name] ?? null;
     let rock: string | null = ROCKS[name] ?? null;
     if (
