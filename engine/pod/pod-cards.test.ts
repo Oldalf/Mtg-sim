@@ -343,6 +343,38 @@ export function runPodCardTests(allDecks: Record<string, Deck>): boolean {
       [2, 0, 4],
     );
   }
+  {
+    // Junji dies with nothing of ours worth returning: the opponents hold cards, so each discards two and loses 2
+    const table = newTable(allDecks);
+    const meren = table.games[MEREN];
+    const mike = table.games[MIKE];
+    mike.hand = [C.get('Island'), C.get('Opt'), C.get('Forest')];
+    table.games[SAM_AND_FRODO].hand = [C.get('Plains'), C.get('Forest')];
+    table.games[AESI].hand = [C.get('Island'), C.get('Forest')];
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    meren.sacrifice(putOnBattlefield(meren, 'Junji, the Midnight Sky'));
+    table.applyChangesFrom(MEREN);
+    check(
+      'Junji: each opponent discards two cards and loses 2',
+      [mike.hand.length, table.games[AESI].hand.length, mike.myLife],
+      [1, 0, 38],
+    );
+  }
+  {
+    // ... the opponents' hands are empty and Aesi has a creature card in its graveyard: it comes to us (a stolen 5/5)
+    const table = newTable(allDecks);
+    const meren = table.games[MEREN];
+    table.games[AESI].graveyard = [C.get('Grave Titan')];
+    table.startTurnLog(MEREN);
+    table.refreshView(MEREN);
+    meren.sacrifice(putOnBattlefield(meren, 'Junji, the Midnight Sky'));
+    check(
+      "Junji: a creature card from Aesi's graveyard comes in as our stolen 5/5, we lose 2",
+      [names(meren.battlefield), meren.myLife],
+      [['Stolen creature'], 38],
+    );
+  }
 
   const wrong = checks.filter(
     ([, actual, expected]) =>

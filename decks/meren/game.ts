@@ -58,6 +58,9 @@ export class MerenGame extends CreatureDeckGame {
   reanimatedAtTurnEnd: number[] = []; // ... at the end of turns 4-6
   experienceAtTurnEnd: number[] = []; // Meren's experience at the end of turns 4-6
   merenOnBattlefieldAtTurnEnd: boolean[] = []; // ... and whether Meren was on the battlefield then
+  cardsDrawn = 0; // cards drawn in the game (draw steps included, the opening hand not)
+  cardsDrawnAtTurnEnd: number[] = []; // ... at the end of turns 4-8
+  handAtTurnEnd: number[] = []; // cards in hand at the end of turns 4-8
   override diag(): Record<string, number | null> {
     return {
       merenOut: this.merenOut,
@@ -71,6 +74,11 @@ export class MerenGame extends CreatureDeckGame {
       exp6: this.experienceAtTurnEnd[6] ?? null,
       merenOn5: Number(this.merenOnBattlefieldAtTurnEnd[5] ?? false),
       merenOn6: Number(this.merenOnBattlefieldAtTurnEnd[6] ?? false),
+      drawn6: this.cardsDrawnAtTurnEnd[6] ?? null,
+      drawn8: this.cardsDrawnAtTurnEnd[8] ?? null,
+      hand8: this.handAtTurnEnd[8] ?? null,
+      hand5: this.handAtTurnEnd[5] ?? null,
+      hand6: this.handAtTurnEnd[6] ?? null,
     };
   }
   morbidUsed = false; // Morbid Opportunist: once each turn
@@ -353,8 +361,19 @@ export class MerenGame extends CreatureDeckGame {
       : 0;
   }
 
+  /** Counts the cards drawn once the game is on (for --diag). */
+  override draw(count = 1): void {
+    const libraryBefore = this.library.length;
+    super.draw(count);
+    if (this.turn >= 1) this.cardsDrawn += libraryBefore - this.library.length;
+  }
+
   // ================================================================ turn steps
   override startTurn(): void {
+    if (this.turn >= 4 && this.turn <= 8) {
+      this.cardsDrawnAtTurnEnd[this.turn] = this.cardsDrawn;
+      this.handAtTurnEnd[this.turn] = this.hand.length;
+    }
     if (this.turn >= 4 && this.turn <= 6) {
       this.permanentsAtTurnEnd[this.turn] = this.battlefield.filter(
         (permanent) => permanent.land === null,

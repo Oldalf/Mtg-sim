@@ -294,13 +294,7 @@ function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
       if (target !== null) game.damageOpponent(target, 5);
     }
   } else if (name === 'Junji, the Midnight Sky') {
-    const best = game.bestCreatureInGraveyard(
-      (card) => card.name !== name && game.battlefieldValue(card) >= 60,
-    );
-    if (best) {
-      game.reanimate(best);
-      game.loseLife(2);
-    } else game.drainEach(2);
+    resolveJunjiDeath(game);
   } else if (name === 'Protean Hulk') {
     // creatures with total mana value 6 or less onto the battlefield
     let budget = 6;
@@ -316,4 +310,45 @@ function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
     }
     game.shuffle();
   }
+}
+
+/**
+ * Junji, the Midnight Sky dies: our best creature card worth it comes back (we lose 2). Otherwise, in a pod where the
+ * opponents hold cards, each discards two and loses 2; else a creature card from an opponent's graveyard (the
+ * deck's stolen 5/5, as Puppeteer Clique) if there is one; else each opponent just loses 2.
+ */
+function resolveJunjiDeath(game: MerenGame): void {
+  const best = game.bestCreatureInGraveyard(
+    (card) =>
+      card.name !== 'Junji, the Midnight Sky' &&
+      game.battlefieldValue(card) >= 60,
+  );
+  if (best) {
+    game.reanimate(best);
+    game.loseLife(2);
+    return;
+  }
+  const arena = game.inArena() ? game.arena! : null;
+  const livingSlots = game.life
+    .map((_, slot) => slot)
+    .filter((slot) => game.isOpponentAlive(slot));
+  const cardsInOpponentsHands = arena
+    ? livingSlots.reduce((total, slot) => total + arena.handSize(game, slot), 0)
+    : 0;
+  const opponentHasCreatureCard =
+    arena !== null &&
+    livingSlots.some((slot) => arena.creatureCardsInGraveyard(game, slot) > 0);
+  if (
+    arena &&
+    cardsInOpponentsHands < 2 * livingSlots.length &&
+    opponentHasCreatureCard
+  ) {
+    game.enter(TOKENS.stolen, 'graveyard', { token: true });
+    game.loseLife(2);
+    return;
+  }
+  if (arena)
+    for (const slot of livingSlots)
+      arena.discardOneOpponentsCards(game, slot, 2, 'Junji, the Midnight Sky');
+  game.drainEach(2);
 }

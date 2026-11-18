@@ -71,6 +71,7 @@ All within noise: a Swamp does about as well as each of them, so none speeds up 
 - **Slow start: 10.7%** (under 9 mana by turn 5: 8.5%; under 13 by turn 6: 8.9%). Average mana spent: 13.1 by turn 5, 18.5 by turn 6 (Aesi's package list: 15.5 / 24).
 - Meren comes down on turn 4.0 on average; still not out, game still going: 18.4% after turn 4, 6.5% after turn 5, 3.5% after turn 6.
 - **The engine is slow to start:** nothing has come back from a graveyard by the end of turn 5 in 71% of games (49% by turn 6), and Meren's experience averages 0.75 after turn 5 and 1.7 after turn 6. A thin board (under 3 nonland permanents) after turn 5: 17%.
+- **Card draw** (2026-11-18, `--diag`): cards in hand at the end of turns 5 / 6 / 8, "out of cards" (1 or fewer in hand, game still going) at turns 6 / 8, cards drawn by turns 6 / 8 (draw steps included). decklist.txt: hand 5.3 / 5.1 / 4.8, out of cards 1.7 / 4.5%, drawn 7.0 / 10.6.
 - **"No meaningful impact"** (Pontus's definition, 2026-11-18; `noImpact` in `index.ts`): the game is still going at the end of turn 5 / 6 and Meren's engine isn't running: Meren isn't on the battlefield, or nothing has come back from a graveyard and she has under 2 experience. **68.9% / 43.5%** (the first definition, nothing reanimated and under 3 nonland permanents, gave 15.9% / 4.3%). The new one is much stricter: by turn 5 the engine runs in about a third of the games.
 
 ## Known limits of the simulation
@@ -116,3 +117,18 @@ Rules added first (T6): the engine gives Massacre Wurm its -2/-2 and its "that p
 Pod: `npm run pod -- gale meren:<list> samfrodo aesi edgar -n 4000 --no-log`. In the logged games the Bloodletter's -1/-1 killed 2 to 13 creatures at a time, and the Wurm drained on most opposing deaths.
 
 **Verdict:** every swap is within noise, in goldfish, in `--diag` and in the pod. Neither card measurably helps or hurts here, so none was rerun at 16,000. What the simulator doesn't see: the opponents' AIs don't play around a sweeper or hold creatures back, and Meren's attack and blocking rules are still the fixed ones, so a cleared board isn't pressed as hard as a player would. Pontus decides. Aside: `proposed.txt` beats `decklist.txt` by about 3 points in the pod (19.3 against 16.2, above the ±2 noise at 4,000) and by 3–4 points on the impact measure. That's worth knowing while deciding on the proposed list.
+
+**Second round (2026-11-18), after the rules fixes** (Wight of the Reliquary's land ability, Village Rites and Disciple of Bolas choices, Junji's pod modes: opponents discard two, or a stolen 5/5 from an opponent's graveyard). Pontus's pairs: Massacre Wurm for Garruk's Packleader, D'Ghor Bloodletter for Unearth. 4,000 games per list, same seeds; the pod is the same five-player table. Card draw columns from `--diag` (hand and "out of cards" = 1 or fewer in hand, game still going).
+
+| List | Win by T10 | Avg turn | No impact T5 / T6 | Cards drawn by T8 | Out of cards T8 | Pod win | Pod out first |
+|---|---|---|---|---|---|---|---|
+| decklist.txt | 72.8 | 9.60 | 67.3 / 42.4 | 10.62 | 4.5 | 17.1 | 22.1 |
+| Massacre Wurm for Garruk's Packleader | −0.7 | 9.60 | +0.0 / −0.2 | −0.22 | +0.4 | +0.8 | −0.4 |
+| D'Ghor Bloodletter for Unearth | −0.4 | 9.61 | +1.6 / +0.7 | −0.02 | +0.1 | −0.7 | +0.3 |
+| both | −1.0 | 9.62 | +1.7 / +0.6 | −0.22 | +0.5 | +0.2 | 0.0 |
+| lists/proposed.txt | 79.5 | 9.38 | 63.8 / 38.1 | 10.63 | 7.0 | 20.4 | 22.0 |
+| Massacre Wurm for Garruk's Packleader | −0.7 | 9.39 | +0.1 / +0.6 | −0.23 | +0.6 | +1.5 | 0.0 |
+| D'Ghor Bloodletter for Unearth | −0.6 | 9.39 | +1.3 / +0.5 | −0.03 | +0.2 | −1.0 | +0.1 |
+| both | −1.1 | 9.40 | +1.3 / +1.0 | −0.27 | +0.8 | +0.5 | +0.1 |
+
+**Verdict:** all within noise again (goldfish ±2.2, `--diag` ±2, pod ±2). Garruk's Packleader draws about 0.2 cards by turn 8 on average, so cutting it costs very little draw. Unearth's cut costs nothing measurable. Hand size counts the removal the AI holds in goldfish (never cast there), so goldfish hands look fuller than at the table. Pontus decides.

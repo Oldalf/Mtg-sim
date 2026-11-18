@@ -27,6 +27,8 @@ const THIN = 3;
 // ENGINE_EXPERIENCE experience counters. (The first definition was: nothing reanimated and under THIN nonland
 // permanents.)
 const ENGINE_EXPERIENCE = 2;
+// Card draw: a hand this small at the end of turn 6 / 8 means we're playing off the top of the library.
+const OUT_OF_CARDS = 1;
 const isEngineRunning = (row: DiagRow, turn: 5 | 6) =>
   (row['merenOn' + turn] ?? 0) === 1 &&
   ((row['reanim' + turn] ?? 0) > 0 ||
@@ -181,6 +183,75 @@ export const deck = {
       label: 'No impact by turn 6: the same (%)',
       unit: '%' as const,
       measure: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 6)),
+    },
+    {
+      label: 'Average cards in hand at end of turn 5',
+      unit: 'n' as const,
+      measure: (rows: DiagRow[]) =>
+        averageOf(
+          rows.filter((row) => win(row) > 5),
+          (row) => row.hand5 ?? 0,
+        ),
+    },
+    {
+      label: 'Average cards in hand at end of turn 6',
+      unit: 'n' as const,
+      measure: (rows: DiagRow[]) =>
+        averageOf(
+          rows.filter((row) => win(row) > 6),
+          (row) => row.hand6 ?? 0,
+        ),
+    },
+    {
+      label: 'Average cards in hand at end of turn 8',
+      unit: 'n' as const,
+      measure: (rows: DiagRow[]) =>
+        averageOf(
+          rows.filter((row) => win(row) > 8),
+          (row) => row.hand8 ?? 0,
+        ),
+    },
+    {
+      label:
+        'Out of cards: ' +
+        OUT_OF_CARDS +
+        ' or fewer in hand at end of turn 6, game still going (%)',
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(
+          rows,
+          (row) => win(row) > 6 && (row.hand6 ?? 0) <= OUT_OF_CARDS,
+        ),
+    },
+    {
+      label: 'Average cards drawn by end of turn 6 (draw steps included)',
+      unit: 'n' as const,
+      measure: (rows: DiagRow[]) =>
+        averageOf(
+          rows.filter((row) => win(row) > 6),
+          (row) => row.drawn6 ?? 0,
+        ),
+    },
+    {
+      label:
+        'Out of cards: ' +
+        OUT_OF_CARDS +
+        ' or fewer in hand at end of turn 8, game still going (%)',
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(
+          rows,
+          (row) => win(row) > 8 && (row.hand8 ?? 0) <= OUT_OF_CARDS,
+        ),
+    },
+    {
+      label: 'Average cards drawn by end of turn 8 (draw steps included)',
+      unit: 'n' as const,
+      measure: (rows: DiagRow[]) =>
+        averageOf(
+          rows.filter((row) => win(row) > 8),
+          (row) => row.drawn8 ?? 0,
+        ),
     },
   ],
   // --hands: what to look for in an opening hand
