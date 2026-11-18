@@ -19,6 +19,7 @@ export const CFG: Config = {
   self_counter_dev: true,
   opponents_end_step: false,
   hold_counter: false,
+  chump_life: 20,
 };
 
 /** What Gale's settings mean (the app's tooltips); the shared ones are in engine/run/setting-descriptions.ts. */
@@ -45,4 +46,6 @@ export const SETTING_DESCRIPTIONS: Record<string, string> = {
     'AI choice. On: counter our own cheap spell (Offer / Unwind) so Gale can cast a sorcery again.',
   hold_counter:
     "AI choice, goldfish games. On: once Gale is out, keep the mana for the cheapest counterspell in hand untapped on our turn (as at the table). With opponents_end_step on, that mana is spent at the end of the opponents' turns when nothing needed countering. In a pod Gale holds mana by the pod's rule (hold_from).",
+  chump_life:
+    'Pod only (default 10 for other decks). Gale is in danger when the biggest opposing board would leave it at this life or less next turn: it then chump-blocks with its cheap creatures (any creature against a lethal attack), casts creatures from hand as blockers, counters creature and big spells, and keeps mana for Aetherize (Pontus, 2026-11-18).',
 };

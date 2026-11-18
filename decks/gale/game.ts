@@ -58,6 +58,8 @@ import { Game } from '../../engine/game/game';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
+const AETHERIZE = 'Aetherize';
+
 /** The engine's ranks of a black and a blue source for a generic cost (RANK.N in game-core.ts): black is tapped first. */
 const RANK_OF_BLACK_FOR_GENERIC = 3;
 const RANK_OF_BLUE_FOR_GENERIC = 4;
@@ -379,6 +381,7 @@ export class GaleGame extends Game<KillSearchState> {
       return this.hand.some((candidate) => candidate.name === name) ? 30 : 70;
     }
     if (Facts.COUNTERS.has(name)) return this.hasCounterInHand() ? 38 : 58;
+    if (name === AETHERIZE && this.inArena()) return 58;
     if (Facts.TUTORS.has(name)) return 66;
     if (name === 'Sol Ring') return 85;
     if (card.rock) return this.manaSources() < 6 ? 60 : 20;
@@ -468,7 +471,12 @@ export class GaleGame extends Game<KillSearchState> {
   /** Mana kept untapped on our turn: in a pod by the pod's rule; in a goldfish game with hold_counter on, the
    *  cheapest counterspell's once Gale is out (a kill is still taken: develop looks for it first). */
   override podReserve(): number {
-    if (this.inArena()) return super.podReserve();
+    if (this.inArena()) {
+      const aetherize = this.hand.find((card) => card.name === AETHERIZE);
+      return aetherize && this.isInDanger()
+        ? Math.max(super.podReserve(), this.answerCost(aetherize).manaValue)
+        : super.podReserve();
+    }
     if (!this.config.hold_counter || !this.isOnBattlefield(GALE)) return 0;
     // Bender's Waterskin untaps in each other player's untap step: it pays for one mana of the counterspell even
     // when we tapped it on our own turn (Pontus)
@@ -598,17 +606,41 @@ export class GaleGame extends Game<KillSearchState> {
         );
       }
     }
-    if (this.inArena()) {
-      // a pod: the other creatures attack when no blocker can stop or kill them (in a goldfish game Gale never attacks)
-      const pool = this.creatures().filter(
-        (candidate) =>
-          candidate.card.name !== 'The Mindskinner' &&
-          !candidate.tapped &&
-          !candidate.sick &&
-          this.power(candidate) > 0 &&
-          !this.manaSourceKind(candidate, true),
-      );
-      if (pool.length) this.arenaCombat(pool);
-    }
+    // Gale's other creatures never attack (Pontus, 2026-11-18): they stay home as blockers. Creatures that must attack
+    // (goad, Thantis) are sent by the engine after combat (attackWithForcedCreatures).
+  }
+
+  // ---------------------------------------------------------------- the pod: staying alive (Pontus, 2026-11-18)
+  /** In a pod: would the biggest opposing board leave us at chump_life or less next turn, with our creatures
+   *  blocking? Then Gale counters threats and keeps mana for Aetherize. */
+  isInDanger(): boolean {
+    return (
+      this.inArena() &&
+      this.myLife - this.biggestAttackNextTurn() <=
+        ((this.config.chump_life as number) ?? 10)
+    );
+  }
+  /** While in danger, an opponent's creature spell or big spell is worth a counterspell too. */
+  override podWantsToCounter(
+    spell: CardDef,
+    weight: number,
+    casterIsBiggestThreat: boolean,
+    counterspellsHeld: number,
+    settings: { counterAtWeight: number; counterAnyWeight: number },
+  ): boolean {
+    if (
+      super.podWantsToCounter(
+        spell,
+        weight,
+        casterIsBiggestThreat,
+        counterspellsHeld,
+        settings,
+      )
+    )
+      return true;
+    return (
+      this.isInDanger() &&
+      (spell.isCreature || weight >= settings.counterAtWeight)
+    );
   }
 }

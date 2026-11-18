@@ -135,6 +135,33 @@ Verdict: within noise; the Drake is a cost reducer first. Its sacrifice costs {3
 
 Found on the way (for T5): `--test` checks kill misses on `decklist.txt` only. On `proposed.txt` and `speed.txt` there were already 12 and 22 kill misses in 2,000 games before this change (9 and 23 after; none of them in a line that sacrifices the Drake): Singularity Rupture or Expansion Algorithm short of mana after Signets, Fellwar Stone or Rain of Filth, the "kill-search mana leftovers" below.
 
+## Why Gale is the first one out in the pod (step 11, T4, 2026-11-18)
+
+2,000 logged pod games, `lists/speed.txt` against Helga, Ardyn and Teval (full power). Gale went out first, to life loss, in 901 games (45%):
+
+- **When:** round 7 in 502 of them, round 6 in 205, round 8 in 150 (round 5 or earlier: 8).
+- **Who:** Teval takes 24.8 of Gale's 40 life per game on average, Ardyn 11.3, Helga 8.9, nearly all of it in combat (drains: Ardyn 2.6). Two or three players attack Gale in 796 of the 901 games, about 5 attacks per game. Gale ends its last turn at 17.5 life on average, and the biggest single hit it takes averages 23.7: one round of attacks finishes it.
+- **Why the attacks go to Gale:** an attacker picks the opponent where its attack does the most damage that gets through (+1000 for a kill, `planAttack` in `engine/game/game.ts`), plus up to 12 for the biggest threat (`threatPreference`, "leader"). Gale has almost no creatures, so nothing is blocked and every attacker's best plan is Gale; once Gale is low, the kill bonus finishes it.
+- **What Gale held:** at the end of its last turn, a counterspell in most of these games (Spell Pierce 154, Dispel 148, Counterspell 145, Unwind 139, An Offer 123, Mana Sculpt 110, Arcane Denial 88), Aetherize in 33 and a creature card in 60. Gale casts 0.22 answers per game against the others, the same as in the games it survives: its counterspells wait for its own win. In these games it never got that far (0.03 win attempts per game, against 0.74 in the others).
+
+So Gale dies because it is slow in those games and is the open target, not because one deck singles it out. Its counterspells sit in hand while the creatures that kill it are cast.
+
+**What Pontus chose (2026-11-18), and what it does.** Pontus: Aetherize should be used sooner (bouncing a big board costs that player turns and leaves them open to the others); countering an opponent's threat is worth it when Gale is in danger; blockers are fine; Gale never attacks unless forced (goad, Thantis), the Mindskinner combo aside; the attackers' rule stays. Built (`decks/gale/game.ts`, `config.ts`; the engine hooks `podWantsToCounter` and `biggestAttackNextTurn` are IDENTICAL for every other deck):
+
+- Gale's creatures never attack in a pod (only the Mindskinner, and creatures the engine forces to attack).
+- In danger = the biggest opposing board would leave Gale at `chump_life` (20 for Gale, 10 for the others) or less next turn. Then Gale counters an opponent's creature spell or a spell of weight 60+, and keeps Aetherize's mana open.
+- Aetherize is worth a counterspell in a pod (kept, not discarded: 17 discards in 2,000 games instead of 152).
+- `chump_life` 20: Gale casts blockers and chump-blocks with its cheap creatures earlier.
+
+4,000 games, same seeds, `lists/speed.txt`; goldfish games are IDENTICAL (none of this happens outside a pod). Gale's win rate (first out in brackets):
+
+| | With Helga, Ardyn, Teval | With Helga, Thantis, DnD |
+|---|---|---|
+| Before | 38.6% (47.3%) | 35.0% (51.0%) |
+| **After** | **50.3% (30.6%)** | **44.6% (37.2%)** |
+
+Which part does it (Helga, Ardyn, Teval; each part turned off on its own): without the counters 50.2% (30.9%), without the Aetherize changes 50.1% (31.1%), with Gale attacking again 39.4% (46.0%), with all three off (only `chump_life` 20 left) 38.7% (47.4%). **Nearly all of it is not attacking:** Gale's attacks tapped its few creatures, so it had no blockers and was everyone's best target. The counters (0.35 answers per game, from 0.22) and Aetherize happen, but rarely enough to change little.
+
 ## Open
 
 - Pontus's goldfish feedback on the adopted list; whether to add a protection card, and for what.

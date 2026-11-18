@@ -81,6 +81,8 @@ R6: Gale is the first player out in about half its pod games (nearly all to life
 2. Propose the fix to Pontus (for example: blockers or a fog cast earlier, `podDefence` for a combo deck, the attackers' threat rule) and build what he picks. A behaviour change in the pod: save the fixed-seed pod run first, report before / after, and re-record only when Pontus accepts.
 3. The cards `POD_PLAN.md` lists as not wired in a pod (Diversion Unit, Siren Stormtamer's own ability, Soratami Savant, Mirror-Mage, Wash Out, Shire Shirriff, Vindictive Lich's sacrifice mode, Insidious Fungus, Bushwhack's fight, Crypt Incursion): wire the ones still in a current list, each with a pod test.
 
+Steps 1 and 2 done 2026-11-18 (Opus 5.5). Gale was first out in 45% of the pod games, mostly in round 7, killed by 2 or 3 attackers. It had no blockers, so every attacker's best target was Gale, and its counterspells waited for its own win (`decks/gale/PLAN.md`, "Why Gale is the first one out in the pod"). Built Pontus's picks: Gale never attacks in a pod (the Mindskinner and forced attacks aside), counters threats and keeps Aetherize's mana while in danger, keeps Aetherize instead of discarding it, and has `chump_life` 20. Engine hooks: `podWantsToCounter` and `biggestAttackNextTurn` (IDENTICAL for the other decks). Gale's wins: 38.6% to 50.3% and 35.0% to 44.6%; first out 47% to 31% and 51% to 37%. Nearly all of it comes from not attacking. `regress_baseline/pod.txt` was re-recorded (Pontus). **Left:** step 3, the unwired cards.
+
 ## T5. Gale's leftovers (Opus 5.5)
 
 From `decks/gale/PLAN.md` "Open":
