@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { MerenGame } from './game';
+import { DRAW_CARDS } from './cards';
 import { runMerenTests } from './tests/meren.test';
 import { DiagRow } from '../../engine/run/runner';
 import {
@@ -35,6 +36,30 @@ const isEngineRunning = (row: DiagRow, turn: 5 | 6) =>
     (row['exp' + turn] ?? 0) >= ENGINE_EXPERIENCE);
 const noImpact = (row: DiagRow, turn: 5 | 6) =>
   win(row) > turn && !isEngineRunning(row, turn);
+// What each draw card gave: the cards it drew in the games where it was played (0 when it never was: see its share).
+const drewKey = (name: string) => 'drew:' + name;
+const gamesWherePlayed = (rows: DiagRow[], name: string) =>
+  rows.filter(
+    (row) => row[drewKey(name)] !== null && row[drewKey(name)] !== undefined,
+  );
+const drawMetricsOf = (name: string) => [
+  {
+    label: `${name}: played in (% of games)`,
+    unit: '%' as const,
+    measure: (rows: DiagRow[]) =>
+      (100 * gamesWherePlayed(rows, name).length) / rows.length,
+  },
+  {
+    label: `${name}: cards it drew when played`,
+    unit: 'n' as const,
+    measure: (rows: DiagRow[]) => {
+      const played = gamesWherePlayed(rows, name);
+      return played.length
+        ? averageOf(played, (row) => row[drewKey(name)] ?? 0)
+        : 0;
+    },
+  },
+];
 const slow5 = (row: DiagRow) => win(row) > 5 && (row.spent5 ?? 0) < 9;
 const slow6 = (row: DiagRow) => win(row) > 6 && (row.spent6 ?? 0) < 13;
 
@@ -253,6 +278,7 @@ export const deck = {
           (row) => row.drawn8 ?? 0,
         ),
     },
+    ...DRAW_CARDS.flatMap(drawMetricsOf),
   ],
   // --hands: what to look for in an opening hand
   handFeatures: [

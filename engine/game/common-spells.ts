@@ -61,13 +61,16 @@ export function resolveCardSelection(
       game.draw(1);
       return true;
     case 'Deep Analysis':
-    case "Night's Whisper":
     case "Archmage's Charm":
       game.draw(2);
       return true;
+    case "Night's Whisper":
+      game.draw(2, otherCard.name);
+      game.loseLife(2);
+      return true;
     case 'Diresight':
       game.scry(2, true);
-      game.draw(2);
+      game.draw(2, otherCard.name);
       return true;
     case 'Stock Up':
       stockUp(game);

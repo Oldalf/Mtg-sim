@@ -62,6 +62,7 @@ export const LANDS: Record<string, LandInfo> = {
   'Fabled Passage': { mana: '', special: 'wilds' }, // (the basic enters untapped with four or more lands)
   'Myriad Landscape': { mana: 'C', etb: 'tapped', special: 'myriad' }, // {2}, T, sac: two basics of one type, tapped
   'Exotic Orchard': { mana: 'A' },
+  'Grim Backwoods': { mana: 'C' }, // {2}{B}{G}, {T}, sacrifice a creature: draw a card (a deck's choice)
   'Fetid Pools': {
     mana: 'A',
     etb: 'tapped',
@@ -315,6 +316,11 @@ export const COMMON_PERMANENTS = [
   'Timeless Witness',
   'Phyrexian Arena',
   'Massacre Wurm',
+  'Elvish Visionary',
+  'Midnight Reaper',
+  'Moldervine Reclamation',
+  'Corpse Augur',
+  'Tireless Tracker',
 ];
 
 export const KNOWN = new Set<string>([

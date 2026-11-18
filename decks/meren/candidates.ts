@@ -25,7 +25,20 @@ import {
   sacrificeThenCast,
   activateWight,
 } from './actions';
+import { activateGrimBackwoods } from './actions';
 import type { MerenGame } from './game';
+import {
+  AYARA,
+  GREATER_GOOD,
+  MOLDERVINE_RECLAMATION,
+  SKULLCLAMP,
+  castSacrificeDrawSpell,
+  clampCreature,
+  crackClue,
+  sacrificeToAyara,
+  sacrificeToGreaterGood,
+} from '../../engine/game/card-draw';
+import { CLUE } from '../../engine/cards/tokens';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Candidate, Permanent } from '../../engine/game/game-types';
 
@@ -70,6 +83,7 @@ export function buildCandidates(game: MerenGame, main2: boolean): Candidate[] {
   }
   addPermanentAbilityCandidates(game, add, main2, sacrificeOrder);
   addGraveyardAndMillCandidates(game, add);
+  if (main2) addClueCandidate(game, add);
   return candidates;
 }
 
@@ -174,6 +188,7 @@ function addRampAndDrawCandidate(
       return true;
     case 'Decode Transmissions':
     case 'Diresight':
+    case "Night's Whisper":
       add(game.myLife > 12 ? 55 : 25, cost, true, () =>
         game.castInstantOrSorcery(card),
       );
@@ -184,6 +199,32 @@ function addRampAndDrawCandidate(
         add(52, cost, true, () => sacrificeThenCast(game, card, toSacrifice));
       return true;
     }
+    case 'Deadly Dispute':
+    case 'Costly Plunder': {
+      const toSacrifice = game.chooseSacrificeForDraw(true);
+      if (toSacrifice)
+        add(54, cost, true, () =>
+          castSacrificeDrawSpell(game, card, [toSacrifice]),
+        );
+      return true;
+    }
+    case 'Plumb the Forbidden': {
+      const toSacrifice = game.choosePlumbSacrifices();
+      if (toSacrifice.length)
+        add(52, cost, true, () =>
+          castSacrificeDrawSpell(game, card, toSacrifice),
+        );
+      return true;
+    }
+    case SKULLCLAMP:
+      add(70, cost, false, () => game.castPerm(card));
+      return true;
+    case MOLDERVINE_RECLAMATION:
+      add(55, cost, false, () => game.castPerm(card));
+      return true;
+    case GREATER_GOOD:
+      add(52, cost, false, () => game.castPerm(card));
+      return true;
     case 'Breach the Multiverse':
       add(88, cost, false, () => game.castInstantOrSorcery(card));
       return true;
@@ -332,6 +373,32 @@ function addPermanentAbilityCandidates(
         add(48, new Cost(), false, () =>
           activateWight(game, permanent, toSacrifice),
         );
+    } else if (name === SKULLCLAMP) {
+      // equip {1} to a 1-toughness creature we don't mind losing: it dies and we draw two
+      const target = sacrificeOrder.find(
+        (creature) =>
+          game.toughness(creature) <= 1 && game.sacrificeCost(creature) <= 25,
+      );
+      if (target)
+        add(75, new Cost(1), false, () => clampCreature(game, target));
+    } else if (name === GREATER_GOOD) {
+      const toSacrifice = game.chooseGreaterGoodSacrifice();
+      if (toSacrifice)
+        add(56, new Cost(), false, () =>
+          sacrificeToGreaterGood(game, toSacrifice),
+        );
+    } else if (main2 && name === AYARA && isReady) {
+      const toSacrifice = game.expendableCreatures([permanent])[0];
+      if (toSacrifice)
+        add(50, new Cost(), false, () =>
+          sacrificeToAyara(game, permanent, toSacrifice),
+        );
+    } else if (main2 && name === 'Grim Backwoods' && !permanent.tapped) {
+      const toSacrifice = game.expendableCreatures()[0];
+      if (toSacrifice)
+        add(44, Cost.parse('{2}{B}{G}'), false, () =>
+          activateGrimBackwoods(game, permanent, toSacrifice),
+        );
     } else if (main2 && name === 'Sakura-Tribe Elder')
       add(50, new Cost(), false, () => {
         game.sacrifice(permanent);
@@ -352,6 +419,12 @@ function addPermanentAbilityCandidates(
         );
     }
   }
+}
+
+/** Tireless Tracker's Clues: {2}, sacrifice: draw a card (with mana to spare, after the spells). */
+function addClueCandidate(game: MerenGame, add: AddCandidate): void {
+  const clue = game.battlefield.find((permanent) => permanent.card === CLUE);
+  if (clue) add(36, new Cost(2), false, () => crackClue(game, clue));
 }
 
 /** Skull Prophet's mill, Reassembling Skeleton's return and Woe Strider's escape. */

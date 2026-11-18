@@ -132,3 +132,46 @@ Pod: `npm run pod -- gale meren:<list> samfrodo aesi edgar -n 4000 --no-log`. In
 | both | −1.1 | 9.40 | +1.3 / +1.0 | −0.27 | +0.8 | +0.5 | +0.1 |
 
 **Verdict:** all within noise again (goldfish ±2.2, `--diag` ±2, pod ±2). Garruk's Packleader draws about 0.2 cards by turn 8 on average, so cutting it costs very little draw. Unearth's cut costs nothing measurable. Hand size counts the removal the AI holds in goldfish (never cast there), so goldfish hands look fuller than at the table. Pontus decides.
+
+### T6: card draw round (2026-11-18)
+
+Pontus's request: "build all these cards in, make them reusable, cut Garruk's Packleader and Morbid Opportunist for sure, try every card in a slot and measure how many cards each draws on average in the games where it shows up". Base `lists/proposed.txt`. Rules first (engine `engine/game/card-draw.ts`, tests in `card-draw.test.ts` and `meren.test.ts`): the sacrifice spells, Midnight Reaper, Moldervine Reclamation, Corpse Augur, Tireless Tracker with Clues, Skullclamp, Greater Good, Ayara, Elvish Visionary, Grim Backwoods, and Night's Whisper's 2 life (the engine was missing it; no other deck's results changed). Meren chooses what to sacrifice: an expendable creature, else a Treasure then a Clue (Deadly Dispute, Costly Plunder); up to 3 creatures and never under 15 life (Plumb); Skullclamp only on a 1-toughness creature it doesn't mind losing; Greater Good only for a creature with power 4+ that Meren can return. Prices: Scryfall bulk data of 2026-11-13, check Cardmarket before buying.
+
+Each card was put into Garruk's Packleader's slot (line replaced in place), 4,000 games, same seeds, default settings (goldfish ±2.2, `--diag` ±2). "Played in" is the share of games where the card was cast or entered the battlefield; "drew" is the cards it drew in those games, over the whole game (a Clue's draws count for Tracker). `--diag` now reports both for every draw card.
+
+| In for Garruk's Packleader | Win by T8 | by T10 | Avg turn | No impact T6 | Cards drawn by T8 | Played in % | It drew when played |
+|---|---|---|---|---|---|---|---|
+| lists/proposed.txt (Packleader) | 22.5 | 79.5 | 9.38 | 38.1 | 10.63 | 12.0 | 4.28 |
+| Ayara, First of Locthwain (€5.32) | +2.3 | +2.0 | 9.30 | −0.3 | −0.16 | 21.8 | 0.77 |
+| Skullclamp (€5.51) | +1.2 | +1.0 | 9.34 | −1.5 | +0.36 | 19.5 | 4.71 |
+| Deadly Dispute (€0.54) | +0.9 | +1.0 | 9.34 | −0.9 | +0.08 | 16.5 | 2.01 |
+| Plumb the Forbidden (€0.61) | +0.6 | +0.9 | 9.35 | −1.0 | +0.15 | 15.1 | 3.01 |
+| Costly Plunder (€0.13) | +0.7 | +0.7 | 9.36 | −0.7 | +0.04 | 15.3 | 2.00 |
+| Night's Whisper (€0.48) | +0.8 | +0.9 | 9.35 | −0.1 | +0.13 | 16.9 | 2.01 |
+| Corpse Augur (€0.14) | +0.7 | +0.4 | 9.36 | −0.2 | +0.05 | 12.9 | 3.79 |
+| Grim Backwoods (€0.17, a land) | +0.8 | +0.4 | 9.35 | −0.6 | −0.12 | 15.0 | 0.16 |
+| Midnight Reaper (€0.28) | +0.4 | +0.6 | 9.36 | +0.3 | +0.05 | 21.4 | 3.02 |
+| Elvish Visionary (€9.31) | +0.4 | +0.6 | 9.36 | −0.3 | +0.01 | 18.5 | 1.16 |
+| Greater Good (€2.26) | +0.5 | +0.4 | 9.37 | −0.0 | +0.63 | 11.9 | 23.23 |
+| Tireless Tracker (€0.26) | −0.3 | −0.3 | 9.40 | +0.4 | −0.13 | 18.6 | 0.83 |
+| Moldervine Reclamation (€0.30) | −0.0 | +0.0 | 9.38 | +0.0 | +0.06 | 11.6 | 5.68 |
+
+Only Ayara passed the noise at 4,000. The leaders went to 16,000 games (goldfish ±1.1), also in Morbid Opportunist's slot, and as pairs for both slots:
+
+| 16,000 games | Win by T8 | by T10 | by T12 | Avg turn |
+|---|---|---|---|---|
+| lists/proposed.txt | 23.2 | 79.1 | 96.6 | 9.38 |
+| Ayara for Packleader | +2.4 | +2.0 | +0.2 | 9.30 |
+| Skullclamp for Packleader | +1.0 | +1.4 | +0.1 | 9.33 |
+| Deadly Dispute for Packleader | +1.1 | +1.3 | +0.1 | 9.34 |
+| Plumb the Forbidden for Packleader | +1.0 | +1.1 | +0.1 | 9.34 |
+| Ayara for Morbid Opportunist | +2.2 | +1.8 | +0.2 | 9.30 |
+| Skullclamp for Morbid Opportunist | +0.8 | +1.2 | +0.1 | 9.34 |
+| Deadly Dispute for Morbid Opportunist | +0.9 | +0.8 | +0.1 | 9.35 |
+| Midnight Reaper for Morbid Opportunist | +0.1 | +0.5 | 0.0 | 9.37 |
+| Ayara for Packleader, Skullclamp for Opportunist | +3.4 | +3.0 | +0.2 | 9.25 |
+| Ayara for Packleader, Deadly Dispute for Opportunist | +3.6 | +2.6 | +0.2 | 9.26 |
+| Skullclamp for Packleader, Deadly Dispute for Opportunist | +1.8 | +1.8 | +0.1 | 9.31 |
+| Ayara for Packleader, Midnight Reaper for Opportunist | +2.7 | +2.4 | +0.3 | 9.28 |
+
+**Verdict.** Looks real at 16,000: Ayara (+2.4 by T8, +2.0 by T10, about 0.08 turns faster), and any pair with Ayara (+2.4 to +3.6 by T8). Skullclamp, Deadly Dispute and Plumb the Forbidden are at the edge of the noise (about +1 by T8, +1.1 to +1.4 by T10): a small gain, not proven. The rest are within noise. Ayara is no draw card here: it draws 0.77 cards when played. What helps is its drain (1 life each time a black creature enters, and 1 gained), and the simulator wins by damage. What counts for card draw: Skullclamp draws the most for its slot among the clean cards (4.71 cards in the games it is played, about 2 per use), Corpse Augur 3.8 and Midnight Reaper 3.0 (Reaper costs 1 life per card, Augur X life), Deadly Dispute and Costly Plunder exactly 2 (net +1 after the spell and a creature, but the Treasure helps), Moldervine Reclamation 5.7 but only in 11.6% of games (5 mana). Tracker and Grim Backwoods draw under 1 card (Clues cost {2}, Backwoods {2}{B}{G} and a land slot). Greater Good's 23 cards is misleading: it discards 3 each time (net power minus 3) and loops a returned Grave Titan, and the win turn didn't improve. None of them moved the "out of cards" or hand-size measures beyond noise, so the smoothing the deck wants isn't visible in goldfish, where Packleader's loss (about 4 cards in the games it is played) is replaced one for one. Not run in the pod: these cards don't change interaction. What goldfish can't see: Ayara needs BBB (the sim does pay it from the B sources the deck has), and Corpse Augur and Reaper cost life that a pod punishes. Pontus decides; `decklist.txt` and `lists/proposed.txt` are unchanged.

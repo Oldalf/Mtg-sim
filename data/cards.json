@@ -12321,5 +12321,153 @@
   "layout": "normal",
   "oracle_id": "ae5ee92a-5915-49ce-aa4c-611ab711b2ef",
   "scryfall_id": "5075645d-ef69-4559-953e-c3140153bd75"
+ },
+ "Deadly Dispute": {
+  "name": "Deadly Dispute",
+  "full_name": "Deadly Dispute",
+  "mana_cost": "{1}{B}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards and create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Treasure"
+  ],
+  "layout": "normal",
+  "oracle_id": "457af74a-02b3-4659-846d-63e482667f34",
+  "scryfall_id": "d86fa72c-25c1-43ef-9cb0-fe76f7568ed3"
+ },
+ "Midnight Reaper": {
+  "name": "Midnight Reaper",
+  "full_name": "Midnight Reaper",
+  "mana_cost": "{2}{B}",
+  "type_line": "Creature — Zombie Knight",
+  "oracle": "Whenever a nontoken creature you control dies, this creature deals 1 damage to you and you draw a card.",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "e8c7566d-7cc0-48af-a986-83223ec7e06c",
+  "scryfall_id": "f229b0e6-1ffd-410e-b04b-a0afc179c58c"
+ },
+ "Plumb the Forbidden": {
+  "name": "Plumb the Forbidden",
+  "full_name": "Plumb the Forbidden",
+  "mana_cost": "{1}{B}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, you may sacrifice one or more creatures. When you do, copy this spell for each creature sacrificed this way.\nYou draw a card and lose 1 life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "b099fc54-cdbc-46cb-b4e4-7c2ca77b115b",
+  "scryfall_id": "79c27df1-0c05-4208-a80c-73185ab35424"
+ },
+ "Costly Plunder": {
+  "name": "Costly Plunder",
+  "full_name": "Costly Plunder",
+  "mana_cost": "{1}{B}",
+  "type_line": "Instant",
+  "oracle": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "8cdfd9df-4783-4138-a286-828a97f516aa",
+  "scryfall_id": "598405fd-02d2-4bf8-b241-7a2ae6338913"
+ },
+ "Greater Good": {
+  "name": "Greater Good",
+  "full_name": "Greater Good",
+  "mana_cost": "{2}{G}{G}",
+  "type_line": "Enchantment",
+  "oracle": "Sacrifice a creature: Draw cards equal to the sacrificed creature's power, then discard three cards.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "dc0593c2-ccb4-4648-a592-c5bcd121dc72",
+  "scryfall_id": "9dd8b16f-3dfd-4e04-a2e9-ec87d0e007c9"
+ },
+ "Ayara, First of Locthwain": {
+  "name": "Ayara, First of Locthwain",
+  "full_name": "Ayara, First of Locthwain",
+  "mana_cost": "{B}{B}{B}",
+  "type_line": "Legendary Creature — Elf Noble",
+  "oracle": "Whenever Ayara or another black creature you control enters, each opponent loses 1 life and you gain 1 life.\n{T}, Sacrifice another black creature: Draw a card.",
+  "power": "2",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "388168b3-ec68-4af2-b88c-6a5ec88c15f6",
+  "scryfall_id": "ed0ace28-9a33-4f0d-b8c8-f5517f20ccf1"
+ },
+ "Tireless Tracker": {
+  "name": "Tireless Tracker",
+  "full_name": "Tireless Tracker",
+  "mana_cost": "{2}{G}",
+  "type_line": "Creature — Human Scout",
+  "oracle": "Landfall — Whenever a land you control enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhenever you sacrifice a Clue, put a +1/+1 counter on this creature.",
+  "power": "3",
+  "toughness": "2",
+  "keywords": [
+   "Investigate",
+   "Landfall"
+  ],
+  "layout": "normal",
+  "oracle_id": "e6555cca-e608-4c87-b835-9cd47fd1f543",
+  "scryfall_id": "b0da1ea2-6a42-4551-a6ae-5a7ddb70b56b"
+ },
+ "Corpse Augur": {
+  "name": "Corpse Augur",
+  "full_name": "Corpse Augur",
+  "mana_cost": "{3}{B}",
+  "type_line": "Creature — Zombie Wizard",
+  "oracle": "When this creature dies, you draw X cards and you lose X life, where X is the number of creature cards in target player's graveyard.",
+  "power": "4",
+  "toughness": "2",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "06eb43af-637a-4f73-8071-a7036d4c8c3d",
+  "scryfall_id": "14fc0dfb-663a-4713-902e-96dbecc404b7"
+ },
+ "Moldervine Reclamation": {
+  "name": "Moldervine Reclamation",
+  "full_name": "Moldervine Reclamation",
+  "mana_cost": "{3}{B}{G}",
+  "type_line": "Enchantment",
+  "oracle": "Whenever a creature you control dies, you gain 1 life and draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "68639a3d-2192-4921-8298-c76bb0cd6b02",
+  "scryfall_id": "f3e93085-ffcb-4f48-8649-3fcbc5e97699"
+ },
+ "Elvish Visionary": {
+  "name": "Elvish Visionary",
+  "full_name": "Elvish Visionary",
+  "mana_cost": "{1}{G}",
+  "type_line": "Creature — Elf Shaman",
+  "oracle": "When this creature enters, draw a card.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c6a3a882-a127-4590-93d7-679ef4313efe",
+  "scryfall_id": "6d2f4a37-453f-4a2c-bfba-2d1227394c90"
+ },
+ "Grim Backwoods": {
+  "name": "Grim Backwoods",
+  "full_name": "Grim Backwoods",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{2}{B}{G}, {T}, Sacrifice a creature: Draw a card.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "5effaa94-7f87-4485-8959-473d584c5034",
+  "scryfall_id": "606c5f42-fe5f-4dcd-b8f4-b67beabe3f0a"
  }
 }

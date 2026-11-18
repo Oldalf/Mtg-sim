@@ -17,11 +17,15 @@ import {
   DEATH_VALUE,
   DISCIPLE_CARD_WORTH,
   DGHOR_BLOODLETTER,
+  DRAW_CARDS,
+  DRAW_SOURCE_COUNTS_FOR,
   DGHOR_BLOODLETTER_MANA_VALUE,
   EDICT_ETB,
   ENTER_AGAIN,
   FREE_OUTLETS,
   GRAY_MERCHANT,
+  PLUMB_LIFE_FLOOR,
+  PLUMB_MOST,
   HOLD,
   MANA_ELVES,
   MEREN,
@@ -32,6 +36,8 @@ import {
 import { buildCandidates } from './candidates';
 import { onPermanentDied, onPermanentEntered } from './triggers';
 import { CardDef, Cost } from '../../engine/cards/cards';
+import { CLUE, TREASURE } from '../../engine/cards/tokens';
+import { GREATER_GOOD_DISCARDS } from '../../engine/game/card-draw';
 import {
   Candidate,
   LogBoardView,
@@ -61,8 +67,16 @@ export class MerenGame extends CreatureDeckGame {
   cardsDrawn = 0; // cards drawn in the game (draw steps included, the opening hand not)
   cardsDrawnAtTurnEnd: number[] = []; // ... at the end of turns 4-8
   handAtTurnEnd: number[] = []; // cards in hand at the end of turns 4-8
+  cardsDrawnBy: Record<string, number> = {}; // cards drawn, by the card that drew them
+  cardsPlayed = new Set<string>(); // the cards cast or played from hand this game
   override diag(): Record<string, number | null> {
+    const drawnWhenPlayed: Record<string, number | null> = {};
+    for (const name of DRAW_CARDS)
+      drawnWhenPlayed['drew:' + name] = this.cardsPlayed.has(name)
+        ? this.cardsDrawnFor(name)
+        : null;
     return {
+      ...drawnWhenPlayed,
       merenOut: this.merenOut,
       spent5: this.spentEnd[5] ?? null,
       spent6: this.spentEnd[6] ?? null,
@@ -110,6 +124,8 @@ export class MerenGame extends CreatureDeckGame {
   /** Copies also need Meren's own references to permanents pointing at the copied permanents. */
   override clone(): this {
     const copy = super.clone();
+    copy.cardsDrawnBy = { ...this.cardsDrawnBy };
+    copy.cardsPlayed = new Set(this.cardsPlayed);
     const map = new Map(
       this.battlefield.map(
         (permanent, i) =>
@@ -227,6 +243,7 @@ export class MerenGame extends CreatureDeckGame {
     const basicLand = new Permanent(card, card.land, true);
     basicLand.sick = false;
     this.putOntoBattlefield(basicLand);
+    this.onLandEnter(basicLand, false);
   }
 
   /** The basic land we'd fetch: a Forest when we have no more Forests than Swamps, else a Swamp. */
@@ -333,6 +350,43 @@ export class MerenGame extends CreatureDeckGame {
     );
   }
 
+  /** What to sacrifice for a draw spell: a creature we don't mind losing, else (when the spell allows it) a Treasure,
+   *  then a Clue. */
+  chooseSacrificeForDraw(artifactAllowed: boolean): Permanent | null {
+    const creature = this.expendableCreatures()[0];
+    if (creature || !artifactAllowed) return creature ?? null;
+    for (const token of [TREASURE, CLUE]) {
+      const artifact = this.battlefield.find(
+        (permanent) => permanent.card === token,
+      );
+      if (artifact) return artifact;
+    }
+    return null;
+  }
+
+  /** Plumb the Forbidden: the creatures we don't mind losing (up to a few), each is a card for 1 life: not below the
+   *  life floor. */
+  choosePlumbSacrifices(): Permanent[] {
+    const room = Math.max(0, this.myLife - PLUMB_LIFE_FLOOR - 1);
+    return this.expendableCreatures().slice(0, Math.min(PLUMB_MOST, room));
+  }
+
+  /** Greater Good: the creature to sacrifice for the cards (power of 4 or more, or it's a net loss after the discard):
+   *  one we don't mind losing, or one Meren can bring back at once. */
+  chooseGreaterGoodSacrifice(): Permanent | null {
+    const choices = this.sacrificeOrder().filter(
+      (creature) =>
+        this.power(creature) > GREATER_GOOD_DISCARDS &&
+        (this.expendableCreatures().includes(creature) ||
+          (this.isOnBattlefield(MEREN) &&
+            !creature.token &&
+            creature.card.manaValue <= this.experienceCounters + 1)),
+    );
+    return choices.length
+      ? firstMax(choices, (creature) => this.power(creature))
+      : null;
+  }
+
   findFreeSacrificeOutlet(): Permanent | null {
     for (const name of FREE_OUTLETS) {
       const permanent = this.findPermanent(name);
@@ -343,6 +397,7 @@ export class MerenGame extends CreatureDeckGame {
 
   // ================================================================ triggers
   override onEnter(permanent: Permanent, from: Zone): void {
+    if (!permanent.token) this.cardsPlayed.add(permanent.card.name);
     onPermanentEntered(this, permanent, from);
   }
 
@@ -361,11 +416,45 @@ export class MerenGame extends CreatureDeckGame {
       : 0;
   }
 
-  /** Counts the cards drawn once the game is on (for --diag). */
-  override draw(count = 1): void {
+  /** Counts the cards drawn once the game is on, and which card drew them (for --diag). */
+  override draw(count = 1, source: string | null = null): void {
     const libraryBefore = this.library.length;
-    super.draw(count);
-    if (this.turn >= 1) this.cardsDrawn += libraryBefore - this.library.length;
+    super.draw(count, source);
+    if (this.turn < 1) return;
+    const drawn = libraryBefore - this.library.length;
+    this.cardsDrawn += drawn;
+    if (source !== null)
+      this.cardsDrawnBy[source] = (this.cardsDrawnBy[source] ?? 0) + drawn;
+  }
+
+  /** The cards a card has drawn this game (a Clue's draws are Tireless Tracker's). */
+  cardsDrawnFor(name: string): number {
+    return Object.entries(this.cardsDrawnBy)
+      .filter(([source]) => (DRAW_SOURCE_COUNTS_FOR[source] ?? source) === name)
+      .reduce((total, [, drawn]) => total + drawn, 0);
+  }
+
+  override castInstantOrSorcery(
+    card: CardDef,
+    fromGraveyard = false,
+    base: Cost | null = null,
+    mode: string | null = null,
+    triggerOptions: Record<string, unknown> = {},
+  ): boolean {
+    const isCast = super.castInstantOrSorcery(
+      card,
+      fromGraveyard,
+      base,
+      mode,
+      triggerOptions,
+    );
+    if (isCast && !fromGraveyard) this.cardsPlayed.add(card.name);
+    return isCast;
+  }
+
+  override onLandEnter(permanent: Permanent, gone: boolean): void {
+    this.cardsPlayed.add(permanent.card.name);
+    super.onLandEnter(permanent, gone);
   }
 
   // ================================================================ turn steps
@@ -620,10 +709,10 @@ export class MerenGame extends CreatureDeckGame {
   ): void {
     const name = card.name;
     if (name === 'Decode Transmissions') {
-      this.draw(2);
+      this.draw(2, name);
       if (this.leftThisTurn) this.drainEach(2);
       else this.loseLife(2);
-    } else if (name === 'Village Rites') this.draw(2);
+    } else if (name === 'Village Rites') this.draw(2, name);
     else if (name === 'Breach the Multiverse') {
       this.millOurselves(10);
       for (let i = 0; i < this.opponentLibrarySizes.length; i++)

@@ -29,7 +29,7 @@
 import * as C from '../cards/cards';
 import * as Facts from '../cards/card-facts';
 import { Cost, CardDef } from '../cards/cards';
-import { ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
+import { CLUE, ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
 import { Rng } from '../util/rng';
 import { MulliganRule } from './mulligan';
 import { drawOpeningHand, playTurn } from './turn';
@@ -90,6 +90,12 @@ import {
   putOpeningHandLeylineOntoBattlefield,
   resolveFlashSpell,
 } from './instant-speed';
+import {
+  clueSacrificed,
+  drawWhenCreatureDies,
+  landfallOfCommonCards,
+  resolveSacrificeDrawSpell,
+} from './card-draw';
 import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
@@ -167,6 +173,8 @@ export abstract class GameCore<S = unknown> {
   opponentGraveyardSizes: number[];
   poison: number[];
   myLife = 40;
+  /** How many permanents were sacrificed to cast the spell that is resolving (card-draw.ts). */
+  spellSacrifices = 0;
   unprotectedKillTurn: number | null = null;
   protectedKillTurn: number | null = null;
   caseSolved = false;
@@ -686,7 +694,8 @@ export abstract class GameCore<S = unknown> {
     this.onToGraveyard(card);
   }
 
-  draw(count = 1): void {
+  /** Draws cards. `_source` names the card that makes us draw (a deck may count what each card gives it). */
+  draw(count = 1, _source: string | null = null): void {
     for (let i = 0; i < count; i++) {
       if (!this.library.length) return;
       this.beforeDraw();
@@ -753,6 +762,7 @@ export abstract class GameCore<S = unknown> {
     mode: string | null = null,
   ): void {
     if (resolveCardSelection(this, card, fromGraveyard)) return;
+    if (resolveSacrificeDrawSpell(this, card)) return;
     if (resolveManaOrTutor(this, card, mode)) return;
     if (resolveLandSearch(this, card)) return;
     if (resolveReanimationSpell(this, card)) return;
@@ -874,6 +884,7 @@ export abstract class GameCore<S = unknown> {
   sacrifice(permanent: Permanent): void {
     this.say('sacrifice', permanent.card);
     this.dies(permanent);
+    if (permanent.card === CLUE) clueSacrificed(this);
   }
 
   /** Devotion to a colour: its pips in the mana costs of our permanents (token copies count too). */
@@ -1089,7 +1100,9 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */
-  onLandEnter(permanent: Permanent, _gone: boolean): void {}
+  onLandEnter(_permanent: Permanent, _gone: boolean): void {
+    landfallOfCommonCards(this);
+  }
 
   // ================================================================ card actions
   flashback(card: CardDef): boolean {
@@ -1452,6 +1465,7 @@ export abstract class GameCore<S = unknown> {
   /** A creature died (death triggers). It's already off the battlefield (and in the graveyard if a card). */
   onDies(permanent: Permanent): void {
     deathTriggerOfCommonCard(this, permanent);
+    if (permanent.card.isCreature) drawWhenCreatureDies(this, permanent);
   }
   /** Extra power / toughness from static effects (e.g. +1/+1 per creature card in the graveyard). */
   powerBonus(permanent: Permanent): number {

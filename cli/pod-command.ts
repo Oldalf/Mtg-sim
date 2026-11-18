@@ -15,6 +15,7 @@ import { runForcedAttackTests } from '../engine/pod/pod-forced-attacks.test';
 import { runDungeonTests } from '../engine/game/dungeons.test';
 import { runBlinkTests } from '../engine/game/blink.test';
 import { runTreasureTests } from '../engine/game/treasure.test';
+import { runCardDrawTests } from '../engine/game/card-draw.test';
 import { runCommonCardTests } from '../engine/game/common-cards.test';
 import { runSearchManaTests } from '../engine/game/search-mana.test';
 import { runBlinkAnswerTests } from '../engine/pod/pod-blink-answer.test';
@@ -78,6 +79,7 @@ export async function runPodCommand(
     const areDungeonsRight = runDungeonTests(decks);
     const areTreasuresRight = runTreasureTests(decks);
     const areCommonCardsRight = runCommonCardTests(decks);
+    const areCardDrawCardsRight = runCardDrawTests(decks);
     const areEldraziRight = runEldraziTests(decks);
     const isProtectionRight = runProtectionTests(decks);
     const arePodCardsRight = runPodCardTests(decks);
@@ -97,6 +99,7 @@ export async function runPodCommand(
         areDungeonsRight &&
         areTreasuresRight &&
         areCommonCardsRight &&
+        areCardDrawCardsRight &&
         areEldraziRight &&
         isProtectionRight
         ? 0

@@ -10,6 +10,8 @@ import type { MerenGame } from './game';
 import { Permanent, Zone } from '../../engine/game/game-types';
 import { firstMax } from '../../engine/util/lists';
 import { SHRIEKMAW } from '../../engine/game/answers';
+import { drawWhenCreatureDies } from '../../engine/game/card-draw';
+import { triggersOfCreatureEntering } from '../../engine/game/creature-enter-triggers';
 import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
@@ -26,6 +28,7 @@ export function onPermanentEntered(
   if (from === 'graveyard' && !permanent.token) game.reanimated++;
   if (permanent.card.isCreature || name === 'Grist, the Hunger Tide')
     triggerLilianaAndPackleader(game, permanent);
+  triggersOfCreatureEntering(game, permanent); // Ayara
   triggerTwilightDiviner(game, permanent, from);
   // enters-the-battlefield effects (token copies have them too)
   if (resolveDrainOnEnter(game, permanent)) return;
@@ -51,7 +54,7 @@ function triggerLilianaAndPackleader(
     game.isOnBattlefield("Garruk's Packleader") &&
     game.power(permanent) >= 3
   )
-    game.draw(1);
+    game.draw(1, "Garruk's Packleader");
 }
 
 /** Twilight Diviner: creatures entering from a graveyard make a token copy of one of them (once a turn). */
@@ -111,7 +114,7 @@ function resolveCardAdvantageOnEnter(
       const power = game.power(sacrificed);
       game.sacrifice(sacrificed);
       game.gainLife(power);
-      game.draw(power);
+      game.draw(power, 'Disciple of Bolas');
     }
   } else if (name === 'Satyr Wayfinder') {
     const top = game.takeTopCardsOfLibrary(4);
@@ -238,14 +241,15 @@ function triggerCreatureDeathPayoffs(
   if (name !== MEREN && game.isOnBattlefield(MEREN)) game.gainExperience();
   if (game.isOnBattlefield('Morbid Opportunist') && !game.morbidUsed) {
     game.morbidUsed = true;
-    game.draw(1);
+    game.draw(1, 'Morbid Opportunist');
   }
   if (
     !permanent.token &&
     name !== 'Grim Haruspex' &&
     game.isOnBattlefield('Grim Haruspex')
   )
-    game.draw(1);
+    game.draw(1, 'Grim Haruspex');
+  drawWhenCreatureDies(game, permanent); // Midnight Reaper, Moldervine Reclamation
 }
 
 /** Vindictive Lich in a pod: each mode on a different opponent. The 5 life to the one closest to dead, the sacrifice
@@ -284,7 +288,7 @@ function resolveVindictiveLichInPod(game: MerenGame): void {
 function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
   if (name === 'Simulacrum Shaper') {
-    game.draw(1);
+    game.draw(1, name);
   } else if (deathTriggerOfCommonCard(game, permanent)) {
     // Solemn Simulacrum: the engine's rule
   } else if (name === 'Vindictive Lich') {

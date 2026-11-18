@@ -2,13 +2,16 @@
  * Cards that trigger whenever a creature enters under our control (not the entering creature's own trigger):
  *   - Cathars' Crusade: a +1/+1 counter on each creature we control;
  *   - Radiant Solar: another nontoken creature entering ventures into the dungeon (its own entering is read from its
- *     text, like any "enters, venture": dungeons.ts).
+ *     text, like any "enters, venture": dungeons.ts);
+ *   - Ayara, First of Locthwain: Ayara or another black creature entering drains each opponent for 1 and gains us 1.
  * The trigger doublers count by the permanent that entered (trigger-doublers.ts): the deck runs this once per trigger.
  * A deck that plays these cards calls it from its onEnter.
  */
 import type { GameCore } from './game-core';
 import { Permanent } from './game-types';
 import { ventureIntoDungeon } from './dungeons';
+import { AYARA } from './card-draw';
+import { coloursOf } from '../cards/cards';
 
 export const CATHARS_CRUSADE = "Cathars' Crusade";
 export const RADIANT_SOLAR = 'Radiant Solar';
@@ -21,6 +24,10 @@ export function triggersOfCreatureEntering(
   if (!game.isCreatureNow(entering)) return;
   for (let i = 0; i < game.countOnBattlefield(CATHARS_CRUSADE); i++)
     for (const creature of game.creatures()) creature.counters += 1;
+  if (game.isOnBattlefield(AYARA) && coloursOf(entering.card).includes('B')) {
+    game.drainEach(1);
+    game.gainLife(1);
+  }
   if (entering.token) return;
   for (const solar of game.battlefield)
     if (solar.card.name === RADIANT_SOLAR && solar !== entering)

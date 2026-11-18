@@ -1,6 +1,16 @@
 /** The cards of the Meren deck that have rules of their own, and the facts about them. */
 import * as C from '../../engine/cards/cards';
 import { makeToken } from '../../engine/cards/cards';
+import {
+  AYARA,
+  CORPSE_AUGUR,
+  GREATER_GOOD,
+  MIDNIGHT_REAPER,
+  MOLDERVINE_RECLAMATION,
+  SACRIFICE_DRAW_SPELLS,
+  SKULLCLAMP,
+  TIRELESS_TRACKER,
+} from '../../engine/game/card-draw';
 
 export const MEREN = 'Meren of Clan Nel Toth';
 export const DGHOR_BLOODLETTER = "D'Ghor Bloodletter";
@@ -76,6 +86,15 @@ export const VALUE: Record<string, number> = {
   'Fleshbag Marauder': 40,
   [DGHOR_BLOODLETTER]: 45,
   'Massacre Wurm': 60,
+  // card draw (Pontus, 2026-11-18: the draw swap round)
+  [MIDNIGHT_REAPER]: 60,
+  [TIRELESS_TRACKER]: 58,
+  [AYARA]: 62,
+  [CORPSE_AUGUR]: 42,
+  'Elvish Visionary': 45,
+  [SKULLCLAMP]: 55,
+  [GREATER_GOOD]: 50,
+  [MOLDERVINE_RECLAMATION]: 50,
 };
 export const MANA_ELVES = new Set([
   'Llanowar Elves',
@@ -95,6 +114,7 @@ export const DEATH_VALUE = new Set([
   'Sakura-Tribe Elder',
   'Spore Frog',
   'Reassembling Skeleton',
+  CORPSE_AUGUR, // draws a card for each creature card in our graveyard
 ]);
 /** Creatures whose enter trigger is worth getting again (Meren returns them). */
 export const ENTER_AGAIN = new Set([
@@ -120,7 +140,11 @@ export const ENTER_AGAIN = new Set([
   'Massacre Wurm',
   'Puppeteer Clique',
   'Sepulchral Primordial',
+  'Elvish Visionary',
 ]);
+/** Plumb the Forbidden: sacrifice at most this many creatures, and keep our life at this or more afterwards. */
+export const PLUMB_MOST = 3;
+export const PLUMB_LIFE_FLOOR = 15;
 /** Disciple of Bolas: what one card (and one life) from its sacrifice is worth, in sacrifice-cost points. */
 export const DISCIPLE_CARD_WORTH = 12;
 /** Sacrifice a creature for free (Viscera Seer: any creature; the others: another creature). */
@@ -169,4 +193,38 @@ C.registerKnown([
   'Vampiric Rites',
   'Victimize',
   'Village Rites',
+  "Night's Whisper",
+  'Grim Backwoods',
+  ...Object.keys(SACRIFICE_DRAW_SPELLS),
 ]);
+
+/** Every card of the deck that draws cards: --diag counts the cards each one drew in the games where it was played. */
+export const DRAW_CARDS = [
+  'Decode Transmissions',
+  'Diresight',
+  "Night's Whisper",
+  'Disciple of Bolas',
+  "Garruk's Packleader",
+  'Grim Haruspex',
+  'Morbid Opportunist',
+  'Phyrexian Arena',
+  'Priest of Forgotten Gods',
+  'Vampiric Rites',
+  'Village Rites',
+  'Simulacrum Shaper',
+  'Insidious Fungus',
+  ...Object.keys(SACRIFICE_DRAW_SPELLS),
+  SKULLCLAMP,
+  MIDNIGHT_REAPER,
+  MOLDERVINE_RECLAMATION,
+  CORPSE_AUGUR,
+  TIRELESS_TRACKER,
+  'Elvish Visionary',
+  GREATER_GOOD,
+  AYARA,
+  'Grim Backwoods',
+];
+/** Draws that count for another card: Clues are Tireless Tracker's. */
+export const DRAW_SOURCE_COUNTS_FOR: Record<string, string> = {
+  Clue: TIRELESS_TRACKER,
+};

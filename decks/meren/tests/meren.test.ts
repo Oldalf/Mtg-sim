@@ -6,6 +6,7 @@ import { CFG } from '../config';
 import { castSawInHalf } from '../actions';
 import { MerenGame } from '../game';
 import { buildCandidates } from '../candidates';
+import { TREASURE } from '../../../engine/cards/tokens';
 
 const repeatName = (cardName: string, count: number) =>
   new Array(count).fill(cardName) as string[];
@@ -330,6 +331,80 @@ export function runMerenTests(): boolean {
     'Disciple of Bolas: Satyr Wayfinder (Meren returns it, it mills again) over Llanowar Elves',
     game.chooseDiscipleSacrifice(disciple)?.card.name,
     'Satyr Wayfinder',
+  );
+
+  // Card draw (T6 draw round): what to sacrifice, and what each card drew
+  game = board(
+    ['Meren of Clan Nel Toth', 'Llanowar Elves', 'Grave Titan'],
+    ['Deadly Dispute'],
+  );
+  check(
+    'Deadly Dispute sacrifices the Elves (expendable with Meren out), never Grave Titan or Meren',
+    game.chooseSacrificeForDraw(true)?.card.name,
+    'Llanowar Elves',
+  );
+  game = board(['Meren of Clan Nel Toth', 'Grave Titan'], ['Deadly Dispute']);
+  game.createTokens(TREASURE);
+  check(
+    'Deadly Dispute with only Grave Titan to lose: a Treasure goes instead (creatures only, as Plumb has it: none)',
+    [
+      game.chooseSacrificeForDraw(true)?.card.name,
+      game.chooseSacrificeForDraw(false)?.card.name,
+    ],
+    ['Treasure', undefined],
+  );
+  game = board(['Llanowar Elves', 'Sakura-Tribe Elder', 'Woe Strider']);
+  game.turn = 6;
+  check(
+    'Plumb the Forbidden: sacrifices the expendable creatures (at most three)',
+    game.choosePlumbSacrifices().length,
+    2,
+  );
+  game.myLife = 17;
+  check(
+    'Plumb the Forbidden: not below 15 life (1 life each, one card for the spell)',
+    game.choosePlumbSacrifices().length,
+    1,
+  );
+  game = board(['Llanowar Elves', 'Skullclamp'], []);
+  game.createTokens(TREASURE);
+  game.turn = 3; // an Elf is our mana this early: not one to clamp
+  check(
+    'Skullclamp: not equipped to Llanowar Elves on turn 3',
+    buildCandidates(game, false).some((candidate) => candidate.score === 75),
+    false,
+  );
+  game.turn = 6;
+  check(
+    'Skullclamp: equipped to Llanowar Elves on turn 6 (it dies, two cards)',
+    buildCandidates(game, false).some((candidate) => candidate.score === 75),
+    true,
+  );
+  game = board(['Greater Good', 'Grave Titan', 'Llanowar Elves']);
+  game.turn = 6;
+  check(
+    'Greater Good: Grave Titan is not given up without Meren to bring it back',
+    game.chooseGreaterGoodSacrifice(),
+    null,
+  );
+  game = board(['Greater Good', 'Meren of Clan Nel Toth', 'Grave Titan']);
+  game.experienceCounters = 5;
+  check(
+    'Greater Good: with Meren and 5 experience, Grave Titan is the one to sacrifice',
+    game.chooseGreaterGoodSacrifice()?.card.name,
+    'Grave Titan',
+  );
+  // --diag counts the cards a card drew, in the games where it was played
+  game = board(['Midnight Reaper', 'Llanowar Elves']);
+  game.library = repeatName('Swamp', 5).map((name) => C.get(name));
+  game.turn = 6;
+  game.cardsPlayed.add('Midnight Reaper');
+  game.sacrifice(game.findPermanent('Llanowar Elves')!);
+  game.createTokens(TREASURE);
+  check(
+    'diag: the Reaper drew one card; a card never played counts as nothing',
+    [game.diag()['drew:Midnight Reaper'], game.diag()['drew:Skullclamp']],
+    [1, null],
   );
 
   return allPassed;

@@ -117,7 +117,7 @@ export function activatePriest(
   game.sacrifice(secondSacrifice);
   game.drainEach(2);
   game.pool.B += 2;
-  game.draw(1);
+  game.draw(1, 'Priest of Forgotten Gods');
   game.say('Priest of Forgotten Gods: each opponent loses 2');
   return true;
 }
@@ -228,7 +228,7 @@ export function activateInsidiousFungus(
     )
   )
     return true;
-  game.draw(1);
+  game.draw(1, 'Insidious Fungus');
   const land = game.hand.find((card) => card.land !== null);
   if (land) {
     game.takeCardIfThere(land, 'hand');
@@ -246,7 +246,25 @@ export function activateVampiricRites(
   if (!game.pay(Cost.parse('{1}{B}'), false)) return false;
   game.sacrifice(permanent);
   game.gainLife(1);
-  game.draw(1);
+  game.draw(1, 'Vampiric Rites');
+  return true;
+}
+
+/** Grim Backwoods: {2}{B}{G}, {T}, sacrifice a creature: draw a card. The land taps as part of the cost, so it can't
+ *  pay for it. */
+export function activateGrimBackwoods(
+  game: MerenGame,
+  land: Permanent,
+  creature: Permanent,
+): boolean {
+  if (land.tapped || !game.battlefield.includes(creature)) return false;
+  land.tapped = true;
+  if (!game.pay(Cost.parse('{2}{B}{G}'), false)) {
+    land.tapped = false;
+    return false;
+  }
+  game.sacrifice(creature);
+  game.draw(1, 'Grim Backwoods');
   return true;
 }
 

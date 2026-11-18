@@ -8,6 +8,7 @@ import { Permanent } from './game-types';
 import { CardDef } from '../cards/cards';
 import { fetchLand } from './land-search';
 import { firstMax } from '../util/lists';
+import { corpseAugurDies } from './card-draw';
 import {
   takesInitiativeOnEnter,
   ventureIntoDungeon,
@@ -52,7 +53,8 @@ export function enterTriggerOfCommonCard(
     case 'Wall of Omens':
     case 'Spirited Companion':
     case 'Helpful Hunter':
-      game.draw(1);
+    case 'Elvish Visionary':
+      game.draw(1, permanent.card.name);
       return true;
     default:
       return false;
@@ -64,15 +66,16 @@ export function deathTriggerOfCommonCard(
   game: GameCore,
   permanent: Permanent,
 ): boolean {
+  if (corpseAugurDies(game, permanent)) return true;
   if (permanent.card.name !== 'Solemn Simulacrum') return false;
-  game.draw(1);
+  game.draw(1, permanent.card.name);
   return true;
 }
 
 /** Upkeep triggers of common cards. */
 export function upkeepOfCommonCards(game: GameCore): void {
   if (game.isOnBattlefield('Phyrexian Arena')) {
-    game.draw(1);
+    game.draw(1, 'Phyrexian Arena');
     game.loseLife(1);
   }
 }
