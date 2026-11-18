@@ -58,7 +58,7 @@ export function fetchLand(
   return pick;
 }
 
-/** Sacrifices a land for a spell's cost: a basic, tapped ones first. */
+/** Sacrifices a land for a spell's cost: a basic, tapped ones first. It goes to the graveyard. */
 function sacrificeLandForSearch(game: GameCore): void {
   const permanent =
     game
@@ -66,5 +66,6 @@ function sacrificeLandForSearch(game: GameCore): void {
       .filter((basicLand) => basicLand.land?.basic)
       .sort((first, second) => +second.tapped - +first.tapped)[0] ??
     game.landsOnBattlefield()[0];
-  if (permanent) game.takeFromBattlefieldIfThere(permanent);
+  if (permanent && game.takeFromBattlefieldIfThere(permanent))
+    game.toGraveyard(permanent.card);
 }
