@@ -4,6 +4,15 @@ import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards/cards';
 import { Permanent, Zone } from '../../engine/game/game-types';
 import { fetchLand } from '../../engine/game/land-search';
+import { Answer } from '../../engine/game/answers';
+
+/** Shire Shirriff's enter trigger in a pod: exile target creature an opponent controls. */
+const SHIRRIFF_EXILE: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['creature'],
+  how: 'exile',
+};
 
 // ================================================================ entering
 export function onPermanentEntered(
@@ -111,6 +120,16 @@ function resolveOwnEnterTrigger(
       ...new Array(xValue).fill(FOOD),
     ]);
   } else if (name === 'Shire Shirriff') {
+    if (game.inArena()) {
+      // a pod: sacrifice a token to exile the best creature an opponent controls (it stays exiled: Shirriff leaving
+      // the battlefield doesn't bring it back here)
+      const token = game.spareSacrifices().find((candidate) => candidate.token);
+      if (token) {
+        game.sacrifice(token);
+        game.arena!.snipe(game, SHIRRIFF_EXILE, 'Shire Shirriff');
+      }
+      return;
+    }
     const token = game
       .spareSacrifices()
       .find(

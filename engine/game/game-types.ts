@@ -268,6 +268,47 @@ export interface Arena {
   wheel(game: Game<unknown>, mine: number): number;
   /** Each player draws n (Folio of Fancies): the opponents' part. */
   eachDraws(game: Game<unknown>, count: number): void;
+  /** Opponent `slot` sacrifices its least valuable creature (Vindictive Lich). Returns its name, or null. */
+  sacrificeOneOpponentsCreature(
+    game: Game<unknown>,
+    slot: number,
+    sourceName: string,
+  ): string | null;
+  /** Opponent `slot` discards `count` cards of its choice (Vindictive Lich). Returns how many. */
+  discardOneOpponentsCards(
+    game: Game<unknown>,
+    slot: number,
+    count: number,
+    sourceName: string,
+  ): number;
+  /** This creature of ours fights the best opposing creature it kills (Bushwhack). Returns that creature's name, or
+   *  null when there is none worth it (or a shield countered it). */
+  fightBestCreature(
+    game: Game<unknown>,
+    fighter: Permanent,
+    sourceName: string,
+  ): string | null;
+  /** How many creature cards opponent `slot` has in its graveyard. */
+  creatureCardsInGraveyard(game: Game<unknown>, slot: number): number;
+  /** Exile every creature card in opponent `slot`'s graveyard (Crypt Incursion). Returns how many. */
+  exileCreaturesFromGraveyard(
+    game: Game<unknown>,
+    slot: number,
+    sourceName: string,
+  ): number;
+  /** How many permanents of this colour opponent `slot` controls (Wash Out's choice of colour). */
+  countPermanentsOfColour(
+    game: Game<unknown>,
+    slot: number,
+    colour: 'W' | 'U' | 'B' | 'R' | 'G',
+  ): number;
+  /** Every permanent of this colour returns to its owner's hand, ours too (Wash Out). Returns how many each player
+   *  lost: ours first, then the opponents' in slot order. */
+  bounceColour(
+    game: Game<unknown>,
+    colour: 'W' | 'U' | 'B' | 'R' | 'G',
+    sourceName: string,
+  ): number[];
   /** Volatile Stormdrake entered: exchange control of it and the best creature an opponent controls that the
    *  ability may target, get 4 energy, and keep the creature only by paying its mana value in energy. */
   stormdrakeExchange(game: Game<unknown>, stormdrake: Permanent): void;

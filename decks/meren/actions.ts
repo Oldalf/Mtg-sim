@@ -3,6 +3,17 @@ import type { MerenGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Permanent } from '../../engine/game/game-types';
 import { firstMin, sortDesc } from '../../engine/util/lists';
+import { Answer } from '../../engine/game/answers';
+
+/** Insidious Fungus in a pod: destroy target artifact or enchantment. */
+const FUNGUS_DESTROY: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['artifact', 'enchantment'],
+  how: 'destroy',
+};
+/** Only a target its owner values at least this much (a mana rock or an engine, not a token). */
+const FUNGUS_TARGET_MINIMUM_VALUE = 40;
 
 // ---------------------------------------------------------------- actions
 export function evokeCreature(game: MerenGame, card: CardDef): boolean {
@@ -192,6 +203,17 @@ export function activateInsidiousFungus(
 ): boolean {
   if (!game.pay(new Cost(2), false)) return false;
   game.sacrifice(permanent);
+  // a pod: destroy an opponent's artifact or enchantment worth it; otherwise draw
+  if (
+    game.inArena() &&
+    game.arena!.snipe(
+      game,
+      FUNGUS_DESTROY,
+      'Insidious Fungus',
+      FUNGUS_TARGET_MINIMUM_VALUE,
+    )
+  )
+    return true;
   game.draw(1);
   const land = game.hand.find((card) => card.land !== null);
   if (land) {

@@ -58,9 +58,14 @@ function resolveBasicLandFetcher(
       game.fetchBasic();
       if (mode === 'kicked') game.fetchBasic();
       return true;
-    case 'Bushwhack':
-      game.fetchBasic({ toHand: true });
+    case 'Bushwhack': {
+      const fighter = game.biggestCreature();
+      if (mode === 'fight') {
+        if (fighter && game.inArena())
+          game.arena!.fightBestCreature(game, fighter, 'Bushwhack');
+      } else game.fetchBasic({ toHand: true });
       return true;
+    }
     default:
       return false;
   }

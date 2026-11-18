@@ -3,13 +3,20 @@
  * whether they counter a spell, make them sacrifice...). Each method hands the question to the pod rules.
  */
 import { Arena } from '../game/game-types';
+import { coloursOf } from '../cards/cards';
 import { Game } from '../game/game';
 import { fightOpponent } from './pod-combat';
 import {
   answerWin,
   attackPreference,
   bounceEveryOpponentsCreatures,
+  bounceEveryPermanentOfColour,
   counterSpell,
+  creatureCardsInGraveyard,
+  exileCreaturesFromGraveyard,
+  fightBestCreature,
+  makeOneOpponentDiscard,
+  makeOneOpponentSacrifice,
   exchangeForStormdrake,
   goadBestCreature,
   makeDefenderSacrifice,
@@ -27,13 +34,14 @@ export function buildArena(table: PodTable): Arena {
     real: (game) => table.games.includes(game),
     board: (game, slot) => {
       const opponent =
-        table.games[table.opponentsOf[table.playerOf(game)][slot]];
+        table.games[table.opponentsOf[table.playerOrCopyOf(game)][slot]];
       return opponent.creatures().map((creature) => opponent.power(creature));
     },
     handSize: (game, slot) =>
-      table.games[table.opponentsOf[table.playerOf(game)][slot]].hand.length,
+      table.games[table.opponentsOf[table.playerOrCopyOf(game)][slot]].hand
+        .length,
     tappedLands: (game, slot) =>
-      table.games[table.opponentsOf[table.playerOf(game)][slot]]
+      table.games[table.opponentsOf[table.playerOrCopyOf(game)][slot]]
         .landsOnBattlefield()
         .filter((land) => land.tapped).length,
     fight: (game, slot, attackers, apply) => {
@@ -95,6 +103,34 @@ export function buildArena(table: PodTable): Arena {
     wheel: (game, cardsInOwnHand) =>
       table.runOffTurn(() =>
         everyOpponentDiscardsAndDraws(table, game, cardsInOwnHand),
+      ),
+    sacrificeOneOpponentsCreature: (game, slot, sourceName) =>
+      table.runOffTurn(() =>
+        makeOneOpponentSacrifice(table, game, slot, sourceName),
+      ),
+    discardOneOpponentsCards: (game, slot, count, sourceName) =>
+      table.runOffTurn(() =>
+        makeOneOpponentDiscard(table, game, slot, count, sourceName),
+      ),
+    fightBestCreature: (game, fighter, sourceName) =>
+      table.runOffTurn(() =>
+        fightBestCreature(table, game, fighter, sourceName),
+      ),
+    creatureCardsInGraveyard: (game, slot) =>
+      creatureCardsInGraveyard(table, game, slot),
+    exileCreaturesFromGraveyard: (game, slot, sourceName) =>
+      table.runOffTurn(() =>
+        exileCreaturesFromGraveyard(table, game, slot, sourceName),
+      ),
+    countPermanentsOfColour: (game, slot, colour) =>
+      table.games[
+        table.opponentsOf[table.playerOrCopyOf(game)][slot]
+      ].battlefield.filter((permanent) =>
+        coloursOf(permanent.card).includes(colour),
+      ).length,
+    bounceColour: (game, colour, sourceName) =>
+      table.runOffTurn(() =>
+        bounceEveryPermanentOfColour(table, game, colour, sourceName),
       ),
     stormdrakeExchange: (game, stormdrake) =>
       table.runOffTurn(() => exchangeForStormdrake(table, game, stormdrake)),

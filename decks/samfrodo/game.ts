@@ -250,6 +250,21 @@ export class SamFrodoGame extends CreatureDeckGame {
   }
 
   /** Opponents' total life loss if this permanent were sacrificed now (the payoffs on the battlefield). */
+  /** Crypt Incursion's target: the graveyard with the most creature cards (3 life each). Ours (slot null), or in a pod
+   *  an opponent's when it has more: that also hurts a graveyard deck. */
+  cryptIncursionTarget(): { slot: number | null; creatureCards: number } {
+    let best: { slot: number | null; creatureCards: number } = {
+      slot: null,
+      creatureCards: this.graveyard.filter((card) => card.isCreature).length,
+    };
+    if (!this.isPodGame()) return best;
+    for (let slot = 0; slot < this.life.length; slot++) {
+      if (!this.isOpponentAlive(slot)) continue;
+      const creatureCards = this.arena!.creatureCardsInGraveyard(this, slot);
+      if (creatureCards > best.creatureCards) best = { slot, creatureCards };
+    }
+    return best;
+  }
   sacrificeValue(permanent: Permanent): number {
     const key = permanent.token
       ? permanent.card === FOOD
@@ -564,10 +579,21 @@ export class SamFrodoGame extends CreatureDeckGame {
           .map((permanent) => permanent.card),
       );
     else if (name === 'Crypt Incursion') {
-      const cards = this.graveyard.filter((candidate) => candidate.isCreature);
-      for (const card of cards) this.takeCard(card, 'graveyard');
-      this.putCards(cards, 'exile');
-      this.gainLife(3 * cards.length);
+      const target = this.cryptIncursionTarget();
+      if (target.slot !== null) {
+        // (a planner copy only counts the life: the cards are another player's)
+        const exiled = this.inArena()
+          ? this.arena!.exileCreaturesFromGraveyard(this, target.slot, name)
+          : target.creatureCards;
+        this.gainLife(3 * exiled);
+      } else {
+        const cards = this.graveyard.filter(
+          (candidate) => candidate.isCreature,
+        );
+        for (const card of cards) this.takeCard(card, 'graveyard');
+        this.putCards(cards, 'exile');
+        this.gainLife(3 * cards.length);
+      }
     } else if (OWN_KILL.includes(name)) {
       const guest = this.findPermanent('Rapacious Guest');
       if (!guest) return;

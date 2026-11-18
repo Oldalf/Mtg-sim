@@ -381,7 +381,7 @@ export class GaleGame extends Game<KillSearchState> {
       return this.hand.some((candidate) => candidate.name === name) ? 30 : 70;
     }
     if (Facts.COUNTERS.has(name)) return this.hasCounterInHand() ? 38 : 58;
-    if (name === AETHERIZE && this.inArena()) return 58;
+    if (name === AETHERIZE && this.isPodGame()) return 58;
     if (Facts.TUTORS.has(name)) return 66;
     if (name === 'Sol Ring') return 85;
     if (card.rock) return this.manaSources() < 6 ? 60 : 20;
@@ -615,7 +615,7 @@ export class GaleGame extends Game<KillSearchState> {
    *  blocking? Then Gale counters threats and keeps mana for Aetherize. */
   isInDanger(): boolean {
     return (
-      this.inArena() &&
+      this.isPodGame() &&
       this.myLife - this.biggestAttackNextTurn() <=
         ((this.config.chump_life as number) ?? 10)
     );

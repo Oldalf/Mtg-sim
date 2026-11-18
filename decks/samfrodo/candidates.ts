@@ -154,9 +154,7 @@ function addCardInHandCandidate(
       return;
     }
     case 'Crypt Incursion': {
-      const creaturesInGraveyard = game.graveyard.filter(
-        (candidate) => candidate.isCreature,
-      ).length;
+      const creaturesInGraveyard = game.cryptIncursionTarget().creatureCards;
       const familiarLoop =
         game.graveyard.some(
           (candidate) => candidate.name === 'Cauldron Familiar',

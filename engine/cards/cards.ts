@@ -503,3 +503,18 @@ export function loadDecklist(file: string): Decklist {
   ].sort();
   return { commanders, library, missing, generic, sections };
 }
+
+/** A card's colours: the coloured mana symbols in its cost, or a creature token's colours (makeToken). Hybrid {U/B}
+ *  counts as blue and black. */
+export function coloursOf(card: CardDef): ('W' | 'U' | 'B' | 'R' | 'G')[] {
+  const tokenColours = card.tokenFace?.colours ?? [];
+  const isColour = (pips: number, word: string) =>
+    pips > 0 || tokenColours.includes(word);
+  const colours: ('W' | 'U' | 'B' | 'R' | 'G')[] = [];
+  if (isColour(card.cost.white, 'white')) colours.push('W');
+  if (isColour(card.cost.blue + card.cost.hybrid, 'blue')) colours.push('U');
+  if (isColour(card.cost.black + card.cost.hybrid, 'black')) colours.push('B');
+  if (isColour(card.cost.red, 'red')) colours.push('R');
+  if (isColour(card.cost.green, 'green')) colours.push('G');
+  return colours;
+}

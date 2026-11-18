@@ -40,6 +40,10 @@ import { CardDef, Cost } from '../../engine/cards/cards';
 import { Candidate, Permanent } from '../../engine/game/game-types';
 import { activateThunderclapDrake } from '../../engine/game/spell-copies';
 
+const WASH_OUT = 'Wash Out';
+/** Wash Out is cast when the opponents lose at least this many more permanents than we do (ours count twice). */
+const WASH_OUT_MINIMUM_SCORE = 4;
+
 // ================================================================ what to do
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
 type AddCandidate = (
@@ -97,7 +101,20 @@ export function buildCandidates(game: MikeGame, main2: boolean): Candidate[] {
     context.drawRoom,
     context.hasWinPiece,
   );
+  addWashOutCandidate(game, add);
   return candidates;
+}
+
+/** A pod: Wash Out returns every permanent of one colour to its owner's hand, ours too. Cast it when the best colour
+ *  costs the opponents clearly more permanents than us (our own count twice). */
+function addWashOutCandidate(game: MikeGame, add: AddCandidate): void {
+  const card = game.hand.find((candidate) => candidate.name === WASH_OUT);
+  if (!card || !game.isPodGame()) return;
+  const choice = game.washOutColour();
+  if (choice.score >= WASH_OUT_MINIMUM_SCORE)
+    add(60 + choice.score, game.effectiveCost(card), true, () =>
+      game.castInstantOrSorcery(card, false, null, choice.colour),
+    );
 }
 
 /** Casting one card from hand. */

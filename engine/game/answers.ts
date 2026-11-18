@@ -171,3 +171,20 @@ export const KEY_SPELLS: Record<string, number> = {
   'Pippin, Warden of Isengard': 20,
   'Toxic Deluge': 30,
 };
+
+/** A counter ability of a permanent (it counts as a hard counter, as the "unless its controller pays" counterspells in
+ *  hand do: a deck going for the win is tapped out). */
+export interface BoardCounter {
+  cost: string;
+  spells: Answer['spells'];
+  /** The permanent is sacrificed to pay for it. */
+  sacrifice?: boolean;
+  /** A land we control returns to our hand to pay for it. */
+  returnLand?: boolean;
+}
+export const BOARD_COUNTERS: Record<string, BoardCounter> = {
+  // {U}, sacrifice it: counter target instant or sorcery spell unless its controller pays {3}
+  'Diversion Unit': { cost: '{U}', spells: 'instant-sorcery', sacrifice: true },
+  // {3}, return a land you control to its owner's hand: counter target spell unless its controller pays {3}
+  'Soratami Savant': { cost: '{3}', spells: 'any', returnLand: true },
+};

@@ -53,6 +53,20 @@ import type { AesiGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Candidate, Permanent } from '../../engine/game/game-types';
 import { firstMax } from '../../engine/util/lists';
+import { Answer } from '../../engine/game/answers';
+
+const MIRROR_MAGE = 'Soratami Mirror-Mage';
+/** Mirror-Mage's ability: return target creature to its owner's hand. */
+const BOUNCE_A_CREATURE: Answer = {
+  kind: 'removal',
+  instant: true,
+  hits: ['creature'],
+  how: 'bounce',
+};
+/** Only a creature its owner values at least this much is worth three lands and {3}. */
+const MIRROR_MAGE_TARGET_MINIMUM_VALUE = 50;
+/** Bushwhack's fight needs a creature of ours with at least this much power. */
+const BUSHWHACK_FIGHTER_MINIMUM_POWER = 3;
 
 // ================================================================ what to do
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
@@ -307,6 +321,14 @@ function rampSpellCandidates(
         add(50, cost, true, () =>
           game.castInstantOrSorcery(spell, false, null, 'basic'),
         );
+      // a pod: the fight mode, when an opponent has a creature and ours is big enough to kill something
+      else if (game.isPodGame() && game.opponentsHaveCreatures()) {
+        const fighter = game.biggestCreature();
+        if (fighter && game.power(fighter) >= BUSHWHACK_FIGHTER_MINIMUM_POWER)
+          add(40, cost, true, () =>
+            game.castInstantOrSorcery(spell, false, null, 'fight'),
+          );
+      }
       return true;
     default:
       return false;
@@ -423,6 +445,51 @@ export function abilityCandidates(
   addMelokuEndOfTurnCandidate(game, add, main2, landsInHand);
   for (const permanent of game.battlefield)
     addPermanentAbilityCandidate(game, permanent, add, main2, landsInHand);
+  addMirrorMageBounceCandidate(game, add, main2);
+}
+
+/** A pod, second main phase: Soratami Mirror-Mage ({3}, return three lands to hand: they come back as landfall)
+ *  returns the best creature of the biggest threat to its owner's hand. */
+function addMirrorMageBounceCandidate(
+  game: AesiGame,
+  add: AddCandidate,
+  main2: boolean,
+): void {
+  const mirrorMage = game.findPermanent(MIRROR_MAGE);
+  if (
+    !main2 ||
+    !game.isPodGame() ||
+    !mirrorMage ||
+    game.landsOnBattlefield().length < 3 ||
+    !game.opponentsHaveCreatures()
+  )
+    return;
+  add(38, game.abilityCost(new Cost(3)), false, () =>
+    bounceWithMirrorMage(game),
+  );
+}
+
+/** Soratami Mirror-Mage's ability: pay {3} (less with Aesi's reducers), return three lands to hand (tapped ones
+ *  first), and the best creature of the biggest threat returns to its owner's hand (only in the real pod game).
+ *  False if it can't be paid. */
+export function bounceWithMirrorMage(game: AesiGame): boolean {
+  if (!game.pay(game.abilityCost(new Cost(3)), false)) return false;
+  const lands = game
+    .landsOnBattlefield()
+    .sort((first, second) => +second.tapped - +first.tapped)
+    .slice(0, 3);
+  for (const land of lands) {
+    game.takeFromBattlefield(land);
+    game.putCard(land.card, 'hand');
+  }
+  if (game.inArena())
+    game.arena!.snipe(
+      game,
+      BOUNCE_A_CREATURE,
+      MIRROR_MAGE,
+      MIRROR_MAGE_TARGET_MINIMUM_VALUE,
+    );
+  return true;
 }
 
 /** Return a land with a moonfolk and play it again: a landfall trigger (a card with Aesi) for the mana. */

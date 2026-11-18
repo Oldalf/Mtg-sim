@@ -6,7 +6,7 @@
  * Every function takes the PodTable it works on.
  */
 import { Answer, PROTECTIONS } from '../game/answers';
-import { CardDef } from '../cards/cards';
+import { CardDef, coloursOf } from '../cards/cards';
 import { Game } from '../game/game';
 import { Permanent, Target } from '../game/game-types';
 import { PodTable } from './pod-table';
@@ -533,6 +533,7 @@ interface UsedAnswer {
   how: string;
   shield?: string; // set when the winner's Kira / Rainshaper / Stormtamer countered this answer
   answer: Answer;
+  isAbility?: boolean; // a permanent's counter ability (Diversion Unit): not a spell, so it can't be countered
 }
 
 /**
@@ -597,18 +598,22 @@ export function answerWin(table: PodTable, game: Game<unknown>): boolean {
     }
   }
   const unshielded = used.filter((usedAnswer) => !usedAnswer.shield);
-  // the winner answers back with its own counterspells
+  // the winner answers back with its own counterspells (a counter ability is not a spell: it can't be countered)
+  const counterable = unshielded.filter((usedAnswer) => !usedAnswer.isAbility);
   const counteredBack = game.podBurnCounters(
-    unshielded.slice(0, attempt.backup).map((usedAnswer) => usedAnswer.card),
+    counterable.slice(0, attempt.backup).map((usedAnswer) => usedAnswer.card),
   );
   for (let index = 0; index < counteredBack.length; index++)
     table.sayAs(
       player,
-      `counters ${table.playerName(unshielded[index].owner)}'s ${unshielded[index].card} with ${counteredBack[index]}`,
+      `counters ${table.playerName(counterable[index].owner)}'s ${counterable[index].card} with ${counteredBack[index]}`,
       'answer',
-      [unshielded[index].card, counteredBack[index]],
+      [counterable[index].card, counteredBack[index]],
     );
-  const standing = unshielded.slice(counteredBack.length);
+  const countered = new Set(counterable.slice(0, counteredBack.length));
+  const standing = unshielded.filter(
+    (usedAnswer) => !countered.has(usedAnswer),
+  );
   if (!standing.length) return false;
 
   table.stats.stopped[player]++;
@@ -681,16 +686,18 @@ export function counterSpell(
     if (!table.isAlive[opponent]) continue;
     const opponentGame = table.games[opponent];
     const possibleCounters = counterspellsAgainst(opponentGame, spell);
-    if (!possibleCounters.length) continue;
+    const boardCounters = opponentGame.boardCountersAgainst(spell);
+    if (!possibleCounters.length && !boardCounters.length) continue;
     const casterIsBiggestThreat = table
       .livingOpponents(opponent)
       .every(
         (other) =>
           other === caster || table.threats[other] <= table.threats[caster],
       );
-    const counterspellsHeld = opponentGame.hand.filter(
-      (card) => opponentGame.answer(card)?.kind === 'counter',
-    ).length;
+    const counterspellsHeld =
+      opponentGame.hand.filter(
+        (card) => opponentGame.answer(card)?.kind === 'counter',
+      ).length + boardCounters.length;
     if (
       !opponentGame.podWantsToCounter(
         spell,
@@ -702,6 +709,20 @@ export function counterSpell(
     )
       continue;
 
+    if (!possibleCounters.length) {
+      // a permanent's counter ability (Diversion Unit, Soratami Savant): not a spell, so it can't be countered back
+      const source = boardCounters[0];
+      if (!opponentGame.useBoardCounter(source)) continue;
+      table.stats.answers[opponent]++;
+      table.stats.countered[caster]++;
+      table.sayAs(
+        opponent,
+        `counters ${spell.name} with ${source.card.name}'s ability`,
+        'answer',
+        [spell.name, source.card.name],
+      );
+      return true;
+    }
     const counter = possibleCounters[0];
     opponentGame.podCast(counter);
     table.stats.answers[opponent]++;
@@ -780,4 +801,178 @@ function threatPreference(
     default:
       return 0;
   }
+}
+
+// ================================================================ effects on one opponent (step 11, T4)
+
+/** Opponent `slot` of a player sacrifices its least valuable creature (Vindictive Lich). Returns its name, or null. */
+export function makeOneOpponentSacrifice(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+  sourceName: string,
+): string | null {
+  const opponent = table.opponentsOf[table.playerOf(game)][slot];
+  const opponentGame = table.games[opponent];
+  const creatures = opponentGame.creatures();
+  if (!creatures.length) return null;
+  const leastValuable = creatures.reduce((least, creature) =>
+    opponentGame.blockValue(creature) < opponentGame.blockValue(least)
+      ? creature
+      : least,
+  );
+  table.sayAs(
+    opponent,
+    `${sourceName}: sacrifices ${leastValuable.card.name}`,
+    'note',
+    [sourceName, leastValuable.card.name],
+  );
+  opponentGame.podRemove(leastValuable, 'sacrifice');
+  return leastValuable.card.name;
+}
+
+/** Opponent `slot` discards `count` cards, the ones it wants least (Vindictive Lich). Returns how many. */
+export function makeOneOpponentDiscard(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+  count: number,
+  sourceName: string,
+): number {
+  const opponent = table.opponentsOf[table.playerOf(game)][slot];
+  const opponentGame = table.games[opponent];
+  const discarded = Math.min(count, opponentGame.hand.length);
+  table.sayAs(opponent, `${sourceName}: discards ${discarded}`, 'note', [
+    sourceName,
+  ]);
+  opponentGame.discard(discarded);
+  return discarded;
+}
+
+/** What a fight may target: one creature an opponent controls (Bushwhack). */
+const FIGHT_TARGET: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['creature'],
+};
+
+/** Our creature fights the best creature an opponent controls that it kills (each deals damage equal to its power to
+ *  the other): the biggest threat's first, one that can't kill ours back preferred, then the most valuable. A shield
+ *  (Kira...) may counter it. Returns the name of the creature it fought, or null when no fight kills one. */
+export function fightBestCreature(
+  table: PodTable,
+  game: Game<unknown>,
+  fighter: Permanent,
+  sourceName: string,
+): string | null {
+  const caster = table.playerOf(game);
+  const ourPower = game.power(fighter);
+  const ourToughness = game.toughness(fighter);
+  let best: { owner: number; creature: Permanent; score: number } | null = null;
+  for (const owner of table.livingOpponents(caster)) {
+    const ownerGame = table.games[owner];
+    for (const creature of ownerGame.creatures()) {
+      if (
+        ownerGame.toughness(creature) > ourPower ||
+        !ownerGame.podCanTarget(creature, FIGHT_TARGET)
+      )
+        continue;
+      const fighterSurvives = ownerGame.power(creature) < ourToughness;
+      const score =
+        (fighterSurvives ? 1000 : 0) +
+        ownerGame.cardValue(creature.card) +
+        table.threats[owner];
+      if (best === null || score > best.score)
+        best = { owner, creature, score };
+    }
+  }
+  if (best === null) return null;
+  const ownerGame = table.games[best.owner];
+  const ownerName = table.playerName(best.owner);
+  const shield = ownerGame.podShield(best.creature, FIGHT_TARGET);
+  if (shield) {
+    table.stats.shields[best.owner]++;
+    table.sayAs(
+      caster,
+      `${sourceName} on ${ownerName}'s ${best.creature.card.name} is countered by ${shield}`,
+      'answer',
+      [sourceName, best.creature.card.name, shield],
+    );
+    return null;
+  }
+  const theirPower = ownerGame.power(best.creature);
+  table.sayAs(
+    caster,
+    `${sourceName}: ${fighter.card.name} fights ${ownerName}'s ${best.creature.card.name}`,
+    'answer',
+    [sourceName, fighter.card.name, best.creature.card.name],
+  );
+  table.stats.removed[best.owner]++;
+  ownerGame.podRemove(best.creature, 'destroy');
+  if (theirPower >= ourToughness) game.dies(fighter);
+  return best.creature.card.name;
+}
+
+/** How many creature cards are in opponent `slot`'s graveyard (Crypt Incursion's choice of target). */
+export function creatureCardsInGraveyard(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+): number {
+  const opponent = table.opponentsOf[table.playerOrCopyOf(game)][slot];
+  return table.games[opponent].graveyard.filter((card) => card.isCreature)
+    .length;
+}
+
+/** Every creature card in opponent `slot`'s graveyard is exiled (Crypt Incursion). Returns how many. */
+export function exileCreaturesFromGraveyard(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+  sourceName: string,
+): number {
+  const opponent = table.opponentsOf[table.playerOf(game)][slot];
+  const opponentGame = table.games[opponent];
+  const creatureCards = opponentGame.graveyard.filter(
+    (card) => card.isCreature,
+  );
+  for (const card of creatureCards)
+    opponentGame.moveCard(card, 'graveyard', 'exile');
+  table.sayAs(
+    table.playerOf(game),
+    `${sourceName}: exiles ${creatureCards.length} creature card(s) from ${table.playerName(opponent)}'s graveyard`,
+    'answer',
+    [sourceName],
+  );
+  return creatureCards.length;
+}
+
+/** Every permanent of this colour returns to its owner's hand, ours too (Wash Out). Returns how many each player
+ *  lost: [us, then the opponents in slot order]. */
+export function bounceEveryPermanentOfColour(
+  table: PodTable,
+  game: Game<unknown>,
+  colour: 'W' | 'U' | 'B' | 'R' | 'G',
+  sourceName: string,
+): number[] {
+  const caster = table.playerOf(game);
+  const players = [caster, ...table.opponentsOf[caster]];
+  const lost = players.map((player) => {
+    if (!table.isAlive[player]) return 0;
+    const playerGame = table.games[player];
+    const permanents = playerGame.battlefield.filter((permanent) =>
+      coloursOf(permanent.card).includes(colour),
+    );
+    for (const permanent of permanents)
+      playerGame.podRemove(permanent, 'bounce');
+    if (player !== caster) table.stats.removed[player] += permanents.length;
+    return permanents.length;
+  });
+  table.sayAs(
+    caster,
+    `${sourceName} (${colour}): ${players.map((player, index) => `${table.playerName(player)} ${lost[index]}`).join(', ')} permanent(s) back to hand`,
+    'answer',
+    [sourceName],
+  );
+  return lost;
 }

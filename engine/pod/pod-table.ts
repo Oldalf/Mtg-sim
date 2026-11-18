@@ -224,6 +224,13 @@ export class PodTable {
     return this.games.indexOf(game);
   }
 
+  /** The player of this game, or of the game a planner copy was made from. Only for questions that read the table
+   *  (an opponent's board, hand, graveyard): a copy must never change the other players. */
+  playerOrCopyOf(game: Game<unknown>): number {
+    const player = this.games.indexOf(game);
+    return player >= 0 ? player : game.playerInLog;
+  }
+
   /** The total power of a player's creatures. */
   boardPower(player: number): number {
     const game = this.games[player];

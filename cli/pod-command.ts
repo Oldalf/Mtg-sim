@@ -10,6 +10,7 @@ import { runPodTests } from '../engine/pod/pod.test';
 import { runProtectionTests } from '../engine/pod/pod-protection.test';
 import { runEldraziTests } from '../engine/pod/pod-eldrazi.test';
 import { runControlExchangeTests } from '../engine/pod/pod-exchange.test';
+import { runPodCardTests } from '../engine/pod/pod-cards.test';
 import { runForcedAttackTests } from '../engine/pod/pod-forced-attacks.test';
 import { runDungeonTests } from '../engine/game/dungeons.test';
 import { runBlinkTests } from '../engine/game/blink.test';
@@ -79,8 +80,10 @@ export async function runPodCommand(
     const areCommonCardsRight = runCommonCardTests(decks);
     const areEldraziRight = runEldraziTests(decks);
     const isProtectionRight = runProtectionTests(decks);
+    const arePodCardsRight = runPodCardTests(decks);
     process.exit(
       podTestsPassed &&
+        arePodCardsRight &&
         isLogHarmless &&
         areMovesRecorded &&
         areCountersLogged &&

@@ -8,7 +8,14 @@
  */
 import * as C from '../cards/cards';
 import { Cost, CardDef } from '../cards/cards';
-import { ANSWERS, Answer, KEY_SPELLS, PROTECTIONS } from './answers';
+import {
+  ANSWERS,
+  Answer,
+  BOARD_COUNTERS,
+  BoardCounter,
+  KEY_SPELLS,
+  PROTECTIONS,
+} from './answers';
 import { GameCore } from './game-core';
 import { addFirebendingMana } from './firebending';
 import {
@@ -72,6 +79,12 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   /** Are we the real game of a player in a pod (not a planner copy, not a goldfish game)? */
   override inArena(): boolean {
     return this.arena !== null && !this.inRollout && this.arena.real(this);
+  }
+  /** Is this a pod game, the real one or a planner's copy of it? Candidates and card values that differ in a pod ask
+   *  this, not inArena: a planner copy must list the same candidates in the same order as the real game. Effects on
+   *  the other players happen only in the real game (inArena). */
+  isPodGame(): boolean {
+    return this.arena !== null;
   }
   /** How this attacker gets past blockers. Decks override it (or evasive()). */
   evasion(permanent: Permanent): Evasion {
@@ -492,6 +505,23 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     }
   }
 
+  /** A pod: does any living opponent control a creature? */
+  opponentsHaveCreatures(): boolean {
+    if (this.arena === null) return false;
+    for (let slot = 0; slot < this.life.length; slot++)
+      if (this.isOpponentAlive(slot) && this.arena.board(this, slot).length)
+        return true;
+    return false;
+  }
+  /** Our creature with the most power, or null without one. */
+  biggestCreature(): Permanent | null {
+    const creatures = this.creatures();
+    return creatures.length
+      ? creatures.reduce((biggest, creature) =>
+          this.power(creature) > this.power(biggest) ? creature : biggest,
+        )
+      : null;
+  }
   /** A pod: the damage the biggest opposing board could deal us next turn, each untapped creature of ours blocking one
    *  of its biggest attackers. */
   biggestAttackNextTurn(): number {
@@ -656,6 +686,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     how: string;
     shield?: string;
     answer: Answer;
+    isAbility?: boolean;
   }[] {
     const out: {
       card: string;
@@ -663,6 +694,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       how: string;
       shield?: string;
       answer: Answer;
+      isAbility?: boolean;
     }[] = [];
     for (const card of this.hand.slice()) {
       if (out.filter((x) => !x.shield).length >= need) break;
@@ -700,7 +732,53 @@ export abstract class Game<S = unknown> extends GameCore<S> {
         answer: answer,
       });
     }
+    // then the counter abilities of our permanents (Diversion Unit, Soratami Savant)
+    for (const permanent of this.battlefield.slice()) {
+      if (out.filter((x) => !x.shield).length >= need) break;
+      const ability = BOARD_COUNTERS[permanent.card.name];
+      if (!ability) continue;
+      const answer = boardCounterAnswer(ability);
+      const target = winAttempt.spells.find((x) =>
+        Game.spellOk(answer, C.get(x)),
+      );
+      if (!target || !this.useBoardCounter(permanent)) continue;
+      out.push({
+        card: permanent.card.name,
+        target,
+        how: 'countered',
+        answer,
+        isAbility: true,
+      });
+    }
     return out;
+  }
+  /** Our permanents whose counter ability (BOARD_COUNTERS) can counter this spell now. */
+  boardCountersAgainst(spell: CardDef): Permanent[] {
+    return this.battlefield.filter((permanent) => {
+      const ability = BOARD_COUNTERS[permanent.card.name];
+      return (
+        ability !== undefined &&
+        Game.spellOk(boardCounterAnswer(ability), spell) &&
+        (!ability.returnLand || this.landsOnBattlefield().length > 0) &&
+        this.canPay(Cost.parse(ability.cost), false)
+      );
+    });
+  }
+  /** Uses a permanent's counter ability: pays it, then sacrifices the permanent or returns a land (a tapped one
+   *  first) to hand. False if it can't be paid. */
+  useBoardCounter(permanent: Permanent): boolean {
+    const ability = BOARD_COUNTERS[permanent.card.name];
+    if (!ability || !this.pay(Cost.parse(ability.cost), false)) return false;
+    if (ability.sacrifice) this.sacrifice(permanent);
+    if (ability.returnLand) {
+      const lands = this.landsOnBattlefield();
+      const land = lands.find((candidate) => candidate.tapped) ?? lands[0];
+      if (land) {
+        this.takeFromBattlefield(land);
+        this.putCard(land.card, 'hand');
+      }
+    }
+    return true;
   }
   /** May an opponent's removal spell target this permanent of ours? (Hexproof, shroud, the spell's own limits.) */
   podCanTarget(permanent: Permanent, answer: Answer): boolean {
@@ -1000,3 +1078,8 @@ const NO_KILL_SEARCH: KillSearcher<null> = {
   bestMiss: null,
   minChance: 1,
 };
+
+/** A permanent's counter ability seen as an answer (what spells it may counter). */
+function boardCounterAnswer(ability: BoardCounter): Answer {
+  return { kind: 'counter', instant: true, spells: ability.spells };
+}

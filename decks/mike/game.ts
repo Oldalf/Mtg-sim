@@ -819,12 +819,35 @@ export class MikeGame extends GameWithoutKillSearch {
   }
 
   // ================================================================ spells
+  /** Wash Out's colour in a pod: the one where the opponents lose the most permanents, ours counted twice. */
+  washOutColour(): { colour: 'W' | 'U' | 'B' | 'R' | 'G'; score: number } {
+    let best: { colour: 'W' | 'U' | 'B' | 'R' | 'G'; score: number } = {
+      colour: 'W',
+      score: -Infinity,
+    };
+    for (const colour of ['W', 'U', 'B', 'R', 'G'] as const) {
+      let score =
+        -2 *
+        this.battlefield.filter((permanent) =>
+          C.coloursOf(permanent.card).includes(colour),
+        ).length;
+      for (let slot = 0; slot < this.life.length; slot++)
+        if (this.isOpponentAlive(slot))
+          score += this.arena!.countPermanentsOfColour(this, slot, colour);
+      if (score > best.score) best = { colour, score };
+    }
+    return best;
+  }
   override resolve(
     card: CardDef,
     fromGraveyard = false,
     mode: string | null = null,
   ): void {
     const name = card.name;
+    if (name === 'Wash Out' && this.inArena() && mode) {
+      this.arena!.bounceColour(this, mode as 'W' | 'U' | 'B' | 'R' | 'G', name);
+      return;
+    }
     if (name === 'Tune the Narrative') {
       this.draw(1);
       this.gainEnergy(2);

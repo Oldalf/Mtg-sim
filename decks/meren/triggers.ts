@@ -237,6 +237,38 @@ function triggerCreatureDeathPayoffs(
     game.draw(1);
 }
 
+/** Vindictive Lich in a pod: each mode on a different opponent. The 5 life to the one closest to dead, the sacrifice
+ *  to the one with the biggest board, the discard of two to the one with the most cards in hand. */
+function resolveVindictiveLichInPod(game: MerenGame): void {
+  const sourceName = 'Vindictive Lich';
+  const arena = game.arena!;
+  const loseLifeSlot = game.chooseTargetOpponent();
+  if (loseLifeSlot !== null) game.damageOpponent(loseLifeSlot, 5);
+  const otherSlots = game.life
+    .map((_life, slot) => slot)
+    .filter((slot) => slot !== loseLifeSlot && game.isOpponentAlive(slot));
+  const boardPower = (slot: number) =>
+    arena.board(game, slot).reduce((total, power) => total + power, 0);
+  const slotsWithCreatures = otherSlots.filter(
+    (slot) => arena.board(game, slot).length > 0,
+  );
+  const sacrificeSlot = slotsWithCreatures.length
+    ? firstMax(slotsWithCreatures, boardPower)
+    : null;
+  if (sacrificeSlot !== null)
+    arena.sacrificeOneOpponentsCreature(game, sacrificeSlot, sourceName);
+  const discardSlots = otherSlots.filter(
+    (slot) => slot !== sacrificeSlot && arena.handSize(game, slot) > 0,
+  );
+  if (discardSlots.length)
+    arena.discardOneOpponentsCards(
+      game,
+      firstMax(discardSlots, (slot) => arena.handSize(game, slot)),
+      2,
+      sourceName,
+    );
+}
+
 /** What the creature itself does when it dies (draw, drain, reanimate, put creatures onto the battlefield). */
 function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
@@ -245,8 +277,11 @@ function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
   } else if (deathTriggerOfCommonCard(game, permanent)) {
     // Solemn Simulacrum: the engine's rule
   } else if (name === 'Vindictive Lich') {
-    const target = game.chooseTargetOpponent();
-    if (target !== null) game.damageOpponent(target, 5);
+    if (game.inArena()) resolveVindictiveLichInPod(game);
+    else {
+      const target = game.chooseTargetOpponent();
+      if (target !== null) game.damageOpponent(target, 5);
+    }
   } else if (name === 'Junji, the Midnight Sky') {
     const best = game.bestCreatureInGraveyard(
       (card) => card.name !== name && game.battlefieldValue(card) >= 60,
