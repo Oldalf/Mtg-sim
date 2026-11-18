@@ -2,7 +2,7 @@
  * Checks of single card rules in the engine that the DnD deck brought: "enters, draw a card" (Wall of Omens), Peregrine
  * Drake's untap doubled by Panharmonicon, Theros gods that aren't creatures below their devotion (Thassa, Ephara),
  * the rocks (Azorius Signet, Midnight Clock, Sarevok's Tome with the initiative), a Plains search, and Day of
- * Judgment as a pod answer, Cathars' Crusade and Radiant Solar, Thunderclap Drake's copies, Mizzix's Mastery. Also a search's copy of our next turn (copyAtNextTurn).
+ * Judgment as a pod answer, Cathars' Crusade and Radiant Solar, Thunderclap Drake's copies, Mizzix's Mastery, cycling. Also a search's copy of our next turn (copyAtNextTurn).
  * Run: npm run pod -- --test
  */
 import * as C from '../cards/cards';
@@ -239,6 +239,29 @@ export function runCommonCardTests(allDecks: Record<string, Deck>): boolean {
     ANSWERS['Day of Judgment'],
     { kind: 'wipe', instant: false, wipe: 'all' },
   );
+  {
+    // cycling: the cost comes from the text, landcycling is not cycling; cycle pays it, discards, draws one
+    const game = newGame(allDecks);
+    for (let i = 0; i < 2; i++) putOnBattlefield(game, 'Island');
+    const unearth = C.get('Unearth');
+    game.hand = [unearth];
+    check(
+      'cycling costs: Unearth {2}, a card without cycling none',
+      [C.cyclingCost(unearth)?.generic, C.cyclingCost(C.get('Wall of Omens'))],
+      [2, null],
+    );
+    const hasCycled = game.cycle(unearth);
+    check(
+      'cycling Unearth: paid with two lands, Unearth in the graveyard, a card drawn',
+      [
+        hasCycled,
+        untappedLands(game),
+        game.graveyard.map((card) => card.name),
+        game.hand.length,
+      ],
+      [true, 0, ['Unearth'], 1],
+    );
+  }
 
   const wrong = checks
     .map(([label, actual, expected]) => [

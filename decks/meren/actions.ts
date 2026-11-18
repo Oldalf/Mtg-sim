@@ -4,6 +4,7 @@ import { CardDef, Cost } from '../../engine/cards/cards';
 import { Permanent } from '../../engine/game/game-types';
 import { firstMin, sortDesc } from '../../engine/util/lists';
 import { Answer } from '../../engine/game/answers';
+import { fetchLand } from '../../engine/game/land-search';
 
 /** Insidious Fungus in a pod: destroy target artifact or enchantment. */
 const FUNGUS_DESTROY: Answer = {
@@ -118,6 +119,19 @@ export function activatePriest(
   game.pool.B += 2;
   game.draw(1);
   game.say('Priest of Forgotten Gods: each opponent loses 2');
+  return true;
+}
+
+/** Wight of the Reliquary: tap it, sacrifice another creature, put a land onto the battlefield tapped. */
+export function activateWight(
+  game: MerenGame,
+  wight: Permanent,
+  toSacrifice: Permanent,
+): boolean {
+  wight.tapped = true;
+  game.sacrifice(toSacrifice);
+  game.say('Wight of the Reliquary fetches a land');
+  fetchLand(game, 'any', true);
   return true;
 }
 

@@ -106,7 +106,7 @@ function resolveCardAdvantageOnEnter(
   if (name === 'Twilight Diviner') {
     game.scry(2, true);
   } else if (name === 'Disciple of Bolas') {
-    const sacrificed = game.sacrificeOrder([permanent])[0];
+    const sacrificed = game.chooseDiscipleSacrifice(permanent);
     if (sacrificed) {
       const power = game.power(sacrificed);
       game.sacrifice(sacrificed);

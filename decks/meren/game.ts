@@ -15,9 +15,11 @@
  */
 import {
   DEATH_VALUE,
+  DISCIPLE_CARD_WORTH,
   DGHOR_BLOODLETTER,
   DGHOR_BLOODLETTER_MANA_VALUE,
   EDICT_ETB,
+  ENTER_AGAIN,
   FREE_OUTLETS,
   GRAY_MERCHANT,
   HOLD,
@@ -239,21 +241,23 @@ export class MerenGame extends CreatureDeckGame {
   }
 
   /** Our creatures in the order we'd sacrifice them (cheapest loss first). */
+  /** How much we mind sacrificing this creature (low = a good one to sacrifice). */
+  sacrificeCost(permanent: Permanent): number {
+    if (permanent.card === TOKENS.stolen) return 80;
+    if (permanent.token) return 5 + this.power(permanent);
+    if (DEATH_VALUE.has(permanent.card.name) && this.isOnBattlefield(MEREN))
+      return 10;
+    if (MANA_ELVES.has(permanent.card.name) && this.turn >= 5) return 15;
+    if (
+      EDICT_ETB.has(permanent.card.name) ||
+      permanent.card.name === 'Satyr Wayfinder' ||
+      permanent.card.name === 'Studious First-Year'
+    )
+      return 20;
+    return this.battlefieldValue(permanent.card);
+  }
+
   sacrificeOrder(exclude: Permanent[] = []): Permanent[] {
-    const sacValue = (permanent: Permanent): number => {
-      if (permanent.card === TOKENS.stolen) return 80;
-      if (permanent.token) return 5 + this.power(permanent);
-      if (DEATH_VALUE.has(permanent.card.name) && this.isOnBattlefield(MEREN))
-        return 10;
-      if (MANA_ELVES.has(permanent.card.name) && this.turn >= 5) return 15;
-      if (
-        EDICT_ETB.has(permanent.card.name) ||
-        permanent.card.name === 'Satyr Wayfinder' ||
-        permanent.card.name === 'Studious First-Year'
-      )
-        return 20;
-      return this.battlefieldValue(permanent.card);
-    };
     return sortDesc(
       this.creatures().filter(
         (permanent) =>
@@ -262,8 +266,45 @@ export class MerenGame extends CreatureDeckGame {
           permanent.card.name !== 'Spore Frog' &&
           permanent.card.name !== 'Twilight Diviner',
       ),
-      (permanent) => -sacValue(permanent),
+      (permanent) => -this.sacrificeCost(permanent),
     );
+  }
+
+  /** Creatures we are happy to sacrifice for value (Priest of Forgotten Gods, Village Rites, Wight of the
+   *  Reliquary): tokens, creatures whose death is worth something, and the cheap ones Meren can bring back. */
+  expendableCreatures(exclude: Permanent[] = []): Permanent[] {
+    return this.sacrificeOrder(exclude).filter(
+      (candidate) =>
+        candidate.token ||
+        DEATH_VALUE.has(candidate.card.name) ||
+        this.battlefieldValue(candidate.card) < 50,
+    );
+  }
+
+  /** Disciple of Bolas sacrifices for the most cards: power is cards and life; a creature whose death is worth
+   *  something, or whose enter trigger Meren can give us again this turn, is a good one to lose. */
+  chooseDiscipleSacrifice(disciple: Permanent): Permanent | null {
+    const choices = this.sacrificeOrder([disciple]);
+    if (!choices.length) return null;
+    const merenOut = this.isOnBattlefield(MEREN);
+    const worth = (permanent: Permanent) => {
+      const comesBackThisTurn =
+        merenOut &&
+        !permanent.token &&
+        permanent.card.manaValue <= this.experienceCounters + 1;
+      const triggerBonus =
+        merenOut &&
+        (DEATH_VALUE.has(permanent.card.name) ||
+          (comesBackThisTurn && ENTER_AGAIN.has(permanent.card.name)))
+          ? 15
+          : 0;
+      return (
+        DISCIPLE_CARD_WORTH * this.power(permanent) +
+        triggerBonus -
+        this.sacrificeCost(permanent)
+      );
+    };
+    return firstMax(choices, worth);
   }
 
   /** D'Ghor Bloodletter's mode in a pod: -1/-1 to all other creatures (true) or the edict. The -1/-1 when it kills

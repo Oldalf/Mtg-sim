@@ -23,6 +23,7 @@ import {
   escapeWoeStrider,
   evokeCreature,
   sacrificeThenCast,
+  activateWight,
 } from './actions';
 import type { MerenGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
@@ -178,9 +179,7 @@ function addRampAndDrawCandidate(
       );
       return true;
     case 'Village Rites': {
-      const toSacrifice = sacrificeOrder.find(
-        (permanent) => permanent.token || DEATH_VALUE.has(permanent.card.name),
-      );
+      const toSacrifice = game.expendableCreatures()[0];
       if (toSacrifice)
         add(52, cost, true, () => sacrificeThenCast(game, card, toSacrifice));
       return true;
@@ -294,14 +293,7 @@ function addPermanentAbilityCandidates(
     const name = permanent.card.name;
     const isReady = !permanent.tapped && !permanent.sick;
     if (name === 'Priest of Forgotten Gods' && isReady) {
-      const expendable = game
-        .sacrificeOrder([permanent])
-        .filter(
-          (candidate) =>
-            candidate.token ||
-            DEATH_VALUE.has(candidate.card.name) ||
-            game.battlefieldValue(candidate.card) < 50,
-        );
+      const expendable = game.expendableCreatures([permanent]);
       if (expendable.length >= 2)
         add(78, new Cost(), false, () =>
           activatePriest(game, permanent, expendable[0], expendable[1]),
@@ -332,6 +324,13 @@ function addPermanentAbilityCandidates(
       )
         add(74, Cost.parse('{B}'), false, () =>
           castPreparedSpell(game, permanent),
+        );
+    } else if (main2 && name === 'Wight of the Reliquary' && isReady) {
+      // {T}, sacrifice another creature: a land onto the battlefield tapped (and Meren's experience)
+      const toSacrifice = game.expendableCreatures([permanent])[0];
+      if (toSacrifice && game.library.some((card) => card.land !== null))
+        add(48, new Cost(), false, () =>
+          activateWight(game, permanent, toSacrifice),
         );
     } else if (main2 && name === 'Sakura-Tribe Elder')
       add(50, new Cost(), false, () => {

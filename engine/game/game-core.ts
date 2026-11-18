@@ -1129,8 +1129,9 @@ export abstract class GameCore<S = unknown> {
     return true;
   }
 
+  /** Cycling: pay its cost ("Cycling {2}" in the text; {2} if the text doesn't say), discard it, draw a card. */
   cycle(card: CardDef): boolean {
-    if (!this.pay(new Cost(2))) return false;
+    if (!this.pay(C.cyclingCost(card) ?? new Cost(2))) return false;
     this.moveCard(card, 'hand', 'graveyard');
     this.say('cycle', card);
     this.draw(1);

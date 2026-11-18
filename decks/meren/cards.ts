@@ -96,6 +96,33 @@ export const DEATH_VALUE = new Set([
   'Spore Frog',
   'Reassembling Skeleton',
 ]);
+/** Creatures whose enter trigger is worth getting again (Meren returns them). */
+export const ENTER_AGAIN = new Set([
+  GRAY_MERCHANT,
+  'Lotleth Giant',
+  'Satyr Wayfinder',
+  'Simulacrum Shaper',
+  'Solemn Simulacrum',
+  'Wood Elves',
+  'Gravedigger',
+  'Eternal Witness',
+  'Timeless Witness',
+  'Rune-Scarred Demon',
+  'Vile Entomber',
+  'Grim Servant',
+  'Grave Titan',
+  'Shriekmaw',
+  'Plaguecrafter',
+  "Demon's Disciple",
+  'Accursed Marauder',
+  'Fleshbag Marauder',
+  DGHOR_BLOODLETTER,
+  'Massacre Wurm',
+  'Puppeteer Clique',
+  'Sepulchral Primordial',
+]);
+/** Disciple of Bolas: what one card (and one life) from its sacrifice is worth, in sacrifice-cost points. */
+export const DISCIPLE_CARD_WORTH = 12;
 /** Sacrifice a creature for free (Viscera Seer: any creature; the others: another creature). */
 export const FREE_OUTLETS = [
   'Viscera Seer',

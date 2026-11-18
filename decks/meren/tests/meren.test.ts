@@ -5,6 +5,7 @@ import { Rng } from '../../../engine/util/rng';
 import { CFG } from '../config';
 import { castSawInHalf } from '../actions';
 import { MerenGame } from '../game';
+import { buildCandidates } from '../candidates';
 
 const repeatName = (cardName: string, count: number) =>
   new Array(count).fill(cardName) as string[];
@@ -274,6 +275,61 @@ export function runMerenTests(): boolean {
     '  ... {C} for a generic cost and just checking a payment cost nothing',
     game.myLife,
     40,
+  );
+
+  // Wight of the Reliquary: {T}, sacrifice another creature (an expendable one): a land onto the battlefield tapped
+  game = board(['Wight of the Reliquary', 'Sakura-Tribe Elder']);
+  const wight = game.findPermanent('Wight of the Reliquary')!;
+  const landsBefore = game.landsOnBattlefield().length;
+  const wightCandidate = buildCandidates(game, true).find(
+    (candidate) => candidate.score === 48,
+  );
+  wightCandidate?.action();
+  check(
+    'Wight of the Reliquary: sacrifices the Elder, a tapped land comes in, the Wight is tapped',
+    [
+      game.isOnBattlefield('Sakura-Tribe Elder'),
+      game.landsOnBattlefield().length - landsBefore,
+      game.landsOnBattlefield().some((land) => land.tapped),
+      wight.tapped,
+    ],
+    [false, 1, true, true],
+  );
+  // Village Rites: any expendable creature will do (Llanowar Elves with Meren out), not only tokens
+  game = board(['Meren of Clan Nel Toth', 'Llanowar Elves'], ['Village Rites']);
+  check(
+    'Village Rites: Llanowar Elves is expendable, so it can be cast',
+    buildCandidates(game, false).some((candidate) => candidate.score === 52),
+    true,
+  );
+  // Disciple of Bolas: sacrifices the creature worth the most cards (Protean Hulk: 6 cards, and its death trigger)
+  game = board(
+    ['Meren of Clan Nel Toth', 'Llanowar Elves', 'Protean Hulk'],
+    ['Disciple of Bolas'],
+  );
+  const handBefore = game.hand.length;
+  game.enter(C.get('Disciple of Bolas'));
+  check(
+    'Disciple of Bolas: sacrifices Protean Hulk, not the Elves: 6 cards and 6 life',
+    [
+      game.isOnBattlefield('Protean Hulk'),
+      game.isOnBattlefield('Llanowar Elves'),
+      game.hand.length - handBefore,
+      game.myLife,
+    ],
+    [false, true, 6, 46],
+  );
+  // ... and an enter trigger Meren gives back this turn beats a plain body of the same power
+  game = board(
+    ['Meren of Clan Nel Toth', 'Llanowar Elves', 'Satyr Wayfinder'],
+    [],
+  );
+  game.experienceCounters = 1;
+  const disciple = new Permanent(C.get('Disciple of Bolas'));
+  check(
+    'Disciple of Bolas: Satyr Wayfinder (Meren returns it, it mills again) over Llanowar Elves',
+    game.chooseDiscipleSacrifice(disciple)?.card.name,
+    'Satyr Wayfinder',
   );
 
   return allPassed;

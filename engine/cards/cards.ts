@@ -430,6 +430,12 @@ export function get(name: string): CardDef {
   return card;
 }
 
+/** "Cycling {2}" in the card's text: the cost, or null if it has no cycling (landcycling is not cycling). */
+export function cyclingCost(card: CardDef): Cost | null {
+  const match = card.oracle.match(/(?:^|\n)Cycling ((?:\{[^}]+\})+)/);
+  return match ? Cost.parse(match[1]) : null;
+}
+
 /** Is the card a creature of this type ("Demon", "Vampire")? A token has the types in its name ("Zombie Druid");
  *  a card reads its type line. (Edgar's isVampire predates this and does the same.) */
 export function hasCreatureType(card: CardDef, creatureType: string): boolean {
