@@ -440,6 +440,49 @@ export function runMerenTests(): boolean {
     ],
     [6, 3, true],
   );
+  // Dark Ritual: also cast to make two plays instead of one (3 lands: Viscera Seer, or Woe Strider; with the ritual both)
+  const ritualTurn = (severalPlays: number) => {
+    const ritualGame = board(
+      [],
+      ['Dark Ritual', 'Viscera Seer', 'Woe Strider'],
+      [],
+      repeatName('Swamp', 3),
+    );
+    ritualGame.config.ritual_several_plays = severalPlays;
+    const candidates = ritualGame.orderedCandidates(false);
+    const ritual = candidates.findIndex(
+      (candidate) =>
+        candidate.rock === undefined && candidate.isInstantOrSorcery,
+    );
+    return ritual === 0;
+  };
+  check(
+    'Dark Ritual with a 1-mana and a 3-mana creature and 3 lands: cast first with the new rule, not with the old one',
+    [ritualTurn(1), ritualTurn(0)],
+    [true, false],
+  );
+  // Rise of the Dark Realms: only with 4 creature cards in the graveyard; they all come back
+  game = board(
+    [],
+    ['Rise of the Dark Realms'],
+    ['Grave Titan', 'Shriekmaw', 'Llanowar Elves'],
+    repeatName('Swamp', 9),
+  );
+  check(
+    'Rise of the Dark Realms is not cast with 3 creature cards in the graveyard',
+    buildCandidates(game, false).length,
+    0,
+  );
+  game.graveyard.push(C.get('Woe Strider'));
+  check(
+    'Rise of the Dark Realms is cast with 4: all of them come back',
+    [
+      buildCandidates(game, false).length,
+      game.castInstantOrSorcery(C.get('Rise of the Dark Realms')),
+      game.creatures().length,
+    ],
+    [1, true, 7], // four cards, Grave Titan's two Zombies and Woe Strider's Goat
+  );
   // --diag counts the cards a card drew, in the games where it was played
   game = board(['Midnight Reaper', 'Llanowar Elves']);
   game.library = repeatName('Swamp', 5).map((name) => C.get(name));

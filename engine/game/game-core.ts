@@ -1155,6 +1155,15 @@ export abstract class GameCore<S = unknown> {
   // ================================================================ choosing what to do
   /** Use a ritual only if it lets us cast something good we otherwise can't. (Tested without Treasures: the test
    *  pays for real and restores a snapshot.) */
+  /** Is a ritual also worth casting when it lets us make one more smaller play (two creatures instead of one), not only
+   *  one play we couldn't pay for? A deck says yes (planner.ts). */
+  ritualsEnableSeveralPlays(): boolean {
+    return false;
+  }
+
+  /** Rise of the Dark Realms: the creature cards in the other players' graveyards come too (a pod; a deck decides how). */
+  reanimateFromOtherGraveyards(): void {}
+
   ritualCandidates(candidates: Candidate[]): Candidate[] {
     return this.withoutExpendableMana(() =>
       ritualCandidatesThatHelp(this, candidates),

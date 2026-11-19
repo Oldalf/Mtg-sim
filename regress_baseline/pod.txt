@@ -2,29 +2,29 @@
 Noise: about +/-7 points on a win rate.
 
 deck           wins  avg turn  10%-90% turn  declared  standing  out first    seat 1  seat 2  seat 3  seat 4  seat 5
-gale          30.5%      7.39           6-9     32.8%     67.2%      22.0%     33.3%   37.5%   36.8%   31.6%   14.3%
-meren         18.0%      9.42          8-12      2.8%     97.2%      24.5%     17.9%   34.1%   13.5%   11.3%   14.6%
-samfrodo      13.5%      9.30          8-11      7.4%     92.6%      14.5%      9.3%   18.2%   20.5%    8.6%   12.8%
-aesi          24.0%      7.73          6-10     87.5%     12.5%      18.0%     23.5%   27.9%   30.6%   16.7%   18.4%
-edgar         14.0%      9.57          8-12      0.0%    100.0%       6.5%      9.5%   11.6%   18.9%   15.8%   15.0%
+gale          30.0%      7.37           6-9     33.3%     66.7%      23.0%     33.3%   35.0%   36.8%   31.6%   14.3%
+meren         18.5%      9.38          8-12      2.7%     97.3%      23.0%     17.9%   34.1%   13.5%   13.2%   14.6%
+samfrodo      14.0%      9.32          8-11      7.1%     92.9%      14.5%     11.1%   18.2%   20.5%    8.6%   12.8%
+aesi          24.0%      7.75          6-10     87.5%     12.5%      18.5%     23.5%   27.9%   30.6%   16.7%   18.4%
+edgar         13.5%      9.56          8-12      0.0%    100.0%       7.0%      9.5%   11.6%   16.2%   15.8%   15.0%
 
 Won by the end of round (share of all games):
 deck              4      5      6      7      8      9     10     11     12     14
-gale           0.0%   1.0%   7.0%  17.0%  26.0%  29.0%  30.0%  30.5%  30.5%  30.5%
-meren          0.0%   0.0%   0.0%   0.5%   5.5%  11.5%  14.5%  16.0%  17.0%  18.0%
-samfrodo       0.0%   0.0%   0.0%   1.0%   2.5%   8.0%  12.0%  13.0%  13.5%  13.5%
-aesi           0.0%   1.0%   5.0%  11.5%  17.0%  21.0%  23.0%  24.0%  24.0%  24.0%
-edgar          0.0%   0.0%   0.0%   0.5%   3.0%   8.0%  11.0%  12.5%  13.0%  14.0%
+gale           0.0%   1.0%   7.0%  17.0%  26.0%  28.5%  29.5%  30.0%  30.0%  30.0%
+meren          0.0%   0.0%   0.0%   0.5%   6.0%  12.0%  15.0%  16.5%  17.5%  18.5%
+samfrodo       0.0%   0.0%   0.0%   1.0%   2.5%   8.0%  12.5%  13.5%  14.0%  14.0%
+aesi           0.0%   1.0%   5.0%  11.5%  16.5%  21.0%  23.0%  24.0%  24.0%  24.0%
+edgar          0.0%   0.0%   0.0%   0.5%   3.0%   7.5%  11.0%  12.0%  12.5%  13.5%
 
 No winner by round 17: 0.0%. Average game length: 8.40 rounds.
 
 Interaction, per game:
 deck          win attempts   stopped  turns waited  spells countered  removal taken  shielded  answers used  removal / wipes cast
-gale                  0.35     21.1%          0.00              0.00           0.04      0.00          0.67                  0.20
+gale                  0.35     21.4%          0.00              0.00           0.04      0.00          0.67                  0.20
 meren                 0.00         -          0.00              0.15           0.23      0.00          0.09                  0.17
 samfrodo              0.00         -          0.00              0.13           0.47      0.00          0.07                  0.23
-aesi                  0.25     16.0%          0.00              0.20           0.14      0.01          0.14                  0.07
-edgar                 0.02      0.0%          0.00              0.22           0.56      0.00          0.00                  0.00
+aesi                  0.25     16.0%          0.00              0.20           0.14      0.02          0.14                  0.07
+edgar                 0.02      0.0%          0.00              0.23           0.56      0.00          0.00                  0.00
 
-How each deck went out (share of its games): gale: life 54.5%, decked 0.5%; meren: life 51.0%, poison 4.5%, decked 2.0%, its own doing 1.0%; samfrodo: life 54.0%, poison 7.0%, decked 1.0%; aesi: life 62.0%, poison 6.0%; edgar: life 52.0%, poison 6.0%, decked 1.0%, its own doing 0.5%.
+How each deck went out (share of its games): gale: life 55.0%, decked 0.5%; meren: life 50.0%, poison 5.0%, decked 2.0%, its own doing 1.0%; samfrodo: life 53.5%, poison 7.0%, decked 1.0%; aesi: life 62.5%, poison 6.0%; edgar: life 53.5%, poison 5.5%, decked 1.0%, its own doing 0.5%.
 "declared" = the deck's own win (a combo, a kill line, its win rule) with others still alive; "standing" = it was the last one left.

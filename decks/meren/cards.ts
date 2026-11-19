@@ -142,6 +142,8 @@ export const ENTER_AGAIN = new Set([
   'Sepulchral Primordial',
   'Elvish Visionary',
 ]);
+/** Rise of the Dark Realms is cast with at least this many creature cards in our graveyard (the others' come too in a pod). */
+export const RISE_MIN_CREATURES = 4;
 /** Greater Good: sacrifice a creature with at least this much power (3 cards back for the 3 discarded: a rummage; Pontus,
  *  2026-11-19, it also fills the graveyard and feeds Meren). */
 export const GREATER_GOOD_MIN_POWER = 3;

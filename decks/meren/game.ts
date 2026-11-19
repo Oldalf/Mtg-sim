@@ -251,6 +251,22 @@ export class MerenGame extends CreatureDeckGame {
     return this.graveyard.filter((card) => card.isCreature).length;
   }
 
+  override ritualsEnableSeveralPlays(): boolean {
+    return this.config.ritual_several_plays === 1;
+  }
+
+  /** Rise of the Dark Realms in a pod: a stolen 5/5 for each creature card in an opponent's graveyard, as the
+   *  other cards that take them do (Sepulchral Primordial). */
+  override reanimateFromOtherGraveyards(): void {
+    if (!this.inArena()) return;
+    for (const slot of this.life.keys()) {
+      if (!this.isOpponentAlive(slot)) continue;
+      const creatureCards = this.arena!.creatureCardsInGraveyard(this, slot);
+      for (let i = 0; i < creatureCards; i++)
+        this.enter(TOKENS.stolen, 'graveyard', { token: true });
+    }
+  }
+
   override commanderCost(card: CardDef, cost: Cost): Cost {
     return card.name === MEREN
       ? cost.withGeneric(cost.generic + 2 * this.merenCasts)

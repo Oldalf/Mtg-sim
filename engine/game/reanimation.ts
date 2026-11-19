@@ -41,6 +41,7 @@ function reanimateFromGraveyard(
       (card) => card.isCreature && isAllowed(card),
     );
     for (const creature of creatures) game.reanimate(creature, options);
+    game.reanimateFromOtherGraveyards();
     return;
   }
   for (let i = 0; i < spellInfo.count; i++) {

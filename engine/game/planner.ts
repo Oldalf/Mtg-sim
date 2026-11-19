@@ -10,7 +10,39 @@ import type { GameCore } from './game-core';
 import { Candidate, Permanent } from './game-types';
 import { playOpponentsEndStep } from './instant-speed';
 
-/** Use a ritual only if it lets us cast something good we otherwise can't (see GameCore.ritualCandidates). */
+/** A ritual that only adds a small play must add at least this much (the score of a decent play). */
+const RITUAL_EXTRA_PLAYS_SCORE = 40;
+
+/** What the plays we can pay for are worth together: the best one first, then the best we can still pay for, and so on
+ *  (the payments are only tried, the game is restored). Returns the sum of their scores and how many there are. */
+function affordablePlays(
+  game: GameCore,
+  candidates: Candidate[],
+): { total: number; count: number } {
+  const snapshot = game.takeSnapshot();
+  const remaining = candidates.filter((candidate) => candidate.score > 0);
+  let total = 0;
+  let count = 0;
+  for (;;) {
+    const affordable = remaining.filter((candidate) =>
+      game.canPay(candidate.cost, candidate.isInstantOrSorcery),
+    );
+    if (!affordable.length) break;
+    const best = affordable.reduce((first, second) =>
+      second.score > first.score ? second : first,
+    );
+    if (!game.pay(best.cost, best.isInstantOrSorcery)) break;
+    remaining.splice(remaining.indexOf(best), 1);
+    total += best.score;
+    count++;
+  }
+  game.restore(snapshot);
+  return { total, count };
+}
+
+/** Use a ritual only if it lets us cast something good we otherwise can't (see GameCore.ritualCandidates). A deck that
+ *  asks for it (ritualsEnableSeveralPlays) also uses one that lets us make one more play, even a smaller one: two
+ *  creatures instead of one. That ritual goes first, before the plays it pays for. */
 export function ritualCandidatesThatHelp(
   game: GameCore,
   candidates: Candidate[],
@@ -26,6 +58,10 @@ export function ritualCandidatesThatHelp(
         .map((candidate) => candidate.score),
     );
   let affordableBest: number | null = null; // (worked out only if there is a ritual in hand)
+  const severalPlays = game.ritualsEnableSeveralPlays();
+  const playsWithoutRitual = severalPlays
+    ? affordablePlays(game, candidates)
+    : null;
   for (const card of game.hand) {
     const cardName = card.name;
     if (
@@ -48,11 +84,20 @@ export function ritualCandidatesThatHelp(
     else if (cardName === 'Drain Power') game.pool.C += game.drainPowerMana();
     else game.pool.C += game.energyTapTarget()?.card.manaValue ?? 0;
     const gain = bestAffordable();
+    const playsWithRitual = severalPlays
+      ? affordablePlays(game, candidates)
+      : null;
     if (cardName === 'High Tide') game.highTidesThisTurn -= 1;
     game.restore(snapshot);
-    if (gain >= 60 && gain > affordableBest!)
+    const makesBigPlay = gain >= 60 && gain > affordableBest!;
+    const makesMorePlays =
+      playsWithRitual !== null &&
+      playsWithRitual.count > playsWithoutRitual!.count &&
+      playsWithRitual.total - playsWithoutRitual!.total >=
+        RITUAL_EXTRA_PLAYS_SCORE;
+    if (makesBigPlay || makesMorePlays)
       out.push({
-        score: gain - 1,
+        score: makesMorePlays ? Math.max(gain, affordableBest!) + 1 : gain - 1,
         cost: game.effectiveCost(card),
         isInstantOrSorcery: true,
         action: () => game.castRitual(card),

@@ -6,6 +6,7 @@ import {
   HOLD,
   MANA_ELVES,
   MEREN,
+  RISE_MIN_CREATURES,
   TOKENS,
 } from './cards';
 import {
@@ -304,6 +305,13 @@ function addReanimationCandidate(
         add(target.card.name === GRAY_MERCHANT ? 92 : 60, cost, true, () =>
           castSawInHalf(game, card, target),
         );
+      return true;
+    }
+    case 'Rise of the Dark Realms': {
+      // every creature card in every graveyard onto the battlefield: only with several worth having
+      const creatureCards = game.creaturesInGraveyard();
+      if (creatureCards >= RISE_MIN_CREATURES)
+        add(88, cost, true, () => game.castInstantOrSorcery(card));
       return true;
     }
     case 'Deadly Brew':
