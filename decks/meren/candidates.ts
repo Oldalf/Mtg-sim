@@ -419,7 +419,7 @@ function addPermanentAbilityCandidates(
       );
     else if (main2 && name === 'Vampiric Rites') {
       const token = sacrificeOrder.find(
-        (candidate) => candidate.token && candidate.card !== TOKENS.stolen,
+        (candidate) => candidate.token && !game.isStolen(candidate),
       );
       if (token)
         add(30, Cost.parse('{1}{B}'), false, () =>

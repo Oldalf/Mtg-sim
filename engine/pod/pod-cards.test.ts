@@ -362,7 +362,7 @@ export function runPodCardTests(allDecks: Record<string, Deck>): boolean {
     );
   }
   {
-    // ... the opponents' hands are empty and Aesi has a creature card in its graveyard: it comes to us (a stolen 5/5)
+    // ... the opponents' hands are empty and Aesi has a creature card in its graveyard: it comes to us (the real card, with its Zombies)
     const table = newTable(allDecks);
     const meren = table.games[MEREN];
     table.games[AESI].graveyard = [C.get('Grave Titan')];
@@ -370,9 +370,13 @@ export function runPodCardTests(allDecks: Record<string, Deck>): boolean {
     table.refreshView(MEREN);
     meren.sacrifice(putOnBattlefield(meren, 'Junji, the Midnight Sky'));
     check(
-      "Junji: a creature card from Aesi's graveyard comes in as our stolen 5/5, we lose 2",
-      [names(meren.battlefield), meren.myLife],
-      [['Stolen creature'], 38],
+      "Junji: Grave Titan from Aesi's graveyard comes in as the real card (with its two Zombies), we lose 2, Aesi's graveyard is empty",
+      [
+        names(meren.battlefield),
+        meren.myLife,
+        table.games[AESI].graveyard.length,
+      ],
+      [['Grave Titan', 'Zombie', 'Zombie'], 38, 0],
     );
   }
 

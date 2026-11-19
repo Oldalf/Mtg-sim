@@ -154,14 +154,14 @@ function resolveCardAdvantageOnEnter(
 function resolveTokensOnEnter(game: MerenGame, permanent: Permanent): boolean {
   switch (permanent.card.name) {
     case 'Puppeteer Clique': {
-      const stolen = game.enter(TOKENS.stolen, 'graveyard', { token: true });
-      stolen.sick = false; // it gains haste
-      game.exileAtEnd.push(stolen);
+      for (const stolen of game.stealCreatures(Infinity, 1)) {
+        stolen.sick = false; // it gains haste
+        game.exileAtEnd.push(stolen);
+      }
       return true;
     }
     case 'Sepulchral Primordial':
-      for (let i = 0; i < game.countOpponentsAlive(); i++)
-        game.enter(TOKENS.stolen, 'graveyard', { token: true });
+      game.stealCreatures(1);
       return true;
     case 'Woe Strider':
       game.createTokens(TOKENS.goat);
@@ -347,7 +347,7 @@ function resolveJunjiDeath(game: MerenGame): void {
     cardsInOpponentsHands < 2 * livingSlots.length &&
     opponentHasCreatureCard
   ) {
-    game.enter(TOKENS.stolen, 'graveyard', { token: true });
+    game.stealCreatures(1, 1);
     game.loseLife(2);
     return;
   }

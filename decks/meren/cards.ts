@@ -17,6 +17,8 @@ export const DGHOR_BLOODLETTER = "D'Ghor Bloodletter";
 export const DGHOR_BLOODLETTER_MANA_VALUE = 3;
 /** D'Ghor Bloodletter shrinks (all other creatures -1/-1) instead of the edict when it kills this many opposing creatures. */
 export const SHRINK_KILLS_AT_LEAST = 2;
+/** Permanent.marks: a creature taken from a graveyard, or a 5/5 copy of one (Breach the Multiverse). */
+export const STOLEN_MARK = 1;
 export const GRAY_MERCHANT = 'Gray Merchant of Asphodel';
 
 export const TOKENS = {
@@ -207,8 +209,12 @@ C.registerKnown([
   ...Object.keys(SACRIFICE_DRAW_SPELLS),
 ]);
 
-/** Every card of the deck that draws cards: --diag counts the cards each one drew in the games where it was played. */
+/** Every card of the deck that draws cards (and the rituals): --diag says in how many games each was played and how many
+ *  cards it drew then. */
 export const DRAW_CARDS = [
+  'Dark Ritual',
+  'Rise of the Dark Realms',
+  'Songs of the Damned',
   'Decode Transmissions',
   'Diresight',
   "Night's Whisper",

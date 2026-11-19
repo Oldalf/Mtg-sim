@@ -481,7 +481,7 @@ export function runMerenTests(): boolean {
       game.castInstantOrSorcery(C.get('Rise of the Dark Realms')),
       game.creatures().length,
     ],
-    [1, true, 7], // four cards, Grave Titan's two Zombies and Woe Strider's Goat
+    [1, true, 10], // four cards, Grave Titan's two Zombies, Woe Strider's Goat, and a vanilla 5/5 for each of the 3 goldfish opponents
   );
   // --diag counts the cards a card drew, in the games where it was played
   game = board(['Midnight Reaper', 'Llanowar Elves']);

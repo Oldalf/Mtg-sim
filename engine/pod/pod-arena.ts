@@ -14,7 +14,9 @@ import {
   bounceEveryPermanentOfColour,
   counterSpell,
   creatureCardsInGraveyard,
+  creatureCardsOfGraveyard,
   exileCreaturesFromGraveyard,
+  takeCreatureCardFromGraveyard,
   fightBestCreature,
   makeOneOpponentDiscard,
   makeOneOpponentSacrifice,
@@ -130,6 +132,12 @@ export function buildArena(table: PodTable): Arena {
       ),
     creatureCardsInGraveyard: (game, slot) =>
       creatureCardsInGraveyard(table, game, slot),
+    creatureCardsOfGraveyard: (game, slot) =>
+      creatureCardsOfGraveyard(table, game, slot),
+    takeCreatureCardFromGraveyard: (game, slot, card) =>
+      table.runOffTurn(() =>
+        takeCreatureCardFromGraveyard(table, game, slot, card),
+      ),
     exileCreaturesFromGraveyard: (game, slot, sourceName) =>
       table.runOffTurn(() =>
         exileCreaturesFromGraveyard(table, game, slot, sourceName),

@@ -305,6 +305,15 @@ export interface Arena {
   ): string | null;
   /** How many creature cards opponent `slot` has in its graveyard. */
   creatureCardsInGraveyard(game: Game<unknown>, slot: number): number;
+  /** The creature cards in opponent `slot`'s graveyard. */
+  creatureCardsOfGraveyard(game: Game<unknown>, slot: number): CardDef[];
+  /** A creature card leaves opponent `slot`'s graveyard for our battlefield (Sepulchral Primordial, Rise of the Dark
+   *  Realms): the caller puts it onto the battlefield as a token. */
+  takeCreatureCardFromGraveyard(
+    game: Game<unknown>,
+    slot: number,
+    card: CardDef,
+  ): void;
   /** Exile every creature card in opponent `slot`'s graveyard (Crypt Incursion). Returns how many. */
   exileCreaturesFromGraveyard(
     game: Game<unknown>,

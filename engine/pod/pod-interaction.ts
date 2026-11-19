@@ -924,6 +924,33 @@ export function creatureCardsInGraveyard(
     .length;
 }
 
+/** The creature cards in opponent `slot`'s graveyard. */
+export function creatureCardsOfGraveyard(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+): CardDef[] {
+  const opponent = table.opponentsOf[table.playerOrCopyOf(game)][slot];
+  return table.games[opponent].graveyard.filter((card) => card.isCreature);
+}
+
+/** A creature card leaves opponent `slot`'s graveyard: another player puts it onto the battlefield. */
+export function takeCreatureCardFromGraveyard(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+  card: CardDef,
+): void {
+  const opponent = table.opponentsOf[table.playerOf(game)][slot];
+  table.games[opponent].moveCard(card, 'graveyard', 'exile');
+  table.sayAs(
+    table.playerOf(game),
+    `takes ${card.name} from ${table.playerName(opponent)}'s graveyard`,
+    'note',
+    [card.name],
+  );
+}
+
 /** Every creature card in opponent `slot`'s graveyard is exiled (Crypt Incursion). Returns how many. */
 export function exileCreaturesFromGraveyard(
   table: PodTable,

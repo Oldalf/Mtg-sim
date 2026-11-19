@@ -28,6 +28,7 @@ import {
   GREATER_GOOD_MIN_LIBRARY,
   GREATER_GOOD_MIN_POWER,
   PLUMB_LIFE_FLOOR,
+  STOLEN_MARK,
   SURPLUS_LANDS,
   PLUMB_MOST,
   HOLD,
@@ -255,16 +256,56 @@ export class MerenGame extends CreatureDeckGame {
     return this.config.ritual_several_plays === 1;
   }
 
-  /** Rise of the Dark Realms in a pod: a stolen 5/5 for each creature card in an opponent's graveyard, as the
-   *  other cards that take them do (Sepulchral Primordial). */
+  /** Rise of the Dark Realms: every creature card in the opponents' graveyards comes too. */
   override reanimateFromOtherGraveyards(): void {
-    if (!this.inArena()) return;
-    for (const slot of this.life.keys()) {
-      if (!this.isOpponentAlive(slot)) continue;
-      const creatureCards = this.arena!.creatureCardsInGraveyard(this, slot);
-      for (let i = 0; i < creatureCards; i++)
-        this.enter(TOKENS.stolen, 'graveyard', { token: true });
+    this.stealCreatures(Infinity);
+  }
+
+  /** Creature cards from the opponents' graveyards onto our battlefield (Sepulchral Primordial, Rise of the Dark Realms,
+   *  Puppeteer Clique, Junji): in a pod the real cards, the ones we value most first (at most `perOpponent` from each
+   *  graveyard, `total` in all). In a goldfish game there are no graveyards to look at: a vanilla 5/5 for each opponent,
+   *  as an estimate (Pontus, 2026-11-19). */
+  stealCreatures(perOpponent: number, total = Infinity): Permanent[] {
+    const opponents = [...this.life.keys()].filter((slot) =>
+      this.isOpponentAlive(slot),
+    );
+    const stolen: Permanent[] = [];
+    const takeCard = (card: CardDef) => {
+      const permanent = this.enter(card, 'graveyard', { token: true });
+      permanent.marks |= STOLEN_MARK;
+      stolen.push(permanent);
+    };
+    if (!this.inArena()) {
+      for (const _opponent of opponents.slice(0, total))
+        takeCard(TOKENS.stolen);
+      return stolen;
     }
+    const arena = this.arena!;
+    const taken = new Map<number, number>();
+    const options = opponents.flatMap((slot) =>
+      arena
+        .creatureCardsOfGraveyard(this, slot)
+        .map((card) => ({ slot, card })),
+    );
+    options.sort(
+      (first, second) =>
+        this.battlefieldValue(second.card) - this.battlefieldValue(first.card),
+    );
+    for (const { slot, card } of options) {
+      if (stolen.length >= total || (taken.get(slot) ?? 0) >= perOpponent)
+        continue;
+      taken.set(slot, (taken.get(slot) ?? 0) + 1);
+      arena.takeCreatureCardFromGraveyard(this, slot, card);
+      takeCard(card);
+    }
+    return stolen;
+  }
+
+  /** A creature we took from a graveyard or made a copy of (Breach the Multiverse): worth keeping, not fodder. */
+  isStolen(permanent: Permanent): boolean {
+    return (
+      (permanent.marks & STOLEN_MARK) !== 0 || permanent.card === TOKENS.stolen
+    );
   }
 
   override commanderCost(card: CardDef, cost: Cost): Cost {
@@ -328,7 +369,7 @@ export class MerenGame extends CreatureDeckGame {
   /** Our creatures in the order we'd sacrifice them (cheapest loss first). */
   /** How much we mind sacrificing this creature (low = a good one to sacrifice). */
   sacrificeCost(permanent: Permanent): number {
-    if (permanent.card === TOKENS.stolen) return 80;
+    if (this.isStolen(permanent)) return 80;
     if (permanent.token) return 5 + this.power(permanent);
     if (DEATH_VALUE.has(permanent.card.name) && this.isOnBattlefield(MEREN))
       return 10;
@@ -637,7 +678,7 @@ export class MerenGame extends CreatureDeckGame {
         if (permanent === outlet && outlet.card.name !== 'Viscera Seer')
           continue;
         if (
-          permanent.card === TOKENS.stolen ||
+          this.isStolen(permanent) ||
           FREE_OUTLETS.includes(permanent.card.name)
         )
           continue;
@@ -821,8 +862,10 @@ export class MerenGame extends CreatureDeckGame {
         );
       const best = this.bestCreatureInGraveyard();
       if (best) this.reanimate(best);
+      // a 5/5 copy of a creature in each graveyard
       for (let i = 0; i < this.countOpponentsAlive(); i++)
-        this.enter(TOKENS.stolen, 'graveyard', { token: true });
+        this.enter(TOKENS.stolen, 'graveyard', { token: true }).marks |=
+          STOLEN_MARK;
     } else if (name === 'Grisly Salvage') {
       const top = this.takeTopCardsOfLibrary(5);
       const keep = top.filter(
