@@ -92,20 +92,6 @@ export function castSawInHalf(
   return true;
 }
 
-export function castBeastWithin(
-  game: MerenGame,
-  card: CardDef,
-  permanent: Permanent,
-): boolean {
-  if (!game.pay(game.effectiveCost(card), true)) return false;
-  game.takeCardIfThere(card, 'hand');
-  game.podAnnounceCast(card);
-  game.dies(permanent);
-  game.createTokens(TOKENS.beast);
-  game.putCard(card, 'graveyard');
-  return true;
-}
-
 export function activatePriest(
   game: MerenGame,
   permanent: Permanent,

@@ -174,7 +174,12 @@ export const EDICT_ETB = new Set([
   DGHOR_BLOODLETTER, // its other mode, -1/-1 to all other creatures, only in a pod (triggers.ts)
 ]);
 // Solemn Simulacrum, Wood Elves and the Witnesses are engine cards (engine/game/common-permanents.ts)
-export const HOLD = new Set(['Heartless Act', 'Infernal Grasp']); // removal: no targets in a goldfish game
+// removal: no targets in a goldfish game, and only ever for an opponent's permanent in a pod (engine/game/answers.ts)
+export const HOLD = new Set([
+  'Heartless Act',
+  'Infernal Grasp',
+  'Beast Within',
+]);
 
 // every card this file has rules for (the rest of the list is lands and engine card facts)
 C.registerKnown([

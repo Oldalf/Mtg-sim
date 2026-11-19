@@ -782,6 +782,21 @@ export class MerenGame extends CreatureDeckGame {
     return true;
   }
 
+  /** A pod: keep mana open for an answer only while an opponent has a board worth answering (config.hold_opponent_power;
+   *  0 = whenever we hold an answer, as every deck does). A slower deck spends the mana on its own turn otherwise. */
+  override isHoldingManaForAnswers(): boolean {
+    if (!super.isHoldingManaForAnswers()) return false;
+    const minimumPower = (this.config.hold_opponent_power as number) ?? 0;
+    if (minimumPower <= 0) return true;
+    const arena = this.arena!;
+    return this.life.some(
+      (_life, slot) =>
+        this.isOpponentAlive(slot) &&
+        arena.board(this, slot).reduce((total, power) => total + power, 0) >=
+          minimumPower,
+    );
+  }
+
   // ================================================================ tutors
   tutorPriorities(): string[] {
     const wantedNames: string[] = [];

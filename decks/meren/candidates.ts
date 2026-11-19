@@ -16,7 +16,6 @@ import {
   activateLiliana,
   activatePriest,
   activateVampiricRites,
-  castBeastWithin,
   castEldritchEvolution,
   castGrist,
   castPreparedSpell,
@@ -318,14 +317,6 @@ function addReanimationCandidate(
       if (sacrificeOrder.some((permanent) => permanent.token))
         add(45, cost, false, () => game.castInstantOrSorcery(card));
       return true;
-    case 'Beast Within': {
-      const target = sacrificeOrder.find(
-        (permanent) => permanent.token && game.power(permanent) < 3,
-      );
-      if (target)
-        add(35, cost, true, () => castBeastWithin(game, card, target));
-      return true;
-    }
     default:
       return false;
   }

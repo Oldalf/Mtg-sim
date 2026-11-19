@@ -8,7 +8,7 @@ import { Game } from '../game/game';
 import { Permanent } from '../game/game-types';
 import { Deck } from '../run/runner';
 import type { MerenGame } from '../../decks/meren/game';
-import { castBeastWithin } from '../../decks/meren/actions';
+import { castSawInHalf } from '../../decks/meren/actions';
 import { podSpec, seatPlayers } from './pod';
 import { PodTable } from './pod-table';
 
@@ -132,17 +132,18 @@ export function runOpponentCastTests(allDecks: Record<string, Deck>): boolean {
     );
   }
   {
-    // a spell a deck casts through its own code announces itself too (Meren's Beast Within)
+    // a spell a deck casts through its own code announces itself too (Meren's Saw in Half)
     const table = newTable(allDecks);
     const mauler = putOnBattlefield(table.games[GALE], TAUREAN_MAULER);
     const meren = table.games[MEREN] as unknown as MerenGame;
-    const beastWithin = C.get('Beast Within');
-    meren.hand.push(beastWithin);
+    const sawInHalf = C.get('Saw in Half');
+    meren.hand.push(sawInHalf);
     const target = putOnBattlefield(meren, 'Eternal Witness');
+    meren.pool.B = 3;
     meren.pool.G = 3;
-    const wasCast = castBeastWithin(meren, beastWithin, target);
-    check('Beast Within was cast', wasCast, true);
-    check('Beast Within grows the Mauler', mauler.counters, 1);
+    const wasCast = castSawInHalf(meren, sawInHalf, target);
+    check('Saw in Half was cast', wasCast, true);
+    check('Saw in Half grows the Mauler', mauler.counters, 1);
   }
   {
     const table = newTable(allDecks);
