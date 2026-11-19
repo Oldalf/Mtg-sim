@@ -45,6 +45,7 @@ npm run cards -- images                             # download the card images t
 npm run sim -- gale --test                           # the deck's kill-finder tests (must print ALL OK)
 npm run sim -- gale --regress check                  # after a refactor: results must be IDENTICAL
 npm run pod -- gale meren samfrodo aesi mike -n 1000 # a pod: the decks play against each other (3 to 6 decks; see POD_PLAN.md)
+npm run pod -- meren helga edgar teval -n 16000 --rank  # also ranks the first deck's cards by its pod win rate when seen by turn 4 (--rank-save file, then --rank-merge file1 file2)
 npm run app -- --test                                # the app's server tests (API calls on a free port; no run is left in session-logs/)
 npm test --prefix app/web -- --watch=false           # the page's tests (Angular, Vitest)
 npm run check                                        # type-check the code

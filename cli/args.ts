@@ -24,6 +24,8 @@ export interface Args {
   noLog: boolean; // --no-log: don't write the games to session-logs/
   mode: 'any' | 'protected';
   rank: boolean; // --rank
+  rankSave: string | null; // --rank-save: a pod --rank also writes its counts to this file
+  rankMerge: boolean; // --rank-merge: the lists are saved pod rankings to put together
   cutCards: string[] | null; // --cut: the cards to cut
   cutReplacement: string; // --replace: what a cut card is replaced with
   analyzeLog: string | null; // --analyze: a game log to check for missed kills
@@ -60,6 +62,8 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     noLog: false,
     mode: 'any',
     rank: false,
+    rankSave: null,
+    rankMerge: false,
     cutCards: null,
     cutReplacement: 'Island',
     analyzeLog: null,
@@ -103,6 +107,8 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     else if (option === '--mode')
       args.mode = nextValue() as 'any' | 'protected';
     else if (option === '--rank') args.rank = true;
+    else if (option === '--rank-save') args.rankSave = nextValue();
+    else if (option === '--rank-merge') args.rankMerge = true;
     else if (option === '--cut') {
       args.cutCards = [];
       while (index + 1 < argv.length && !argv[index + 1].startsWith('-'))

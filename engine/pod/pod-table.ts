@@ -249,6 +249,9 @@ export class PodTable {
       out: this.outOrder,
       why: this.outReason,
       seat: this.seatOf,
+      firstDeckSeenByTurn4: this.spec.rank
+        ? this.games[0].seen4 && [...this.games[0].seen4]
+        : undefined,
       log: this.verbose ? this.gameLog() : undefined,
     };
   }

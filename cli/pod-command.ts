@@ -15,6 +15,7 @@ import { runForcedAttackTests } from '../engine/pod/pod-forced-attacks.test';
 import { runDungeonTests } from '../engine/game/dungeons.test';
 import { runBlinkTests } from '../engine/game/blink.test';
 import { runTreasureTests } from '../engine/game/treasure.test';
+import { runPodRankTests } from '../engine/pod/pod-rank.test';
 import { runCardDrawTests } from '../engine/game/card-draw.test';
 import { runCommonCardTests } from '../engine/game/common-cards.test';
 import { runSearchManaTests } from '../engine/game/search-mana.test';
@@ -33,6 +34,14 @@ import { addMissingCards } from '../engine/cards/scryfall';
 import { createPodRunFolder } from '../engine/game-log/logged-runs';
 import { Deck } from '../engine/run/runner';
 import { Args, wantsEcoMode } from './args';
+import { loadDecklist } from '../engine/cards/cards';
+import {
+  countCardsSeen,
+  mergeCounts,
+  printRanking,
+  readCounts,
+  writeCounts,
+} from '../engine/pod/pod-rank';
 import { enableEcoMode } from './eco';
 import { LogSession } from './log-session';
 
@@ -80,6 +89,7 @@ export async function runPodCommand(
     const areTreasuresRight = runTreasureTests(decks);
     const areCommonCardsRight = runCommonCardTests(decks);
     const areCardDrawCardsRight = runCardDrawTests(decks);
+    const isPodRankRight = runPodRankTests();
     const areEldraziRight = runEldraziTests(decks);
     const isProtectionRight = runProtectionTests(decks);
     const arePodCardsRight = runPodCardTests(decks);
@@ -100,11 +110,19 @@ export async function runPodCommand(
         areTreasuresRight &&
         areCommonCardsRight &&
         areCardDrawCardsRight &&
+        isPodRankRight &&
         areEldraziRight &&
         isProtectionRight
         ? 0
         : 1,
     );
+  }
+  if (args.rankMerge) {
+    const rankings = args.lists.map(readCounts);
+    for (const [index, counts] of rankings.entries())
+      printRanking(args.lists[index], counts);
+    printRanking('both lists together', mergeCounts(rankings));
+    return;
   }
   const spec = Pod.podSpec(
     decks,
@@ -114,6 +132,7 @@ export async function runPodCommand(
     threat,
     policy,
   );
+  spec.rank = args.rank;
   await addMissingCards(spec.lists);
   if (args.trace) {
     printTracedGames(args, decks, spec);
@@ -140,6 +159,14 @@ export async function runPodCommand(
     runFolder: runFolder && path.basename(runFolder),
   });
   printPod(report);
+  if (args.rank) {
+    const counts = countCardsSeen(
+      result.games,
+      loadDecklist(spec.lists[0]).library,
+    );
+    printRanking(`${spec.decks[0]} (${spec.lists[0]})`, counts);
+    if (args.rankSave) writeCounts(args.rankSave, counts);
+  }
   logSession.printGamesWorthALook();
   console.log(`\n(${((Date.now() - startTime) / 1000).toFixed(0)}s)`);
 }

@@ -142,6 +142,9 @@ export const ENTER_AGAIN = new Set([
   'Sepulchral Primordial',
   'Elvish Visionary',
 ]);
+/** Greater Good: sacrifice a creature with at least this much power (3 cards back for the 3 discarded: a rummage; Pontus,
+ *  2026-11-19, it also fills the graveyard and feeds Meren). */
+export const GREATER_GOOD_MIN_POWER = 3;
 /** Greater Good is left alone (it would mill us out) with fewer cards than this in the library. */
 export const GREATER_GOOD_MIN_LIBRARY = 15;
 /** Discarding: a land beyond this many on the battlefield is surplus. */

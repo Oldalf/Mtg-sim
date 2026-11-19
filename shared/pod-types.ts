@@ -12,6 +12,8 @@ export interface PodSpec {
    *  backup) | mixed (protected until round protect_until, default 9, then any) | window (with backup, or when every opponent
    *  has at most window_mana untapped mana, default 1, or no cards in hand). Keyed by deck name. */
   policy?: Record<string, string>;
+  /** Keep the cards the first deck had seen by the end of its fourth turn in every game (--rank: engine/pod/pod-rank.ts). */
+  rank?: boolean;
 }
 
 /** Counts kept per deck during a game. Each array is indexed by deck (the position in PodSpec.decks). */
@@ -33,6 +35,8 @@ export interface PodGame extends PodStats {
   why: string[]; // why[i] = how deck i was eliminated ("" = it wasn't): life | commander | poison | decked
   out: number[]; // players eliminated, in order
   seat: number[]; // seat[i] = the seat (0 = first to play) of deck i
+  /** With PodSpec.rank: the cards the first deck had seen by the end of its fourth turn (null: the game ended before). */
+  firstDeckSeenByTurn4?: string[] | null;
   /** The game's log (only when it was played with the log on). */
   log?: GameLog;
 }

@@ -26,6 +26,7 @@ import {
   FREE_OUTLETS,
   GRAY_MERCHANT,
   GREATER_GOOD_MIN_LIBRARY,
+  GREATER_GOOD_MIN_POWER,
   PLUMB_LIFE_FLOOR,
   SURPLUS_LANDS,
   PLUMB_MOST,
@@ -42,7 +43,6 @@ import { CardDef, Cost } from '../../engine/cards/cards';
 import { CLUE, TREASURE } from '../../engine/cards/tokens';
 import {
   GREATER_GOOD,
-  GREATER_GOOD_DISCARDS,
   sacrificeToGreaterGood,
 } from '../../engine/game/card-draw';
 import {
@@ -415,13 +415,13 @@ export class MerenGame extends CreatureDeckGame {
     return this.expendableCreatures().slice(0, Math.min(PLUMB_MOST, room));
   }
 
-  /** Greater Good: the creature to sacrifice for the cards (power of 4 or more, or it's a net loss after the discard):
+  /** Greater Good: the creature to sacrifice for the cards (power GREATER_GOOD_MIN_POWER or more):
    *  one we don't mind losing, or one Meren can bring back at once. */
   chooseGreaterGoodSacrifice(): Permanent | null {
     if (this.library.length < GREATER_GOOD_MIN_LIBRARY) return null;
     const choices = this.sacrificeOrder().filter(
       (creature) =>
-        this.power(creature) > GREATER_GOOD_DISCARDS &&
+        this.power(creature) >= GREATER_GOOD_MIN_POWER &&
         (this.expendableCreatures().includes(creature) ||
           (this.isOnBattlefield(MEREN) &&
             !creature.token &&
