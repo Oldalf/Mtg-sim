@@ -253,3 +253,22 @@ Pod: `npm run pod -- meren:<list> helga edgar teval -n 4000 --no-log` (25% is ev
 **The ranking** (new: `npm run pod -- meren:<list> helga edgar teval -n 16000 --no-log --rank [--rank-save file]`, and `npm run pod -- --rank-merge file1 file2` for the two lists together) is in [POD_RANKING.md](POD_RANKING.md): one table for each list and one for both together. How to read it: the pod win rate of Meren in the games where it had seen the card by the end of its fourth turn, minus the games where it had not. It is biased (a ramp card or Sol Ring seen early is a faster game; held removal such as Beast Within, Infernal Grasp and Heartless Act shows as very negative, probably because it sits in the hand in games with no good target; not checked). Use it for the clear things: Spore Frog (+13), Sol Ring (+12), Sakura-Tribe Elder (+8), Twilight Diviner, Grist and Protean Hulk (+6 to +7) help, and the Witnesses, Heartless Act, Infernal Grasp and Beast Within are at the bottom. Check any cut with a swap test, as always.
 
 Pontus decides; `decklist.txt` and `lists/proposed.txt` are unchanged.
+
+### T6: without Skullclamp, and Songs of the Damned back in (2026-11-19)
+
+Pontus's questions: a list of `proposed.txt` without Skullclamp; does Greater Good run better in the original list because Songs of the Damned turns its discards into ritual mana; and a list with Songs back in for the lowest-ranked of the five adds (Wood Elves, −0.5 in the pod ranking). Lists (lines replaced in place): "no Skullclamp" = Deadly Dispute for Morbid Opportunist and Greater Good for Unearth, Garruk's Packleader stays; "three" = Skullclamp for Packleader as well; "Songs" = Songs of the Damned for Wood Elves. Goldfish 16,000 games (±1.1); pod `meren:<list> helga edgar teval` at 16,000 games (±1.1; the 4,000-game runs gave the same picture within ±2).
+
+| List | Win by T8 | by T10 | by T12 | Avg turn | Pod win (16,000) | Pod out first |
+|---|---|---|---|---|---|---|
+| lists/proposed.txt | 23.2 | 79.1 | 96.6 | 9.38 | 30.5 | 27.1 |
+| three swaps (Skullclamp, Deadly Dispute, Greater Good) | +1.4 | +2.5 | +0.5 | 9.31 | +0.5 | +0.9 |
+| no Skullclamp (Deadly Dispute, Greater Good) | +0.7 | +1.6 | +0.4 | 9.34 | +0.3 | +0.4 |
+| proposed, Songs for Wood Elves | −0.3 | −1.1 | −0.2 | 9.41 | −0.3 | −0.3 |
+| three swaps, Songs for Wood Elves | +1.0 | +1.8 | +0.3 | 9.32 | +0.2 | +0.9 |
+| no Skullclamp, Songs for Wood Elves | +0.5 | +0.8 | +0.2 | 9.35 | −0.2 | +0.4 |
+
+**Songs of the Damned does not explain it.** With Songs in, each list is a little worse (−0.4 to −1.1 by turn 10 in goldfish, within noise to just above it, and −0.3 to −0.5 in the pod). The difference between the original and proposed list for Greater Good is inside the noise of the ranking (−0.9 against −2.3 with ±1.4 each); in goldfish the three swaps gain the same in both lists (+1.3 / +2.6 original, +1.4 / +2.5 proposed). Songs only gets cast when the graveyard holds 4 creature cards (the AI's rule: `candidates.ts`), and the graveyard has 1.7 creature cards on average at turn 6, so it rarely does anything. Wood Elves is better than its pod rank says: in goldfish `--rank` seeing it by turn 4 is +3.3 points by turn 10 and 0.12 turns faster.
+
+**Dark Ritual and fast mana.** Goldfish `--rank` (16,000 games, `proposed.txt`): Sol Ring +0.65 turns faster and +9.7 points by turn 10, so fast mana matters a lot; Dark Ritual −0.01 turns and −1.6 points, so it does nothing measurable. The engine casts a ritual only when it lets the AI cast something it otherwise couldn't that turn (`ritualCandidatesThatHelp`, `engine/game/planner.ts`), and in the pod ranking Dark Ritual is −2.5 in `proposed.txt`. A cut test (Dark Ritual out for a card Pontus names) would tell whether a better card does more; not run.
+
+**Verdict.** The three swaps without Skullclamp still add +0.7 by turn 8 and +1.6 by turn 10 (just above the noise at turn 10); Skullclamp adds about another +0.7 / +0.9. In the pod nothing is beyond noise. Songs in for Wood Elves is not an improvement. Pontus decides; `decklist.txt` and `lists/proposed.txt` are unchanged.
