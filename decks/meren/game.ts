@@ -17,6 +17,7 @@ import {
   DEATH_VALUE,
   DISCIPLE_CARD_WORTH,
   DGHOR_BLOODLETTER,
+  DISCARD_CARDS,
   DRAW_CARDS,
   DRAW_SOURCE_COUNTS_FOR,
   DGHOR_BLOODLETTER_MANA_VALUE,
@@ -24,7 +25,9 @@ import {
   ENTER_AGAIN,
   FREE_OUTLETS,
   GRAY_MERCHANT,
+  GREATER_GOOD_MIN_LIBRARY,
   PLUMB_LIFE_FLOOR,
+  SURPLUS_LANDS,
   PLUMB_MOST,
   HOLD,
   MANA_ELVES,
@@ -37,7 +40,11 @@ import { buildCandidates } from './candidates';
 import { onPermanentDied, onPermanentEntered } from './triggers';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { CLUE, TREASURE } from '../../engine/cards/tokens';
-import { GREATER_GOOD_DISCARDS } from '../../engine/game/card-draw';
+import {
+  GREATER_GOOD,
+  GREATER_GOOD_DISCARDS,
+  sacrificeToGreaterGood,
+} from '../../engine/game/card-draw';
 import {
   Candidate,
   LogBoardView,
@@ -46,7 +53,7 @@ import {
 } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
-import { firstMax, sortDesc } from '../../engine/util/lists';
+import { firstMax, firstMin, sortDesc } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -69,14 +76,36 @@ export class MerenGame extends CreatureDeckGame {
   handAtTurnEnd: number[] = []; // cards in hand at the end of turns 4-8
   cardsDrawnBy: Record<string, number> = {}; // cards drawn, by the card that drew them
   cardsPlayed = new Set<string>(); // the cards cast or played from hand this game
+  cardsDiscarded = 0; // cards discarded in the game
+  cardsDiscardedBy: Record<string, number> = {}; // ... by the card that made us
+  cardsMilled = 0; // cards from the library into the graveyard (mill, Buried Alive...)
+  // at the end of turns 4-8: discarded, milled, cards left in the library, life
+  discardedAtTurnEnd: number[] = [];
+  milledAtTurnEnd: number[] = [];
+  libraryAtTurnEnd: number[] = [];
+  lifeAtTurnEnd: number[] = [];
+  creatureCardsInGraveyardAtTurnEnd: number[] = []; // at the end of turns 5 and 6
   override diag(): Record<string, number | null> {
     const drawnWhenPlayed: Record<string, number | null> = {};
     for (const name of DRAW_CARDS)
       drawnWhenPlayed['drew:' + name] = this.cardsPlayed.has(name)
         ? this.cardsDrawnFor(name)
         : null;
+    const netCards: Record<string, number | null> = {};
+    // a card that makes us discard: the cards it drew minus the ones it made us discard
+    for (const name of DISCARD_CARDS)
+      netCards['net:' + name] = this.cardsPlayed.has(name)
+        ? this.cardsDrawnFor(name) - (this.cardsDiscardedBy[name] ?? 0)
+        : null;
     return {
       ...drawnWhenPlayed,
+      ...netCards,
+      discarded8: this.discardedAtTurnEnd[8] ?? null,
+      milled8: this.milledAtTurnEnd[8] ?? null,
+      library8: this.libraryAtTurnEnd[8] ?? null,
+      life8: this.lifeAtTurnEnd[8] ?? null,
+      graveyardCreatures5: this.creatureCardsInGraveyardAtTurnEnd[5] ?? null,
+      graveyardCreatures6: this.creatureCardsInGraveyardAtTurnEnd[6] ?? null,
       merenOut: this.merenOut,
       spent5: this.spentEnd[5] ?? null,
       spent6: this.spentEnd[6] ?? null,
@@ -126,6 +155,7 @@ export class MerenGame extends CreatureDeckGame {
     const copy = super.clone();
     copy.cardsDrawnBy = { ...this.cardsDrawnBy };
     copy.cardsPlayed = new Set(this.cardsPlayed);
+    copy.cardsDiscardedBy = { ...this.cardsDiscardedBy };
     const map = new Map(
       this.battlefield.map(
         (permanent, i) =>
@@ -201,6 +231,20 @@ export class MerenGame extends CreatureDeckGame {
   override discardValue(card: CardDef): number {
     // creature cards in the graveyard are fine: Meren and reanimation get them back
     return this.cardValue(card) - (card.isCreature ? 25 : 0);
+  }
+
+  /** What we least mind discarding to Greater Good: surplus lands, then creature cards (the graveyard is where Meren
+   *  and reanimation work), most of all one Meren can return at once. (Surveil keeps using discardValue.) */
+  greaterGoodDiscardValue(card: CardDef): number {
+    if (card.land !== null)
+      return this.landsOnBattlefield().length >= SURPLUS_LANDS
+        ? 5
+        : this.cardValue(card);
+    if (!card.isCreature) return this.cardValue(card);
+    const merenReturnsItAtOnce =
+      this.isOnBattlefield(MEREN) &&
+      card.manaValue <= this.experienceCounters + 1;
+    return this.cardValue(card) - 25 - (merenReturnsItAtOnce ? 15 : 0);
   }
 
   creaturesInGraveyard(): number {
@@ -374,6 +418,7 @@ export class MerenGame extends CreatureDeckGame {
   /** Greater Good: the creature to sacrifice for the cards (power of 4 or more, or it's a net loss after the discard):
    *  one we don't mind losing, or one Meren can bring back at once. */
   chooseGreaterGoodSacrifice(): Permanent | null {
+    if (this.library.length < GREATER_GOOD_MIN_LIBRARY) return null;
     const choices = this.sacrificeOrder().filter(
       (creature) =>
         this.power(creature) > GREATER_GOOD_DISCARDS &&
@@ -427,6 +472,33 @@ export class MerenGame extends CreatureDeckGame {
       this.cardsDrawnBy[source] = (this.cardsDrawnBy[source] ?? 0) + drawn;
   }
 
+  override discard(count: number, source: string | null = null): void {
+    const handBefore = this.hand.length;
+    if (source === GREATER_GOOD) this.discardForGreaterGood(count);
+    else super.discard(count, source);
+    const discarded = handBefore - this.hand.length;
+    this.cardsDiscarded += discarded;
+    if (source !== null)
+      this.cardsDiscardedBy[source] =
+        (this.cardsDiscardedBy[source] ?? 0) + discarded;
+  }
+
+  private discardForGreaterGood(count: number): void {
+    for (let i = 0; i < count && this.hand.length; i++) {
+      const card = firstMin(this.hand, (handCard) =>
+        this.greaterGoodDiscardValue(handCard),
+      );
+      this.takeCard(card, 'hand');
+      this.toGraveyard(card);
+      this.say('discard', card);
+    }
+  }
+
+  override toGraveyard(card: CardDef, fromLibrary = false): void {
+    if (fromLibrary) this.cardsMilled++;
+    super.toGraveyard(card, fromLibrary);
+  }
+
   /** The cards a card has drawn this game (a Clue's draws are Tireless Tracker's). */
   cardsDrawnFor(name: string): number {
     return Object.entries(this.cardsDrawnBy)
@@ -462,6 +534,12 @@ export class MerenGame extends CreatureDeckGame {
     if (this.turn >= 4 && this.turn <= 8) {
       this.cardsDrawnAtTurnEnd[this.turn] = this.cardsDrawn;
       this.handAtTurnEnd[this.turn] = this.hand.length;
+      this.discardedAtTurnEnd[this.turn] = this.cardsDiscarded;
+      this.milledAtTurnEnd[this.turn] = this.cardsMilled;
+      this.libraryAtTurnEnd[this.turn] = this.library.length;
+      this.lifeAtTurnEnd[this.turn] = this.myLife;
+      this.creatureCardsInGraveyardAtTurnEnd[this.turn] =
+        this.creaturesInGraveyard();
     }
     if (this.turn >= 4 && this.turn <= 6) {
       this.permanentsAtTurnEnd[this.turn] = this.battlefield.filter(
@@ -531,6 +609,11 @@ export class MerenGame extends CreatureDeckGame {
 
   /** Feed Meren with a free sacrifice outlet, then return the best creature card from the graveyard. */
   feedMerenAtEndStep(): void {
+    // Greater Good: a big creature Meren can return now, for cards and a full graveyard
+    const toGreaterGood = this.isOnBattlefield(GREATER_GOOD)
+      ? this.chooseGreaterGoodSacrifice()
+      : null;
+    if (toGreaterGood) sacrificeToGreaterGood(this, toGreaterGood);
     const outlet = this.findFreeSacrificeOutlet();
     if (outlet) {
       // sacrifice tokens and creatures whose death is worth something: each one is an experience counter

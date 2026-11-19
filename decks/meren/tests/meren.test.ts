@@ -394,6 +394,52 @@ export function runMerenTests(): boolean {
     game.chooseGreaterGoodSacrifice()?.card.name,
     'Grave Titan',
   );
+  // Greater Good's discards: surplus lands first, then creature cards, spells we may cast last
+  game = board(['Greater Good', 'Meren of Clan Nel Toth']);
+  game.experienceCounters = 5;
+  game.hand = [
+    "Dina's Guidance",
+    'Grave Titan',
+    'Swamp',
+    'Gray Merchant of Asphodel',
+  ].map((name) => C.get(name));
+  game.discard(1);
+  const firstDiscard = game.graveyard.map((card) => card.name);
+  game.hand = ['Grave Titan', 'Gray Merchant of Asphodel'].map((name) =>
+    C.get(name),
+  );
+  game.discard(1);
+  check(
+    'Greater Good discards the surplus Swamp first, then of two creatures the one Meren returns at once (Grave Titan)',
+    [firstDiscard, game.graveyard.map((card) => card.name)],
+    [['Swamp'], ['Swamp', 'Grave Titan']],
+  );
+  game = board(['Greater Good', 'Meren of Clan Nel Toth', 'Grave Titan']);
+  game.experienceCounters = 5;
+  check(
+    'Greater Good: with Meren and 5 experience, Grave Titan is the one to sacrifice',
+    game.chooseGreaterGoodSacrifice()?.card.name,
+    'Grave Titan',
+  );
+  game = board(['Greater Good', 'Meren of Clan Nel Toth', 'Grave Titan']);
+  game.experienceCounters = 5;
+  game.library = repeatName('Swamp', 10).map((name) => C.get(name));
+  check(
+    'Greater Good: not with a library of 10 cards (it would mill us out)',
+    game.chooseGreaterGoodSacrifice(),
+    null,
+  );
+  game.library = repeatName('Swamp', 40).map((name) => C.get(name));
+  game.endStep();
+  check(
+    'Greater Good at the end step: Grave Titan sacrificed (6 cards, 3 discarded), Meren returns it',
+    [
+      game.cardsDrawnFor('Greater Good'),
+      game.cardsDiscardedBy['Greater Good'],
+      game.isOnBattlefield('Grave Titan'),
+    ],
+    [6, 3, true],
+  );
   // --diag counts the cards a card drew, in the games where it was played
   game = board(['Midnight Reaper', 'Llanowar Elves']);
   game.library = repeatName('Swamp', 5).map((name) => C.get(name));

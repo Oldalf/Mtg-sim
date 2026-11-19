@@ -704,7 +704,8 @@ export abstract class GameCore<S = unknown> {
     }
   }
 
-  discard(count: number): void {
+  /** Discards cards, the ones we want least first. `_source` names the card that makes us discard. */
+  discard(count: number, _source: string | null = null): void {
     for (let i = 0; i < count; i++) {
       if (!this.hand.length) return;
       const card = firstMin(

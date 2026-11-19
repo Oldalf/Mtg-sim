@@ -142,6 +142,10 @@ export const ENTER_AGAIN = new Set([
   'Sepulchral Primordial',
   'Elvish Visionary',
 ]);
+/** Greater Good is left alone (it would mill us out) with fewer cards than this in the library. */
+export const GREATER_GOOD_MIN_LIBRARY = 15;
+/** Discarding: a land beyond this many on the battlefield is surplus. */
+export const SURPLUS_LANDS = 7;
 /** Plumb the Forbidden: sacrifice at most this many creatures, and keep our life at this or more afterwards. */
 export const PLUMB_MOST = 3;
 export const PLUMB_LIFE_FLOOR = 15;
@@ -213,17 +217,15 @@ export const DRAW_CARDS = [
   'Village Rites',
   'Simulacrum Shaper',
   'Insidious Fungus',
-  ...Object.keys(SACRIFICE_DRAW_SPELLS),
+  'Deadly Dispute',
+  'Plumb the Forbidden',
   SKULLCLAMP,
   MIDNIGHT_REAPER,
-  MOLDERVINE_RECLAMATION,
   CORPSE_AUGUR,
-  TIRELESS_TRACKER,
-  'Elvish Visionary',
   GREATER_GOOD,
-  AYARA,
-  'Grim Backwoods',
 ];
+/** Cards that make us discard: --diag reports their net cards (drawn minus discarded). */
+export const DISCARD_CARDS = [GREATER_GOOD];
 /** Draws that count for another card: Clues are Tireless Tracker's. */
 export const DRAW_SOURCE_COUNTS_FOR: Record<string, string> = {
   Clue: TIRELESS_TRACKER,

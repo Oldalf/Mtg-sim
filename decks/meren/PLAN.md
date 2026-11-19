@@ -175,3 +175,58 @@ Only Ayara passed the noise at 4,000. The leaders went to 16,000 games (goldfish
 | Ayara for Packleader, Midnight Reaper for Opportunist | +2.7 | +2.4 | +0.3 | 9.28 |
 
 **Verdict.** Looks real at 16,000: Ayara (+2.4 by T8, +2.0 by T10, about 0.08 turns faster), and any pair with Ayara (+2.4 to +3.6 by T8). Skullclamp, Deadly Dispute and Plumb the Forbidden are at the edge of the noise (about +1 by T8, +1.1 to +1.4 by T10): a small gain, not proven. The rest are within noise. Ayara is no draw card here: it draws 0.77 cards when played. What helps is its drain (1 life each time a black creature enters, and 1 gained), and the simulator wins by damage. What counts for card draw: Skullclamp draws the most for its slot among the clean cards (4.71 cards in the games it is played, about 2 per use), Corpse Augur 3.8 and Midnight Reaper 3.0 (Reaper costs 1 life per card, Augur X life), Deadly Dispute and Costly Plunder exactly 2 (net +1 after the spell and a creature, but the Treasure helps), Moldervine Reclamation 5.7 but only in 11.6% of games (5 mana). Tracker and Grim Backwoods draw under 1 card (Clues cost {2}, Backwoods {2}{B}{G} and a land slot). Greater Good's 23 cards is misleading: it discards 3 each time (net power minus 3) and loops a returned Grave Titan, and the win turn didn't improve. None of them moved the "out of cards" or hand-size measures beyond noise, so the smoothing the deck wants isn't visible in goldfish, where Packleader's loss (about 4 cards in the games it is played) is replaced one for one. Not run in the pod: these cards don't change interaction. What goldfish can't see: Ayara needs BBB (the sim does pay it from the B sources the deck has), and Corpse Augur and Reaper cost life that a pod punishes. Pontus decides; `decklist.txt` and `lists/proposed.txt` are unchanged.
+
+### T6: card draw round 2 (2026-11-19)
+
+Pontus's changes after round 1: no Ayara (it is the commander of his other deck, and her gain was drain, not draw), no drain cards. Seven cards: Skullclamp, Corpse Augur, Plumb the Forbidden, Midnight Reaper, Deadly Dispute, Night's Whisper, Greater Good. Three cuts: Garruk's Packleader, Morbid Opportunist and Unearth (Unearth can go to Gale; Persist is the better one here). New: card-flow measures in `--diag` (cards discarded, cards milled, net cards = drawn minus discarded, cards left in the library, life, creature cards in the graveyard), a smarter Greater Good (see below), and the pod at Helga, Edgar, Teval. Base `lists/proposed.txt`, default settings, same seeds. Prices as in the first table (Scryfall bulk data of 2026-11-13: Skullclamp €5.51, Greater Good €2.26, Plumb €0.61, Deadly Dispute €0.54, Night's Whisper €0.48, Midnight Reaper €0.28, Corpse Augur €0.14); check Cardmarket before buying.
+
+Greater Good: it discards to feed the graveyard (Pontus: a form of mill, like Liliana). The discard is chosen by `greaterGoodDiscardValue`: a land beyond 7 on the battlefield first, then creature cards (Meren and reanimation bring them back), most of all one Meren can return at once, spells last. It stays out with under 15 cards in the library, and at Meren's end step it sacrifices a big creature Meren returns right away. Surveil and other discards keep the old values (the first version changed surveil too and moved the base list; that was caught by `--regress check` and fixed, the base rows below match the earlier base, 79.5 at turn 10).
+
+**Each card in each of the three slots, 4,000 games** (goldfish noise ±2.2): difference to the base in wins by turn 8 / by turn 10, slot Packleader | Opportunist | Unearth. Base: 22.5 / 79.5, no impact T6 38.1.
+
+| In for | Packleader | Opportunist | Unearth | No impact T6 (P / O / U) | Played in % | Cards it drew when played |
+|---|---|---|---|---|---|---|
+| Skullclamp | +1.2 / +1.0 | +1.0 / +1.1 | +0.6 / +1.1 | −1.5 / −1.9 / +0.4 | 19.5 | 4.71 |
+| Deadly Dispute | +0.9 / +1.0 | +1.1 / +1.0 | +0.6 / +1.0 | −0.9 / −1.7 / +0.5 | 16.5 | 2.01 |
+| Plumb the Forbidden | +0.6 / +0.9 | +0.7 / +0.6 | +0.9 / +0.5 | −1.0 / −1.7 / +0.5 | 15.1 | 3.01 |
+| Night's Whisper | +0.8 / +0.9 | +0.6 / +0.8 | +0.5 / +1.2 | −0.1 / −0.9 / +1.4 | 16.9 | 2.01 |
+| Corpse Augur | +0.7 / +0.4 | +0.5 / +0.5 | +0.4 / +0.5 | −0.2 / −0.9 / +1.2 | 12.9 | 3.79 |
+| Midnight Reaper | +0.4 / +0.6 | −0.1 / +0.5 | +0.1 / +0.1 | +0.3 / −0.2 / +1.9 | 21.4 | 3.02 |
+| Greater Good | +0.2 / +0.5 | +0.6 / +0.5 | +0.1 / +0.3 | −0.1 / −0.9 / +1.5 | 11.8 | 22.4 (net 10.0 after its discards) |
+
+Everything is within noise. Taking Unearth out costs about 1.5 points on the no-impact measure (more games without a returned creature by turn 6) with every card, the other two slots don't.
+
+**Card flow** (`--diag`, 4,000 games, Packleader slot; base: 10.63 cards drawn by turn 8, 0.50 discarded, 8.34 milled, net 10.12, 70.19 cards left in the library, 1.65 creature cards in the graveyard at turn 6):
+
+| In for Packleader | Drawn by T8 | Discarded | Milled | Net | Library left | Creature cards in graveyard T6 |
+|---|---|---|---|---|---|---|
+| Skullclamp | +0.36 | +0.11 | −0.03 | +0.25 | −0.29 | +0.03 |
+| Deadly Dispute | +0.08 | −0.03 | +0.03 | +0.11 | −0.12 | 0.00 |
+| Plumb the Forbidden | +0.15 | 0.00 | +0.03 | +0.15 | −0.20 | +0.01 |
+| Night's Whisper | +0.13 | 0.00 | −0.05 | +0.13 | −0.08 | −0.04 |
+| Corpse Augur | +0.05 | +0.03 | −0.15 | +0.01 | +0.14 | +0.02 |
+| Midnight Reaper | +0.05 | −0.03 | −0.16 | +0.08 | +0.12 | −0.03 |
+| Greater Good | +0.75 | +0.68 | −0.08 | +0.06 | −0.65 | −0.02 |
+
+The deck already mills 8.3 cards by turn 8 (Entomber, Salvage, Wayfinder, Liliana, Skull Prophet...), so Greater Good's 3 discards a use barely change the graveyard: it draws about 6 and discards 3 in the games it is played (net 10 cards over the whole game, 11.8% of games), but the games where it shows up were already strong. The library stays above 10 cards at turn 8 in 99.6% of games for every list (decking is not a problem).
+
+**Decide: 16,000 games** (goldfish ±1.1) and the pod (`npm run pod -- meren:<list> helga edgar teval -n 4000 --no-log`, 25% is an even share, ±2). Pairs are in the Packleader and Opportunist slots, triples also take Unearth's:
+
+| List | Win by T8 | by T10 | by T12 | Avg turn | No impact T6 (4,000) | Net cards T8 (4,000) | Pod win | Pod out first |
+|---|---|---|---|---|---|---|---|---|
+| lists/proposed.txt | 23.2 | 79.1 | 96.6 | 9.38 | 38.1 | 10.12 | 30.9 | 27.4 |
+| Skullclamp for Packleader | +1.0 | +1.4 | +0.1 | 9.33 | | | +0.6 | +0.1 |
+| Deadly Dispute for Packleader | +1.1 | +1.3 | +0.1 | 9.34 | | | +0.4 | +0.1 |
+| Plumb the Forbidden for Packleader | +1.0 | +1.1 | +0.1 | 9.34 | | | +0.2 | +0.2 |
+| Night's Whisper for Packleader | +0.8 | +0.9 | +0.1 | 9.35 | | | +0.3 | +0.1 |
+| Greater Good for Packleader | +0.5 | +0.9 | 0.0 | 9.36 | | | 0.0 | +0.3 |
+| Corpse Augur for Packleader | | | | | | | +0.2 | +0.3 |
+| Midnight Reaper for Packleader | | | | | | | −0.4 | +0.8 |
+| Skullclamp + Deadly Dispute | +1.8 | +1.8 | +0.1 | 9.31 | −3.0 | +0.25 | | |
+| Skullclamp + Greater Good | +1.1 | +1.6 | +0.1 | 9.32 | −2.3 | +0.23 | | |
+| Deadly Dispute + Greater Good | +1.2 | +1.5 | +0.1 | 9.32 | −1.8 | +0.09 | | |
+| Greater Good + Plumb the Forbidden | +1.2 | +1.4 | +0.1 | 9.33 | −1.8 | +0.07 | | |
+| Skullclamp + Dispute + Greater Good (Unearth out too) | +1.5 | +2.3 | +0.3 | 9.30 | −1.7 | +0.35 | +0.6 | +0.7 |
+| Skullclamp + Dispute + Plumb (Unearth out too) | +2.0 | +2.5 | +0.4 | 9.30 | −2.3 | +0.40 | | |
+
+**Verdict.** Looks real at 16,000, but small: Skullclamp, Deadly Dispute and Plumb the Forbidden each add about 1 point by turn 8 and 1.1 to 1.4 by turn 10 (just above ±1.1), and the combinations add up: Skullclamp with Deadly Dispute +1.8 / +1.8, the triples with Unearth out +1.5 to +2.0 by turn 8 and +2.3 to +2.5 by turn 10 (the best: Skullclamp, Deadly Dispute and Plumb the Forbidden). Night's Whisper is at the edge too; Greater Good, Corpse Augur and Midnight Reaper are within noise alone. In the pod nothing changes beyond noise (30.5 to 31.5 against 30.9), also for the cards that cost life (Reaper, Augur, Plumb, Whisper). On the card draw problem: the best lists draw about 0.3 to 1.2 more cards by turn 8 (Skullclamp, Greater Good) and keep life about 0.7 higher, but net cards are +0.1 to +0.4 and the "out of cards" and hand-size measures don't move beyond noise; the deck's draw problem isn't visible in goldfish. Skullclamp is the best clean draw (2 cards a use, and it turns tokens into cards). Not tested: Greater Good with a Meren-less loop of its own, and Unearth in Gale. Pontus decides; `decklist.txt` and `lists/proposed.txt` are unchanged.

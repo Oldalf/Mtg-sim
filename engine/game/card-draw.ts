@@ -179,7 +179,7 @@ export function sacrificeToGreaterGood(
   const power = game.power(creature);
   game.sacrifice(creature);
   game.draw(power, GREATER_GOOD);
-  game.discard(GREATER_GOOD_DISCARDS);
+  game.discard(GREATER_GOOD_DISCARDS, GREATER_GOOD);
   return true;
 }
 

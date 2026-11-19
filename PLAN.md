@@ -107,6 +107,8 @@ Done (2026-11-18): `noImpact` is now Pontus's "Meren out and the engine running"
 
 Done (2026-11-18, card draw round): 13 draw cards got rules (`engine/game/card-draw.ts`: the sacrifice spells, Reaper, Moldervine, Augur, Tracker and Clues, Skullclamp, Greater Good, Ayara, Elvish Visionary; Grim Backwoods; Night's Whisper's life) and each was tested in Garruk's Packleader's slot, the leaders also at 16,000 games and in Morbid Opportunist's slot. `--diag` counts the cards each draw card drew in the games where it was played. Only Ayara (a drain, not a draw) is clearly better; Skullclamp, Deadly Dispute and Plumb are at the edge of the noise (table in `decks/meren/PLAN.md`).
 
+Done (2026-11-19, draw round 2): without Ayara and the drain cards, seven cards tested in the slots of Garruk's Packleader, Morbid Opportunist and Unearth, with card-flow measures (discarded, milled, net cards), a smarter Greater Good, pairs and triples at 16,000 games and the pod at Helga, Edgar, Teval. Best: Skullclamp, Deadly Dispute and Plumb the Forbidden for the three slots (+2.0 by turn 8, +2.5 by turn 10); the pod is unchanged. Pontus decides (table in `decks/meren/PLAN.md`).
+
 ## T7. Sam & Frodo: analyze Pontus's logs (Sonnet 5.5, after P)
 
 Pontus will add real games to `decks/samfrodo/logs/` (one so far, `game1_t8_pippin_alpha.txt`, already analyzed in `decks/samfrodo/PLAN.md`).

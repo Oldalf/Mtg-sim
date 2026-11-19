@@ -3,7 +3,7 @@ import * as path from 'path';
 import { ROOT, landMakes, CardDef } from '../../engine/cards/cards';
 import { CFG, SETTING_DESCRIPTIONS } from './config';
 import { MerenGame } from './game';
-import { DRAW_CARDS } from './cards';
+import { DISCARD_CARDS, DRAW_CARDS } from './cards';
 import { runMerenTests } from './tests/meren.test';
 import { DiagRow } from '../../engine/run/runner';
 import {
@@ -58,6 +58,71 @@ const drawMetricsOf = (name: string) => [
         ? averageOf(played, (row) => row[drewKey(name)] ?? 0)
         : 0;
     },
+  },
+];
+// Cards in and out (Pontus, 2026-11-19): the draws, discards and mill, and what's left of the library.
+const LOW_LIBRARY = 10;
+const averageAtTurn8 = (key: string) => (rows: DiagRow[]) =>
+  averageOf(
+    rows.filter((row) => win(row) > 8),
+    (row) => row[key] ?? 0,
+  );
+const cardFlowMetrics = [
+  {
+    label: 'Average cards discarded by end of turn 8',
+    unit: 'n' as const,
+    measure: averageAtTurn8('discarded8'),
+  },
+  {
+    label: 'Average cards milled by end of turn 8',
+    unit: 'n' as const,
+    measure: averageAtTurn8('milled8'),
+  },
+  {
+    label: 'Average net cards by end of turn 8 (drawn minus discarded)',
+    unit: 'n' as const,
+    measure: (rows: DiagRow[]) =>
+      averageAtTurn8('drawn8')(rows) - averageAtTurn8('discarded8')(rows),
+  },
+  {
+    label: 'Average cards left in the library at end of turn 8',
+    unit: 'n' as const,
+    measure: averageAtTurn8('library8'),
+  },
+  {
+    label:
+      'Library down to ' +
+      LOW_LIBRARY +
+      ' cards or fewer at end of turn 8, game still going (%)',
+    unit: '%' as const,
+    measure: (rows: DiagRow[]) =>
+      percentOf(
+        rows,
+        (row) => win(row) > 8 && (row.library8 ?? 99) <= LOW_LIBRARY,
+      ),
+  },
+  {
+    label: 'Average life at end of turn 8',
+    unit: 'n' as const,
+    measure: averageAtTurn8('life8'),
+  },
+  {
+    label: 'Average creature cards in the graveyard at end of turn 5',
+    unit: 'n' as const,
+    measure: (rows: DiagRow[]) =>
+      averageOf(
+        rows.filter((row) => win(row) > 5),
+        (row) => row.graveyardCreatures5 ?? 0,
+      ),
+  },
+  {
+    label: 'Average creature cards in the graveyard at end of turn 6',
+    unit: 'n' as const,
+    measure: (rows: DiagRow[]) =>
+      averageOf(
+        rows.filter((row) => win(row) > 6),
+        (row) => row.graveyardCreatures6 ?? 0,
+      ),
   },
 ];
 const slow5 = (row: DiagRow) => win(row) > 5 && (row.spent5 ?? 0) < 9;
@@ -278,7 +343,18 @@ export const deck = {
           (row) => row.drawn8 ?? 0,
         ),
     },
+    ...cardFlowMetrics,
     ...DRAW_CARDS.flatMap(drawMetricsOf),
+    ...DISCARD_CARDS.map((name) => ({
+      label: `${name}: net cards when played (drawn minus discarded)`,
+      unit: 'n' as const,
+      measure: (rows: DiagRow[]) => {
+        const played = rows.filter((row) => row['net:' + name] != null);
+        return played.length
+          ? averageOf(played, (row) => row['net:' + name] ?? 0)
+          : 0;
+      },
+    })),
   ],
   // --hands: what to look for in an opening hand
   handFeatures: [
