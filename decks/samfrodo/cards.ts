@@ -12,6 +12,11 @@ export const SAM = 'Sam, Loyal Attendant';
 export const GOLLUM = 'Gollum, Obsessed Stalker';
 /** Archidekt's Ring card: its counter = how many times the Ring has tempted us. */
 export const RING_TRACKER = 'The Ring // The Ring Tempts You';
+/** A Background: each of our commanders on the battlefield drains 1 from each opponent when an artifact or
+ *  creature of ours goes to the graveyard (so 2 with Sam and Frodo both out). */
+export const AGENT_OF_THE_IRON_THRONE = 'Agent of the Iron Throne';
+/** {T}: draw a card, only in a turn we created a token. (Its 10/10 Eldrazi ability is not modelled.) */
+export const IDOL_OF_OBLIVION = 'Idol of Oblivion';
 
 export const FOOD = makeArtifactToken('Food');
 export const CLUE = makeArtifactToken('Clue');
@@ -34,6 +39,7 @@ export const VALUE: Record<string, number> = {
   'Arcane Signet': 80,
   'Mirkwood Bats': 80,
   'Marionette Apprentice': 78,
+  [AGENT_OF_THE_IRON_THRONE]: 78,
   'Popular Egotist': 76,
   'Susurian Voidborn': 76,
   'Peregrin Took': 76,
@@ -80,6 +86,9 @@ export const VALUE: Record<string, number> = {
   "Night's Whisper": 52,
   'Second Harvest': 50,
   'Crypt Incursion': 30,
+  [IDOL_OF_OBLIVION]: 56,
+  'Deadly Dispute': 54,
+  'Eternal Witness': 50,
 };
 /** Removal: no targets in a goldfish game (held; the first cards to discard). */
 export const HOLD = new Set([

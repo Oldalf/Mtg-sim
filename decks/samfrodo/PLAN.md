@@ -77,6 +77,28 @@ The log ends on turn 9 without a win, but by Pontus's count it was won: a huge b
 
 **Lands (2026-11-07):** the check lands (Isolated Chapel, Sunpetal Grove, Woodland Cemetery), the battle land (Canopy Vista), the snarls and Fortified Village now enter tapped when their condition fails. Murmuring Bosk is tapped and costs 1 life for {W} or {B} ({G} is free), Brushland costs 1 life for a colour and nothing for {C}. Effect: win by turn 10 / 12 / 14 now 67.2 / 95.5 / 99.3% (was 69.0 / 95.6 / 99.3), average turn 9.88 (was 9.81). The AI with your logged game's draws still wins on turn 9 in 99% of runs.
 
+## Swap test: Agent of the Iron Throne and list B (2026-11-23)
+
+Pontus's request: a solid mid bracket 3 deck, more card draw that is a token payoff, more resilience (Eternal Witness, freed from Meren), the two colourless utility lands out. Base `decklist.txt`, same seeds, default settings, full power. Goldfish 16,000 games a list (noise about ±1.1); pod `samfrodo:<list> gale meren aesi edgar`, 16,000 games (an even share is 20%, noise about ±1).
+
+- **List B** (37 lands): Access Tunnel → Llanowar Wastes, Graypelt Refuge (always tapped) → Caves of Koilos, Rogue's Passage → the draw card, Pristine Talisman → Eternal Witness, Farmer Cotton → Agent of the Iron Throne.
+- New rules: Agent of the Iron Throne (each of Sam and Frodo on the battlefield drains 1 from each opponent when an artifact or creature of ours goes to the graveyard), Idol of Oblivion (draws in a turn we created a token; the 10/10 is not modelled), Deadly Dispute (sacrifices the spare token that drains most, never a Treasure; its Treasure goes through `makeTokens`), Eternal Witness's enter trigger (in a pod it prefers held removal). The pain lands play by their text.
+
+| list (price, Scryfall 2026-11-13) | win T10 | win T12 | 1st dead T12 | avg turn | pod win | pod out first |
+| --- | --- | --- | --- | --- | --- | --- |
+| decklist.txt | 67.9 | 95.5 | 96.2 | 9.87 | 15.1% | 23.4% |
+| Agent of the Iron Throne for Farmer Cotton (€0.92) | +5.3 | +1.2 | +1.0 | 9.70 | 16.3% | 22.9% |
+| List B with Idol of Oblivion (€3.17) | +6.7 | +1.6 | +1.3 | 9.65 | 16.2% | 23.4% |
+| List B with Deadly Dispute (€0.54) | +6.6 | +1.6 | +1.3 | 9.64 | 16.6% | 22.8% |
+
+(Eternal Witness €0.93; Pontus already owns both pain lands. Check Cardmarket before buying.)
+
+- **Agent of the Iron Throne is real** (+5.3 by turn 10 on its own, 4,000 games +5.9): most of list B's gain. Every Food, Treasure and Clue sacrificed with both commanders out is 2 to each opponent.
+- **The other four swaps add about +1.4 more** by turn 10 together (beyond noise only just). Idol and Dispute are the same (74.6 vs 74.5): pick by taste.
+- **Pod:** about +1 to +1.5 points (15.1 → 16.2–16.6%, at the edge of the noise), still below an even share, out first unchanged. Eternal Witness's value (getting removal back) does not show beyond that. The deck stays mid-pack: no sign of it becoming oppressive.
+- Pontus (2026-11-23): list B with Deadly Dispute looks best so far; `decklist.txt` unchanged for now.
+- The fixed-seed pod report (`regress_baseline/pod.txt`) was re-recorded with this work: it had drifted on main with the Master drain finish (d97ee19) and the Meren list update (f31d471), not with these rules.
+
 ## Next
 
 - Pontus's game logs (two so far): replay them with `npm run sim -- samfrodo --analyze logs/<file>.txt` (the analyzer may need token names from the logs, `logToken`).

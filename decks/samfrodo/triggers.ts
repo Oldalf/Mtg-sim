@@ -1,5 +1,6 @@
 import { TREASURE } from '../../engine/cards/tokens';
-import { FOOD, SAGA, TOK } from './cards';
+import { AGENT_OF_THE_IRON_THRONE, FOOD, SAGA, TOK } from './cards';
+import { enterTriggerOfCommonCard } from '../../engine/game/common-permanents';
 import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards/cards';
 import { Permanent, Zone } from '../../engine/game/game-types';
@@ -141,7 +142,7 @@ function resolveOwnEnterTrigger(
     const target = game.bestCounterTarget();
     if (target) target.counters += 1;
     game.makeTokens([FOOD]);
-  }
+  } else if (!permanent.token) enterTriggerOfCommonCard(game, permanent); // Eternal Witness
 }
 
 /** Put into the graveyard from the battlefield (sacrificed, destroyed; tokens too). */
@@ -160,6 +161,9 @@ export function onPermanentDied(
     else if (name === 'Susurian Voidborn') {
       game.drainTargetOpponent(1);
       game.gainLife(1);
+    } else if (name === AGENT_OF_THE_IRON_THRONE) {
+      const commanders = game.commandersOnBattlefield();
+      if (commanders > 0) game.drainEach(commanders);
     }
   }
   if (permanent.card.name === 'Susurian Voidborn') {

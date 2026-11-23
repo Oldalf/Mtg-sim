@@ -6,7 +6,15 @@ import { Rng } from '../../../engine/util/rng';
 import { CFG } from '../config';
 import { SamFrodoGame } from '../game';
 import { TREASURE } from '../../../engine/cards/tokens';
-import { FOOD, CLUE, FRODO, SAM, GOLLUM } from '../cards';
+import {
+  AGENT_OF_THE_IRON_THRONE,
+  CLUE,
+  FOOD,
+  FRODO,
+  GOLLUM,
+  IDOL_OF_OBLIVION,
+  SAM,
+} from '../cards';
 import { activateWitchsOven, returnCauldronFamiliar } from '../actions';
 import { playCombat } from '../combat';
 import { finishWithMasterDrain } from '../drain-finish';
@@ -355,6 +363,65 @@ export function runSamFrodoTests(): boolean {
   boskGame = board([], [], [], ['Brushland']);
   boskGame.pay(Cost.parse('{W}'));
   check('  ... {W} costs 1 life', boskGame.myLife, 39);
+
+  // Agent of the Iron Throne: 1 per commander on the battlefield, for an artifact or creature of ours dying
+  game = board([AGENT_OF_THE_IRON_THRONE, SAM, FRODO]);
+  game.sacrifice(game.makeTokens([FOOD])[0]);
+  check(
+    'Agent of the Iron Throne with Sam and Frodo: a Food sacrificed = 2 each',
+    game.life,
+    [38, 38, 38],
+  );
+  game = board([AGENT_OF_THE_IRON_THRONE, SAM]);
+  const agentFood = game.makeTokens([FOOD])[0];
+  check(
+    '  ... with Sam only: the AI counts 1 each for the Food',
+    game.sacrificeValue(agentFood),
+    3,
+  );
+  game = board([AGENT_OF_THE_IRON_THRONE]);
+  game.sacrifice(game.makeTokens([FOOD])[0]);
+  check('  ... with no commander out: nothing', game.life, [40, 40, 40]);
+
+  // Idol of Oblivion: draws only in a turn we created a token
+  game = board([IDOL_OF_OBLIVION]);
+  const idolCandidates = () =>
+    game.candidates(true).filter((candidate) => candidate.score === 50).length;
+  check('Idol of Oblivion: no token this turn, no draw', idolCandidates(), 0);
+  game.makeTokens([FOOD]);
+  check('  ... after a Food: it may draw', idolCandidates(), 1);
+  game.startTurn();
+  check('  ... next turn: not until a new token', idolCandidates(), 0);
+
+  // Deadly Dispute: sacrifices a spare Food (not a Treasure), draws 2, its Treasure gets Peregrin's Food
+  game = board(['Peregrin Took'], ['Deadly Dispute']);
+  game.battlefield.push(new Permanent(FOOD), new Permanent(FOOD));
+  game.battlefield[game.battlefield.length - 1].token = true;
+  game.battlefield[game.battlefield.length - 2].token = true;
+  const handBefore = game.hand.length;
+  const dispute = game
+    .candidates(false)
+    .find((candidate) => candidate.score === 54);
+  check(
+    'Deadly Dispute: offered with a spare Food',
+    dispute !== undefined,
+    true,
+  );
+  dispute?.action();
+  check(
+    '  ... draws 2 (hand -1 +2), one Food gone, a Treasure and a Food made',
+    [game.hand.length - handBefore, count(game, FOOD), count(game, TREASURE)],
+    [1, 2, 1],
+  );
+
+  // Eternal Witness: the best card in the graveyard comes back (in a goldfish game not held removal)
+  game = board([], ['Eternal Witness'], ['Swords to Plowshares', 'Sol Ring']);
+  game.castPerm(C.get('Eternal Witness'));
+  check(
+    'Eternal Witness: Sol Ring back to hand',
+    game.hand.map((card) => card.name),
+    ['Sol Ring'],
+  );
 
   return allPassed;
 }

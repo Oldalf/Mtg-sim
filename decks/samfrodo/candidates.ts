@@ -3,6 +3,7 @@ import {
   FOOD,
   GOLLUM,
   HOLD,
+  IDOL_OF_OBLIVION,
   OWN_KILL,
   RAMP_EARLY,
   SAM,
@@ -25,6 +26,9 @@ import { eatFood } from './combat';
 import type { SamFrodoGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Candidate, Permanent } from '../../engine/game/game-types';
+import { castSacrificeDrawSpell } from '../../engine/game/card-draw';
+import { TREASURE } from '../../engine/cards/tokens';
+import { firstMax } from '../../engine/util/lists';
 
 /** Adds one thing the AI may do: its score, what it costs, whether it is an instant or sorcery, and how to do it. */
 type AddCandidate = (
@@ -141,6 +145,21 @@ function addCardInHandCandidate(
           false,
           () => castFarmerCotton(game, card, xValue),
         );
+      return;
+    }
+    case 'Deadly Dispute': {
+      // sacrifice the spare token whose death drains most (the worst one on a tie); not a Treasure that may pay for it
+      const spare = game
+        .spareSacrifices()
+        .filter((permanent) => permanent.card !== TREASURE);
+      if (spare.length) {
+        const toSacrifice = firstMax(spare, (permanent) =>
+          game.sacrificeValue(permanent),
+        );
+        add(54, cost, true, () =>
+          castSacrificeDrawSpell(game, card, [toSacrifice]),
+        );
+      }
       return;
     }
     case 'Second Harvest': {
@@ -277,6 +296,16 @@ function addPermanentAbilityCandidate(
     add(30, new Cost(1), false, () =>
       payTapAndActivate(game, permanent, new Cost(1), () =>
         game.makeTokens([FOOD]),
+      ),
+    );
+  else if (
+    name === IDOL_OF_OBLIVION &&
+    !permanent.tapped &&
+    game.hasCreatedTokenThisTurn
+  )
+    add(50, new Cost(), false, () =>
+      payTapAndActivate(game, permanent, new Cost(), () =>
+        game.draw(1, IDOL_OF_OBLIVION),
       ),
     );
   else if (name === 'Nuka-Cola Vending Machine' && !permanent.tapped && main2)

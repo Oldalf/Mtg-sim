@@ -12469,5 +12469,44 @@
   "layout": "normal",
   "oracle_id": "5effaa94-7f87-4485-8959-473d584c5034",
   "scryfall_id": "606c5f42-fe5f-4dcd-b8f4-b67beabe3f0a"
+ },
+ "Agent of the Iron Throne": {
+  "name": "Agent of the Iron Throne",
+  "full_name": "Agent of the Iron Throne",
+  "mana_cost": "{2}{B}",
+  "type_line": "Legendary Enchantment — Background",
+  "oracle": "Commander creatures you own have \"Whenever an artifact or creature you control is put into a graveyard from the battlefield, each opponent loses 1 life.\"",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "325032d5-c452-4454-8976-82f86fee5ab8",
+  "scryfall_id": "5a5984d3-1e76-4d97-9373-b59cfa9c38ae"
+ },
+ "Caves of Koilos": {
+  "name": "Caves of Koilos",
+  "full_name": "Caves of Koilos",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{T}: Add {W} or {B}. This land deals 1 damage to you.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "33de01e9-ce5a-42d4-afcb-343cd54a6d80",
+  "scryfall_id": "ca814c7c-9908-4727-b556-3f85bfd653ca"
+ },
+ "Idol of Oblivion": {
+  "name": "Idol of Oblivion",
+  "full_name": "Idol of Oblivion",
+  "mana_cost": "{2}",
+  "type_line": "Artifact",
+  "oracle": "{T}: Draw a card. Activate only if you created a token this turn.\n{8}, {T}, Sacrifice this artifact: Create a 10/10 colorless Eldrazi creature token.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "c232d974-9c65-4bce-b045-e5a7cc0c62e0",
+  "scryfall_id": "cbc25725-1485-4d98-abe1-906520f868d8"
  }
 }

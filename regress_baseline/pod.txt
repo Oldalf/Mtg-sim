@@ -12,7 +12,7 @@ Won by the end of round (share of all games):
 deck              4      5      6      7      8      9     10     11     12     14
 gale           0.0%   1.0%   8.0%  19.0%  28.5%  30.5%  31.0%  31.0%  31.0%  31.5%
 meren          0.0%   0.0%   0.0%   0.5%   6.0%  13.0%  17.5%  19.0%  20.5%  21.0%
-samfrodo       0.0%   0.0%   0.0%   0.5%   2.5%   9.0%  13.0%  15.5%  15.5%  16.0%
+samfrodo       0.0%   0.0%   0.0%   0.5%   3.0%   9.0%  13.0%  15.5%  15.5%  16.0%
 aesi           0.0%   1.0%   5.0%  10.0%  15.5%  19.0%  20.5%  21.0%  21.0%  21.0%
 edgar          0.0%   0.0%   0.0%   1.0%   4.0%   7.0%   8.5%  10.0%  10.0%  10.5%
 
@@ -26,5 +26,5 @@ samfrodo              0.00         -          0.00              0.11           0
 aesi                  0.23     17.8%          0.00              0.20           0.13      0.01          0.17                  0.06
 edgar                 0.02      0.0%          0.00              0.23           0.53      0.00          0.00                  0.00
 
-How each deck went out (share of its games): gale: life 53.5%, decked 0.5%, its own doing 0.5%; meren: life 47.5%, poison 7.0%, decked 2.5%, its own doing 1.0%; samfrodo: life 52.0%, poison 9.0%, decked 1.5%; aesi: life 66.5%, poison 6.5%; edgar: life 59.0%, poison 8.5%, decked 1.5%, its own doing 0.5%.
+How each deck went out (share of its games): gale: life 53.5%, decked 0.5%, its own doing 0.5%; meren: life 48.0%, poison 7.0%, decked 2.5%, its own doing 0.5%; samfrodo: life 52.0%, poison 9.0%, decked 1.5%; aesi: life 66.5%, poison 6.5%; edgar: life 59.0%, poison 8.5%, decked 1.5%, its own doing 0.5%.
 "declared" = the deck's own win (a combo, a kill line, its win rule) with others still alive; "standing" = it was the last one left.

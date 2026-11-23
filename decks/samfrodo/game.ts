@@ -20,6 +20,7 @@
  */
 import { TREASURE } from '../../engine/cards/tokens';
 import {
+  AGENT_OF_THE_IRON_THRONE,
   ART_TOKENS,
   BASIC_COL,
   CLUE,
@@ -76,6 +77,7 @@ export class SamFrodoGame extends CreatureDeckGame {
   gollumHit: boolean[] = new Array(this.life.length).fill(false); // opponents dealt combat damage by Gollum this game
   pigRibbonCounters = 0; // Prize Pig's ribbon counters
   farmerCottonX = 0; // X for Farmer Cotton while it enters
+  hasCreatedTokenThisTurn = false; // Idol of Oblivion
   allInWin = false; // the win came from an all-in attack (for the stats)
 
   // ---------------------------------------------------------------- log analyzer hooks
@@ -175,6 +177,7 @@ export class SamFrodoGame extends CreatureDeckGame {
         )
       : list;
     const out: Permanent[] = [];
+    this.hasCreatedTokenThisTurn = true;
     for (const tokenCard of all) {
       const permanent = this.enter(tokenCard, 'token', {
         token: true,
@@ -219,6 +222,15 @@ export class SamFrodoGame extends CreatureDeckGame {
 
   foodsOnBattlefield(): Permanent[] {
     return this.battlefield.filter((permanent) => permanent.card === FOOD);
+  }
+
+  /** Sam and Frodo on the battlefield (Agent of the Iron Throne gives each of them its drain). */
+  commandersOnBattlefield(except: Permanent | null = null): number {
+    return this.battlefield.filter(
+      (permanent) =>
+        permanent !== except &&
+        (permanent.card.name === SAM || permanent.card.name === FRODO),
+    ).length;
   }
 
   halflingCount(): number {
@@ -310,6 +322,8 @@ export class SamFrodoGame extends CreatureDeckGame {
       else if (name === 'Marionette Master' && art)
         total += this.power(battlefieldPermanent);
       else if (name === 'Susurian Voidborn' && (art || cre)) total += 1 + bond;
+      else if (name === AGENT_OF_THE_IRON_THRONE && (art || cre))
+        total += alive * this.commandersOnBattlefield(permanent);
     }
     return total;
   }
@@ -439,6 +453,11 @@ export class SamFrodoGame extends CreatureDeckGame {
     if (RAMP_EARLY.has(card.name) && this.manaSources() >= 7) return 25;
     return super.cardValue(card);
   }
+  /** Eternal Witness: in a pod, removal is worth getting back (it is held, so worth little in a goldfish game). */
+  override returnToHandValue(card: CardDef): number {
+    if (this.isPodGame() && HOLD.has(card.name)) return 70;
+    return this.cardValue(card);
+  }
   override discardValue(card: CardDef): number {
     return this.cardValue(card);
   }
@@ -476,6 +495,7 @@ export class SamFrodoGame extends CreatureDeckGame {
       this.merryUsed =
         false;
     this.belladonnaTriggers = 0;
+    this.hasCreatedTokenThisTurn = false;
   }
 
   override upkeep(): void {
@@ -571,7 +591,11 @@ export class SamFrodoGame extends CreatureDeckGame {
       this.draw(2);
       this.loseLife(2);
     } else if (name === 'Harmonize') this.draw(3);
-    else if (name === 'Cultivate') {
+    else if (name === 'Deadly Dispute') {
+      // the engine's rule, but the Treasure is made our way (Peregrin, Manufactor, Bats see it)
+      this.draw(2 * this.spellSacrifices, name);
+      this.makeTokens(new Array(this.spellSacrifices).fill(TREASURE));
+    } else if (name === 'Cultivate') {
       fetchLand(this, 'basic', true);
       fetchLand(this, 'basic', true, true);
     } else if (name === 'Farseek') fetchLand(this, 'types', true);
