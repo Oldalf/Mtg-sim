@@ -9,7 +9,19 @@ import { buildCandidates } from '../candidates';
 import { TREASURE } from '../../../engine/cards/tokens';
 import { Arena } from '../../../engine/game/game-types';
 import { playGoldfishOpponentsTurns } from '../../../engine/game/turn';
-import { GRAY_MERCHANT, MEREN } from '../cards';
+import { GRAY_MERCHANT, MEREN, TOKENS } from '../cards';
+import {
+  EVOLUTIONARY_LEAP,
+  FIEND_ARTISAN,
+  HIGH_MARKET,
+  PROMISE_OF_ACLAZOTZ,
+  SIDISI_REGENT,
+  YAHENNI,
+  activateFiendArtisan,
+  activateSidisi,
+  castFoulRebirth,
+  castFromAdventure,
+} from '../../../engine/game/sacrifice-outlets';
 import { JUNJI } from '../junji';
 
 const repeatName = (cardName: string, count: number) =>
@@ -190,6 +202,7 @@ export function runMerenTests(): boolean {
 
   checkOpponentsTurns(check);
   checkJunji(check);
+  checkSacrificeOutlets(check);
 
   // win: 100 damage in total or 2 opponents dead
   game = board();
@@ -570,6 +583,132 @@ function checkOpponentsTurns(check: Check): void {
     '... not without a sacrifice outlet',
     isOnBattlefieldCount(game, JUNJI),
     1,
+  );
+}
+
+/** The outlet round (2026-11-23): the new outlets at Meren's end step, and the Pod-like cards. */
+function checkSacrificeOutlets(check: Check): void {
+  const withZombie = (game: MerenGame) => {
+    game.createTokens(TOKENS.zombie);
+    return game;
+  };
+  let game = withZombie(board([MEREN, YAHENNI]));
+  game.endStep();
+  check(
+    'Yahenni is a free outlet at the end step: the Zombie is sacrificed',
+    [isOnBattlefieldCount(game, 'Zombie'), game.experienceCounters],
+    [0, 1],
+  );
+  game = withZombie(
+    board([MEREN], [], [], [...repeatName('Swamp', 3), HIGH_MARKET]),
+  );
+  game.endStep();
+  check(
+    'High Market: taps to sacrifice the Zombie, we gain 1',
+    [
+      isOnBattlefieldCount(game, 'Zombie'),
+      game.findPermanent(HIGH_MARKET)?.tapped,
+      game.myLife,
+    ],
+    [0, true, 41],
+  );
+  game = withZombie(board([MEREN, EVOLUTIONARY_LEAP]));
+  game.library = ['Swamp', 'Forest', 'Grave Titan', 'Swamp'].map((name) =>
+    C.get(name),
+  );
+  game.endStep();
+  check(
+    'Evolutionary Leap ({G}): sacrifice the Zombie, Grave Titan to the hand, Swamp and Forest to the bottom',
+    [game.hand.map((card) => card.name), game.library.map((card) => card.name)],
+    [['Grave Titan'], ['Swamp', 'Swamp', 'Forest']],
+  );
+  game = withZombie(board([MEREN, 'Vampiric Rites']));
+  game.endStep();
+  check(
+    'Vampiric Rites ({1}{B}) sacrifices the Zombie at the end step: a card and 1 life',
+    [isOnBattlefieldCount(game, 'Zombie'), game.hand.length, game.myLife],
+    [0, 1, 41],
+  );
+  game = withZombie(board([MEREN, PROMISE_OF_ACLAZOTZ, 'Sakura-Tribe Elder']));
+  game.endStep();
+  check(
+    'Promise of Aclazotz at the end step: Sakura-Tribe Elder sacrificed, the Zombie copied',
+    [
+      isOnBattlefieldCount(game, 'Sakura-Tribe Elder'),
+      isOnBattlefieldCount(game, 'Zombie'),
+    ],
+    [0, 2],
+  );
+
+  // Foul Rebirth, then Promise of Aclazotz from exile
+  game = board(['Llanowar Elves'], [PROMISE_OF_ACLAZOTZ]);
+  const promise = game.hand[0];
+  castFoulRebirth(game, promise, game.findPermanent('Llanowar Elves')!);
+  check(
+    'Foul Rebirth: the Elves for a 4/3 flying Vampire Demon, the card on an adventure in exile',
+    [
+      isOnBattlefieldCount(game, 'Vampire Demon'),
+      game.exile.includes(promise),
+      game.cardsOnAdventure.length,
+    ],
+    [1, true, 1],
+  );
+  castFromAdventure(game, promise);
+  check(
+    '... then Promise of Aclazotz is cast from exile',
+    [isOnBattlefieldCount(game, PROMISE_OF_ACLAZOTZ), game.exile.length],
+    [1, 0],
+  );
+
+  // Fiend Artisan: +1/+1 per creature card in the graveyard; {X}{B}, {T}, sacrifice: Grave Titan (X = 6, 7 lands)
+  game = board(
+    [FIEND_ARTISAN, 'Llanowar Elves'],
+    [],
+    ['Viscera Seer', 'Satyr Wayfinder'],
+  );
+  const artisan = game.findPermanent(FIEND_ARTISAN)!;
+  check(
+    'Fiend Artisan is a 3/3 with two creature cards in the graveyard',
+    game.power(artisan),
+    3,
+  );
+  game.library.push(C.get('Grave Titan'));
+  check(
+    '... and fetches Grave Titan for X = 6 by sacrificing the Elves',
+    [
+      activateFiendArtisan(
+        game,
+        artisan,
+        game.findPermanent('Llanowar Elves')!,
+        6,
+        (cards) => cards[0],
+      ),
+      isOnBattlefieldCount(game, 'Grave Titan'),
+      artisan.tapped,
+    ],
+    [true, 1, true],
+  );
+
+  // Sidisi: sacrifice mana value 1 (Llanowar Elves) for mana value 2 from the graveyard
+  game = board(
+    [SIDISI_REGENT, 'Llanowar Elves'],
+    [],
+    ['Fauna Shaman', 'Grave Titan'],
+  );
+  const sidisi = game.findPermanent(SIDISI_REGENT)!;
+  const elves = game.findPermanent('Llanowar Elves')!;
+  check(
+    'Sidisi: mana value 1 cannot return Grave Titan (6)',
+    activateSidisi(game, sidisi, elves, game.graveyard[1]),
+    false,
+  );
+  check(
+    '... but returns Fauna Shaman (2)',
+    [
+      activateSidisi(game, sidisi, elves, game.graveyard[0]),
+      isOnBattlefieldCount(game, 'Fauna Shaman'),
+    ],
+    [true, 1],
   );
 }
 

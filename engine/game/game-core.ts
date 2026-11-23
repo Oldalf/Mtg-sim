@@ -200,6 +200,8 @@ export abstract class GameCore<S = unknown> {
   sorceriesHaveFlashThisTurn = false;
   nextSorceryHasFlash = false;
   opponentsEndStepCasts = 0;
+  /** Cards in exile on an adventure: their permanent half may be cast from there (sacrifice-outlets.ts). */
+  cardsOnAdventure: CardDef[] = [];
   /** Copies to make of the next instant or sorcery we cast this turn (Thunderclap Drake, spell-copies.ts). */
   copiesOfNextInstantOrSorcery = 0;
   landPlayed = false;

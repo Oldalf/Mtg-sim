@@ -105,6 +105,50 @@ Pod, list 3 against Helga, Edgar and Teval, 8,000 games (±1): Meren wins 33.5% 
 
 **Verdict.** The plays are right but small in the numbers: under +1 point everywhere, inside the noise. The Snake is the part that shows (lists 2 and 3 have Ophiomancer: experience +0.2 at turn 6, Morbid Opportunist draws 2.1 → 2.5 cards in list 2). The new Junji choice alone (opponents_turns=0) changes nothing measurable in goldfish. The off-turn Junji line needs Junji, an outlet and Gray Merchant together, which is rare (about 1 game in 100 in list 3 before the end-step rule). The pod and `decklist.txt` regress baselines were re-recorded (20 of 600 goldfish seeds changed). The earlier Junji swap tests (Massacre Wurm for Junji) used the old fixed order.
 
+### Why "no impact" (`--diag` breakdown, 2026-11-23, 16,000 games each)
+
+Each no-impact game has one cause: Meren not out; Meren out but she only returned creatures to the hand (mana value above her experience); Meren out with no creature card in the graveyard at her end steps. For the last two together: how often no free sacrifice outlet was out at the end of the turn, and how often Meren came down that same turn.
+
+| % of all games | List 1 T5 | List 2 T5 | List 3 T5 | List 1 T6 | List 2 T6 | List 3 T6 |
+|---|---|---|---|---|---|---|
+| No impact | 67.2 | 62.7 | 63.8 | 41.7 | 37.1 | 37.7 |
+| Meren not out | 7.1 | 5.9 | 5.7 | 3.8 | 3.1 | 3.0 |
+| Meren out, only returned to the hand | 42.1 | 42.4 | 44.3 | 29.7 | 28.3 | 29.3 |
+| Meren out, no creature card in the graveyard | 17.9 | 14.4 | 13.8 | 8.2 | 5.7 | 5.4 |
+| (of Meren-out ones) no free sacrifice outlet | 68.5 | 63.9 | 63.7 | 62.6 | 56.3 | 56.1 |
+| (of Meren-out ones) Meren came down that turn | 16.6 | 14.9 | 15.1 | 6.3 | 5.3 | 5.5 |
+
+**Reading.** Two thirds of the no-impact games are Meren returning a creature to the hand because her experience is too low: she is working, as card advantage, but not as reanimation. In most of the Meren-out games there is no free sacrifice outlet, so nothing dies and the experience stays low. An empty graveyard is the smaller cause (6–8% of games at turn 6), and Meren arriving late is rare.
+
+**Three levels** (Pontus, 2026-11-23: returning to the hand counts, as lower impact). `--diag` now prints full impact (Meren out, something reanimated or 2+ experience), low impact (Meren only returned creatures to the hand) and no impact (Meren not out, or nothing in the graveyard for her); the old "no impact" measure is replaced. Games still going, 16,000 each:
+
+| % of all games | List 1 T5 | List 2 T5 | List 3 T5 | List 1 T6 | List 2 T6 | List 3 T6 |
+|---|---|---|---|---|---|---|
+| Full impact | 32.8 | 37.3 | 36.2 | 58.0 | 62.5 | 62.0 |
+| Low impact | 42.1 | 42.4 | 44.3 | 29.7 | 28.3 | 29.3 |
+| No impact | 25.1 | 20.3 | 19.5 | 12.0 | 8.8 | 8.3 |
+
+The lever for moving low to full is a sacrifice outlet early (Pontus: more outlets, and a balance of outlets and fodder, like Woe Strider which is both).
+
+### Outlet round: six sacrifice outlets (2026-11-23)
+
+Pontus's candidates, cuts suggested from a fresh `--rank` of `decklist.txt` (16,000 games: Eternal Witness −0.29 turns, Timeless Witness −0.23, Songs of the Damned −0.19, Garruk's Packleader −0.15, Puppeteer Clique −0.12, Mosswort Bridge the lowest land) and approved by him. Rules for the new cards in `engine/game/sacrifice-outlets.ts` (Yahenni, High Market, Evolutionary Leap, Fiend Artisan, Sidisi, Promise of Aclazotz with its adventure Foul Rebirth), Meren's choices in `candidates.ts` and `game.ts`. Meren's end step and the opponents' turns now use any outlet in this order: a free creature outlet, High Market, Evolutionary Leap ({G}), Vampiric Rites ({1}{B}); before, only free creature outlets fed Meren, so Vampiric Rites was never used there and the base row is a little better than earlier ones (73.4 against 71.3 by turn 10). Base `decklist.txt`, 16,000 goldfish games each, same seeds, `--diag`, noise about ±2 points as printed (±1.1 by the usual rule at 16,000). Prices: one printing's euro price in Scryfall's data of 2026-11-13, check Cardmarket before buying.
+
+| List | Win by T8 | by T10 | by T12 | Full impact T5 / T6 | No free outlet (Meren out, below full) T5 / T6 |
+|---|---|---|---|---|---|
+| decklist.txt | 18.3 | 73.4 | 95.6 | 32.5 / 58.0 | 68.8 / 62.4 |
+| Yahenni for Eternal Witness (€0.30) | +0.8 | +1.2 | +0.2 | +0.1 / +0.7 | −5.4 / −5.9 |
+| Evolutionary Leap for Timeless Witness (€1.30) | −0.1 | +0.0 | +0.0 | +0.0 / +0.4 | +0.1 / −0.0 |
+| Fiend Artisan for Songs of the Damned (€5.24) | +0.7 | +2.1 | +0.4 | +0.1 / +0.2 | −0.3 / −0.3 |
+| Sidisi for Garruk's Packleader (€0.25) | +0.6 | +0.4 | −0.1 | +0.4 / +0.7 | −0.1 / −0.4 |
+| Promise of Aclazotz for Puppeteer Clique (€0.45) | +0.6 | −0.5 | −0.3 | −0.3 / −0.9 | −1.3 / −2.8 |
+| High Market for Mosswort Bridge (€0.88) | +0.5 | +0.3 | +0.1 | +0.4 / +0.2 | −0.2 / −0.0 |
+| all six together | **+4.1** | **+3.8** | +0.2 | +0.3 / +1.0 | −7.5 / −9.6 |
+
+How the AI used them (2,000 logged games of the six together): Promise of Aclazotz's end-step sacrifice 636 times, Sidisi 416 activations, Fiend Artisan mostly fetches Gray Merchant, Twilight Diviner or Viscera Seer, Foul Rebirth cast 93 times (the enchantment from exile 68), Evolutionary Leap 138 activations, High Market as an outlet only 5 times (it is the backup after a free outlet, and is usually tapped for mana by then).
+
+**Verdict.** All six together win sooner: +4.1 points by turn 8 and +3.8 by turn 10, beyond the noise; the slow tail is a turn shorter (the 90th-percentile game wins on turn 11). Alone, each swap is within the noise except Fiend Artisan (+2.1 by turn 10, at the edge): the gain comes from having several outlets, not from one card. They do **not** move Meren's early engine: full impact at turn 5 / 6 is +0.3 / +1.0 although a free outlet is out much more often. With an outlet out, what is missing is fodder: the AI only sacrifices tokens and creatures whose death is worth something. Pontus decides; `decklist.txt` is unchanged, the combined list is kept as `lists/outlets_all_six.txt`.
+
 ## Next ideas
 
 - Test replacements for the weakest slots (more ramp or graveyard filling), with `npm run sim -- meren decklist.txt lists/test.txt -n 5000`.

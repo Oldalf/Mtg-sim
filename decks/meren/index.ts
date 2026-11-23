@@ -23,19 +23,87 @@ const lands = (hand: CardDef[]) =>
 const turnOf = (row: DiagRow, key: string) => (row[key] ?? 13) as number;
 const win = (row: DiagRow) => turnOf(row, 'win');
 const THIN = 3;
-// "No meaningful impact" (Pontus, 2026-11-18): the game is still going at the end of turn 5 / 6 and Meren's engine
-// isn't running: Meren isn't on the battlefield, or nothing has come back from a graveyard and she has fewer than
-// ENGINE_EXPERIENCE experience counters. (The first definition was: nothing reanimated and under THIN nonland
+// Meren's impact by the end of turn 5 / 6, in games still going (Pontus: 2026-11-18, three levels on 2026-11-23):
+// - full: Meren is out, and something has come back from a graveyard or she has ENGINE_EXPERIENCE+ experience;
+// - low: Meren is out and only returned creature cards to the hand (their mana value above her experience);
+// - none: Meren isn't out, or she found no creature card in the graveyard at her end steps.
+// (The first definition, 2026-11-18, counted low as none; the one before: nothing reanimated and under THIN nonland
 // permanents.)
 const ENGINE_EXPERIENCE = 2;
 // Card draw: a hand this small at the end of turn 6 / 8 means we're playing off the top of the library.
 const OUT_OF_CARDS = 1;
-const isEngineRunning = (row: DiagRow, turn: 5 | 6) =>
-  (row['merenOn' + turn] ?? 0) === 1 &&
+type ImpactTurn = 5 | 6;
+const isGameGoing = (row: DiagRow, turn: ImpactTurn) => win(row) > turn;
+const isMerenOut = (row: DiagRow, turn: ImpactTurn) =>
+  (row['merenOn' + turn] ?? 0) === 1;
+const isFullImpact = (row: DiagRow, turn: ImpactTurn) =>
+  isGameGoing(row, turn) &&
+  isMerenOut(row, turn) &&
   ((row['reanim' + turn] ?? 0) > 0 ||
     (row['exp' + turn] ?? 0) >= ENGINE_EXPERIENCE);
-const noImpact = (row: DiagRow, turn: 5 | 6) =>
-  win(row) > turn && !isEngineRunning(row, turn);
+const isLowImpact = (row: DiagRow, turn: ImpactTurn) =>
+  isGameGoing(row, turn) &&
+  isMerenOut(row, turn) &&
+  !isFullImpact(row, turn) &&
+  (row['toHand' + turn] ?? 0) > 0;
+const isNoImpact = (row: DiagRow, turn: ImpactTurn) =>
+  isGameGoing(row, turn) && !isFullImpact(row, turn) && !isLowImpact(row, turn);
+const impactMetrics = (turn: ImpactTurn) => {
+  // the games where Meren is out but her engine isn't running yet: why
+  const isMerenOutBelowFull = (row: DiagRow) =>
+    isMerenOut(row, turn) && (isLowImpact(row, turn) || isNoImpact(row, turn));
+  const percentOfMerenOutBelowFull = (
+    rows: DiagRow[],
+    isCounted: (row: DiagRow) => boolean,
+  ) => {
+    const merenOutRows = rows.filter(isMerenOutBelowFull);
+    return merenOutRows.length ? percentOf(merenOutRows, isCounted) : 0;
+  };
+  return [
+    {
+      label: `Full impact by turn ${turn}: Meren out, something reanimated or ${ENGINE_EXPERIENCE}+ experience (%)`,
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => isFullImpact(row, turn)),
+    },
+    {
+      label: `Low impact by turn ${turn}: Meren out, she only returned creatures to the hand (%)`,
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => isLowImpact(row, turn)),
+    },
+    {
+      label: `No impact by turn ${turn}: Meren not out, or nothing in the graveyard for her (%)`,
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(rows, (row) => isNoImpact(row, turn)),
+    },
+    {
+      label: `No impact by turn ${turn}, of which Meren not out (%)`,
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOf(
+          rows,
+          (row) => isNoImpact(row, turn) && !isMerenOut(row, turn),
+        ),
+    },
+    {
+      label: `Meren out, low or no impact by turn ${turn}: no free sacrifice outlet (% of those games)`,
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOfMerenOutBelowFull(
+          rows,
+          (row) => (row['outlet' + turn] ?? 0) !== 1,
+        ),
+    },
+    {
+      label: `Meren out, low or no impact by turn ${turn}: she came down on turn ${turn} (% of those games)`,
+      unit: '%' as const,
+      measure: (rows: DiagRow[]) =>
+        percentOfMerenOutBelowFull(rows, (row) => row.merenOut === turn),
+    },
+  ];
+};
 // What each draw card gave: the cards it drew in the games where it was played (0 when it never was: see its share).
 const drewKey = (name: string) => 'drew:' + name;
 const gamesWherePlayed = (rows: DiagRow[], name: string) =>
@@ -261,19 +329,8 @@ export const deck = {
           (row) => row.exp6 ?? 0,
         ),
     },
-    {
-      label:
-        'No impact by turn 5: Meren not out, or nothing reanimated and under ' +
-        ENGINE_EXPERIENCE +
-        ' experience (%)',
-      unit: '%' as const,
-      measure: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 5)),
-    },
-    {
-      label: 'No impact by turn 6: the same (%)',
-      unit: '%' as const,
-      measure: (rows: DiagRow[]) => percentOf(rows, (row) => noImpact(row, 6)),
-    },
+    ...impactMetrics(5),
+    ...impactMetrics(6),
     {
       label: 'Average cards in hand at end of turn 5',
       unit: 'n' as const,

@@ -39,6 +39,18 @@ import {
   sacrificeToGreaterGood,
 } from '../../engine/game/card-draw';
 import { CLUE } from '../../engine/cards/tokens';
+import {
+  EVOLUTIONARY_LEAP,
+  FIEND_ARTISAN,
+  PROMISE_OF_ACLAZOTZ,
+  SIDISI_REGENT,
+  activateFiendArtisan,
+  activateSidisi,
+  castFoulRebirth,
+  castFromAdventure,
+  fiendArtisanCost,
+  isDemon,
+} from '../../engine/game/sacrifice-outlets';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Candidate, Permanent } from '../../engine/game/game-types';
 
@@ -82,6 +94,11 @@ export function buildCandidates(game: MerenGame, main2: boolean): Candidate[] {
       addNonCreatureCandidate(game, card, add, merenOut, sacrificeOrder);
   }
   addPermanentAbilityCandidates(game, add, main2, sacrificeOrder);
+  for (const card of game.cardsOnAdventure)
+    if (game.exile.includes(card))
+      add(45, game.effectiveCost(card), false, () =>
+        castFromAdventure(game, card),
+      );
   addGraveyardAndMillCandidates(game, add);
   if (main2) addClueCandidate(game, add);
   return candidates;
@@ -225,6 +242,21 @@ function addRampAndDrawCandidate(
     case GREATER_GOOD:
       add(52, cost, false, () => game.castPerm(card));
       return true;
+    case EVOLUTIONARY_LEAP:
+      add(55, cost, false, () => game.castPerm(card));
+      return true;
+    case PROMISE_OF_ACLAZOTZ: {
+      // Foul Rebirth first (a 4/3 flyer for a creature Meren can return), then the enchantment from exile
+      const toSacrifice = game
+        .expendableCreatures()
+        .find((permanent) => !isDemon(permanent.card));
+      if (toSacrifice)
+        add(58, game.effectiveCost(card, FOUL_REBIRTH_COST), true, () =>
+          castFoulRebirth(game, card, toSacrifice),
+        );
+      add(35, cost, false, () => game.castPerm(card));
+      return true;
+    }
     case 'Breach the Multiverse':
       add(88, cost, false, () => game.castInstantOrSorcery(card));
       return true;
@@ -398,7 +430,11 @@ function addPermanentAbilityCandidates(
         add(44, Cost.parse('{2}{B}{G}'), false, () =>
           activateGrimBackwoods(game, permanent, toSacrifice),
         );
-    } else if (main2 && name === 'Sakura-Tribe Elder')
+    } else if (name === FIEND_ARTISAN && isReady)
+      addFiendArtisanCandidate(game, permanent, add);
+    else if (name === SIDISI_REGENT && isReady)
+      addSidisiCandidate(game, permanent, add);
+    else if (main2 && name === 'Sakura-Tribe Elder')
       add(50, new Cost(), false, () => {
         game.sacrifice(permanent);
         game.fetchBasic();
@@ -417,6 +453,83 @@ function addPermanentAbilityCandidates(
           activateVampiricRites(game, token),
         );
     }
+  }
+}
+
+/** Foul Rebirth, Promise of Aclazotz's adventure. */
+const FOUL_REBIRTH_COST = Cost.parse('{2}{B}');
+/** Fiend Artisan and Sidisi only fetch a creature worth at least this much. */
+const POD_TARGET_MIN_VALUE = 55;
+/** Fiend Artisan's X is tried up to this. */
+const FIEND_ARTISAN_MOST_X = 10;
+
+/** Fiend Artisan: sacrifice a creature we don't mind losing for the best creature of the library we can pay X for. */
+function addFiendArtisanCandidate(
+  game: MerenGame,
+  artisan: Permanent,
+  add: AddCandidate,
+): void {
+  const toSacrifice = game.expendableCreatures([artisan])[0];
+  if (!toSacrifice) return;
+  let mostX = -1;
+  while (
+    mostX < FIEND_ARTISAN_MOST_X &&
+    fiendArtisanCost(game, mostX + 1) !== null
+  )
+    mostX++;
+  const choices = game.library.filter(
+    (card) => card.isCreature && card.manaValue <= mostX,
+  );
+  if (!choices.length) return;
+  const target = mostValuable(game, choices);
+  if (game.battlefieldValue(target) < POD_TARGET_MIN_VALUE) return;
+  // X just big enough for it; the card itself is picked after the sacrifice (a death trigger may change the library)
+  const x = target.manaValue;
+  add(66, fiendArtisanCost(game, x)!, false, () =>
+    activateFiendArtisan(game, artisan, toSacrifice, x, (cards) =>
+      mostValuable(game, cards),
+    ),
+  );
+}
+
+function mostValuable(game: MerenGame, cards: CardDef[]): CardDef {
+  return cards.reduce((best, card) =>
+    game.battlefieldValue(card) > game.battlefieldValue(best) ? card : best,
+  );
+}
+
+/** Sidisi: sacrifice a creature of mana value X for the best creature card of mana value X + 1 in the graveyard,
+ *  when that trade gains enough. */
+function addSidisiCandidate(
+  game: MerenGame,
+  sidisi: Permanent,
+  add: AddCandidate,
+): void {
+  let bestCreature: Permanent | null = null;
+  let bestTarget: CardDef | null = null;
+  let bestGain = 0;
+  for (const creature of game.sacrificeOrder([sidisi])) {
+    if (game.isStolen(creature)) continue;
+    for (const card of game.graveyard) {
+      if (!card.isCreature || card.manaValue !== creature.card.manaValue + 1)
+        continue;
+      const gain = game.battlefieldValue(card) - game.sacrificeCost(creature);
+      if (
+        gain > bestGain &&
+        game.battlefieldValue(card) >= POD_TARGET_MIN_VALUE
+      ) {
+        bestGain = gain;
+        bestCreature = creature;
+        bestTarget = card;
+      }
+    }
+  }
+  if (bestCreature && bestTarget) {
+    const creature = bestCreature;
+    const target = bestTarget;
+    add(65, new Cost(), false, () =>
+      activateSidisi(game, sidisi, creature, target),
+    );
   }
 }
 

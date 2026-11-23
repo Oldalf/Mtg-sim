@@ -43,28 +43,27 @@ function sacrificeSnake(game: MerenGame): boolean {
   const snake = game.battlefield.find(
     (permanent) => permanent.card === TOKENS.snake,
   );
-  if (!snake || !game.findFreeSacrificeOutlet()) return false;
+  if (!snake || !game.hasOutletNow()) return false;
   const isWorthSomething =
     game.isOnBattlefield(MEREN) ||
     (game.isOnBattlefield('Morbid Opportunist') && !game.morbidUsed);
   if (!isWorthSomething) return false;
-  game.sacrifice(snake);
-  return true;
+  return game.sacrificeToOutlet(snake);
 }
 
 /**
  * Sacrifice Junji so it returns Gray Merchant (a drain, and a second one when Twilight Diviner copies it). Gray Merchant
- * on our battlefield goes first to a free outlet, so Junji brings it straight back. Junji goes to Greater Good when it
- * is out (5 cards), else to the free outlet; Meren can return it at our end step. Returns true when it was done.
+ * on our battlefield goes first to an outlet, so Junji brings it straight back. Junji goes to Greater Good when it
+ * is out (5 cards), else to another outlet; Meren can return it at our end step. Returns true when it was done.
  */
 function sacrificeJunjiForGrayMerchant(game: MerenGame): boolean {
   const junji = game.findPermanent(JUNJI);
   if (!junji) return false;
-  const freeOutlet = game.findFreeSacrificeOutlet();
+  const hasOutlet = game.hasOutletNow();
   const canUseGreaterGood =
     game.isOnBattlefield(GREATER_GOOD) &&
     game.library.length >= GREATER_GOOD_MIN_LIBRARY;
-  if (!freeOutlet && !canUseGreaterGood) return false;
+  if (!hasOutlet && !canUseGreaterGood) return false;
   const grayInGraveyard = game.graveyard.find(
     (card) => card.name === GRAY_MERCHANT,
   );
@@ -75,9 +74,9 @@ function sacrificeJunjiForGrayMerchant(game: MerenGame): boolean {
   if (!grayCard) return false;
   if (junjiTargetWorth(game, grayCard) < junjiDiscardWorth(game)) return false;
   if (!grayInGraveyard) {
-    if (!freeOutlet || !grayOnBattlefield) return false;
+    if (!hasOutlet || !grayOnBattlefield) return false;
     game.say('sacrifice Gray Merchant so Junji returns it');
-    game.sacrifice(grayOnBattlefield);
+    if (!game.sacrificeToOutlet(grayOnBattlefield)) return false;
   }
   game.say("sacrifice Junji at the end of an opponent's turn");
   sacrificeJunji(game, junji, canUseGreaterGood);
@@ -102,5 +101,5 @@ function sacrificeJunji(
   canUseGreaterGood: boolean,
 ): void {
   if (canUseGreaterGood) sacrificeToGreaterGood(game, junji);
-  else game.sacrifice(junji);
+  else game.sacrificeToOutlet(junji);
 }

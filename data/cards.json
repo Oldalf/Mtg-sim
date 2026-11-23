@@ -12508,5 +12508,78 @@
   "layout": "normal",
   "oracle_id": "c232d974-9c65-4bce-b045-e5a7cc0c62e0",
   "scryfall_id": "cbc25725-1485-4d98-abe1-906520f868d8"
+ },
+ "Fiend Artisan": {
+  "name": "Fiend Artisan",
+  "full_name": "Fiend Artisan",
+  "mana_cost": "{B/G}{B/G}",
+  "type_line": "Creature — Nightmare",
+  "oracle": "This creature gets +1/+1 for each creature card in your graveyard.\n{X}{B/G}, {T}, Sacrifice another creature: Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle. Activate only as a sorcery.",
+  "power": "1",
+  "toughness": "1",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "43b8456a-3333-4936-a09c-324327619c36",
+  "scryfall_id": "6cd9d800-6d31-42e2-87d2-772db0ff95ed"
+ },
+ "Evolutionary Leap": {
+  "name": "Evolutionary Leap",
+  "full_name": "Evolutionary Leap",
+  "mana_cost": "{1}{G}",
+  "type_line": "Enchantment",
+  "oracle": "{G}, Sacrifice a creature: Reveal cards from the top of your library until you reveal a creature card. Put that card into your hand and the rest on the bottom of your library in a random order.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "44cf5ef4-2b0f-4d9d-bf87-8835424721d0",
+  "scryfall_id": "4d007d3c-3356-4394-9bcd-2b2c1031c20b"
+ },
+ "Promise of Aclazotz": {
+  "name": "Promise of Aclazotz",
+  "full_name": "Promise of Aclazotz // Foul Rebirth",
+  "mana_cost": "{1}{B}",
+  "type_line": "Enchantment",
+  "oracle": "At the beginning of your end step, you may sacrifice a non-Demon creature. If you do, populate. (Create a token that's a copy of a creature token you control.)",
+  "power": null,
+  "toughness": null,
+  "keywords": [
+   "Populate"
+  ],
+  "layout": "adventure",
+  "oracle_id": "4ef4b4f9-47cd-4862-8cbb-b6e624d6e6fc",
+  "scryfall_id": "b88a3b40-bf04-4017-be97-08ab86e331d1",
+  "back": {
+   "name": "Foul Rebirth",
+   "mana_cost": "{2}{B}",
+   "type_line": "Sorcery — Adventure",
+   "oracle": "Sacrifice a non-Demon creature. If you do, create a 4/3 white and black Vampire Demon creature token with flying."
+  }
+ },
+ "Sidisi, Regent of the Mire": {
+  "name": "Sidisi, Regent of the Mire",
+  "full_name": "Sidisi, Regent of the Mire",
+  "mana_cost": "{1}{B}",
+  "type_line": "Legendary Creature — Zombie Snake Warlock",
+  "oracle": "{T}, Sacrifice a creature you control with mana value X other than Sidisi: Return target creature card with mana value X plus 1 from your graveyard to the battlefield. Activate only as a sorcery.",
+  "power": "1",
+  "toughness": "3",
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "72074972-418d-4dce-83cf-ce8cf310fc42",
+  "scryfall_id": "47374d23-662b-4ba7-a94f-37c9bc759cc6"
+ },
+ "High Market": {
+  "name": "High Market",
+  "full_name": "High Market",
+  "mana_cost": "",
+  "type_line": "Land",
+  "oracle": "{T}: Add {C}.\n{T}, Sacrifice a creature: You gain 1 life.",
+  "power": null,
+  "toughness": null,
+  "keywords": [],
+  "layout": "normal",
+  "oracle_id": "86fb3749-37d6-48a6-8524-71e996850307",
+  "scryfall_id": "894aa6b6-0d08-4c43-8734-9cb7b31359c6"
  }
 }

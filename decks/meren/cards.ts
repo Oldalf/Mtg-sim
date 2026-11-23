@@ -11,6 +11,14 @@ import {
   SKULLCLAMP,
   TIRELESS_TRACKER,
 } from '../../engine/game/card-draw';
+import {
+  EVOLUTIONARY_LEAP,
+  FIEND_ARTISAN,
+  HIGH_MARKET,
+  PROMISE_OF_ACLAZOTZ,
+  SIDISI_REGENT,
+  YAHENNI,
+} from '../../engine/game/sacrifice-outlets';
 
 export const MEREN = 'Meren of Clan Nel Toth';
 export const DGHOR_BLOODLETTER = "D'Ghor Bloodletter";
@@ -97,6 +105,12 @@ export const VALUE: Record<string, number> = {
   [SKULLCLAMP]: 55,
   [GREATER_GOOD]: 50,
   [MOLDERVINE_RECLAMATION]: 50,
+  // sacrifice outlets (Pontus, 2026-11-23: the outlet round)
+  [YAHENNI]: 58,
+  [FIEND_ARTISAN]: 62,
+  [SIDISI_REGENT]: 55,
+  [EVOLUTIONARY_LEAP]: 50,
+  [PROMISE_OF_ACLAZOTZ]: 45,
 };
 export const MANA_ELVES = new Set([
   'Llanowar Elves',
@@ -164,6 +178,7 @@ export const FREE_OUTLETS = [
   'Umbral Collar Zealot',
   'Woe Strider',
   'Carrion Feeder',
+  YAHENNI,
 ];
 /** Edicts: each player sacrifices a creature; we lose our worst one (opponents have none in a goldfish). */
 export const EDICT_ETB = new Set([
@@ -211,6 +226,7 @@ C.registerKnown([
   'Village Rites',
   "Night's Whisper",
   'Grim Backwoods',
+  HIGH_MARKET,
   ...Object.keys(SACRIFICE_DRAW_SPELLS),
 ]);
 

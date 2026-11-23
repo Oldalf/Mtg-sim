@@ -46,6 +46,17 @@ import {
   resetOnceEachTurnAbilities,
 } from './opponents-turns';
 import { JUNJI } from './junji';
+import { activateVampiricRites } from './actions';
+import {
+  EVOLUTIONARY_LEAP,
+  HIGH_MARKET,
+  PROMISE_OF_ACLAZOTZ,
+  fiendArtisanBonus,
+  isDemon,
+  sacrificeToEvolutionaryLeap,
+  sacrificeToHighMarket,
+  sacrificeToPromiseOfAclazotz,
+} from '../../engine/game/sacrifice-outlets';
 import { onPermanentDied, onPermanentEntered } from './triggers';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { CLUE, TREASURE } from '../../engine/cards/tokens';
@@ -79,6 +90,9 @@ export class MerenGame extends CreatureDeckGame {
   reanimatedAtTurnEnd: number[] = []; // ... at the end of turns 4-6
   experienceAtTurnEnd: number[] = []; // Meren's experience at the end of turns 4-6
   merenOnBattlefieldAtTurnEnd: boolean[] = []; // ... and whether Meren was on the battlefield then
+  merenReturnsToHand = 0; // creature cards Meren returned to the hand (mana value above her experience)
+  returnedToHandAtTurnEnd: number[] = []; // ... at the end of turns 4-6
+  freeOutletAtTurnEnd: boolean[] = []; // a free sacrifice outlet on the battlefield at the end of turns 4-6
   cardsDrawn = 0; // cards drawn in the game (draw steps included, the opening hand not)
   cardsDrawnAtTurnEnd: number[] = []; // ... at the end of turns 4-8
   handAtTurnEnd: number[] = []; // cards in hand at the end of turns 4-8
@@ -125,6 +139,10 @@ export class MerenGame extends CreatureDeckGame {
       exp6: this.experienceAtTurnEnd[6] ?? null,
       merenOn5: Number(this.merenOnBattlefieldAtTurnEnd[5] ?? false),
       merenOn6: Number(this.merenOnBattlefieldAtTurnEnd[6] ?? false),
+      toHand5: this.returnedToHandAtTurnEnd[5] ?? null,
+      toHand6: this.returnedToHandAtTurnEnd[6] ?? null,
+      outlet5: Number(this.freeOutletAtTurnEnd[5] ?? false),
+      outlet6: Number(this.freeOutletAtTurnEnd[6] ?? false),
       drawn6: this.cardsDrawnAtTurnEnd[6] ?? null,
       drawn8: this.cardsDrawnAtTurnEnd[8] ?? null,
       hand8: this.handAtTurnEnd[8] ?? null,
@@ -502,6 +520,64 @@ export class MerenGame extends CreatureDeckGame {
       : null;
   }
 
+  /** Sacrifice this creature to the cheapest outlet we can use now: a free creature outlet (Viscera Seer may sacrifice
+   *  itself, the others only another creature), High Market (once, it taps), then with mana left Evolutionary Leap
+   *  ({G}: a creature card) and Vampiric Rites ({1}{B}: a card). False when none can take it. */
+  sacrificeToOutlet(creature: Permanent): boolean {
+    const freeOutlet = this.battlefield.find(
+      (permanent) =>
+        FREE_OUTLETS.includes(permanent.card.name) &&
+        (permanent !== creature || permanent.card.name === 'Viscera Seer'),
+    );
+    if (freeOutlet) {
+      this.sacrifice(creature);
+      return true;
+    }
+    const highMarket = this.battlefield.find(
+      (permanent) => permanent.card.name === HIGH_MARKET && !permanent.tapped,
+    );
+    if (highMarket) return sacrificeToHighMarket(this, highMarket, creature);
+    if (
+      this.isOnBattlefield(EVOLUTIONARY_LEAP) &&
+      sacrificeToEvolutionaryLeap(this, creature)
+    )
+      return true;
+    return (
+      this.isOnBattlefield('Vampiric Rites') &&
+      activateVampiricRites(this, creature)
+    );
+  }
+
+  /** Could sacrificeToOutlet take a creature now (without doing it)? */
+  hasOutletNow(): boolean {
+    return (
+      this.findFreeSacrificeOutlet() !== null ||
+      this.battlefield.some(
+        (permanent) => permanent.card.name === HIGH_MARKET && !permanent.tapped,
+      ) ||
+      (this.isOnBattlefield(EVOLUTIONARY_LEAP) &&
+        this.canPay(Cost.parse('{G}'), false)) ||
+      (this.isOnBattlefield('Vampiric Rites') &&
+        this.canPay(Cost.parse('{1}{B}'), false))
+    );
+  }
+
+  /** Promise of Aclazotz at our end step: sacrifice a token or a creature whose death is worth something (not a
+   *  Demon), then populate. A nontoken one first, so the token copy has a token to copy. */
+  private usePromiseOfAclazotz(): void {
+    if (!this.isOnBattlefield(PROMISE_OF_ACLAZOTZ)) return;
+    const choices = this.sacrificeOrder().filter(
+      (permanent) =>
+        !this.isStolen(permanent) &&
+        !FREE_OUTLETS.includes(permanent.card.name) &&
+        !isDemon(permanent.card) &&
+        (permanent.token || DEATH_VALUE.has(permanent.card.name)),
+    );
+    const choice =
+      choices.find((permanent) => !permanent.token) ?? choices[0] ?? null;
+    if (choice) sacrificeToPromiseOfAclazotz(this, choice);
+  }
+
   findFreeSacrificeOutlet(): Permanent | null {
     for (const name of FREE_OUTLETS) {
       const permanent = this.findPermanent(name);
@@ -523,12 +599,10 @@ export class MerenGame extends CreatureDeckGame {
   override powerBonus(permanent: Permanent): number {
     return permanent.card.name === 'Wight of the Reliquary'
       ? this.creaturesInGraveyard()
-      : 0;
+      : fiendArtisanBonus(this, permanent);
   }
   override toughnessBonus(permanent: Permanent): number {
-    return permanent.card.name === 'Wight of the Reliquary'
-      ? this.creaturesInGraveyard()
-      : 0;
+    return this.powerBonus(permanent);
   }
 
   /** Counts the cards drawn once the game is on, and which card drew them (for --diag). */
@@ -618,6 +692,9 @@ export class MerenGame extends CreatureDeckGame {
       this.reanimatedAtTurnEnd[this.turn] = this.reanimated;
       this.experienceAtTurnEnd[this.turn] = this.experienceCounters;
       this.merenOnBattlefieldAtTurnEnd[this.turn] = this.isOnBattlefield(MEREN);
+      this.returnedToHandAtTurnEnd[this.turn] = this.merenReturnsToHand;
+      this.freeOutletAtTurnEnd[this.turn] =
+        this.findFreeSacrificeOutlet() !== null;
     }
     super.startTurn();
     this.morbidUsed =
@@ -689,39 +766,31 @@ export class MerenGame extends CreatureDeckGame {
       ? this.chooseGreaterGoodSacrifice()
       : null;
     if (toGreaterGood) sacrificeToGreaterGood(this, toGreaterGood);
-    const outlet = this.findFreeSacrificeOutlet();
-    if (outlet) {
-      // sacrifice tokens and creatures whose death is worth something: each one is an experience counter
-      for (const permanent of this.sacrificeOrder()) {
-        if (permanent === outlet && outlet.card.name !== 'Viscera Seer')
-          continue;
-        if (
-          this.isStolen(permanent) ||
-          FREE_OUTLETS.includes(permanent.card.name) ||
-          (permanent.card.name === JUNJI && keepsJunjiForOpponentsTurn(this))
-        )
-          continue;
-        if (permanent.token || DEATH_VALUE.has(permanent.card.name))
-          this.sacrifice(permanent);
-      }
-      // the Gray Merchant loop: sacrifice it and let Meren bring it back (drain again)
-      const grayMerchant = this.findPermanent(GRAY_MERCHANT);
+    this.usePromiseOfAclazotz();
+    // sacrifice tokens and creatures whose death is worth something: each one is an experience counter
+    for (const permanent of this.sacrificeOrder()) {
       if (
-        grayMerchant &&
-        !grayMerchant.token &&
-        this.experienceCounters + 1 >= 5
+        this.isStolen(permanent) ||
+        FREE_OUTLETS.includes(permanent.card.name) ||
+        (permanent.card.name === JUNJI && keepsJunjiForOpponentsTurn(this))
       )
-        this.sacrifice(grayMerchant);
-      // a pod: sacrifice D'Ghor Bloodletter so Meren brings it back for a second -1/-1 (it stacks this turn)
-      const bloodletter = this.findPermanent(DGHOR_BLOODLETTER);
-      if (
-        bloodletter &&
-        !bloodletter.token &&
-        this.experienceCounters + 1 >= bloodletter.card.manaValue &&
-        this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
-      )
-        this.sacrifice(bloodletter);
+        continue;
+      if (permanent.token || DEATH_VALUE.has(permanent.card.name))
+        if (!this.sacrificeToOutlet(permanent)) break;
     }
+    // the Gray Merchant loop: sacrifice it and let Meren bring it back (drain again)
+    const grayMerchant = this.findPermanent(GRAY_MERCHANT);
+    if (grayMerchant && !grayMerchant.token && this.experienceCounters + 1 >= 5)
+      this.sacrificeToOutlet(grayMerchant);
+    // a pod: sacrifice D'Ghor Bloodletter so Meren brings it back for a second -1/-1 (it stacks this turn)
+    const bloodletter = this.findPermanent(DGHOR_BLOODLETTER);
+    if (
+      bloodletter &&
+      !bloodletter.token &&
+      this.experienceCounters + 1 >= bloodletter.card.manaValue &&
+      this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
+    )
+      this.sacrificeToOutlet(bloodletter);
     const candidates = this.graveyard.filter((card) => card.isCreature);
     if (!candidates.length) return;
     const score = (card: CardDef) =>
@@ -738,6 +807,7 @@ export class MerenGame extends CreatureDeckGame {
     } else {
       this.takeCardIfThere(best, 'graveyard');
       this.putCard(best, 'hand');
+      this.merenReturnsToHand++;
       this.say(
         `Meren (${this.experienceCounters} experience) returns to hand`,
         best,
