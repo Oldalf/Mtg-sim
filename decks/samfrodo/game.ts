@@ -38,6 +38,7 @@ import {
   isHalfling,
 } from './cards';
 import { buildCandidates } from './candidates';
+import { finishWithMasterDrain } from './drain-finish';
 import { playCombat } from './combat';
 import {
   onFoodSacrificed,
@@ -497,6 +498,8 @@ export class SamFrodoGame extends CreatureDeckGame {
 
   override develop(main2 = false): boolean {
     this.phase = main2 ? 'main2' : 'main1';
+    if (main2 && this.config.drain_finish && finishWithMasterDrain(this))
+      return true;
     return super.develop(main2);
   }
 

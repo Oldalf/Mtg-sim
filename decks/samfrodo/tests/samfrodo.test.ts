@@ -9,6 +9,7 @@ import { TREASURE } from '../../../engine/cards/tokens';
 import { FOOD, CLUE, FRODO, SAM, GOLLUM } from '../cards';
 import { activateWitchsOven, returnCauldronFamiliar } from '../actions';
 import { playCombat } from '../combat';
+import { finishWithMasterDrain } from '../drain-finish';
 
 const repeatName = (cardName: string, count: number) =>
   new Array(count).fill(cardName) as string[];
@@ -97,6 +98,44 @@ export function runSamFrodoTests(): boolean {
     'Marionette Master (4 power): a Food sacrificed = 4 to one opponent',
     game.life,
     [36, 40, 40],
+  );
+
+  // the Master finish: 6 Foods at 1 mana each (Sam), each drains 4 = 24 = three opponents at 8; at 40 life it does nothing
+  const masterBoard = (opponentLife: number) => {
+    const finishBoard = board(
+      [SAM, 'Marionette Master'],
+      [],
+      [],
+      repeatName('Swamp', 6),
+    );
+    finishBoard.findPermanent('Marionette Master')!.counters = 3;
+    finishBoard.makeTokens(new Array(6).fill(FOOD));
+    finishBoard.life = [opponentLife, opponentLife, opponentLife];
+    return finishBoard;
+  };
+  game = masterBoard(8);
+  check('Master finish: wins on 6 Foods', finishWithMasterDrain(game), true);
+  game = masterBoard(40);
+  check(
+    'Master finish: not enough, nothing sacrificed',
+    [finishWithMasterDrain(game), game.life, game.foodsOnBattlefield().length],
+    [false, [40, 40, 40], 6],
+  );
+
+  // with Second Harvest in hand: 3 Foods become 6 first
+  game = board(
+    [SAM, 'Marionette Master'],
+    ['Second Harvest'],
+    [],
+    repeatName('Forest', 12),
+  );
+  game.findPermanent('Marionette Master')!.counters = 3;
+  game.makeTokens(new Array(3).fill(FOOD));
+  game.life = [8, 8, 8];
+  check(
+    'Master finish: Second Harvest first, then 6 Foods',
+    finishWithMasterDrain(game),
+    true,
   );
 
   // Cauldron Familiar + Witch's Oven with Marionette Apprentice: oven eats Familiar (1 each), Food brings it back

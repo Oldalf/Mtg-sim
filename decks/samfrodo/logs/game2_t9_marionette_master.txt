@@ -1,0 +1,305 @@
+T0; Plains; moved library => hand
+T0; Sol Ring; moved library => hand
+T0; Supper for Spiders; moved library => hand
+T0; Gilded Goose; moved library => hand
+T0; Plains; moved library => hand
+T0; Trading Post; moved library => hand
+T0; Evolving Wilds; moved library => hand
+T0; Marionette Master; moved library => hand
+T0; Marionette Master; moved hand => library
+T1; Marionette Master; moved library => hand
+T1; Evolving Wilds; moved hand => battlefield
+T1; Evolving Wilds; tapped
+T1; Evolving Wilds; moved battlefield => graveyard
+T1; Forest; moved library => battlefield
+T1; Forest; tapped
+T2; Forest; untapped
+T2; Shire Shirriff; moved library => hand
+T2; Plains; moved hand => battlefield
+T2; Plains; tapped
+T2; Sol Ring; moved hand => battlefield
+T2; Forest; tapped
+T2; Gilded Goose; moved hand => battlefield
+T2; Food; moved miscCards => battlefield
+T3; Plains; untapped
+T3; Forest; untapped
+T3; Belladonna Took; moved library => hand
+T3; Plains; moved hand => battlefield
+T3; Gilded Goose; tapped
+T3; Frodo, Adventurous Hobbit; moved commandZone => battlefield
+T3; Plains; tapped
+T3; Forest; tapped
+T3; Sol Ring; tapped
+T3; Sam, Loyal Attendant; moved commandZone => battlefield
+T3; Plains; tapped
+T3; Belladonna Took; moved hand => battlefield
+T3; Food; moved miscCards => battlefield
+T4; Sol Ring; untapped
+T4; Gilded Goose; untapped
+T4; Forest; untapped
+T4; Plains; untapped
+T4; Plains; untapped
+T4; Cat Collector; moved library => hand
+T4; Plains; tapped
+T4; Sol Ring; tapped
+T4; Cat Collector; moved hand => battlefield
+T4; Food; moved miscCards => battlefield
+T4; Cat; moved miscCards => battlefield
+T4; Forest; moved library => hand
+T4; Forest; moved hand => battlefield
+T4; Food; moved miscCards => battlefield
+T4; Cat Collector; counter:+1 / +1=1
+T4; Frodo, Adventurous Hobbit; counter:+1 / +1=1
+T4; Sam, Loyal Attendant; counter:+1 / +1=1
+T4; Belladonna Took; counter:+1 / +1=1
+T4; Cat; counter:+1 / +1=1
+T4; Gilded Goose; counter:+1 / +1=1
+T4; Plains; tapped
+T4; Food; tapped
+T4; Frodo, Adventurous Hobbit; tapped
+T4; The Ring // The Ring Tempts You; moved miscCards => battlefield
+T4; The Ring // The Ring Tempts You; counter:+1 / +1=1
+T5; Frodo, Adventurous Hobbit; untapped
+T5; Sol Ring; untapped
+T5; Plains; untapped
+T5; Plains; untapped
+T5; Savvy Hunter; moved library => hand
+T5; Sol Ring; tapped
+T5; Plains; tapped
+T5; Forest; tapped
+T5; Trading Post; moved hand => battlefield
+T5; Plains; tapped
+T5; Trading Post; tapped
+T5; Goat; moved miscCards => battlefield
+T5; Cat; moved miscCards => battlefield
+T5; Swamp; moved library => hand
+T5; Swamp; moved hand => battlefield
+T5; Food; moved miscCards => battlefield
+T5; Cat Collector; counter:+1 / +1=2
+T5; Frodo, Adventurous Hobbit; counter:+1 / +1=2
+T5; Sam, Loyal Attendant; counter:+1 / +1=2
+T5; Belladonna Took; counter:+1 / +1=2
+T5; Cat; counter:+1 / +1=2
+T5; Cat; counter:+1 / +1=1
+T5; Gilded Goose; counter:+1 / +1=2
+T5; Goat; counter:+1 / +1=1
+T5; Forest; tapped
+T5; Food; tapped
+T5; Frodo, Adventurous Hobbit; tapped
+T5; Cat; tapped
+T5; The Ring // The Ring Tempts You; counter:+1 / +1=2
+T5; Arcane Signet; moved library => hand
+T5; Swamp; tapped
+T5; Gilded Goose; tapped
+T5; Arcane Signet; moved hand => battlefield
+T6; Frodo, Adventurous Hobbit; untapped
+T6; Trading Post; untapped
+T6; Sol Ring; untapped
+T6; Cat; untapped
+T6; Swamp; untapped
+T6; Plains; untapped
+T6; Forest; untapped
+T6; Plains; untapped
+T6; Forest; untapped
+T6; Gilded Goose; untapped
+T6; Birds of Paradise; moved library => hand
+T6; Gilded Goose; tapped
+T6; Swamp; tapped
+T6; Sol Ring; tapped
+T6; Plains; tapped
+T6; Forest; tapped
+T6; Marionette Master; moved hand => battlefield
+T6; Marionette Master; counter:+1 / +1=1
+T6; Marionette Master; counter:+1 / +1=2
+T6; Marionette Master; counter:+1 / +1=3
+T6; Forest; tapped
+T6; Birds of Paradise; moved hand => battlefield
+T6; Plains; tapped
+T6; Trading Post; tapped
+T6; Goat; moved miscCards => battlefield
+T6; Cat; moved miscCards => battlefield
+T6; Scattered Groves; moved library => hand
+T6; Food; moved miscCards => battlefield
+T6; Gilded Goose; counter:+1 / +1=3
+T6; Marionette Master; counter:+1 / +1=4
+T6; Cat; counter:+1 / +1=2
+T6; Cat; counter:+1 / +1=3
+T6; Cat; counter:+1 / +1=1
+T6; Belladonna Took; counter:+1 / +1=3
+T6; Sam, Loyal Attendant; counter:+1 / +1=3
+T6; Frodo, Adventurous Hobbit; counter:+1 / +1=3
+T6; Cat Collector; counter:+1 / +1=3
+T6; Goat; counter:+1 / +1=2
+T6; Goat; counter:+1 / +1=1
+T6; Frodo, Adventurous Hobbit; tapped
+T6; Goat; tapped
+T6; Cat; tapped
+T6; Cat; tapped
+T6; Arcane Signet; tapped
+T6; The Ring // The Ring Tempts You; counter:+1 / +1=3
+T6; Cultivate; moved library => hand
+T6; Farseek; moved library => hand
+T6; Shire Shirriff; moved hand => graveyard
+T6; Birds of Paradise; counter:+1 / +1=1
+T7; Goat; untapped
+T7; Sol Ring; untapped
+T7; Gilded Goose; untapped
+T7; Forest; untapped
+T7; Plains; untapped
+T7; Plains; untapped
+T7; Forest; untapped
+T7; Swamp; untapped
+T7; Frodo, Adventurous Hobbit; untapped
+T7; Arcane Signet; untapped
+T7; Trading Post; untapped
+T7; Cat; untapped
+T7; Cat; untapped
+T7; Commander's Sphere; moved library => hand
+T7; Sol Ring; tapped
+T7; Forest; tapped
+T7; Gilded Goose; tapped
+T7; Food; moved miscCards => battlefield
+T7; Cat; moved miscCards => battlefield
+T7; Go for the Throat; moved library => hand
+T7; Trading Post; tapped
+T7; Second Harvest; moved library => hand
+T7; Scattered Groves; moved hand => battlefield
+T7; Scattered Groves; tapped
+T7; Swamp; tapped
+T7; Forest; tapped
+T7; Plains; tapped
+T7; Savvy Hunter; moved hand => battlefield
+T7; Food; moved miscCards => battlefield
+T7; Savvy Hunter; counter:+1 / +1=1
+T7; Goat; counter:+1 / +1=2
+T7; Goat; counter:+1 / +1=3
+T7; Cat Collector; counter:+1 / +1=4
+T7; Frodo, Adventurous Hobbit; counter:+1 / +1=4
+T7; Sam, Loyal Attendant; counter:+1 / +1=4
+T7; Belladonna Took; counter:+1 / +1=4
+T7; Cat; counter:+1 / +1=4
+T7; Cat; counter:+1 / +1=3
+T7; Cat; counter:+1 / +1=2
+T7; Cat; counter:+1 / +1=1
+T7; Marionette Master; counter:+1 / +1=5
+T7; Birds of Paradise; counter:+1 / +1=2
+T7; Gilded Goose; counter:+1 / +1=4
+T7; Plains; tapped
+T7; Frodo, Adventurous Hobbit; tapped
+T7; Cat; tapped
+T7; Cat; tapped
+T7; Goat; tapped
+T7; Goat; tapped
+T7; Cat; tapped
+T7; The Ring // The Ring Tempts You; counter:+1 / +1=4
+T7; Fell the Mighty; moved library => hand
+T7; Brushland; moved library => hand
+T7; Farseek; moved hand => graveyard
+T8; Scattered Groves; untapped
+T8; Trading Post; untapped
+T8; Frodo, Adventurous Hobbit; untapped
+T8; Cat; untapped
+T8; Goat; untapped
+T8; Goat; untapped
+T8; Sol Ring; untapped
+T8; Gilded Goose; untapped
+T8; Forest; untapped
+T8; Plains; untapped
+T8; Plains; untapped
+T8; Forest; untapped
+T8; Swamp; untapped
+T8; Cat; untapped
+T8; Cat; untapped
+T8; Nuka-Cola Vending Machine; moved library => hand
+T8; Sol Ring; tapped
+T8; Forest; tapped
+T8; Nuka-Cola Vending Machine; moved hand => battlefield
+T8; Plains; tapped
+T8; Trading Post; tapped
+T8; Goat; moved miscCards => battlefield
+T8; Cat; moved miscCards => battlefield
+T8; Gollum, Obsessed Stalker; moved library => hand
+T8; Swamp; tapped
+T8; Scattered Groves; tapped
+T8; Gollum, Obsessed Stalker; moved hand => battlefield
+T8; Plains; tapped
+T8; Nuka-Cola Vending Machine; tapped
+T8; Food; moved miscCards => battlefield
+T8; Goat; counter:+1 / +1=1
+T8; Goat; counter:+1 / +1=4
+T8; Goat; counter:+1 / +1=3
+T8; Frodo, Adventurous Hobbit; counter:+1 / +1=5
+T8; Savvy Hunter; counter:+1 / +1=2
+T8; Cat Collector; counter:+1 / +1=5
+T8; Sam, Loyal Attendant; counter:+1 / +1=5
+T8; Belladonna Took; counter:+1 / +1=5
+T8; Cat; counter:+1 / +1=5
+T8; Cat; counter:+1 / +1=4
+T8; Cat; counter:+1 / +1=3
+T8; Cat; counter:+1 / +1=2
+T8; Cat; counter:+1 / +1=1
+T8; Marionette Master; counter:+1 / +1=6
+T8; Birds of Paradise; counter:+1 / +1=3
+T8; Gilded Goose; counter:+1 / +1=5
+T8; Gollum, Obsessed Stalker; counter:+1 / +1=1
+T8; Food; moved miscCards => battlefield
+T8; Forest; tapped
+T8; Frodo, Adventurous Hobbit; tapped
+T8; Goat; tapped
+T8; Goat; tapped
+T8; Goat; tapped
+T8; Cat; tapped
+T8; Cat; tapped
+T8; Cat; tapped
+T8; Gilded Goose; tapped
+T8; Savvy Hunter; tapped
+T8; Food; moved miscCards => battlefield
+T8; Treasure; moved miscCards => battlefield
+T8; Treasure; tapped
+T9; Savvy Hunter; untapped
+T9; Treasure; untapped
+T9; Trading Post; untapped
+T9; Nuka-Cola Vending Machine; untapped
+T9; Sol Ring; untapped
+T9; Scattered Groves; untapped
+T9; Swamp; untapped
+T9; Goat; untapped
+T9; Frodo, Adventurous Hobbit; untapped
+T9; Cat; untapped
+T9; Goat; untapped
+T9; Goat; untapped
+T9; Gilded Goose; untapped
+T9; Forest; untapped
+T9; Plains; untapped
+T9; Plains; untapped
+T9; Forest; untapped
+T9; Cat; untapped
+T9; Cat; untapped
+T9; Rogue's Passage; moved library => hand
+T9; Sol Ring; tapped
+T9; Forest; tapped
+T9; Plains; tapped
+T9; Second Harvest; moved hand => battlefield
+T9; Second Harvest; moved battlefield => graveyard
+T9; Food; moved miscCards => battlefield
+T9; Food; moved miscCards => battlefield
+T9; Treasure; moved miscCards => battlefield
+T9; Goat; moved miscCards => battlefield
+T9; Goat; moved miscCards => battlefield
+T9; Goat; moved miscCards => battlefield
+T9; Cat; moved miscCards => battlefield
+T9; Cat; moved miscCards => battlefield
+T9; Cat; moved miscCards => battlefield
+T9; Cat; moved miscCards => battlefield
+T9; Cat; moved miscCards => battlefield
+T9; Treasure; tapped
+T9; Treasure; tapped
+T9; Food; tapped
+T9; Food; tapped
+T9; Marionette Master; counter:+1 / +1=7
+T9; Frodo, Adventurous Hobbit; counter:+1 / +1=6
+T9; Forest; tapped
+T9; Food; tapped
+T9; Swamp; tapped
+T9; Food; tapped
+T9; Gollum, Obsessed Stalker; tapped

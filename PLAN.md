@@ -39,8 +39,9 @@ Rules for every task:
 | 6 | T6 | Meren: "no meaningful impact" and Pontus's changes (after P) | Sonnet 5.5 |
 | 7 | T7 | Sam & Frodo: analyze Pontus's logs (after P) | Sonnet 5.5 |
 | 8 | T8 | Faster tests and `verify` | Opus 5.5 |
+| 9 | T9 | Meren: analyze Pontus's hand playtest logs (after P) | Sonnet 5.5 |
 
-T1 comes first because T3 to T6 all compare lists or settings; T2 before T3 so new engine rules land in the split files. T6 and T7 can run whenever Pontus's input arrives.
+T1 comes first because T3 to T6 all compare lists or settings; T2 before T3 so new engine rules land in the split files. T6, T7 and T9 can run whenever Pontus's input arrives. T9 is not blocking: Pontus has no time for the playtests now (2026-11-23), so work goes on with the other tasks.
 
 ---
 
@@ -103,7 +104,7 @@ Meren's `--diag` has a first definition of a game with no meaningful impact (`no
 1. Ask Pontus for his definition and his changes (cards, AI choices or both). Change `noImpact` to match, with the old numbers next to the new.
 2. Test his changes with T1's skill, judged by the new measure as well as the win turns. No cut tests beyond what he names.
 
-Done (2026-11-18): `noImpact` is now Pontus's "Meren out and the engine running" (68.9 / 43.5%, was 15.9 / 4.3%). D'Ghor Bloodletter and Massacre Wurm got rules (engine: -X/-X until end of turn in the pod, the Wurm's drain; Meren: the Bloodletter's mode and end-step loop) and were tested for Decode Transmissions / Junji on both lists: all within noise (table in `decks/meren/PLAN.md`). The meaningful-impact work for the deck goes on from there.
+Done (2026-11-18): `noImpact` is now Pontus's "Meren out and the engine running" (68.9 / 43.5%, was 15.9 / 4.3%). D'Ghor Bloodletter and Massacre Wurm got rules (engine: -X/-X until end of turn in the pod, the Wurm's drain; Meren: the Bloodletter's mode and end-step loop) and were tested for Decode Transmissions / Junji on both lists: all within noise (table in `decks/meren/PLAN.md`). The meaningful-impact work for the deck goes on from there. The next step (Pontus's hand playtests of the three lists) moved to T9 on 2026-11-23.
 
 Done (2026-11-18, card draw round): 13 draw cards got rules (`engine/game/card-draw.ts`: the sacrifice spells, Reaper, Moldervine, Augur, Tracker and Clues, Skullclamp, Greater Good, Ayara, Elvish Visionary; Grim Backwoods; Night's Whisper's life) and each was tested in Garruk's Packleader's slot, the leaders also at 16,000 games and in Morbid Opportunist's slot. `--diag` counts the cards each draw card drew in the games where it was played. Only Ayara (a drain, not a draw) is clearly better; Skullclamp, Deadly Dispute and Plumb are at the edge of the noise (table in `decks/meren/PLAN.md`).
 
@@ -126,3 +127,11 @@ A full-power `verify` after an engine change took 311 s (2026-11-18, T5). The sl
 1. Measure: the time of every step of `verify` (eco and full power), and inside the slow ones, which part costs (seeds, lists, logs, the 300-seed kill-miss check, the planner).
 2. Propose to Pontus, with the time each saves and what it would stop catching: fewer seeds where the extra ones never caught anything; running steps in parallel; a quick mode for the edit-test loop (type-check, the changed deck's tests, a small regress) with the full `verify` before a commit; finer rules for which decks a changed file can affect.
 3. Build what he picks. `verify` keeps catching what it catches today: show that a deliberate change in the engine still makes it fail.
+
+## T9. Meren: analyze Pontus's hand playtest logs (Sonnet 5.5, after P)
+
+Moved out of T6 (2026-11-23). The next step for Meren is Pontus goldfishing by hand the three playtest lists (the plan is in `decks/meren/PLAYTEST.md`) and returning with a game log for each deck. He has no time for it now, so nothing here starts until the logs arrive.
+
+1. When the logs arrive, put them in `decks/meren/logs/` and run `npm run sim -- meren --analyze logs/<file>.txt` on each (add token names to the analyzer if missing).
+2. For each list: a row in `decks/meren/PLAN.md` with the result, missed triggers, miscoded cards and the AI fixes it led to. Logs contain misplays: use them for draws and the board, flag missed triggers, don't copy mistakes into the AI.
+3. Compare human play with the AI's, as the playtest plan says, and fix cards the sim got wrong. Add each log to the deck's regress and re-record the baseline for the new logs only.
