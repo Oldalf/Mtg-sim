@@ -102,7 +102,7 @@ export function exploreMoves(
       nextTurn: state.nextTurn,
     };
   if (state.libraryInHand && !state.nextTurn) {
-    const nextTurnLine = findNextTurnKill(state, needBackup);
+    const nextTurnLine = findNextTurnKill(state, needBackup, game);
     if (nextTurnLine)
       return {
         steps: [...steps, ...nextTurnLine.steps],
@@ -347,10 +347,13 @@ export function wantedLibraryCards(game: CodieGame): CardDef[] {
 }
 
 /** After Ad Nauseam + Teferi's Protection the whole library is in the hand and life can't change: the kill next turn, with all
- *  lands untapped, Codie ready and one more land drop. */
+ *  lands untapped, Codie ready and one more land drop. Its positions count against the budget of the search that
+ *  asked (`outerSearch`, the game its exploreMoves holds the budget on): otherwise a hand that reaches the library
+ *  from thousands of positions searches 1,500 more from each (one game took 190 s). */
 export function findNextTurnKill(
   game: CodieGame,
   needBackup: boolean,
+  outerSearch: CodieGame,
 ): Line | null {
   const copy = game.copyAtNextTurn();
   copy.nextTurn = true;
@@ -369,6 +372,7 @@ export function findNextTurnKill(
     copy.battlefield.push(landPermanent);
   }
   const line = searchForKill(copy, needBackup, 1500);
+  outerSearch.searchedNodeCount += copy.searchedNodeCount;
   return line
     ? {
         steps: [

@@ -128,6 +128,12 @@ A full-power `verify` after an engine change took 311 s (2026-11-18, T5). The sl
 2. Propose to Pontus, with the time each saves and what it would stop catching: fewer seeds where the extra ones never caught anything; running steps in parallel; a quick mode for the edit-test loop (type-check, the changed deck's tests, a small regress) with the full `verify` before a commit; finer rules for which decks a changed file can affect.
 3. Build what he picks. `verify` keeps catching what it catches today: show that a deliberate change in the engine still makes it fail.
 
+**Measured 2026-11-23 (eco, `verify --full`): 542 s.** Codie's regress 420 s, Sam & Frodo's `--test` 123 s (77 s alone) and regress 76 s, Gale's regress 55 s, `app --test` 29 s, the page 21 + 21 s; everything else under 45 s. Inside `--test` (one thread): the 300-seed kill-miss check is most of every deck's time (Sam & Frodo 59 s, Codie 24, Aesi 21, Gale 15); the log checks (210 games) a quarter; the deck's own tests and the tag/token tests about 0 s. Regress logs: about 1 s each.
+
+- **Done: Codie's seed 329.** One game was 191 s of Codie's 244 s (600 seeds, one thread): almost every state of its kill search had the library in hand and started a 1,500-state next-turn search. Those states now count against the search's 4,000 (`decks/codie/solver.ts` findNextTurnKill): 600 seeds in 52 s, regress IDENTICAL, 3,000 seeds give the same table (eco 301 s -> 99 s). A cache of next-turn searches by the full state was tried first and dropped: only 355 of 3,987 states repeat (graveyard and exile differ), 7% faster.
+- **Sam & Frodo's slow seeds:** 374 (25 s) and 256 (16 s) of 600 (157 s); the time is in the planner's rollouts (candidates for permanents' abilities). Not looked into yet.
+- **Proposed, not picked (2026-11-23):** B kill misses counted in the regress games (600 seeds) and the 300-seed check skipped in `--test` where regress runs (about -150 s CPU on engine changes); C `--test` skipped by the same changed-file rule as regress; D `verify --quick` (changed decks, regress on seeds 1-100) and slowest-first ordering from the last run's times.
+
 ## T9. Meren: analyze Pontus's hand playtest logs (Sonnet 5.5, after P)
 
 Moved out of T6 (2026-11-23). The next step for Meren is Pontus goldfishing by hand the three playtest lists (the plan is in `decks/meren/PLAYTEST.md`) and returning with a game log for each deck. He has no time for it now, so nothing here starts until the logs arrive.

@@ -31,7 +31,7 @@ An abstract Monte Carlo model of an older list (it also modelled Time Warp effec
 - **Codie's free spell as a loop piece:** when the trigger finds Will / Geyser / Bounty and Reiterate is in hand, the loop costs only the 6 for the buyback.
 - **Windfall** now does something (a bug: it resolved as nothing before): discard the hand, draw at least 7. The AI casts it only when no combo piece or tutor is in hand, as in the script.
 - **Profane Tutor from hand:** suspend 2 for {1}{B}, a free tutor two turns later.
-- **A search budget** (`solver_nodes`): the extra moves made some hands' search trees huge (one game took 40 s); the search now stops after 4,000 states (1,500 for the next-turn check).
+- **A search budget** (`solver_nodes`): the extra moves made some hands' search trees huge (one game took 40 s); the search now stops after 4,000 states (1,500 for the next-turn check). Since 2026-11-23 (T8) the next-turn checks' states count against the 4,000 too: seed 329 started a next-turn check from almost every state and took 190 s (the whole of `--regress check`); now under 1 s, with the same results on 3,000 seeds.
 - Optional realism settings, **off by default**: `opp_decay=2` (opponents lose 2 life per turn to a floor of 10) with `opp_payments_decay=1` (Torment payments 7 on turn 1, shrinking to 1): win by turn 10 **50.5%** instead of 39.8%, though fewer wins come through the loop (13.7%); `mana_drain_flat=1` (a Mana Drain pays 2 to 5 next turn): no change (40.2%).
 - Not converted: the old list's cards, and its flat "Mana Geyser pays 7 to 14" (replaced by the turn-based tapped lands).
 
