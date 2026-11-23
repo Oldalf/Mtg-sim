@@ -96,7 +96,7 @@ Pontus's request: a solid mid bracket 3 deck, more card draw that is a token pay
 - **Agent of the Iron Throne is real** (+5.3 by turn 10 on its own, 4,000 games +5.9): most of list B's gain. Every Food, Treasure and Clue sacrificed with both commanders out is 2 to each opponent.
 - **The other four swaps add about +1.4 more** by turn 10 together (beyond noise only just). Idol and Dispute are the same (74.6 vs 74.5): pick by taste.
 - **Pod:** about +1 to +1.5 points (15.1 → 16.2–16.6%, at the edge of the noise), still below an even share, out first unchanged. Eternal Witness's value (getting removal back) does not show beyond that. The deck stays mid-pack: no sign of it becoming oppressive.
-- Pontus (2026-11-23): list B with Deadly Dispute looks best so far; `decklist.txt` unchanged for now.
+- Pontus (2026-11-23): list B with Deadly Dispute looks best so far. It is `lists/proposed.txt` (the swaps on the same lines); `decklist.txt` stays the deck as it is built until the cards are in hand.
 - The fixed-seed pod report (`regress_baseline/pod.txt`) was re-recorded with this work: it had drifted on main with the Master drain finish (d97ee19) and the Meren list update (f31d471), not with these rules.
 
 ## Next
