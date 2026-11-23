@@ -7,6 +7,10 @@ import { castSawInHalf } from '../actions';
 import { MerenGame } from '../game';
 import { buildCandidates } from '../candidates';
 import { TREASURE } from '../../../engine/cards/tokens';
+import { Arena } from '../../../engine/game/game-types';
+import { playGoldfishOpponentsTurns } from '../../../engine/game/turn';
+import { GRAY_MERCHANT, MEREN } from '../cards';
+import { JUNJI } from '../junji';
 
 const repeatName = (cardName: string, count: number) =>
   new Array(count).fill(cardName) as string[];
@@ -183,6 +187,9 @@ export function runMerenTests(): boolean {
       .length,
     1,
   );
+
+  checkOpponentsTurns(check);
+  checkJunji(check);
 
   // win: 100 damage in total or 2 opponents dead
   game = board();
@@ -497,4 +504,152 @@ export function runMerenTests(): boolean {
   );
 
   return allPassed;
+}
+
+type Check = (label: string, got: unknown, expect: unknown) => void;
+
+const isOnBattlefieldCount = (game: MerenGame, cardName: string) =>
+  game.battlefield.filter((permanent) => permanent.card.name === cardName)
+    .length;
+
+/** The opponents' turns (opponents-turns.ts): the Snake in every end step, Junji for Gray Merchant. */
+function checkOpponentsTurns(check: Check): void {
+  let game = board([MEREN, 'Ophiomancer', 'Viscera Seer']);
+  playGoldfishOpponentsTurns(game);
+  check(
+    "Ophiomancer: the Snake is sacrificed in each opponent's end step (3 experience)",
+    game.experienceCounters,
+    3,
+  );
+  game = board([MEREN, 'Ophiomancer', 'Viscera Seer']);
+  game.config.opponents_turns = 0;
+  playGoldfishOpponentsTurns(game);
+  check(
+    '... and with opponents_turns=0 only a Snake is made',
+    [game.experienceCounters, isOnBattlefieldCount(game, 'Snake')],
+    [0, 1],
+  );
+  game = board([MEREN, 'Ophiomancer']);
+  playGoldfishOpponentsTurns(game);
+  check('... not without a free outlet', game.experienceCounters, 0);
+
+  // Junji at an opponent's end step: Gray Merchant goes first, Junji returns it, Twilight Diviner (used on our turn,
+  // fresh in this one) copies it. The copy enters before the drains resolve: devotion 6 (two Gray Merchants 4, Diviner 1,
+  // Seer 1) for each drain.
+  game = board([JUNJI, 'Twilight Diviner', 'Viscera Seer', GRAY_MERCHANT]);
+  game.divinerUsed = true;
+  game.opponentUpkeep();
+  game.opponentEndStep();
+  check(
+    'Junji at an opponent end step: Gray Merchant back and copied, two drains',
+    [game.life, isOnBattlefieldCount(game, GRAY_MERCHANT)],
+    [[28, 28, 28], 2],
+  );
+  check(
+    '... Junji is in the graveyard for Meren',
+    game.graveyard.some((card) => card.name === JUNJI),
+    true,
+  );
+  // our end step: Diviner has copied something this turn, so Junji is kept for an opponent's turn
+  game = board(
+    [MEREN, JUNJI, 'Twilight Diviner', 'Viscera Seer'],
+    [],
+    [GRAY_MERCHANT],
+  );
+  game.divinerUsed = true;
+  game.endStep();
+  check(
+    "... and kept at our end step when Diviner's copy is used up this turn",
+    isOnBattlefieldCount(game, JUNJI),
+    1,
+  );
+  game = board([JUNJI, 'Twilight Diviner', GRAY_MERCHANT]);
+  game.opponentUpkeep();
+  game.opponentEndStep();
+  check(
+    '... not without a sacrifice outlet',
+    isOnBattlefieldCount(game, JUNJI),
+    1,
+  );
+}
+
+/** Junji's death (junji.ts): the mode worth more, from any graveyard in a pod. */
+function checkJunji(check: Check): void {
+  const killJunji = (game: MerenGame) =>
+    game.sacrifice(game.findPermanent(JUNJI)!);
+
+  let game = board([JUNJI], [], ['Llanowar Elves']);
+  killJunji(game);
+  check(
+    'Junji, goldfish: Llanowar Elves is worth less than 2 life from each opponent',
+    [game.life, isOnBattlefieldCount(game, 'Llanowar Elves')],
+    [[38, 38, 38], 0],
+  );
+  game = board([JUNJI], [], ['Llanowar Elves', 'Grave Titan']);
+  killJunji(game);
+  check(
+    '... Grave Titan comes back, we lose 2',
+    [isOnBattlefieldCount(game, 'Grave Titan'), game.myLife, game.life],
+    [1, 38, [40, 40, 40]],
+  );
+
+  // a pod: opponents' graveyards and hands (a stub arena)
+  const discarded: number[] = [];
+  const inPod = (
+    podGame: MerenGame,
+    opponentGraveyards: string[][],
+    handSize: number,
+  ) => {
+    const graveyards = opponentGraveyards.map((names) =>
+      names.map((name) => C.get(name)),
+    );
+    podGame.arena = {
+      real: () => true,
+      announceDeath: () => {},
+      edict: () => {},
+      handSize: () => handSize,
+      creatureCardsOfGraveyard: (_game: MerenGame, slot: number) =>
+        graveyards[slot],
+      takeCreatureCardFromGraveyard: (
+        _game: MerenGame,
+        slot: number,
+        card: C.CardDef,
+      ) => graveyards[slot].splice(graveyards[slot].indexOf(card), 1),
+      discardOneOpponentsCards: (_game: MerenGame, slot: number) =>
+        discarded.push(slot),
+    } as unknown as Arena;
+    return podGame;
+  };
+  game = inPod(
+    board([JUNJI], [], ['Llanowar Elves']),
+    [[], ['Grave Titan'], []],
+    0,
+  );
+  killJunji(game);
+  check(
+    'Junji, pod: a big creature in an opponent graveyard beats the discard (empty hands)',
+    [isOnBattlefieldCount(game, 'Grave Titan'), discarded.length],
+    [1, 0],
+  );
+  game = inPod(board([JUNJI], [], []), [['Llanowar Elves'], [], []], 7);
+  killJunji(game);
+  check(
+    '... a weak one does not: each opponent discards',
+    [isOnBattlefieldCount(game, 'Llanowar Elves'), discarded.length],
+    [0, 3],
+  );
+  game = inPod(
+    board([JUNJI], [], [GRAY_MERCHANT]),
+    [['Grave Titan'], [], []],
+    0,
+  );
+  killJunji(game);
+  check(
+    '... our own Gray Merchant beats their Grave Titan',
+    [
+      isOnBattlefieldCount(game, GRAY_MERCHANT),
+      isOnBattlefieldCount(game, 'Grave Titan'),
+    ],
+    [1, 0],
+  );
 }

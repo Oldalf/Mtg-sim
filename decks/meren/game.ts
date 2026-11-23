@@ -39,6 +39,13 @@ import {
   VALUE,
 } from './cards';
 import { buildCandidates } from './candidates';
+import {
+  keepsJunjiForOpponentsTurn,
+  playAtOpponentsEndStep,
+  playsOnOpponentsTurns,
+  resetOnceEachTurnAbilities,
+} from './opponents-turns';
+import { JUNJI } from './junji';
 import { onPermanentDied, onPermanentEntered } from './triggers';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { CLUE, TREASURE } from '../../engine/cards/tokens';
@@ -270,14 +277,9 @@ export class MerenGame extends CreatureDeckGame {
       this.isOpponentAlive(slot),
     );
     const stolen: Permanent[] = [];
-    const takeCard = (card: CardDef) => {
-      const permanent = this.enter(card, 'graveyard', { token: true });
-      permanent.marks |= STOLEN_MARK;
-      stolen.push(permanent);
-    };
     if (!this.inArena()) {
       for (const _opponent of opponents.slice(0, total))
-        takeCard(TOKENS.stolen);
+        stolen.push(this.enterAsStolen(TOKENS.stolen));
       return stolen;
     }
     const arena = this.arena!;
@@ -295,10 +297,21 @@ export class MerenGame extends CreatureDeckGame {
       if (stolen.length >= total || (taken.get(slot) ?? 0) >= perOpponent)
         continue;
       taken.set(slot, (taken.get(slot) ?? 0) + 1);
-      arena.takeCreatureCardFromGraveyard(this, slot, card);
-      takeCard(card);
+      stolen.push(this.stealCreatureCard(slot, card));
     }
     return stolen;
+  }
+
+  /** A pod: this creature card from that opponent's graveyard onto our battlefield. */
+  stealCreatureCard(slot: number, card: CardDef): Permanent {
+    this.arena!.takeCreatureCardFromGraveyard(this, slot, card);
+    return this.enterAsStolen(card);
+  }
+
+  private enterAsStolen(card: CardDef): Permanent {
+    const permanent = this.enter(card, 'graveyard', { token: true });
+    permanent.marks |= STOLEN_MARK;
+    return permanent;
   }
 
   /** A creature we took from a graveyard or made a copy of (Breach the Multiverse): worth keeping, not fodder. */
@@ -639,7 +652,12 @@ export class MerenGame extends CreatureDeckGame {
   }
 
   override opponentUpkeep(): void {
+    if (playsOnOpponentsTurns(this)) resetOnceEachTurnAbilities(this);
     this.makeOphiomancerSnake();
+  }
+
+  override opponentEndStep(): void {
+    if (playsOnOpponentsTurns(this)) playAtOpponentsEndStep(this);
   }
 
   /** Ophiomancer: at the beginning of each upkeep, a deathtouch Snake if we control none. */
@@ -679,7 +697,8 @@ export class MerenGame extends CreatureDeckGame {
           continue;
         if (
           this.isStolen(permanent) ||
-          FREE_OUTLETS.includes(permanent.card.name)
+          FREE_OUTLETS.includes(permanent.card.name) ||
+          (permanent.card.name === JUNJI && keepsJunjiForOpponentsTurn(this))
         )
           continue;
         if (permanent.token || DEATH_VALUE.has(permanent.card.name))

@@ -48,7 +48,7 @@ Followed:
 Knowingly not followed:
 - Goldfish opponents never act, and in a pod they act only in answer windows. There is no full stack and no priority.
 - Combat's steps (506–511) are one step, `combat`.
-- Instant-speed plays on other players' turns: only the pod's answers, and one window at the end of the turn just before ours for a deck with `opponents_end_step` on (`engine/game/instant-speed.ts`: instants, and sorceries with flash from Wizards of Thay, Leyline of Anticipation, Vedalken Orrery, Borne Upon a Wind, Quicken or Emergence Zone). No kill is looked for in that window. With it on, Leyline of Anticipation starts on the battlefield from the opening hand (Azula plays it without the window, so not yet for her).
+- Instant-speed plays on other players' turns: the deck hooks `opponentUpkeep` and `opponentEndStep` at each other player's turn (a goldfish game plays one upkeep and one end step for each living opponent between our turns, `playGoldfishOpponentsTurns` in `turn.ts`; Meren sacrifices there), the pod's answers, and one window at the end of the turn just before ours for a deck with `opponents_end_step` on (`engine/game/instant-speed.ts`: instants, and sorceries with flash from Wizards of Thay, Leyline of Anticipation, Vedalken Orrery, Borne Upon a Wind, Quicken or Emergence Zone). No kill is looked for in that window. With it on, Leyline of Anticipation starts on the battlefield from the opening hand (Azula plays it without the window, so not yet for her).
 - A goldfish opponent's library is a number, not cards.
 - Filter lands, Hideaway and Bojuka Bog's exile are not modelled.
 - Loops are cut short after their first rounds, as rule 732 (Taking Shortcuts) lets a player do.

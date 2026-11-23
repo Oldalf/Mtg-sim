@@ -129,6 +129,15 @@ function playTurn(table: PodTable, player: number): PodGame | null {
       if (other !== player && table.isAlive[other])
         otherGame.returnBlinkedCardsAtOpponentEndStep();
   });
+  // what the others do at instant speed in this end step (Meren's sacrifices); a drain there can kill
+  table.runOffTurn(() => {
+    for (const [other, otherGame] of table.games.entries())
+      if (other !== player && table.isAlive[other]) otherGame.opponentEndStep();
+  });
+  table.eliminateLosers();
+  const leftAfterEndStep = table.livingPlayers();
+  if (leftAfterEndStep.length === 1)
+    return lastStandingWins(table, leftAfterEndStep[0]);
   // the next player's window at the end of this turn: instant speed with the mana left from its own turn
   // (engine/game/instant-speed.ts; only decks with opponents_end_step on use it)
   const nextPlayer = table.opponentsOf[player].find(

@@ -9,6 +9,7 @@ import { Rng } from '../util/rng';
 import type { GameCore } from './game-core';
 import { Candidate, Permanent } from './game-types';
 import { playOpponentsEndStep } from './instant-speed';
+import { playGoldfishOpponentsTurns } from './turn';
 
 /** A ritual that only adds a small play must add at least this much (the score of a decent play). */
 const RITUAL_EXTRA_PLAYS_SCORE = 40;
@@ -203,8 +204,8 @@ function rolloutValue(game: GameCore, main2: boolean): number {
   if (!game.inArena()) playOpponentsEndStep(game);
   const valueAtTurnEnd = game.positionValue();
   if (game.turn >= (game.config.max_turn as number) + 1) return valueAtTurnEnd;
+  playGoldfishOpponentsTurns(game);
   game.startTurn();
-  game.opponentUpkeep();
   game.enterStep('upkeep');
   game.upkeep();
   game.upkeepTriggersOfTheGame();

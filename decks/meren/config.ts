@@ -8,6 +8,7 @@ export const CFG: Config = {
   win_dead: 2,
   combat_safety: 10,
   ritual_several_plays: 1, // 1: Dark Ritual is also cast to make two plays instead of one; 0: only for one play we couldn't pay for
+  opponents_turns: 1, // 1: on the opponents' turns sacrifice the Snake and Junji (for Gray Merchant), with Diviner and Morbid Opportunist fresh each turn; 0: the old play
   hold_opponent_power: 30, // pod: keep mana open for removal only while one opponent's creatures have this much power in total (0: always, from round 5; 8,000-game pod runs: 0 gave 29.9% wins, 12 30.7%, 20 32.1%, 30 33.1%, never 34.8%)
 };
 
@@ -15,6 +16,8 @@ export const CFG: Config = {
 export const SETTING_DESCRIPTIONS: Record<string, string> = {
   ritual_several_plays:
     'Dark Ritual is cast when it lets Meren make one more play (two creatures instead of one), not only when it pays for one play it could not afford. 0 = the old rule.',
+  opponents_turns:
+    "On each opponent's turn Meren plays at instant speed: Ophiomancer's Snake is sacrificed in every end step (an experience counter each turn), Junji is sacrificed so it returns Gray Merchant, and Twilight Diviner and Morbid Opportunist trigger again in each turn. 0 = nothing on the opponents' turns (the old play).",
   hold_opponent_power:
     'In a pod Meren keeps mana open for an instant-speed removal spell in hand only while one opponent has creatures with this much power in total on the battlefield; otherwise the mana is spent on our own turn. 0 = always, from round 5.',
   win_dead:

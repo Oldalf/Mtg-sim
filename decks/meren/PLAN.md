@@ -82,22 +82,28 @@ All within noise: a Swamp does about as well as each of them, so none speeds up 
 
 - Ophiomancer's Snake is a 1/1 black Snake with deathtouch (as on Scryfall), made at the beginning of **each** upkeep, ours and the opponents', if we control no Snakes (2026-11-15). The engine hook is `opponentUpkeep()`: goldfish calls it before our upkeep, a pod calls it at every other deck's turn start. Goldfish results are IDENTICAL (0 of 600 seeds differ); only the tests changed, so the baseline was re-recorded.
 
-## To fix at the Meren step: Junji's death choice (noted 2026-11-23)
+## Hand playtests and the opponents' turns (2026-11-23)
 
-Pontus wants Junji, the Midnight Sky kept in the lists: its value is in the choice. The AI's `resolveJunjiDeath` (`triggers.ts`) uses a fixed order instead of weighing the options:
+Pontus played two games of each playtest list by hand (`playtests/`, Archidekt logs with notes). Wins on turns 9 and 8 (list 1), 8 and 9 (list 2), 9 and 7 (list 3), average 8.3. The AI with the same opening hands and draws (`--analyze`, 200 replays each, the rest of the library random) averages 8.5: it keeps pace, and these draws were better than usual (the simulator's average is 9.4). Only list 3 game 2 is clearly ahead of the AI, won by a play on an opponent's turn. Log slips that change a result: Grist's +1 in an end step (list 2 game 1, a loyalty ability is sorcery speed; Grist entered in that end step from Protean Hulk), Massacre Wurm damage to imagined creatures (list 3 game 1); both games are won anyway.
 
-1. Our own graveyard first: the best creature worth 60+ (`battlefieldValue`), if there is one.
-2. In a pod, if the opponents hold fewer than 2 cards each and one has a creature card in the graveyard: steal it.
-3. Otherwise each opponent discards 2 and loses 2.
+**What was new: plays on the opponents' turns.** The simulator acted only on our own turn. Now the engine calls two deck hooks at each other player's turn, `opponentUpkeep` and `opponentEndStep` (goldfish: one upkeep and one end step for each living opponent between our turns; a pod: the real turns). Meren uses them (`opponents-turns.ts`, setting `opponents_turns`, 0 = the old play):
+- Twilight Diviner and Morbid Opportunist ("once each turn") are fresh in each opponent's turn.
+- Ophiomancer's Snake is sacrificed to a free outlet in every end step: an experience counter each turn, 4 a round instead of 1.
+- Junji is sacrificed (to Greater Good for the cards, or a free outlet) so it returns Gray Merchant; Gray Merchant on the battlefield goes first so Junji brings it straight back, and Diviner copies it there. At our end step Junji is kept for this when Diviner has already copied something that turn.
 
-What to fix:
-- In a pod, compare the best creature in **every** graveyard (ours and each opponent's) by value, not ours first and then only "a creature card" from an opponent.
-- Weigh that creature against the other mode (each opponent discards two and loses 2). Discard also slows the table and pings for damage, so it can beat a modest creature. Use the opponents' hand sizes, their life and our own life (the creature mode costs us 2).
-- The choice should come out of one comparison of the two options, not a fixed order.
-- Add tests: a big creature in an opponent's graveyard beats the discard mode; a weak one doesn't; our own best target wins when it is worth more.
-- Goldfish results should stay IDENTICAL except where this changes the choice (check with `--regress check`); a pod run will change, so re-record it.
+**Junji's death choice** (`junji.ts`, was a fixed order): one comparison of the two modes in battlefield-value points. The creature mode: the best non-Dragon creature card in any graveyard (ours, or an opponent's in a pod), its value, +15 when its enter trigger is one we want again, x1.5 when Diviner copies it, -40 when we are at 10 life or less. The discard mode: 10 for each life an opponent loses (2 each, so 60 against three goldfish opponents, the old threshold), +50 when it kills one, and in a pod 8 for each card discarded (at most 2 per opponent). Tests in `meren.test.ts`. Not done: Pontus's Plaguecrafter pick (Junji returns an edict creature to sacrifice our Gray Merchant so Meren returns it), too narrow to code.
 
-Until then, the Junji swap tests above (Massacre Wurm for Junji) are based on the fixed order. The three playtest lists keep Junji and cut Garruk's Packleader for Massacre Wurm.
+Results, 16,000 goldfish games (±1.1), "old" = before this change:
+
+| List | by T8 old → new | by T10 old → new | Experience end of T6 | Same with opponents_turns=0 (by T8 / T10) |
+|---|---|---|---|---|
+| 1 original | 17.5 → 17.8 | 71.3 → 71.4 | 1.74 → 1.74 | 17.6 / 71.2 |
+| 2 proposed | 23.0 → 23.9 | 78.1 → 78.7 | 1.87 → 2.09 | 22.9 / 78.1 |
+| 3 proposed + draw | 23.9 → 24.7 | 79.9 → 80.4 | 1.90 → 2.12 | 23.7 / 79.9 |
+
+Pod, list 3 against Helga, Edgar and Teval, 8,000 games (±1): Meren wins 33.5% → 34.0%.
+
+**Verdict.** The plays are right but small in the numbers: under +1 point everywhere, inside the noise. The Snake is the part that shows (lists 2 and 3 have Ophiomancer: experience +0.2 at turn 6, Morbid Opportunist draws 2.1 → 2.5 cards in list 2). The new Junji choice alone (opponents_turns=0) changes nothing measurable in goldfish. The off-turn Junji line needs Junji, an outlet and Gray Merchant together, which is rare (about 1 game in 100 in list 3 before the end-step rule). The pod and `decklist.txt` regress baselines were re-recorded (20 of 600 goldfish seeds changed). The earlier Junji swap tests (Massacre Wurm for Junji) used the old fixed order.
 
 ## Next ideas
 

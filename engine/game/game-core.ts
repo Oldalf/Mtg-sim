@@ -1493,6 +1493,9 @@ export abstract class GameCore<S = unknown> {
   /** At the beginning of another player's upkeep (for "each upkeep" triggers). Goldfish opponents take their turns
    *  between ours; a pod calls this for real turns. */
   opponentUpkeep(): void {}
+  /** At the end step of another player's turn: what we do at instant speed there (sacrifice outlets, "once each turn"
+   *  abilities that are fresh again). Goldfish opponents take their turns between ours; a pod calls this for real turns. */
+  opponentEndStep(): void {}
 
   // ================================================================ goldfish combat for creature decks
   /** Can this creature attack now? (A deck may keep some home, e.g. Spore Frog.) */

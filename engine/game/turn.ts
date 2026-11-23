@@ -33,11 +33,22 @@ export function drawOpeningHand(game: GameCore): void {
   }
 }
 
+/** The goldfish opponents' turns between two of ours: each living opponent's upkeep and end step, for a deck's hooks
+ *  (Ophiomancer's Snake, sacrifices at instant speed). The opponents do nothing else. A pod plays the real turns. */
+export function playGoldfishOpponentsTurns(game: GameCore): void {
+  game.isInOpponentsTurn = true;
+  const opponentsAlive = game.countOpponentsAlive();
+  for (let i = 0; i < opponentsAlive && !game.died; i++) {
+    game.opponentUpkeep();
+    game.opponentEndStep();
+  }
+  game.isInOpponentsTurn = false;
+}
+
 /** One full turn of ours (see GameCore.takeTurn). Returns true when the game ended in it (a win, or we lost). */
 export function playTurn(game: GameCore): boolean {
   game.startTurn();
   game.sayEvent('turn-start');
-  if (game.turn > 1 && !game.inArena()) game.opponentUpkeep();
   game.enterStep('upkeep');
   game.upkeep();
   game.upkeepTriggersOfTheGame();
@@ -66,6 +77,12 @@ export function playTurn(game: GameCore): boolean {
   game.logCardMovesSoFar();
   game.endTurn();
   if (!game.inArena()) playOpponentsEndStep(game);
+  if (
+    !game.inArena() &&
+    game.turn < (game.config.max_turn as number) &&
+    !game.areOpponentsBeaten()
+  )
+    playGoldfishOpponentsTurns(game);
   if (game.turn === 4) {
     // for the card ranking: every card seen by the end of turn 4
     game.seen4 = new Set(
