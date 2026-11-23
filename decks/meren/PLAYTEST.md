@@ -4,7 +4,7 @@ Goldfish playtests by hand, to compare how you play the deck with how the AI pla
 
 ## The three lists
 
-All three have D'Ghor Bloodletter (for Decode Transmissions) and Massacre Wurm (for Junji). No Skullclamp.
+All three have D'Ghor Bloodletter (for Decode Transmissions) and Massacre Wurm (for Garruk's Packleader). Junji stays in: in a pod it can take the best creature from any graveyard (ours too), or make every opponent discard two and lose 2. No Skullclamp.
 
 | File in `lists/` | What it is | Differs from the one before |
 |---|---|---|

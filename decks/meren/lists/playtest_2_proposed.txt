@@ -5,7 +5,6 @@ Draw
 1x D'Ghor Bloodletter
 1x Diresight
 1x Disciple of Bolas
-1x Garruk's Packleader
 1x Grim Haruspex
 1x Morbid Opportunist
 1x Phyrexian Arena
@@ -49,6 +48,7 @@ Ramp
 
 Recursion
 1x Grave Researcher // Reanimate
+1x Junji, the Midnight Sky
 1x Massacre Wurm
 1x Persist
 1x Sepulchral Primordial
