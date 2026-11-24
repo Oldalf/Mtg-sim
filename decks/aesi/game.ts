@@ -4,7 +4,8 @@
  *
  * Files:
  *   cards.ts       the card names and the facts about them (values, which cards ramp, the moonfolk table...)
- *   game.ts        this file: AesiGame, its state, land drops, mana, the turn steps and combat
+ *   game.ts        this file: AesiGame, its state, mana, the turn steps and combat
+ *   land-drops.ts  which way and which land goes onto the battlefield, and a land entering
  *   loops.ts       the loop solver: finds the loops on the battlefield, applies them and looks for a win
  *   candidates.ts  everything the AI may do now, with a score each (cast, play a land, abilities)
  *   actions.ts     what the abilities do when the AI picks them
@@ -23,7 +24,6 @@
  */
 import {
   AESI,
-  BASIC_COL,
   BSZ,
   BUDOKA,
   CASE,
@@ -41,7 +41,6 @@ import {
   MELOKU,
   MINDSWEEPER,
   OMNI,
-  PASSAGE,
   PATRON,
   PUTTERS,
   RAFT,
@@ -61,11 +60,21 @@ import {
   UYO_COPY,
   VALUE,
 } from './cards';
-import { findLoopPutter, findLoops, solveLoops } from './loops';
+import { findLoops, solveLoops } from './loops';
 import type { Loops } from './loops';
 import { buildCandidates, chooseLandTutorTarget } from './candidates';
-import { castFromTopOfLibrary } from './actions';
 import { resolveAesiSpell } from './spells';
+import {
+  entersUntapped,
+  creaturesReadyToPutALand,
+  wayToPutALand,
+  landToPut,
+  colourWeWant,
+  putLandThatWay,
+  playLandsFromTopWithCase,
+  putLandOntoBattlefield,
+  returnLandForGrowthChamber,
+} from './land-drops';
 import * as C from '../../engine/cards/cards';
 import { CardDef, Cost, makeToken } from '../../engine/cards/cards';
 import {
@@ -326,75 +335,19 @@ export class AesiGame extends Game<AesiGame> {
   }
   /** Lands that come back untapped (basics, Reliquary Tower, Demolition Field): they pay for a loop. */
   untappedLand(card: CardDef): boolean {
-    // (a fast land comes back tapped once there are three lands)
-    return (
-      card.land !== null &&
-      card !== SKYCLAVE && // returned to hand it is a battle, not a land
-      card.land.etb !== 'tapped' &&
-      card.land.special !== 'wilds' &&
-      card.land.special !== 'chamber' &&
-      card.land.cond !== 'fast'
-    );
+    return entersUntapped(this, card);
   }
   readyPutters(): Permanent[] {
-    const landCount = this.landsOnBattlefield().length;
-    return this.battlefield.filter(
-      (permanent) =>
-        PUTTERS.has(permanent.card.name) &&
-        !permanent.tapped &&
-        !permanent.sick &&
-        !(permanent.card.name === BUDOKA && permanent.transformed) &&
-        (permanent.card.name !== BUDOKA || landCount < 30),
-    );
+    return creaturesReadyToPutALand(this);
   }
   /** How to get a land from hand onto the battlefield now, best first: a "put" creature when Retreat
    *  will untap it, else a land drop, else a put creature, else Patron of the Moon. */
   landWay(): Way | null {
-    const permanents = this.readyPutters();
-    // Budoka flips at 10 lands (losing the ability): use it last
-    permanents.sort(
-      (permanent, otherPermanent) =>
-        +(permanent.card.name === BUDOKA) -
-        +(otherPermanent.card.name === BUDOKA),
-    );
-    if (permanents.length && this.hasUntapper())
-      return { kind: 'putter', permanent: permanents[0] };
-    if (this.canDrop()) return { kind: 'drop' };
-    if (permanents.length) return { kind: 'putter', permanent: permanents[0] };
-    if (this.isOnBattlefield(PATRON) && this.canPay(new Cost(1)))
-      return { kind: 'patron' };
-    return null;
+    return wayToPutALand(this);
   }
   /** Which land from hand to play: a basic we need the colour of, fetch lands when the mana can wait. */
   chooseLand(lands: CardDef[]): CardDef {
-    const want = this.wantColour();
-    const needNow = this.needManaNow();
-    const score = (card: CardDef): number => {
-      const i = card.land!;
-      let score = 0;
-      if (i.special === 'wilds')
-        score = needNow ? 2 : 7; // two landfall triggers, but the basic is tapped
-      else if (i.special === 'chamber')
-        score = this.landsOnBattlefield().some(
-          (permanent) => permanent.land!.basic,
-        )
-          ? needNow
-            ? 1
-            : 5
-          : -5;
-      else if (i.basic) score = 6 + (BASIC_COL[card.name] === want ? 1.5 : 0);
-      else if (i.mana === 'A' || (i.mana.length === 3 && i.mana[1] === '/'))
-        score = 7.5; // a dual land makes the colour we need
-      else score = 3; // colourless lands
-      if (
-        i.special !== 'wilds' &&
-        i.special !== 'chamber' &&
-        this.entersTapped(card)
-      )
-        score += needNow ? -6 : 0.5;
-      return score;
-    };
-    return firstMax(lands, score);
+    return landToPut(this, lands);
   }
   /** A spell in hand we could cast with one more mana. */
   needManaNow(): boolean {
@@ -407,27 +360,7 @@ export class AesiGame extends Game<AesiGame> {
     );
   }
   wantColour(): string {
-    let blueNeeded = 0,
-      greenNeeded = 0;
-    for (const card of [...this.hand, ...this.command]) {
-      blueNeeded += card.cost.blue;
-      greenNeeded += card.cost.green;
-    }
-    let blueSources = 0,
-      greenSources = 0;
-    for (const permanent of this.landsOnBattlefield()) {
-      const kind = this.manaSourceKind(permanent, true) ?? '';
-      if (kind === 'U' || kind === 'GU' || kind === 'FGU' || kind === 'A')
-        blueSources++;
-      if (kind === 'G' || kind === 'GU' || kind === 'FGU' || kind === 'A')
-        greenSources++;
-    }
-    if (blueSources === 0 && blueNeeded) return 'U';
-    if (greenSources === 0 && greenNeeded) return 'G';
-    return (blueNeeded + 1) / (blueSources + 1) >=
-      (greenNeeded + 1) / (greenSources + 1)
-      ? 'U'
-      : 'G';
+    return colourWeWant(this);
   }
 
   /** Play one land from hand (the best way, or the given one). */
@@ -435,46 +368,7 @@ export class AesiGame extends Game<AesiGame> {
     way: Way | null = null,
     otherCard: CardDef | null = null,
   ): boolean {
-    const lands = this.landsInHand();
-    if (!lands.length) return false;
-    const chosenWay = way ?? this.landWay();
-    if (!chosenWay) return false;
-    if (chosenWay.kind === 'patron') {
-      if (!this.pay(new Cost(1))) return false;
-      const landsToPlay = lands
-        .slice()
-        .sort(
-          (card, anotherCard) =>
-            +(anotherCard.land!.special === 'wilds') -
-            +(card.land!.special === 'wilds'),
-        )
-        .slice(0, 2);
-      this.say('Patron of the Moon: two lands onto the battlefield tapped');
-      for (const landToPlay of landsToPlay)
-        if (this.hand.includes(landToPlay))
-          this.putLand(landToPlay, 'hand', 'Patron', true);
-      return true;
-    }
-    const land = otherCard ?? this.chooseLand(lands);
-    if (chosenWay.kind === 'drop') this.dropsUsed += 1;
-    else {
-      chosenWay.permanent.tapped = true;
-      if (
-        chosenWay.permanent.card.name === BUDOKA &&
-        this.landsOnBattlefield().length + 1 >= 10
-      ) {
-        chosenWay.permanent.transformed = true; // flips into Dokai, Weaver of Life
-        this.say('Budoka Gardener flips (10 lands)');
-      }
-    }
-    this.putLand(
-      land,
-      'hand',
-      chosenWay.kind === 'drop'
-        ? 'play land'
-        : `${chosenWay.permanent.card.name.split(',')[0]} puts`,
-    );
-    return true;
+    return putLandThatWay(this, way, otherCard);
   }
   override playLand(): void {
     this.caseTop();
@@ -488,29 +382,7 @@ export class AesiGame extends Game<AesiGame> {
    *  library. (A fixed step, not a choice: the planner's copies shuffle the library, so their choices
    *  mustn't depend on the top card.) */
   caseTop(): void {
-    const permanent = this.findPermanent(CASE);
-    if (!permanent || !permanent.transformed) return;
-    for (
-      let i = 0;
-      i < 20 && this.library.length > this.libraryCardsToKeep();
-      i++
-    ) {
-      const top = this.library[0];
-      if (top.land !== null && this.canDrop()) {
-        this.dropsUsed += 1;
-        this.putLand(top, 'library', 'play land from the top (Case)');
-      } else if (
-        !this.epic &&
-        top.land === null &&
-        (top.isCreature || top.types.has('enchantment')) &&
-        !HOLD.has(top.name) &&
-        this.battlefieldValue(top) >= 50 &&
-        !(top.types.has('legendary') && this.isOnBattlefield(top.name)) &&
-        this.canPay(this.effectiveCost(top))
-      ) {
-        castFromTopOfLibrary(this, top);
-      } else return;
-    }
+    playLandsFromTopWithCase(this);
   }
 
   /** A land enters from hand or library. Fetch lands crack at once (two landfall triggers, the basic
@@ -521,51 +393,11 @@ export class AesiGame extends Game<AesiGame> {
     how: string,
     tapped = false,
   ): Permanent | null {
-    this.takeCardIfThere(card, from);
-    const landInfo = card.land!;
-    if (landInfo.special === 'wilds') {
-      this.putCard(card, 'graveyard');
-      this.say(`${how}: ${card.name} (cracked)`);
-      this.onLandEnter(new Permanent(card, landInfo), true);
-      this.fetchBasic({
-        tapped: !(
-          card.name === PASSAGE && this.landsOnBattlefield().length >= 3
-        ),
-      });
-      return null;
-    }
-    const permanent = new Permanent(
-      card,
-      landInfo,
-      tapped || this.entersTapped(card),
-    );
-    permanent.sick = true; // entered this turn (matters only when lands are creatures)
-    this.putOntoBattlefield(permanent);
-    this.say(`${how}: ${card.name}${permanent.tapped ? ' (tapped)' : ''}`);
-    this.onLandEnter(permanent, false);
-    if (landInfo.special === 'chamber') this.chamberBounce(permanent);
-    return permanent;
+    return putLandOntoBattlefield(this, card, from, how, tapped);
   }
   /** Simic Growth Chamber: return a land (a tapped basic; tap an untapped one for mana first). */
   chamberBounce(self: Permanent): void {
-    const others = this.landsOnBattlefield().filter(
-      (permanent) =>
-        permanent !== self && permanent.land!.special !== 'chamber',
-    );
-    let landToReturn: Permanent | null = null;
-    const loop = this.hasUntapper() && findLoopPutter(this) !== null; // returning itself sets up the Retreat loop
-    if (others.length && !loop) {
-      landToReturn = firstMax(
-        others,
-        (permanent) =>
-          (permanent.tapped ? 2 : 0) + (permanent.land!.basic ? 1 : 0),
-      );
-      if (!landToReturn.tapped && this.manaSourceKind(landToReturn))
-        this.tap(landToReturn, 'N');
-    } else landToReturn = self;
-    this.takeFromBattlefieldIfThere(landToReturn);
-    this.putCard(landToReturn.card, 'hand');
-    this.say(`${self.card.name} returns`, landToReturn.card);
+    returnLandForGrowthChamber(this, self);
   }
   /** Search the library for a basic land (only = Forest or Island; the colour we need if not given). The engine
    *  does the search; chooseLandToFetch picks the land. */

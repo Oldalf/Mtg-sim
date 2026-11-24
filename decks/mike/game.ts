@@ -5,6 +5,7 @@
  * Files:
  *   cards.ts       the card names and the facts about them (values, the marks on permanents, tokens)
  *   game.ts        this file: MikeGame, its state, win checks, drawing, speed, combat and spells
+ *   drawing.ts     one card drawn (or the empty library) and what each draw triggers
  *   candidates.ts  everything the AI may do now, with a score each (cards in hand and abilities)
  *   actions.ts     what some abilities do when the AI picks them
  *

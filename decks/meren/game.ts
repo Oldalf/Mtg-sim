@@ -5,6 +5,8 @@
  * Files:
  *   cards.ts       the card names and the facts about them (values, which creatures do what)
  *   game.ts        this file: MerenGame, its state, turn steps, combat and tutors
+ *   sacrifice.ts   what to sacrifice and to which outlet
+ *   end-step.ts    Meren's end step: feeding her and the card she returns
  *   triggers.ts    what happens when a permanent enters the battlefield or dies
  *   candidates.ts  everything the AI may do now, with a score each
  *   actions.ts     what the abilities and spells do when the AI picks them
