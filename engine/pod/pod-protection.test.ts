@@ -8,7 +8,7 @@ import { Permanent } from '../game/game-types';
 import { Deck } from '../run/runner';
 import { podSpec, seatPlayers } from './pod';
 import { PodTable } from './pod-table';
-import { answerWin } from './pod-interaction';
+import { answerWin } from './pod-win-answers';
 
 const CODIE_SEAT = 0;
 const GALE_SEAT = 2;

@@ -7,12 +7,14 @@ import { coloursOf } from '../cards/cards';
 import { MASSACRE_WURM } from '../game/common-permanents';
 import { Game } from '../game/game';
 import { fightOpponent } from './pod-combat';
+import { answerWin, counterSpell, shouldGoForKill } from './pod-win-answers';
 import {
-  answerWin,
   attackPreference,
   bounceEveryOpponentsCreatures,
+  snipeBestTarget,
+} from './pod-interaction';
+import {
   bounceEveryPermanentOfColour,
-  counterSpell,
   creatureCardsInGraveyard,
   creatureCardsOfGraveyard,
   exileCreaturesFromGraveyard,
@@ -26,11 +28,9 @@ import {
   makeOpponentsSacrifice,
   creaturesShrinkWouldKill,
   shrinkCreatures,
-  shouldGoForKill,
-  snipeBestTarget,
   stopBestCreatureAttackingUs,
   weakenBestCreature,
-} from './pod-interaction';
+} from './pod-card-effects';
 import { PodTable } from './pod-table';
 
 export function buildArena(table: PodTable): Arena {
