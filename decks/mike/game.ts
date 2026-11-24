@@ -65,6 +65,7 @@ import {
   WIZARD_CLASS,
 } from './cards';
 import { buildCandidates } from './candidates';
+import { drawOneCard, triggerOnCardDrawn } from './drawing';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -359,74 +360,10 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   /** One card actually drawn (or the empty-library replacement). */
   drawOne(): void {
-    if (!this.library.length) {
-      if (
-        this.countOnBattlefield(LABORATORY_MANIAC) > 0 ||
-        this.isOnBattlefield(JACE)
-      ) {
-        this.milled = true;
-        this.winHow = 'mill';
-        this.say('draw from an empty library: WIN');
-      } else if (this.countOnBattlefield(ORMOS_ARCHIVE_KEEPER) > 0) {
-        const permanent = this.battlefield.find(
-          (candidate) => candidate.card.name === ORMOS_ARCHIVE_KEEPER,
-        )!;
-        permanent.counters += 5;
-      } else if (this.isOnBattlefield(LIVING_CONUNDRUM)) {
-        // the draw is skipped
-      } else {
-        this.died = true;
-        this.say('draw from an empty library: we lose');
-      }
-      return;
-    }
-    this.firstDrawDone = true;
-    this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
-    if (!this.library.length && this.emptiedTurn === null) {
-      this.emptiedTurn = this.turn;
-      this.emptiedSafe = this.isSafeToEmptyLibrary();
-    }
-    this.drawsThisTurn += 1;
-    this.drawTriggers();
+    drawOneCard(this);
   }
   drawTriggers(): void {
-    const triggerCount = this.drawTriggerMultiplier();
-    const second = this.drawsThisTurn === 2;
-    for (let triggerNumber = 0; triggerNumber < triggerCount; triggerNumber++) {
-      const crawlers = this.countOnBattlefield(PSYCHOSIS_CRAWLER);
-      if (crawlers) this.crawlerDrain += this.drainEach(crawlers);
-      for (const permanent of this.battlefield) {
-        const name = this.effectiveCard(permanent).name;
-        if (name === CLINQUANT_SKYMAGE || name === ONEIROPHAGE)
-          permanent.counters += 1;
-      }
-      const seas = this.findPermanent(OMINOUS_SEAS);
-      if (seas) {
-        seas.counters += 1;
-        while (seas.counters >= 8) {
-          seas.counters -= 8;
-          this.createTokens(TOK.kraken, 1);
-          this.say('Ominous Seas: an 8/8 Kraken');
-        }
-      }
-      if (this.findPermanent(WIZARD_CLASS)?.counters === 3) {
-        const counterRecipient = this.counterTarget();
-        if (counterRecipient) counterRecipient.counters += 1;
-      }
-      if (second) {
-        for (const battlefieldPermanent of this.battlefield.slice()) {
-          const name = this.effectiveCard(battlefieldPermanent).name;
-          if (name === EMRAKULS_MESSENGER) this.createTokens(TOK.spawn, 1);
-          else if (name === MISCHIEVOUS_MYSTIC)
-            this.createTokens(TOK.faerie, 1);
-        }
-      }
-    }
-    if (second) {
-      for (const battlefieldPermanent of this.battlefield)
-        if (battlefieldPermanent.card.name === KRANG)
-          battlefieldPermanent.counters += triggerCount;
-    }
+    triggerOnCardDrawn(this);
   }
   /** The creature to put a +1/+1 counter on: an evasive attacker. */
   counterTarget(): Permanent | null {
@@ -884,10 +821,6 @@ export class MikeGame extends GameWithoutKillSearch {
       const xValue = parseInt((mode ?? 'x=0').slice(2), 10);
       this.draw(xValue);
       this.discard(1);
-    } else if (name === 'Frantic Search') {
-      this.draw(2);
-      this.discard(2);
-      this.untapLands(3);
     } else super.resolve(card, fromGraveyard, mode);
   }
   /** Slick Imitator at max speed: {1}, sacrifice it: copy a spell we cast (a copy of a draw spell draws again). */
