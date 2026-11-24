@@ -61,7 +61,7 @@ Rule 0 applies to every name in them. Split a file at about 800 lines (`game.ts`
 | `PLAN.md` | The deck's own plan: rules, results, what is open (section 8). |
 | `logs/` | Pontus's real games, if any. |
 | `lists/` | Later: other versions of the list (`proposed.txt` is the adopted one). |
-| `PRIMER.txt`, `SWAPS.txt` | Later, when Pontus asks: the primer for Archidekt (plain text, short, no markdown) and the swaps he adopted. |
+| `PRIMER.txt`, `SWAPS.md` | Later, when Pontus asks: the primer for Archidekt (plain text, short, no markdown) and the swaps he made (newest first, older sections below; Aesi still has an older `SWAPS.txt`). |
 
 Other files (`actions.ts`, `triggers.ts`, `combat.ts`, `spells.ts`, `loops.ts`) come when `game.ts` grows; name them by topic.
 

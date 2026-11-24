@@ -20,7 +20,7 @@ Land
 1x Exotic Orchard
 10x Forest
 1x Llanowar Wastes
-1x Mosswort Bridge
+1x High Market
 1x Necroblossom Snarl
 16x Swamp
 1x Tainted Wood
@@ -49,13 +49,13 @@ Ramp
 1x Studious First-Year // Rampant Growth
 
 Recursion
-1x Eternal Witness
+1x Yahenni, Undying Partisan
 1x Grave Researcher // Reanimate
 1x Junji, the Midnight Sky
 1x Persist
 1x Puppeteer Clique
 1x Sepulchral Primordial
-1x Timeless Witness
+1x Ophiomancer
 1x Unearth
 1x Victimize
 

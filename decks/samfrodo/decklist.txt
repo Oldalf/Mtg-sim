@@ -27,7 +27,7 @@ Draw
 1x Well of Lost Dreams
 
 Land
-1x Access Tunnel
+1x Llanowar Wastes
 1x Ash Barrens
 1x Brushland
 1x Canopy Vista
@@ -37,7 +37,7 @@ Land
 8x Forest
 1x Fortified Village
 1x Ghost Quarter
-1x Graypelt Refuge
+1x Caves of Koilos
 1x Isolated Chapel
 1x Murmuring Bosk
 1x Necroblossom Snarl
@@ -62,7 +62,7 @@ Ramp
 1x Elanor Gardner
 1x Farseek
 1x Gilded Goose
-1x Pristine Talisman
+1x Eternal Witness
 1x Prize Pig
 1x Prosperous Innkeeper
 1x Sol Ring
@@ -92,7 +92,7 @@ Sac Outlet
 Tokens
 1x Academy Manufactor
 1x Cat Collector
-1x Farmer Cotton
+1x Agent of the Iron Throne
 1x Gwaihir, Greatest of the Eagles
 1x Meriadoc Brandybuck
 1x Merry, Warden of Isengard
