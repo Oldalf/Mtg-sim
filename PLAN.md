@@ -60,7 +60,7 @@ Lines are `wc -l`. "Who plays it" is every `decklist.txt` and `lists/*.txt`.
 **`engine/game/game-core.ts` (1,755)**
 - To `casting.ts` (new): `castInstantOrSorcery`, `castReboundCards`, `onCastInstantOrSorcery`, `castPerm`, `flashback`, `wishclaw`, `transmute`, `cycle` (lines 996-1176, about 180).
 - To `turn.ts` (exists): `startTurn`, `beginNewTurn`, `enterStep`, `endTurn`, `upkeepTriggersOfTheGame`, `takeInitiative`, `developWin`; `adoptKillLineCopy` to `kill-line.ts` (about 150).
-- To `mana-payment.ts`: `cabalMana`, `drainPowerMana`, `energyTapTarget`, `canTapForEnergy` (about 35).
+- `cabalMana`, `drainPowerMana`, `energyTapTarget` and `canTapForEnergy` stay where they are: they are 3 to 12 lines each, so a one-line method for each would save almost nothing.
 - What is left is about 1,400 lines: state and `clone` (200), the hooks with their default bodies (300), zone changes (200), creatures, life and damage (140), log lines (90). `ENGINE.md`'s list of why not gets the new numbers.
 
 **`engine/game/game.ts` (1,099, the pod parts)**
@@ -111,7 +111,7 @@ Lines are `wc -l`. "Who plays it" is every `decklist.txt` and `lists/*.txt`.
   - A test list a deck's `PLAN.md` still wants to try keeps its cards.
 
 **Order of the commits** (each IDENTICAL: every deck's regress and the pod run)
-1. `casting.ts`, then the turn steps, then the mana helpers (game-core).
+1. `casting.ts`, then the turn steps (game-core).
 2. `pod-attacks.ts`, then `pod-answers.ts` (game.ts); then `pod-win-answers.ts` and `pod-card-effects.ts` (pod-interaction.ts).
 3. Edgar's unused code (the tests' baseline re-recorded, after asking).
 4. Mike: delete the Frantic Search copy, then `drawing.ts`, then its card facts.

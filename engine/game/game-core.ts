@@ -79,13 +79,18 @@ import {
 } from './common-spells';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import { enterTriggerCount } from './trigger-doublers';
-import {
-  castInstantOrSorceryTriggers,
-  EXILES_ITSELF,
-  copyNextInstantOrSorcery,
-  resolveGraveyardCopySpell,
-} from './spell-copies';
+import { resolveGraveyardCopySpell } from './spell-copies';
 import { playGoldfishCombat } from './goldfish-combat';
+import {
+  castAndActivateWishclaw,
+  castAndResolveInstantOrSorcery,
+  castCardsExiledWithRebound,
+  castPermanentSpell,
+  castWithFlashback,
+  cycleCard,
+  transmuteCard,
+  triggerOnInstantOrSorceryCast,
+} from './casting';
 import {
   putOpeningHandLeylineOntoBattlefield,
   resolveFlashSpell,
@@ -1000,37 +1005,14 @@ export abstract class GameCore<S = unknown> {
     mode: string | null = null,
     triggerOptions: Record<string, unknown> = {},
   ): boolean {
-    const cost = this.effectiveCost(card, base, fromGraveyard);
-    if (!this.pay(cost, true)) return false;
-    this.takeCard(card, fromGraveyard ? 'graveyard' : 'hand');
-    if (card.isSorcery) this.nextSorceryHasFlash = false; // Quicken's flash is for one sorcery
-    this.sayEvent(
-      'cast',
-      'cast',
+    return castAndResolveInstantOrSorcery(
+      this,
       card,
-      fromGraveyard ? '(from graveyard)' : '',
-      mode ? `[${mode}]` : '',
+      fromGraveyard,
+      base,
+      mode,
+      triggerOptions,
     );
-    this.spellsCast += 1;
-    this.onCastInstantOrSorcery(fromGraveyard);
-    this.castTriggers(card, fromGraveyard, triggerOptions);
-    copyNextInstantOrSorcery(this, card, mode);
-    this.podAnnounceCast(card);
-    if (this.podCounters(card)) {
-      this.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
-      return true;
-    }
-    this.resolve(card, fromGraveyard, mode);
-    if (!fromGraveyard && card.keywords.has('rebound')) {
-      // rebound: exiled as it resolves, cast again for free at our next upkeep
-      this.putCard(card, 'exile');
-      this.reboundCards = [...this.reboundCards, card];
-    } else
-      this.putCard(
-        card,
-        fromGraveyard || EXILES_ITSELF.has(card.name) ? 'exile' : 'graveyard',
-      );
-    return true;
   }
 
   /** The upkeep triggers the game itself has: rebound, and the initiative (its holder ventures into Undercity). */
@@ -1050,57 +1032,15 @@ export abstract class GameCore<S = unknown> {
 
   /** Rebound: at our upkeep, the cards exiled with rebound are cast again for free, then go to the graveyard. */
   castReboundCards(): void {
-    const rebounding = this.reboundCards;
-    if (!rebounding.length) return;
-    this.reboundCards = [];
-    for (const card of rebounding) {
-      if (!this.exile.includes(card)) continue;
-      this.takeCard(card, 'exile');
-      this.sayEvent('cast', 'cast', card, '(rebound, free)');
-      this.spellsCast += 1;
-      this.onCastInstantOrSorcery(false);
-      copyNextInstantOrSorcery(this, card, null);
-      this.podAnnounceCast(card);
-      this.resolve(card);
-      this.putCard(card, 'graveyard');
-    }
+    castCardsExiledWithRebound(this);
   }
 
   onCastInstantOrSorcery(fromGraveyard: boolean): void {
-    this.isCast += 1;
-    castInstantOrSorceryTriggers(this);
-    for (const permanent of this.battlefield.slice()) {
-      const cardName = permanent.card.name;
-      if (cardName === 'Academy Wall' && !this.wallUsed) {
-        this.wallUsed = true;
-        this.draw(1);
-        this.discard(1);
-      } else if (cardName === 'Secrets of the Dead' && fromGraveyard)
-        this.draw(1);
-    }
-    if (this.caseSolved && this.isOnBattlefield('Case of the Ransacked Lab'))
-      this.draw(1);
+    triggerOnInstantOrSorceryCast(this, fromGraveyard);
   }
 
   castPerm(card: CardDef, fromCommand = false): boolean {
-    let cost = this.effectiveCost(card);
-    if (fromCommand) cost = this.commanderCost(card, cost);
-    if (!this.pay(cost, false)) return false;
-    if (fromCommand) {
-      this.takeCard(card, 'command');
-      this.commandCasts.push(card.name);
-      this.onCommanderCast(card);
-    } else this.takeCard(card, 'hand');
-    this.spellsCast += 1;
-    this.sayEvent('cast', 'cast', card);
-    this.podAnnounceCast(card);
-    if (this.podCounters(card)) {
-      // countered: a commander goes back to the command zone (its tax still counts this cast)
-      this.putCard(card, fromCommand ? 'command' : 'graveyard');
-      return true;
-    }
-    this.enter(card);
-    return true;
+    return castPermanentSpell(this, card, fromCommand);
   }
 
   // ================================================================ lands
@@ -1124,49 +1064,20 @@ export abstract class GameCore<S = unknown> {
 
   // ================================================================ card actions
   flashback(card: CardDef): boolean {
-    if (!this.pay(this.effectiveCost(card, new Cost(1, 1), true), true))
-      return false;
-    this.takeCard(card, 'graveyard');
-    this.myLife -= 3;
-    this.sayEvent('cast', 'flashback', card);
-    this.spellsCast += 1;
-    this.onCastInstantOrSorcery(true);
-    copyNextInstantOrSorcery(this, card, null);
-    this.podAnnounceCast(card);
-    this.resolve(card, true);
-    this.putCard(card, 'exile');
-    return true;
+    return castWithFlashback(this, card);
   }
 
   wishclaw(card: CardDef): boolean {
-    if (!this.pay(this.effectiveCost(card).plus(new Cost(1)), false))
-      return false;
-    this.takeCard(card, 'hand'); // it goes to an opponent
-    this.say('Wishclaw Talisman (cast + activate)');
-    this.podAnnounceCast(card);
-    this.doTutor(() => true, false);
-    return true;
+    return castAndActivateWishclaw(this, card);
   }
 
   transmute(card: CardDef): boolean {
-    if (!this.pay(new Cost(1, 2), false)) return false;
-    this.moveCard(card, 'hand', 'graveyard');
-    this.say('transmute', card.name);
-    this.doTutor(
-      (otherCard) =>
-        otherCard.manaValue === card.manaValue && otherCard.land === null,
-      false,
-    );
-    return true;
+    return transmuteCard(this, card);
   }
 
   /** Cycling: pay its cost ("Cycling {2}" in the text; {2} if the text doesn't say), discard it, draw a card. */
   cycle(card: CardDef): boolean {
-    if (!this.pay(C.cyclingCost(card) ?? new Cost(2))) return false;
-    this.moveCard(card, 'hand', 'graveyard');
-    this.say('cycle', card);
-    this.draw(1);
-    return true;
+    return cycleCard(this, card);
   }
 
   // ================================================================ choosing what to do
