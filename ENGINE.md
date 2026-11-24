@@ -59,9 +59,9 @@ Knowingly not followed:
 | Folder | Files | What it is |
 |---|---|---|
 | `engine/cards/` | `cards`, `card-facts`, `land-text`, `scryfall`, `card-images` | Card data and facts that hold in any deck |
-| `engine/game/` | `game-core`, `game`, `game-types`; the topic files `mana-payment`, `payment-search`, `search-mana`, `common-spells`, `common-permanents`, `land-play`, `land-search`, `planner`, `kill-line`, `turn`, `goldfish-combat`, `creature-deck`, `blink`, `dungeons`, `reanimation`, `spell-copies`, `instant-speed`, `firebending`, `trigger-doublers`, `opponent-cast-triggers`, `creature-enter-triggers`, `mulligan`, `answers`, `search`, `log-format`; their `.test` files | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
+| `engine/game/` | `game-core`, `game`, `game-types`; the topic files `mana-payment`, `payment-search`, `search-mana`, `common-spells`, `common-permanents`, `land-play`, `land-search`, `planner`, `kill-line`, `turn`, `casting`, `pod-attacks`, `pod-answers`, `goldfish-combat`, `creature-deck`, `blink`, `dungeons`, `reanimation`, `spell-copies`, `instant-speed`, `firebending`, `trigger-doublers`, `opponent-cast-triggers`, `creature-enter-triggers`, `mulligan`, `answers`, `search`, `log-format`; their `.test` files | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
 | `engine/game-log/` | `game-log`, `game-log-moves`, `-text`, `-tags`, `-files`, `-run`, `-replay`, `-archidekt`, `logged-runs`, `game-log.test` | Logging a game and reading logs back |
-| `engine/pod/` | `pod`, `pod-arena`, `pod-table`, `pod-combat`, `pod-blocking`, `pod-interaction`, `pod-report`, `pod.test` | Decks playing each other |
+| `engine/pod/` | `pod`, `pod-arena`, `pod-table`, `pod-combat`, `pod-blocking`, `pod-interaction`, `pod-win-answers`, `pod-card-effects`, `pod-report`, `pod.test` | Decks playing each other |
 | `engine/run/` | `runner`, `worker-pool`, `worker-pool.test`, `power-save`, `setting-descriptions` | Running many games |
 | `engine/tools/` | `report`, `ranking`, `regress`, `analyze`, `log-board`, `diag-metrics` | Reports and the command line tools (`--rank`, `--cut`, `--analyze`, `--diag`, `--regress`) |
 | `engine/util/` | `lists`, `rng` | Small helpers with no imports |
@@ -79,16 +79,17 @@ A large method body lives in a topic file as a plain function that takes the gam
 | `land-play.ts` | Whether a land enters tapped (`entersTapped`), which land to play and playing it (`playLand`, Evolving Wilds, bounce lands) |
 | `planner.ts` | What to do next: the deck's candidates in order (rituals that help, a rock first), `develop`, and the turn planner with its rollouts |
 | `kill-line.ts` | `checkKill` (the kill search at each step of the turn) and playing a found line on a copy |
-| `turn.ts` | The mulligan and one turn of ours (`takeTurn`) |
+| `turn.ts` | The mulligan, the start of our turn (`startTurn`, `beginNewTurn`), moving from step to step (`enterStep`), `developWin`, and one turn of ours (`takeTurn`) |
+| `casting.ts` | Casting an instant or sorcery (with rebound, and Blue Sun's Zenith going back into the library) or a permanent spell, the cast triggers, flashback, Wishclaw, transmute, cycling |
 | `goldfish-combat.ts` | Goldfish combat for creature decks (`creatureCombat`) |
+
+The pod parts of a game (`Game` in `game.ts`) are split the same way: `pod-attacks.ts` is our side of a pod combat (`arenaCombat`, `planAttack`, `pickDefender`, `homeGuard`, the creatures that must attack, `podDefence`), and `pod-answers.ts` our answers (`answerCost`, `podCast`, `podRespond`, the counter abilities, `podShield`, and what an opponent's answer does to our cards). On the table's side, `engine/pod/pod-interaction.ts` keeps the removal after a turn and the attack preference, `pod-win-answers.ts` answers a win and counters spells, `pod-card-effects.ts` has what one player's card does to the others (Stormdrake, goad, edicts, fight, graveyards, -X/-X).
 
 Two other ways were left out. A chain of classes (`GameMana extends GameZones extends ...`) would need every method one layer uses from a later one declared abstract in the earlier one, and all fields would still sit in the first class (a subclass's fields are set after the base constructor runs). Calling functions from the decks (`pay(game, cost)` for `game.pay(cost)`) would change hundreds of lines in every deck and make them harder to read.
 
-`game-core.ts` is still about 1,680 lines after the split (3,095 before), against the guide's 800, for these reasons:
-- About 200 lines of state: some 80 fields with their comments, the constructor and `clone`.
-- About 300 lines of hooks with their default bodies (the deck hooks, the combat hooks, the pod hooks `game.ts` fills in). A hook must be on the class so that a deck can override it.
-- About 200 lines of zone changes (`takeCard`, `putCard`, `draw`, ...) and about 140 of creatures, life and damage. Decks call these hundreds of times, and most are a few lines long, so moving them would only add a one-line method for each.
-- Casting (`castInstantOrSorcery`, `castPerm`, rebound, flashback and the like, about 150 lines) and the turn's small steps (`startTurn`, `beginNewTurn`, `enterStep`, `endTurn`, `developWin`, about 130). Decks override or call most of them. These two could still move to a `casting.ts` and `turn.ts` if they grow.
+Files still over the guide's 800 lines (step 12, U1, 2026-11-25), and why:
+- `game-core.ts`, about 1,620 lines (3,095 before step 11): about 200 lines of state (some 80 fields with their comments, the constructor and `clone`); about 300 of hooks with their default bodies (a hook must be on the class so a deck can override it); about 200 of zone changes and 140 of creatures, life and damage, which decks call hundreds of times and are mostly a few lines long (moving them would only add a one-line method each); about 90 of log lines. Casting and the turn's steps moved out in U1.
+- `decks/aesi/game.ts` and `decks/mike/game.ts`, about 890 each, and `decks/meren/game.ts`, about 830: each moved a topic to its own file (Aesi `land-drops.ts` and `combat.ts`, Mike `drawing.ts`, Meren `sacrifice.ts` and `end-step.ts`) and its cards that no other deck plays to the engine. What is left are the deck's state, its turn steps, its win and its overrides. Their other card rules are tied to the deck's own overrides: Aesi's and Mike's `onEnter` and `onLandEnter` don't call the engine's, and Aesi's lands go through its own land drops. Moving them would change what those decks run, so it is a change of its own and not a move.
 
 ## What the engine provides
 
@@ -114,6 +115,7 @@ Two other ways were left out. A chain of classes (`GameMana extends GameZones ex
 - 2026-11-13: game logs (events, card moves, `session-logs/`, tags, `npm run logs`, the board from the moves, replay); every zone change in the engine and the decks goes through `takeCard` / `putCard` and the like; rule 0 renames (`toGraveyard`, `effectiveCost`, `Permanent`, `Candidate`).
 - 2026-11-23: the goldfish opponents' turns (`opponentEndStep`, `playGoldfishOpponentsTurns`); `sacrifice-outlets.ts` (Yahenni, High Market, Evolutionary Leap, Fiend Artisan, Sidisi, Promise of Aclazotz with its adventure).
 - 2026-11-24: the planner error (`planBestOption`, about 1 game in 8,000 to 16,000 skipped) fixed: a payment tried on a snapshot (rituals, mana rocks) left the pain-land life loss and the mana spent in place, so the next candidate list could differ from the one the planner chose from. `takeSnapshot` / `restore` now cover life, `died` and `spent`. Every deck's regress stayed IDENTICAL.
+- 2026-11-25 (step 12, U1): casting and the turn's steps out of `game-core.ts`; the pod parts of `game.ts` into `pod-attacks.ts` and `pod-answers.ts`; `pod-interaction.ts` split into `pod-win-answers.ts` and `pod-card-effects.ts`; the big deck files split by topic; Frantic Search (Mike), Tune the Narrative, Pull from Tomorrow, Village Rites, Grisly Salvage, Songs of the Damned, Omniscience, Graceful Adept, Blue Sun's Zenith and Windfall (`Game.resolveOther`; Gale and Codie keep their own) are engine rules. Every deck IDENTICAL, except DnD, whose Windfall did nothing before.
 
 ## Ideas for later
 

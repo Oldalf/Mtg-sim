@@ -122,6 +122,24 @@ Lines are `wc -l`. "Who plays it" is every `decklist.txt` and `lists/*.txt`.
 
 DnD's Windfall is a separate commit, with a before / after of the pod run.
 
+**Done (2026-11-25), commits `fdae0c3` to `9d81efb`.** Every move is IDENTICAL: every deck's regress and the pod run. The file sizes after U1:
+- `game-core.ts` 1,617, `game.ts` 556, `pod-interaction.ts` 316.
+- `decks/aesi/game.ts` 888, `decks/mike/game.ts` 888, `decks/meren/game.ts` 828.
+
+`ENGINE.md` lists why each file still over 800 lines stays that size, and names the new files.
+
+What moved to the engine:
+- Mike: Frantic Search (a duplicate), Tune the Narrative, Pull from Tomorrow.
+- Meren: Village Rites, Grisly Salvage, Songs of the Damned.
+- Aesi: Omniscience, Graceful Adept, Blue Sun's Zenith.
+- Windfall, in `Game.resolveOther`. Mike's copy is gone; Gale and Codie keep their own. DnD's Windfall now resolves: DnD won 15.0% of 2,000 pod games before and after.
+
+What stayed in the decks, and why:
+- Aesi's enter and landfall cards (Haru-Onna, Invasion of Zendikar, Lotus Cobra, Druid Class, Khalni Heart Expedition, Azusa's Many Journeys) and Mike's Mystic Sanctuary, The Water Crystal, Roil Cartographer and the looters. Those decks' `onEnter` and `onLandEnter` don't call the engine's, so moving these cards changes what the decks run. That is a change of its own, for U3 or later.
+- Meren's Decode Transmissions, Deadly Brew, Dina's Guidance, Breach the Multiverse and Buried Alive: they hang on Meren's own state and choices, and Teval and Thantis play the last two.
+
+Unused code: Edgar's code for the 6 removed cards and his own copies for Marionette Apprentice and Swords to Plowshares are gone (Edgar's tests re-recorded, Pontus OK'd). The cards in the other decks' code that their lists don't play (Aesi, Meren, Gale, Sam & Frodo) stay. Nearly all are swaps those decks tried, and their `PLAN.md` names them. Meren's Gravedigger and Gale's Mission Briefing are named nowhere; Pontus decides whether their code goes.
+
 ## U2. One board, not two (Sonnet 5.5)
 
 The analyzer and `npm run logs` rebuild the board from the logged card moves in `engine/tools/log-board.ts` (395 lines); the game viewer does it in `shared/game-log-board.ts` (286 lines). A fix in one can be missed in the other (roadmap idea 1, `ENGINE.md` "Ideas for later").
