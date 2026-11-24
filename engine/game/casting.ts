@@ -40,6 +40,7 @@ export function castAndResolveInstantOrSorcery(
   game.podAnnounceCast(card);
   if (game.podCounters(card)) {
     game.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
+    shuffleBackIntoLibrary(game, card);
     return true;
   }
   game.resolve(card, fromGraveyard, mode);
@@ -52,7 +53,16 @@ export function castAndResolveInstantOrSorcery(
       card,
       fromGraveyard || EXILES_ITSELF.has(card.name) ? 'exile' : 'graveyard',
     );
+  shuffleBackIntoLibrary(game, card);
   return true;
+}
+
+/** Blue Sun's Zenith is shuffled into its owner's library instead of going to the graveyard. */
+function shuffleBackIntoLibrary(game: GameCore, card: CardDef): void {
+  if (card.name !== "Blue Sun's Zenith") return;
+  game.takeCardIfThere(card, 'graveyard');
+  game.putCard(card, 'library');
+  game.shuffle();
 }
 
 /** Rebound: at our upkeep, the cards exiled with rebound are cast again for free, then go to the graveyard. */

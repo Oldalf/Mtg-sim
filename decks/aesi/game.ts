@@ -595,21 +595,6 @@ export class AesiGame extends Game<AesiGame> {
     if (this.infMana) return true;
     return super.pay(cost, isInstantOrSorcery, commit);
   }
-  override effectiveCost(
-    card: CardDef,
-    base: Cost | null = null,
-    fromGraveyard = false,
-  ): Cost {
-    // Omniscience: spells from hand are free (an X spell then has X = 0, so Blue Sun's Zenith is paid normally)
-    if (
-      base === null &&
-      !fromGraveyard &&
-      this.isOnBattlefield(OMNI) &&
-      this.hand.includes(card)
-    )
-      return new Cost();
-    return super.effectiveCost(card, base, fromGraveyard);
-  }
   override castPerm(card: CardDef, fromCommand = false): boolean {
     if (this.epic) return false;
     const wasCast = super.castPerm(card, fromCommand);
@@ -624,15 +609,13 @@ export class AesiGame extends Game<AesiGame> {
     triggers: Record<string, unknown> = {},
   ): boolean {
     if (this.epic) return false;
-    if (!super.castInstantOrSorcery(card, fromGraveyard, base, mode, triggers))
-      return false;
-    if (card.name === BSZ) {
-      // shuffled into the library instead of the graveyard
-      this.takeCardIfThere(card, 'graveyard');
-      this.putCard(card, 'library');
-      this.shuffle();
-    }
-    return true;
+    return super.castInstantOrSorcery(
+      card,
+      fromGraveyard,
+      base,
+      mode,
+      triggers,
+    );
   }
   /** A Spirit was cast: Haru-Onna and Kiri-Onna may return to hand (only worth it with Omniscience). */
   spiritCast(): void {}
@@ -763,12 +746,6 @@ export class AesiGame extends Game<AesiGame> {
       this.discard(this.hand.length - 7);
   }
 
-  /** Graceful Adept: no maximum hand size (Reliquary Tower is in the engine's check). */
-  override hasNoMaximumHandSize(): boolean {
-    return (
-      this.isOnBattlefield('Graceful Adept') || super.hasNoMaximumHandSize()
-    );
-  }
   override endStep(): void {
     const permanent = this.findPermanent(CASE);
     if (

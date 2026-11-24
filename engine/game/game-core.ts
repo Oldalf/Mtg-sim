@@ -428,6 +428,14 @@ export abstract class GameCore<S = unknown> {
     base: Cost | null = null,
     fromGraveyard = false,
   ): Cost {
+    // Omniscience: spells from hand are free (an X spell then has X = 0, so it is cast with its X paid normally)
+    if (
+      base === null &&
+      !fromGraveyard &&
+      this.isOnBattlefield('Omniscience') &&
+      this.hand.includes(card)
+    )
+      return new Cost();
     const cost = base ?? card.cost;
     let reduction = 0;
     if (card.isInstantOrSorcery)
@@ -1231,7 +1239,8 @@ export abstract class GameCore<S = unknown> {
     return (
       this.isOnBattlefield('Reliquary Tower') ||
       this.isOnBattlefield('Thought Vessel') ||
-      this.isOnBattlefield('Decanter of Endless Water')
+      this.isOnBattlefield('Decanter of Endless Water') ||
+      this.isOnBattlefield('Graceful Adept')
     );
   }
 
