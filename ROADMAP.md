@@ -90,13 +90,22 @@ The plan and its notes per task are in git (`PLAN.md` at commit `6791b01`), task
 - Merchant Scroll and Mnemonic Wall are engine card rules.
 - The pick is `decks/gale/lists/speed.txt` (Merchant Scroll, Rain of Filth and Aetherize for Personal Tutor, Wizards of Thay and Mocking Sprite, about 9 €): +4.7 points by turn 7 in goldfish, and about +4 points of win rate in lower-bracket pods. Pontus decides whether to adopt it.
 
-## 11. Engine split, a swap skill, and deck follow-ups (in progress)
+## 11. Engine split, a swap skill, and deck follow-ups (done 2026-11-24)
 
-The plan is in `PLAN.md` (tasks T1 to T7): split `engine/game/game-core.ts` by topic, a skill for testing a swap, card rules shared between decks (Thunderclap Drake, Codie's missing cards), pod gaps, Gale's leftovers, Meren's "no meaningful impact" with Pontus's ideas, and Sam & Frodo's logs.
+The plan and its notes per task are in git (`PLAN.md` at commit `29f352e`), tasks T1 to T9.
+
+- `game-core.ts` split by topic (3,095 -> 1,676 lines, `ENGINE.md` "How the game class is split"), and `/test-swap` for testing a card swap.
+- Card rules shared between decks: Thunderclap Drake and Mizzix's Mastery in the engine, modal cards' land sides; Codie's gap to the table measured.
+- Gale in the pod: it no longer attacks, counters threats and keeps Aetherize up when in danger (wins 39 -> 50% and 35 -> 45% in the two pods tested); the pod cards that were not wired are. Gale's planner runs only when the top plays are close, and every kill miss is fixed.
+- Meren: impact measured in three levels, card-draw and outlet rounds, plays on the opponents' turns from Pontus's hand playtests. Sam & Frodo: game 2 analyzed, the Marionette Master finish.
+- Faster `verify`: Codie's and Sam & Frodo's slow seeds, kill misses checked in the regress games, checks by changed files, `verify --quick`.
+
+## 12. A heavier engine, one board, missing cards and the app's missing commands (in progress)
+
+The plan is in `PLAN.md` (tasks U1 to U4, picked by Pontus on 2026-11-24): card rules out of the big deck files and the engine's big files split, one board for the analyzer and the viewer, the cards not modelled yet (Edgar, Aesi, Gale, Codie), and the app's missing commands (`--rank`, `--cut`, `--hands`, `--analyze`, editing lists, a card's print).
 
 ## Ideas not decided (Pontus picks)
 
-Each names the model it would need. Pontus dropped the others on 2026-11-15 (shorter engine file names, a rule for test lists, the app knowing the adopted list, step 1's leftovers, a "watch" button). Splitting `game-core.ts` and the swap skill are now tasks of step 11.
+Each names the model it would need. Pontus dropped the others on 2026-11-15 (shorter engine file names, a rule for test lists, the app knowing the adopted list, step 1's leftovers, a "watch" button). "One board, not two" became task U2 of step 12.
 
-1. **One board, not two** (Sonnet 5.5). `engine/tools/log-board.ts` (the analyzer and `npm run logs`) and `shared/game-log-board.ts` (the viewer) each rebuild the board from the logged card moves with their own code, so a fix in one can be missed in the other. Pontus is unsure it is needed.
-2. **Azula plays its combos like a pilot** (Opus 5.5): task B7 in `decks/azula/PLAN.md`, parked until Pontus wants Azula in the pod.
+1. **Azula plays its combos like a pilot** (Opus 5.5): task B7 in `decks/azula/PLAN.md`, parked until Pontus wants Azula in the pod.
