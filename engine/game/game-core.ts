@@ -117,8 +117,17 @@ import {
   ritualCandidatesThatHelp,
 } from './planner';
 
-/** The pool, which permanents are tapped, and how many payments the log has noted (an undone payment is not logged). */
-type Snap = [ManaPool, boolean[], number];
+/** What a payment changes, to try one and undo it: the pool, which permanents are tapped, how many payments the log has
+ *  noted (an undone payment is not logged), and what a committed payment adds: the mana spent, and the life a pain
+ *  land costs (which could even kill us). */
+interface Snap {
+  pool: ManaPool;
+  tapped: boolean[];
+  paymentsLogged: number;
+  myLife: number;
+  died: boolean;
+  spent: number;
+}
 /** The steps of a turn the engine tells apart (untap has no step: nothing happens in it; cleanup is part of endTurn). */
 export type TurnStep = 'upkeep' | 'draw' | 'main1' | 'combat' | 'main2' | 'end';
 /** What the game log calls each zone (Archidekt's names). */
@@ -474,25 +483,31 @@ export abstract class GameCore<S = unknown> {
   }
 
   takeSnapshot(): Snap {
-    return [
-      { ...this.pool },
-      this.battlefield.map((permanent) => permanent.tapped),
-      this.paymentsForLog.length,
-    ];
+    return {
+      pool: { ...this.pool },
+      tapped: this.battlefield.map((permanent) => permanent.tapped),
+      paymentsLogged: this.paymentsForLog.length,
+      myLife: this.myLife,
+      died: this.died,
+      spent: this.spent,
+    };
   }
 
   restore(snapshot: Snap): void {
-    this.pool = { ...snapshot[0] };
+    this.pool = { ...snapshot.pool };
     this.paymentsForLog.length = Math.min(
       this.paymentsForLog.length,
-      snapshot[2],
+      snapshot.paymentsLogged,
     );
     const permanentCount = Math.min(
       this.battlefield.length,
-      snapshot[1].length,
+      snapshot.tapped.length,
     );
     for (let i = 0; i < permanentCount; i++)
-      this.battlefield[i].tapped = snapshot[1][i];
+      this.battlefield[i].tapped = snapshot.tapped[i];
+    this.myLife = snapshot.myLife;
+    this.died = snapshot.died;
+    this.spent = snapshot.spent;
   }
 
   /** Treasures and Eldrazi Spawn: mana sources that are sacrificed for their mana. */

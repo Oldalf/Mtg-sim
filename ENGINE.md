@@ -112,6 +112,8 @@ Two other ways were left out. A chain of classes (`GameMana extends GameZones ex
 - 2026-11-06: Aesi package list; dual lands with real conditions (Aesi only).
 - 2026-11-07: mulligan rules per deck; conditional lands and pain lands play by their text for every deck (Meren and Sam & Frodo re-recorded: about half a point and two points slower by turn 10); the old Python removed.
 - 2026-11-13: game logs (events, card moves, `session-logs/`, tags, `npm run logs`, the board from the moves, replay); every zone change in the engine and the decks goes through `takeCard` / `putCard` and the like; rule 0 renames (`toGraveyard`, `effectiveCost`, `Permanent`, `Candidate`).
+- 2026-11-23: the goldfish opponents' turns (`opponentEndStep`, `playGoldfishOpponentsTurns`); `sacrifice-outlets.ts` (Yahenni, High Market, Evolutionary Leap, Fiend Artisan, Sidisi, Promise of Aclazotz with its adventure).
+- 2026-11-24: the planner error (`planBestOption`, about 1 game in 8,000 to 16,000 skipped) fixed: a payment tried on a snapshot (rituals, mana rocks) left the pain-land life loss and the mana spent in place, so the next candidate list could differ from the one the planner chose from. `takeSnapshot` / `restore` now cover life, `died` and `spent`. Every deck's regress stayed IDENTICAL.
 
 ## Ideas for later
 

@@ -149,10 +149,30 @@ How the AI used them (2,000 logged games of the six together): Promise of Aclazo
 
 **Verdict.** All six together win sooner: +4.1 points by turn 8 and +3.8 by turn 10, beyond the noise; the slow tail is a turn shorter (the 90th-percentile game wins on turn 11). Alone, each swap is within the noise except Fiend Artisan (+2.1 by turn 10, at the edge): the gain comes from having several outlets, not from one card. They do **not** move Meren's early engine: full impact at turn 5 / 6 is +0.3 / +1.0 although a free outlet is out much more often. With an outlet out, what is missing is fodder: the AI only sacrifices tokens and creatures whose death is worth something. Pontus decides; `decklist.txt` is unchanged, the combined list is kept as `lists/outlets_all_six.txt`.
 
+### Fodder at Meren's end step (2026-11-24)
+
+The outlet round showed that outlets alone don't move the early engine: the AI only sacrificed tokens and creatures whose death is worth something. New (`sacrificeOneMerenReturnsAtOnce` in `game.ts`, setting `end_step_fodder`, 0 = the old play): with an outlet, Meren's end step also sacrifices one creature when its experience counter is free. Either she returns it at once (mana value at most her experience after its death, nothing in the graveyard ahead of it), so it is back with its enter trigger again (a creature whose enter trigger we want first: Wood Elves, Satyr Wayfinder); or its death lets her return a better card to the battlefield that would only go to the hand (mana value exactly her new experience, worth more than the creature: Llanowar Elves for Grave Titan at 5 experience). Tests in `meren.test.ts`.
+
+`decklist.txt` (today's list), 16,000 goldfish games, same seeds, `--diag`, noise about ±2 points:
+
+| Measure | Off | On |
+|---|---|---|
+| Win by turn 8 / 10 / 12 | 21.0 / 76.3 / 96.1% | 25.2 / 79.4 / 96.6% (+4.2 / +3.1 / +0.5) |
+| Full impact by turn 5 / 6 | 34.6 / 60.5% | 42.0 / 66.8% (+7.4 / +6.3) |
+| Low impact by turn 5 / 6 | 41.4 / 28.1% | 35.8 / 22.7% |
+| No impact by turn 5 / 6 | 24.0 / 11.1% | 22.3 / 10.1% |
+| Experience at end of turn 5 / 6 | 0.89 / 2.05 | 1.14 / 2.57 |
+| Out of cards at turn 8 | 4.7% | 5.2% |
+
+**Verdict.** The biggest single gain for the early engine so far: full impact by turn 5 is up 7 points, mostly from low impact (returns to the hand become returns to the battlefield). It is on by default. "No free outlet" in the Meren-out games below full impact rose (64.5 → 72.5% at turn 5): with an outlet out, more of those games now reach full impact, so the ones left over are mostly the ones without an outlet.
+
+Also on 2026-11-24: the rare planner error (`planBestOption`, about 1 game in 8,000 to 16,000 skipped) is fixed. Building the candidate list test-pays rituals and mana rocks on a snapshot and restores it, but the snapshot did not restore life: a pain land tested in a payment cost real life, so the next list (with Grave Researcher's "mana value below life − 10" check) could be shorter than the one the planner chose from. The snapshot now restores life (and `died`) and the mana spent (`spent`, read by the slow-start measure). 80,000 goldfish games and an 8,000-game pod run had no error after it.
+
 ## Next ideas
 
-- Test replacements for the weakest slots (more ramp or graveyard filling), with `npm run sim -- meren decklist.txt lists/test.txt -n 5000`.
-- The card ranking and cut tests above were run before the planner; rerun them when there are new cut ideas.
+- `decklist.txt` changed on 2026-11-24 (`SWAPS.md`). The older test lists are built on the list before it and still have both Witnesses and Mosswort Bridge: `lists/proposed.txt` and its variants, the three `playtest_*.txt` lists, `lists/outlets_all_six.txt`. They are history; a new proposal starts from today's `decklist.txt`.
+- The remaining outlet candidates (Evolutionary Leap, Fiend Artisan, Sidisi, Promise of Aclazotz) have rules and can be tested against today's list when Pontus wants them.
+- A fresh `--rank` on today's list when there are new cut ideas (the last one is from 2026-11-23, before the swaps).
 
 ## Swap tests (moved here from `lists/SWAPS.txt` on 2026-11-14; the lists were removed, see git history)
 

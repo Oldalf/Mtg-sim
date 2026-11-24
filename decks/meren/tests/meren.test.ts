@@ -203,6 +203,7 @@ export function runMerenTests(): boolean {
   checkOpponentsTurns(check);
   checkJunji(check);
   checkSacrificeOutlets(check);
+  checkEndStepFodder(check);
 
   // win: 100 damage in total or 2 opponents dead
   game = board();
@@ -584,6 +585,46 @@ function checkOpponentsTurns(check: Check): void {
     isOnBattlefieldCount(game, JUNJI),
     1,
   );
+}
+
+/** Fodder at Meren's end step (2026-11-24): one creature she returns at once. */
+function checkEndStepFodder(check: Check): void {
+  let game = board([MEREN, 'Viscera Seer', 'Llanowar Elves']);
+  game.endStep();
+  check(
+    'Fodder: the Elves (mana value 1) are sacrificed with 0 experience and Meren returns them at once',
+    [game.experienceCounters, isOnBattlefieldCount(game, 'Llanowar Elves')],
+    [1, 1],
+  );
+  game = board([MEREN, 'Viscera Seer', 'Llanowar Elves'], [], ['Grave Titan']);
+  game.experienceCounters = 5;
+  game.endStep();
+  check(
+    '... and with 5 experience the Elves die so Grave Titan (6) comes back to the battlefield, not to the hand',
+    [
+      isOnBattlefieldCount(game, 'Llanowar Elves'),
+      isOnBattlefieldCount(game, 'Grave Titan'),
+    ],
+    [0, 1],
+  );
+  game = board([MEREN, 'Viscera Seer', 'Llanowar Elves'], [], [GRAY_MERCHANT]);
+  game.experienceCounters = 5;
+  game.endStep();
+  check(
+    '... but not when Meren already returns something better (Gray Merchant, 5)',
+    [
+      isOnBattlefieldCount(game, 'Llanowar Elves'),
+      isOnBattlefieldCount(game, GRAY_MERCHANT),
+    ],
+    [1, 1],
+  );
+  game = board([MEREN, 'Llanowar Elves']);
+  game.endStep();
+  check('... not without an outlet', game.experienceCounters, 0);
+  game = board([MEREN, 'Viscera Seer', 'Llanowar Elves']);
+  game.config.end_step_fodder = 0;
+  game.endStep();
+  check('... and not with end_step_fodder=0', game.experienceCounters, 0);
 }
 
 /** The outlet round (2026-11-23): the new outlets at Meren's end step, and the Pod-like cards. */

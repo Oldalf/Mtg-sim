@@ -39,9 +39,9 @@ Rules for every task:
 | 6 | T6 | Meren: "no meaningful impact" and Pontus's changes (after P) | Sonnet 5.5 |
 | 7 | T7 | Sam & Frodo: analyze Pontus's logs (after P) | Sonnet 5.5 |
 | 8 | T8 | Faster tests and `verify` | Opus 5.5 |
-| 9 | T9 | Meren: analyze Pontus's hand playtest logs (after P) | Sonnet 5.5 |
+| 9 | T9 | Meren: analyze Pontus's hand playtest logs (done 2026-11-23) | Sonnet 5.5 |
 
-T1 comes first because T3 to T6 all compare lists or settings; T2 before T3 so new engine rules land in the split files. T6, T7 and T9 can run whenever Pontus's input arrives. T9 is not blocking: Pontus has no time for the playtests now (2026-11-23), so work goes on with the other tasks.
+T1 comes first because T3 to T6 all compare lists or settings; T2 before T3 so new engine rules land in the split files. T6 and T7 can run whenever Pontus's input arrives. T9 is done (2026-11-23).
 
 ---
 
@@ -110,6 +110,8 @@ Done (2026-11-18, card draw round): 13 draw cards got rules (`engine/game/card-d
 
 Done (2026-11-19, draw round 2): without Ayara and the drain cards, seven cards tested in the slots of Garruk's Packleader, Morbid Opportunist and Unearth, with card-flow measures (discarded, milled, net cards), a smarter Greater Good, pairs and triples at 16,000 games and the pod at Helga, Edgar, Teval. Best: Skullclamp, Deadly Dispute and Plumb the Forbidden for the three slots (+2.0 by turn 8, +2.5 by turn 10); the pod is unchanged. Pontus decides (table in `decks/meren/PLAN.md`).
 
+Done (2026-11-23 and 24, commits ed11d16, de8f5a1): Meren's impact in three levels (full, low = she only returned creatures to the hand, none) with the causes; the outlet round (six sacrifice outlets, `engine/game/sacrifice-outlets.ts`: all six together +4.1 / +3.8 by turn 8 / 10, each alone within noise); Pontus bought Yahenni, High Market and Ophiomancer, now in `decklist.txt` for both Witnesses and Mosswort Bridge (+2.6 / +3.0, full impact +2.1 / +2.6 by turn 5 / 6; `decks/meren/SWAPS.md`).
+
 ## T7. Sam & Frodo: analyze Pontus's logs (Sonnet 5.5, after P)
 
 Pontus will add real games to `decks/samfrodo/logs/` (one so far, `game1_t8_pippin_alpha.txt`, already analyzed in `decks/samfrodo/PLAN.md`).
@@ -141,3 +143,5 @@ Moved out of T6 (2026-11-23). The next step for Meren is Pontus goldfishing by h
 1. When the logs arrive, put them in `decks/meren/logs/` and run `npm run sim -- meren --analyze logs/<file>.txt` on each (add token names to the analyzer if missing).
 2. For each list: a row in `decks/meren/PLAN.md` with the result, missed triggers, miscoded cards and the AI fixes it led to. Logs contain misplays: use them for draws and the board, flag missed triggers, don't copy mistakes into the AI.
 3. Compare human play with the AI's, as the playtest plan says, and fix cards the sim got wrong. Add each log to the deck's regress and re-record the baseline for the new logs only.
+
+Done (2026-11-23, commit 28542e6): Pontus played two games of each list (`decks/meren/playtests/`, Archidekt logs with notes; not in `logs/` or the regress, since they are hand goldfish games of three test lists). The AI with the same draws kept pace (8.5 against his 8.3 average turn). What he did that the simulator did not: plays on the opponents' turns. The engine now plays each goldfish opponent's upkeep and end step (`opponentEndStep`), Meren sacrifices there (Snake, Junji for Gray Merchant), and Junji's death picks its mode by one comparison. Details in `decks/meren/PLAN.md`, "Hand playtests and the opponents' turns".

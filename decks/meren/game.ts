@@ -759,6 +759,67 @@ export class MerenGame extends CreatureDeckGame {
     this.checkKill();
   }
 
+  /** How much Meren wants to return this card at her end step with this much experience: its value when it comes back
+   *  to the battlefield, much less when it can only go to the hand. */
+  merenReturnScore(card: CardDef, experience: number): number {
+    if (card.manaValue > experience) return this.battlefieldValue(card) * 0.4;
+    if (
+      card.name === DGHOR_BLOODLETTER &&
+      this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
+    )
+      return 1000; // a pod: wipes the wide board
+    return this.battlefieldValue(card);
+  }
+
+  /** Fodder (Pontus, 2026-11-24): one creature sacrificed at Meren's end step when the experience counter of its death
+   *  is free. Either she returns it at once (its mana value is at most her experience after its death, and nothing in
+   *  the graveyard comes first): it is back, with its enter trigger again (Wood Elves, Satyr Wayfinder). Or its death
+   *  lets her return a better card that would otherwise only go to the hand (mana value exactly her experience after
+   *  the death, worth more than the creature). One a turn, since Meren returns one card. Off with --set
+   *  end_step_fodder=0. */
+  private sacrificeOneMerenReturnsAtOnce(): void {
+    if (!this.hasOutletNow()) return;
+    const experienceAfter = this.experienceCounters + 1;
+    const graveyardCreatures = this.graveyard.filter((card) => card.isCreature);
+    const bestInGraveyardAfter = graveyardCreatures.length
+      ? firstMax(graveyardCreatures, (card) =>
+          this.merenReturnScore(card, experienceAfter),
+        )
+      : null;
+    const scoreAfter = bestInGraveyardAfter
+      ? this.merenReturnScore(bestInGraveyardAfter, experienceAfter)
+      : 0;
+    // mana value exactly the new experience: before the death it could only have gone to the hand
+    const unlocksBetterCard =
+      bestInGraveyardAfter !== null &&
+      bestInGraveyardAfter.manaValue === experienceAfter;
+    const isFodder = (permanent: Permanent) =>
+      !permanent.token &&
+      !this.isStolen(permanent) &&
+      !FREE_OUTLETS.includes(permanent.card.name) &&
+      !(permanent.card.name === JUNJI && keepsJunjiForOpponentsTurn(this));
+    const comesBackAtOnce = (permanent: Permanent) =>
+      permanent.card.manaValue <= experienceAfter &&
+      this.merenReturnScore(permanent.card, experienceAfter) >= scoreAfter;
+    const isWorthLessThanUnlocked = (permanent: Permanent) =>
+      unlocksBetterCard &&
+      this.battlefieldValue(permanent.card) <
+        this.battlefieldValue(bestInGraveyardAfter);
+    const choices = this.sacrificeOrder().filter(
+      (permanent) =>
+        isFodder(permanent) &&
+        (comesBackAtOnce(permanent) || isWorthLessThanUnlocked(permanent)),
+    );
+    const choice =
+      choices.find(
+        (permanent) =>
+          comesBackAtOnce(permanent) && ENTER_AGAIN.has(permanent.card.name),
+      ) ?? choices[0];
+    if (!choice) return;
+    this.say('sacrifice', choice.card, 'to feed Meren at once');
+    this.sacrificeToOutlet(choice);
+  }
+
   /** Feed Meren with a free sacrifice outlet, then return the best creature card from the graveyard. */
   feedMerenAtEndStep(): void {
     // Greater Good: a big creature Meren can return now, for cards and a full graveyard
@@ -791,16 +852,13 @@ export class MerenGame extends CreatureDeckGame {
       this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
     )
       this.sacrificeToOutlet(bloodletter);
+    if (this.config.end_step_fodder !== 0)
+      this.sacrificeOneMerenReturnsAtOnce();
     const candidates = this.graveyard.filter((card) => card.isCreature);
     if (!candidates.length) return;
-    const score = (card: CardDef) =>
-      card.manaValue > this.experienceCounters
-        ? this.battlefieldValue(card) * 0.4
-        : card.name === DGHOR_BLOODLETTER &&
-            this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
-          ? 1000 // a pod: wipes the wide board
-          : this.battlefieldValue(card);
-    const best = firstMax(candidates, score);
+    const best = firstMax(candidates, (card) =>
+      this.merenReturnScore(card, this.experienceCounters),
+    );
     if (best.manaValue <= this.experienceCounters) {
       this.say(`Meren (${this.experienceCounters} experience) returns`, best);
       this.reanimate(best);
