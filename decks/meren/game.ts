@@ -783,8 +783,7 @@ export class MerenGame extends CreatureDeckGame {
       this.draw(2, name);
       if (this.leftThisTurn) this.drainEach(2);
       else this.loseLife(2);
-    } else if (name === 'Village Rites') this.draw(2, name);
-    else if (name === 'Breach the Multiverse') {
+    } else if (name === 'Breach the Multiverse') {
       this.millOurselves(10);
       for (let i = 0; i < this.opponentLibrarySizes.length; i++)
         this.opponentLibrarySizes[i] = Math.max(
@@ -797,20 +796,7 @@ export class MerenGame extends CreatureDeckGame {
       for (let i = 0; i < this.countOpponentsAlive(); i++)
         this.enter(TOKENS.stolen, 'graveyard', { token: true }).marks |=
           STOLEN_MARK;
-    } else if (name === 'Grisly Salvage') {
-      const top = this.takeTopCardsOfLibrary(5);
-      const keep = top.filter(
-        (candidate) => candidate.isCreature || candidate.land !== null,
-      );
-      const kept = keep.length
-        ? firstMax(keep, (candidate) => this.cardValue(candidate))
-        : null;
-      for (const otherCard of top)
-        if (otherCard === kept) this.putCard(otherCard, 'hand');
-        else this.toGraveyard(otherCard, true);
-    } else if (name === 'Songs of the Damned')
-      this.pool.B += this.creaturesInGraveyard();
-    else if (name === 'Deadly Brew') {
+    } else if (name === 'Deadly Brew') {
       if (this.inArena()) this.arena!.edict(this, false);
       const permanent = this.sacrificeOrder()[0];
       if (permanent) {

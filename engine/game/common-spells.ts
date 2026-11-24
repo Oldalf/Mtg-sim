@@ -9,7 +9,7 @@ import { CardDef } from '../cards/cards';
 import type { GameCore } from './game-core';
 import { Permanent } from './game-types';
 import { UNTAP, isSourceOfClass } from './search-mana';
-import { firstMin, sortDesc } from '../util/lists';
+import { firstMax, firstMin, sortDesc } from '../util/lists';
 
 /** Draw, scry and "look at the top cards" spells. Returns false if this isn't one of them. */
 export function resolveCardSelection(
@@ -92,6 +92,23 @@ export function resolveCardSelection(
       game.discard(2);
       game.untapLands(3);
       return true;
+    case 'Village Rites':
+      game.draw(2, otherCard.name);
+      return true;
+    case 'Grisly Salvage': {
+      // the top five: a creature or land card to hand (the best), the rest to the graveyard
+      const top = game.takeTopCardsOfLibrary(5);
+      const keep = top.filter(
+        (candidate) => candidate.isCreature || candidate.land !== null,
+      );
+      const kept = keep.length
+        ? firstMax(keep, (candidate) => game.cardValue(candidate))
+        : null;
+      for (const topCard of top)
+        if (topCard === kept) game.putCard(topCard, 'hand');
+        else game.toGraveyard(topCard, true);
+      return true;
+    }
     case 'Tune the Narrative':
       game.draw(1);
       game.gainEnergy(2);
@@ -180,6 +197,11 @@ export function resolveManaOrTutor(
   switch (card.name) {
     case 'Snap':
       game.untapLands(2);
+      return true;
+    case 'Songs of the Damned':
+      game.pool.B += game.graveyard.filter(
+        (graveyardCard) => graveyardCard.isCreature,
+      ).length;
       return true;
     case 'Dark Ritual':
       game.pool.B += 3;
