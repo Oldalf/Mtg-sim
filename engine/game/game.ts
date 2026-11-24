@@ -6,17 +6,25 @@
  * A deck subclasses Game. It may override the pod hooks too: evasion(), blockValue(), fogPrevent(), podClose(),
  * podShield(), winAttempt(), podWinStopped(), combatHit().
  */
-import * as C from '../cards/cards';
 import { Cost, CardDef } from '../cards/cards';
-import {
-  ANSWERS,
-  Answer,
-  BOARD_COUNTERS,
-  BoardCounter,
-  KEY_SPELLS,
-  PROTECTIONS,
-} from './answers';
+import { ANSWERS, Answer, KEY_SPELLS } from './answers';
 import { GameCore } from './game-core';
+import {
+  AnswerUsed,
+  answerHitsPermanentTypes,
+  answerHitsSpell,
+  answerWinAttempt,
+  castAnswerFromHand,
+  costOfAnswer,
+  counterAbilitiesAgainst,
+  getWhatRemovalGives,
+  loseCardOurWinStoppedAt,
+  removalTargets,
+  removeOurPermanent,
+  shieldFromRemoval,
+  spendCountersAgainst,
+  useCounterAbility,
+} from './pod-answers';
 import {
   attackInPod,
   attackOpponentForReal,
@@ -31,7 +39,6 @@ import {
 } from './pod-attacks';
 import {
   Arena,
-  CardListZone,
   Evasion,
   Fighter,
   KillSearcher,
@@ -283,26 +290,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return ANSWERS[card.name] ?? null;
   }
   answerCost(card: CardDef): Cost {
-    const answer = this.answer(card);
-    const cost = this.effectiveCost(
-      card,
-      answer?.cost ? Cost.parse(answer.cost) : null,
-    );
-    if (card.name === FIERCE_GUARDIANSHIP && this.controlsCommander())
-      return new Cost();
-    if (
-      card.name === FORCE_OF_WILL &&
-      !this.canPay(cost, true) &&
-      this.forceOfWillPitch(card)
-    )
-      return new Cost();
-    if (
-      card.name === DAZE &&
-      !this.canPay(cost, true) &&
-      this.islandToReturnForDaze()
-    )
-      return new Cost();
-    return cost;
+    return costOfAnswer(this, card);
   }
   /** Daze's other cost: an Island we control returns to hand (a tapped one first), or null. */
   islandToReturnForDaze(): Permanent | null {
@@ -353,36 +341,13 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   /** Cast an answer from hand: pay for it, put it into the graveyard. False if we can't. */
   podCast(card: CardDef): boolean {
-    const cost = this.answerCost(card);
-    if (!this.hand.includes(card) || !this.pay(cost, true)) return false;
-    if (card.name === FORCE_OF_WILL && cost.manaValue === 0) {
-      // the alternative cost: exile a blue card and pay 1 life
-      this.moveCard(this.forceOfWillPitch(card)!, 'hand', 'exile');
-      this.loseLife(1);
-    }
-    if (card.name === DAZE && cost.manaValue === 0) {
-      // the alternative cost: return an Island to hand
-      const island = this.islandToReturnForDaze()!;
-      this.takeFromBattlefield(island);
-      this.putCard(island.card, 'hand');
-    }
-    this.moveCard(card, 'hand', 'graveyard');
-    this.podAnnounceCast(card);
-    const life = this.answer(card)?.pay ?? 0;
-    if (life) this.loseLife(life);
-    return true;
+    return castAnswerFromHand(this, card);
   }
   static spellOk(answer: Answer, card: CardDef): boolean {
-    if (answer.spells === 'noncreature') return !card.isCreature;
-    if (answer.spells === 'instant') return card.isInstant;
-    if (answer.spells === 'instant-sorcery') return card.isInstantOrSorcery;
-    return true;
+    return answerHitsSpell(answer, card);
   }
   static permOk(answer: Answer, types: Set<string>): boolean {
-    return (
-      !types.has('land') &&
-      (answer.hits ?? []).some((hitType) => types.has(hitType))
-    );
+    return answerHitsPermanentTypes(answer, types);
   }
   /** Answer a win attempt of `owner` at instant speed with up to `need` cards from hand (they are cast). A removal spell needs
    *  a legal target (type, "nonblack" and the like, hexproof); a shield of the owner's (Kira...) may counter it: then it is
@@ -391,105 +356,17 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     winAttempt: WinAttempt,
     need: number,
     owner: Game<unknown>,
-  ): {
-    card: string;
-    target: string;
-    how: string;
-    shield?: string;
-    answer: Answer;
-    isAbility?: boolean;
-  }[] {
-    const out: {
-      card: string;
-      target: string;
-      how: string;
-      shield?: string;
-      answer: Answer;
-      isAbility?: boolean;
-    }[] = [];
-    for (const card of this.hand.slice()) {
-      if (out.filter((x) => !x.shield).length >= need) break;
-      const answer = this.answer(card);
-      if (!answer || !answer.instant || answer.kind === 'wipe') continue;
-      const isStoppedByVeil =
-        PROTECTIONS[winAttempt.protect ?? '']?.stops === 'blue-black-cards' &&
-        (card.isBlue || card.isBlack);
-      if (isStoppedByVeil) continue;
-      if (answer.kind === 'counter') {
-        const target = winAttempt.spells.find((x) =>
-          Game.spellOk(answer, C.get(x)),
-        );
-        if (!target || !this.podCast(card)) continue;
-        out.push({ card: card.name, target, how: 'countered', answer: answer });
-        continue;
-      }
-      let permanent: Permanent | undefined;
-      for (const x of winAttempt.perms) {
-        permanent = owner.battlefield.find(
-          (otherPermanent) =>
-            otherPermanent.card.name === x &&
-            Game.permOk(answer, otherPermanent.card.types) &&
-            owner.podCanTarget(otherPermanent, answer),
-        );
-        if (permanent) break;
-      }
-      if (!permanent || !this.podCast(card)) continue;
-      const shield = owner.podShield(permanent) ?? undefined;
-      out.push({
-        card: card.name,
-        target: permanent.card.name,
-        how: answer.how ?? 'destroy',
-        shield,
-        answer: answer,
-      });
-    }
-    // then the counter abilities of our permanents (Diversion Unit, Soratami Savant)
-    for (const permanent of this.battlefield.slice()) {
-      if (out.filter((x) => !x.shield).length >= need) break;
-      const ability = BOARD_COUNTERS[permanent.card.name];
-      if (!ability) continue;
-      const answer = boardCounterAnswer(ability);
-      const target = winAttempt.spells.find((x) =>
-        Game.spellOk(answer, C.get(x)),
-      );
-      if (!target || !this.useBoardCounter(permanent)) continue;
-      out.push({
-        card: permanent.card.name,
-        target,
-        how: 'countered',
-        answer,
-        isAbility: true,
-      });
-    }
-    return out;
+  ): AnswerUsed[] {
+    return answerWinAttempt(this, winAttempt, need, owner);
   }
   /** Our permanents whose counter ability (BOARD_COUNTERS) can counter this spell now. */
   boardCountersAgainst(spell: CardDef): Permanent[] {
-    return this.battlefield.filter((permanent) => {
-      const ability = BOARD_COUNTERS[permanent.card.name];
-      return (
-        ability !== undefined &&
-        Game.spellOk(boardCounterAnswer(ability), spell) &&
-        (!ability.returnLand || this.landsOnBattlefield().length > 0) &&
-        this.canPay(Cost.parse(ability.cost), false)
-      );
-    });
+    return counterAbilitiesAgainst(this, spell);
   }
   /** Uses a permanent's counter ability: pays it, then sacrifices the permanent or returns a land (a tapped one
    *  first) to hand. False if it can't be paid. */
   useBoardCounter(permanent: Permanent): boolean {
-    const ability = BOARD_COUNTERS[permanent.card.name];
-    if (!ability || !this.pay(Cost.parse(ability.cost), false)) return false;
-    if (ability.sacrifice) this.sacrifice(permanent);
-    if (ability.returnLand) {
-      const lands = this.landsOnBattlefield();
-      const land = lands.find((candidate) => candidate.tapped) ?? lands[0];
-      if (land) {
-        this.takeFromBattlefield(land);
-        this.putCard(land.card, 'hand');
-      }
-    }
-    return true;
+    return useCounterAbility(this, permanent);
   }
   /** May an opponent's removal spell target this permanent of ours? (Hexproof, shroud, the spell's own limits.) */
   podCanTarget(permanent: Permanent, answer: Answer): boolean {
@@ -520,40 +397,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     permanent: Permanent,
     _answer: Answer | null = null,
   ): string | null {
-    if (!permanent.card.isCreature || this.config.pod_legal === false)
-      return null;
-    if (
-      this.isOnBattlefield('Kira, Great Glass-Spinner') &&
-      !this.podShielded.has(permanent)
-    ) {
-      this.podShielded.add(permanent);
-      return 'Kira, Great Glass-Spinner';
-    }
-    const rain = this.findPermanent('Soratami Rainshaper');
-    if (rain && this.openMana() >= 4) {
-      this.tapMana(3);
-      const land =
-        this.landsOnBattlefield().find(
-          (otherPermanent) => otherPermanent.tapped,
-        ) ?? this.landsOnBattlefield()[0];
-      if (land) {
-        this.takeFromBattlefield(land);
-        this.putCard(land.card, 'hand');
-      }
-      return 'Soratami Rainshaper';
-    }
-    const siren = this.findPermanent('Siren Stormtamer');
-    if (
-      siren &&
-      siren !== permanent &&
-      this.openMana() >= 1 &&
-      this.canPay(Cost.parse('{U}'), true)
-    ) {
-      this.pay(Cost.parse('{U}'), true);
-      this.sacrifice(siren);
-      return 'Siren Stormtamer';
-    }
-    return null;
+    return shieldFromRemoval(this, permanent);
   }
   /** A board wipe is about to take these creatures of ours (all that it kills, the caster's own wipe too; `destroys`:
    *  it destroys them, so indestructible helps). A deck may answer at instant speed, e.g. by blinking them (what has
@@ -563,25 +407,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   /** One of our permanents was removed by this answer: what we get for it (a 3/3, a basic land, life, a 2/2). */
   podGet(permanent: Permanent, answer: Answer): void {
-    if (answer.gives === 'token3')
-      this.createTokens(C.makeToken('Beast', 3, 3, 'Green'));
-    else if (answer.gives === 'manifest')
-      this.createTokens(C.makeToken('Manifest', 2, 2));
-    else if (answer.gives === 'life') this.gainLife(this.power(permanent));
-    else if (answer.gives === 'land') {
-      const basic = this.library.find(
-        (card) =>
-          card.land !== null &&
-          /^(Snow-Covered )?(Plains|Island|Swamp|Mountain|Forest|Wastes)$/.test(
-            card.name,
-          ),
-      );
-      if (basic) {
-        this.takeCard(basic, 'library');
-        this.enter(basic, 'library', { tapped: true });
-        this.shuffle();
-      }
-    }
+    getWhatRemovalGives(this, permanent, answer);
   }
   /** Removed by an opponent's answer: off the battlefield, and the owner gets what the card gives. */
   podSuffer(permanent: Permanent, answer: Answer): void {
@@ -591,24 +417,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   /** One of our permanents is removed by an opponent. A commander goes back to the command zone (the tax counts its casts). */
   podRemove(permanent: Permanent, how: string): void {
-    if (!this.battlefield.includes(permanent)) return;
-    if (this.isCommander(permanent)) {
-      this.takeFromBattlefield(permanent);
-      this.putCard(permanent.card, 'command');
-      this.onLeave(permanent);
-    } else if (how === 'destroy' || how === 'sacrifice') {
-      if (permanent.card.isCreature) this.dies(permanent);
-      else {
-        this.takeFromBattlefield(permanent);
-        if (!permanent.token) this.putCard(permanent.card, 'graveyard');
-        this.onLeave(permanent);
-      }
-    } else {
-      this.takeFromBattlefield(permanent);
-      if (!permanent.token)
-        this.putCard(permanent.card, how === 'bounce' ? 'hand' : 'exile');
-      this.onLeave(permanent);
-    }
+    removeOurPermanent(this, permanent, how);
   }
   /** Tap n of our untapped mana sources (mana spent on something that was answered). Treasures are left alone. */
   tapMana(amount: number): void {
@@ -627,35 +436,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
    *  was cast from there) and its mana is spent; a removed permanent is destroyed / exiled / bounced (a commander goes to
    *  the command zone). The turn goes on. */
   podLose(name: string, how: string, answer?: Answer): void {
-    const permanent = this.battlefield.find(
-      (otherPermanent) =>
-        otherPermanent.card.name === name && !otherPermanent.token,
-    );
-    if (permanent && how !== 'countered') {
-      if (answer) this.podSuffer(permanent, answer);
-      else this.podRemove(permanent, how);
-      return;
-    }
-    const card = C.get(name);
-    if (how === 'countered') this.tapMana(this.effectiveCost(card).manaValue);
-    /** Takes the card with that name out of a zone. False if it is not there. */
-    const take = (fromZone: CardListZone) => {
-      const found = this[fromZone].find((otherCard) => otherCard.name === name);
-      if (!found) return false;
-      this.takeCard(found, fromZone);
-      return true;
-    };
-    if (take('command')) this.putCard(card, 'command');
-    else if (take('hand'))
-      this.putCard(
-        card,
-        how === 'exile' ? 'exile' : how === 'bounce' ? 'hand' : 'graveyard',
-      );
-    else if (how === 'countered' && take('graveyard'))
-      this.putCard(card, 'exile');
-    // a shortcut line (a loop that draws its finisher) still had it in the library
-    else if (take('library'))
-      this.putCard(card, how === 'exile' ? 'exile' : 'graveyard');
+    loseCardOurWinStoppedAt(this, name, how, answer);
   }
   /** After our win was stopped: the opponents' totals go back to before the combo. Decks add their own flags. */
   podWinStopped(): void {
@@ -670,20 +451,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   /** Our answers were answered back (we went for the win with backup): n counterspells in hand are spent. */
   podBurnCounters(against: string[]): string[] {
-    const used: string[] = [];
-    for (const name of against) {
-      const target = C.get(name);
-      const card = this.hand.find((otherCard) => {
-        const answer = this.answer(otherCard);
-        return (
-          answer?.kind === 'counter' &&
-          Game.spellOk(answer, target) &&
-          this.canPay(this.answerCost(otherCard), true)
-        );
-      });
-      if (card && this.podCast(card)) used.push(card.name);
-    }
-    return used;
+    return spendCountersAgainst(this, against);
   }
   /** How much the others want to counter this spell of ours: mana value x 10, +30 for a commander, + the card's key bonus. */
   podWeight(card: CardDef): number {
@@ -699,25 +467,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   }
   /** Our permanents an opponent may aim this removal spell at. */
   podTargets(answer: Answer): Target[] {
-    return this.battlefield
-      .filter(
-        (permanent) =>
-          permanent.land === null &&
-          Game.permOk(answer, permanent.card.types) &&
-          this.podCanTarget(permanent, answer),
-      )
-      .map((permanent) => ({
-        permanent,
-        name: permanent.card.name,
-        power: permanent.card.isCreature ? this.power(permanent) : 0,
-        types: permanent.card.types,
-        token: permanent.token,
-        commander: this.isCommander(permanent),
-        value:
-          (permanent.token ? 0 : this.cardValue(permanent.card)) +
-          (this.isCommander(permanent) ? 30 : 0) +
-          (permanent.card.isCreature ? 2 * this.power(permanent) : 0),
-      }));
+    return removalTargets(this, answer);
   }
   /** How dangerous we look to the others (step 4): board power, nonland permanents, mana, cards in hand, damage dealt so far,
    *  and the deck's own "close to winning" (podClose, worth config.threat_close, default 25). */
@@ -765,9 +515,6 @@ export abstract class Game<S = unknown> extends GameCore<S> {
 }
 
 const VOLATILE_STORMDRAKE = 'Volatile Stormdrake';
-const FORCE_OF_WILL = 'Force of Will';
-const FIERCE_GUARDIANSHIP = 'Fierce Guardianship';
-const DAZE = 'Daze';
 
 /** Base for decks that have no kill search (no combo to find), so they skip the three search hooks. */
 export abstract class GameWithoutKillSearch extends Game<null> {
@@ -789,8 +536,3 @@ const NO_KILL_SEARCH: KillSearcher<null> = {
   bestMiss: null,
   minChance: 1,
 };
-
-/** A permanent's counter ability seen as an answer (what spells it may counter). */
-function boardCounterAnswer(ability: BoardCounter): Answer {
-  return { kind: 'counter', instant: true, spells: ability.spells };
-}
