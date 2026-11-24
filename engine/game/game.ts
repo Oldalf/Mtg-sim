@@ -17,13 +17,23 @@ import {
   PROTECTIONS,
 } from './answers';
 import { GameCore } from './game-core';
-import { addFirebendingMana } from './firebending';
+import {
+  attackInPod,
+  attackOpponentForReal,
+  attackWithCreaturesThatMustAttack,
+  bestOpponentToAttack,
+  castCreaturesAsBlockers,
+  creaturesToKeepHome,
+  damageOfBiggestAttackNextTurn,
+  describeFighter,
+  mayAttackOpponentInSlot,
+  planAttackOn,
+} from './pod-attacks';
 import {
   Arena,
   CardListZone,
   Evasion,
   Fighter,
-  FightResult,
   KillSearcher,
   Permanent,
   Target,
@@ -127,24 +137,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     powerOf?: (otherPermanent: Permanent) => number,
     toughnessOf?: (otherPermanent: Permanent) => number,
   ): Fighter {
-    const keywords = permanent.card.keywords;
-    return {
-      permanent: permanent,
-      name: permanent.card.name,
-      power: powerOf ? powerOf(permanent) : this.power(permanent),
-      toughness: toughnessOf
-        ? toughnessOf(permanent)
-        : this.toughness(permanent),
-      evasion: this.evasion(permanent),
-      air: keywords.has('flying') || keywords.has('reach'),
-      deathtouch: keywords.has('deathtouch'),
-      value: this.blockValue(permanent),
-      commander: this.isCommander(permanent),
-      trample: keywords.has('trample'),
-      first: keywords.has('first strike') || keywords.has('double strike'),
-      menace: keywords.has('menace'),
-      legendary: permanent.card.types.has('legendary'),
-    };
+    return describeFighter(this, permanent, powerOf, toughnessOf);
   }
   /** Our untapped creatures, as blockers (a summoning-sick creature can block). */
   blockers(): Fighter[] {
@@ -164,32 +157,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     powerOf?: (permanent: Permanent) => number,
     toughnessOf?: (permanent: Permanent) => number,
   ): { damage: number; connected: Permanent[] } {
-    for (const attacker of attackers) this.attackersThisTurn.add(attacker);
-    const fightResult = this.arena!.fight(
-      this,
-      slot,
-      attackers.map((permanent) =>
-        this.fighter(permanent, powerOf, toughnessOf),
-      ),
-      true,
-    );
-    if (fightResult.bounced)
-      for (const row of fightResult.rows)
-        this.podRemove(row.attacker.permanent, 'bounce');
-    for (const row of fightResult.rows)
-      if (row.attackerDies) this.dies(row.attacker.permanent);
-    if (fightResult.kills)
-      this.damageOpponent(slot, Math.max(fightResult.damage, this.life[slot]));
-    else if (fightResult.damage > 0) this.combatHit(slot, fightResult.damage);
-    return {
-      damage: fightResult.damage,
-      connected:
-        fightResult.damage > 0
-          ? fightResult.rows
-              .filter((x) => x.blocker === null)
-              .map((x) => x.attacker.permanent)
-          : [],
-    };
+    return attackOpponentForReal(this, slot, attackers, powerOf, toughnessOf);
   }
 
   /** Combat damage our creatures deal to opponent `slot` (a deck may replace it: The Mindskinner). */
@@ -205,48 +173,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     powerOf?: (permanent: Permanent) => number,
     toughnessOf?: (permanent: Permanent) => number,
   ): { attackers: Permanent[]; score: number; damage: number } {
-    let attackers = pool.slice();
-    let fightResult: FightResult = { rows: [], damage: 0, kills: false };
-    for (let round = 0; round < 6 && attackers.length; round++) {
-      fightResult = this.arena!.fight(
-        this,
-        slot,
-        attackers.map((permanent) =>
-          this.fighter(permanent, powerOf, toughnessOf),
-        ),
-        false,
-      );
-      if (fightResult.kills) break;
-      const bad = new Set(
-        fightResult.rows
-          .filter(
-            (x) =>
-              x.blocker !== null &&
-              (!x.blockerDies ||
-                (x.attackerDies && x.blocker.value < x.attacker.value)),
-          )
-          .map((x) => x.attacker.permanent),
-      );
-      if (!bad.size) break;
-      attackers = attackers.filter((permanent) => !bad.has(permanent));
-    }
-    if (!attackers.length) return { attackers: attackers, score: 0, damage: 0 };
-    const gain = fightResult.rows.reduce(
-      (total, x) =>
-        total +
-        (x.blockerDies ? x.blocker!.value : 0) -
-        (x.attackerDies ? x.attacker.value : 0),
-      0,
-    );
-    return {
-      attackers: attackers,
-      score:
-        (fightResult.kills ? 1000 : 0) +
-        fightResult.damage +
-        gain / 20 -
-        this.life[slot] / 1000,
-      damage: fightResult.damage,
-    };
+    return planAttackOn(this, slot, pool, powerOf, toughnessOf);
   }
 
   /** The opponent to attack with these creatures (the attack that does the most; a kill first), or null if no attack is worth it.
@@ -255,23 +182,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     pool: Permanent[],
     prefer?: (slot: number) => number,
   ): { slot: number; attackers: Permanent[] } | null {
-    let best: { slot: number; attackers: Permanent[] } | null = null,
-      bestScore = 0;
-    for (let i = 0; i < this.life.length; i++) {
-      if (!this.isOpponentAlive(i)) continue;
-      const plan = this.planAttack(i, pool);
-      if (!plan.attackers.length) continue;
-      const score =
-        plan.score +
-        (prefer ? prefer(i) : 0) +
-        this.arena!.prefer(this, i) +
-        0.01;
-      if (best === null || score > bestScore) {
-        best = { slot: i, attackers: plan.attackers };
-        bestScore = score;
-      }
-    }
-    return best;
+    return bestOpponentToAttack(this, pool, prefer);
   }
 
   /** Creatures to keep home as blockers: enough that the biggest board among the opponents can't kill us next turn
@@ -280,34 +191,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     pool: Permanent[],
     powerOf: (permanent: Permanent) => number,
   ): Set<Permanent> {
-    let need = 0;
-    for (let i = 0; i < this.life.length; i++) {
-      if (!this.isOpponentAlive(i)) continue;
-      const opponentPowers = this.arena!.board(this, i).sort(
-        (first, second) => second - first,
-      );
-      let sum = opponentPowers.reduce((total, value) => total + value, 0),
-        strongestRemoved = 0;
-      while (sum >= this.myLife && strongestRemoved < opponentPowers.length)
-        sum -= opponentPowers[strongestRemoved++];
-      need = Math.max(need, strongestRemoved);
-    }
-    const stay = new Set<Permanent>();
-    if (!need) return stay;
-    const others = this.creatures().filter(
-      (permanent) => !permanent.tapped && !pool.includes(permanent),
-    ).length;
-    const vig = pool.filter((permanent) =>
-      permanent.card.keywords.has('vigilance'),
-    ).length;
-    const hold = need - others - vig;
-    if (hold <= 0 || hold > pool.length) return stay;
-    for (const otherPermanent of pool
-      .filter((permanent) => !permanent.card.keywords.has('vigilance'))
-      .sort((first, second) => powerOf(first) - powerOf(second))
-      .slice(0, hold))
-      stay.add(otherPermanent);
-    return stay;
+    return creaturesToKeepHome(this, pool, powerOf);
   }
 
   /** The creatures that attacked this turn (vigilance ones stay untapped, so tapped doesn't tell). */
@@ -321,69 +205,12 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   /** May this creature attack opponent `slot`? A goaded creature attacks a player who goaded it only when it can
    *  attack no one else (rule 701.15b). */
   mayAttackOpponent(creature: Permanent, slot: number): boolean {
-    if (this.arena!.forbiddenAttackSlots(this, creature).includes(slot))
-      return false;
-    const goaderSlots = this.arena!.goaderSlots(this, creature);
-    if (!goaderSlots.includes(slot)) return true;
-    return !this.life.some(
-      (_, otherSlot) =>
-        this.isOpponentAlive(otherSlot) && !goaderSlots.includes(otherSlot),
-    );
-  }
-
-  /** The creatures of the pool that may attack opponent `slot`. */
-  private allowedAttackers(pool: Permanent[], slot: number): Permanent[] {
-    return pool.filter((creature) => this.mayAttackOpponent(creature, slot));
-  }
-
-  /** A forced attacker the plan left home joins a group attacking an opponent it may attack, or starts one at the
-   *  opponent its controller would pick (the threat rule). */
-  private addForcedAttackers(
-    groups: { slot: number; attackers: Permanent[] }[],
-    pool: Permanent[],
-    powerOf?: (permanent: Permanent) => number,
-    toughnessOf?: (permanent: Permanent) => number,
-  ): void {
-    for (const creature of pool) {
-      if (!this.mustAttack(creature)) continue;
-      if (groups.some((group) => group.attackers.includes(creature))) continue;
-      const group = groups.find((existing) =>
-        this.mayAttackOpponent(creature, existing.slot),
-      );
-      if (group) {
-        group.attackers.push(creature);
-        continue;
-      }
-      let bestSlot = -1,
-        bestScore = 0;
-      for (let slot = 0; slot < this.life.length; slot++) {
-        if (!this.isOpponentAlive(slot)) continue;
-        if (!this.mayAttackOpponent(creature, slot)) continue;
-        const score =
-          this.planAttack(slot, [creature], powerOf, toughnessOf).score +
-          this.arena!.prefer(this, slot);
-        if (bestSlot < 0 || score > bestScore) {
-          bestSlot = slot;
-          bestScore = score;
-        }
-      }
-      if (bestSlot >= 0) groups.push({ slot: bestSlot, attackers: [creature] });
-    }
+    return mayAttackOpponentInSlot(this, creature, slot);
   }
 
   /** After our combat: creatures that must attack and weren't sent attack now (the deck's own combat left them home). */
   override attackWithForcedCreatures(): void {
-    if (this.inArena()) {
-      const forced = this.creatures().filter(
-        (creature) =>
-          !creature.tapped &&
-          (!creature.sick || creature.card.haste) &&
-          !this.attackersThisTurn.has(creature) &&
-          this.mustAttack(creature),
-      );
-      if (forced.length) this.arenaCombat(forced);
-    }
-    this.attackersThisTurn.clear();
+    attackWithCreaturesThatMustAttack(this);
   }
 
   /** Pod combat for a group of our creatures: choose the opponent and the attackers, attack, deal the damage.
@@ -393,130 +220,14 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     powerOf?: (permanent: Permanent) => number,
     toughnessOf?: (permanent: Permanent) => number,
   ): void {
-    const power = powerOf ?? ((permanent: Permanent) => this.power(permanent));
-    let best: {
-      slot: number;
-      attackers: Permanent[];
-      score: number;
-      damage: number;
-    } | null = null;
-    const stay = this.homeGuard(pool, power);
-    for (const guard of stay) if (this.mustAttack(guard)) stay.delete(guard);
-    for (const candidates of stay.size
-      ? [pool, pool.filter((permanent) => !stay.has(permanent))]
-      : [pool]) {
-      for (let i = 0; i < this.life.length; i++) {
-        if (!this.isOpponentAlive(i)) continue;
-        const plan = this.planAttack(
-          i,
-          this.allowedAttackers(candidates, i),
-          powerOf,
-          toughnessOf,
-        );
-        // the whole team only for a kill; otherwise the guards stay home
-        if (candidates === pool && stay.size && plan.score < 1000) continue;
-        if (!plan.attackers.length || plan.score <= 0) continue;
-        const score = plan.score + this.arena!.prefer(this, i);
-        if (best === null || score > best.score)
-          best = { slot: i, ...plan, score: score };
-      }
-      if (best) break;
-    }
-    if (!best && !pool.some((creature) => this.mustAttack(creature))) return;
-    // the creatures that weren't sent may attack other opponents (the guards stay home)
-    const groups: { slot: number; attackers: Permanent[] }[] = best
-      ? [best]
-      : [];
-    const plannedAttackers = best ? best.attackers : [];
-    const keepsGuardsHome = best === null || best.score < 1000;
-    let rest = pool.filter(
-      (permanent) =>
-        !plannedAttackers.includes(permanent) &&
-        !(stay.has(permanent) && keepsGuardsHome),
-    );
-    while (rest.length && groups.length < 3) {
-      let next: {
-        slot: number;
-        attackers: Permanent[];
-        score: number;
-        damage: number;
-      } | null = null;
-      for (let i = 0; i < this.life.length; i++) {
-        if (!this.isOpponentAlive(i) || groups.some((x) => x.slot === i))
-          continue;
-        const plan = this.planAttack(
-          i,
-          this.allowedAttackers(rest, i),
-          powerOf,
-          toughnessOf,
-        );
-        if (!plan.attackers.length || plan.score <= 0) continue;
-        const score = plan.score + this.arena!.prefer(this, i);
-        if (next === null || score > next.score)
-          next = { slot: i, ...plan, score: score };
-      }
-      if (!next) break;
-      groups.push(next);
-      rest = rest.filter((permanent) => !next!.attackers.includes(permanent));
-    }
-    this.addForcedAttackers(groups, pool, powerOf, toughnessOf);
-    if (!groups.length) return;
-    this.attacked = true;
-    const sent = groups.flatMap((x) => x.attackers);
-    for (const permanent of sent)
-      if (!permanent.card.keywords.has('vigilance')) permanent.tapped = true;
-    addFirebendingMana(this, sent);
-    const joined = this.onAttack(sent);
-    const connected: Permanent[] = [];
-    let total = 0;
-    groups.forEach((group, groupIndex) => {
-      const all = [
-        ...group.attackers,
-        ...(groupIndex === 0 ? joined : []),
-      ].filter((permanent) => this.battlefield.includes(permanent));
-      if (!all.length || !this.isOpponentAlive(group.slot)) return;
-      const strikeResult = this.strike(group.slot, all, powerOf, toughnessOf);
-      connected.push(...strikeResult.connected);
-      total += strikeResult.damage;
-      this.sayEvent(
-        'attack',
-        `attack ${this.opponentName(group.slot)} with ${all.length} creature(s): ${strikeResult.damage} damage (${this.opponentName(group.slot)} ${this.life[group.slot]})`,
-      );
-    });
-    this.onCombatDamage(
-      connected.filter((permanent) => this.battlefield.includes(permanent)),
-      total,
-    );
+    attackInPod(this, pool, powerOf, toughnessOf);
   }
 
   /** A pod, after our second main phase: if the biggest opposing board would leave us at config.chump_life (10) or less next turn
    *  even with our untapped creatures blocking, cast creatures from hand as blockers, cheapest first (decks built against
    *  goldfish opponents never do this on their own). */
   override podDefence(): void {
-    for (let round = 0; round < 4; round++) {
-      const worst = this.biggestAttackNextTurn();
-      if (
-        worst <= 0 ||
-        this.myLife - worst > ((this.config.chump_life as number) ?? 10)
-      )
-        return;
-      const cards = this.hand
-        .filter(
-          (card) =>
-            card.isCreature && this.canPay(this.effectiveCost(card), false),
-        )
-        .sort(
-          (first, second) =>
-            this.effectiveCost(first).manaValue -
-            this.effectiveCost(second).manaValue,
-        );
-      if (!cards.length || !this.castPerm(cards[0])) return;
-      this.say(
-        '(a blocker: the biggest opposing board would leave us at',
-        this.myLife - worst,
-        'life)',
-      );
-    }
+    castCreaturesAsBlockers(this);
   }
 
   /** A pod: does any living opponent control a creature? */
@@ -539,21 +250,7 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   /** A pod: the damage the biggest opposing board could deal us next turn, each untapped creature of ours blocking one
    *  of its biggest attackers. */
   biggestAttackNextTurn(): number {
-    const mine = this.creatures().filter(
-      (permanent) => !permanent.tapped,
-    ).length;
-    let worst = 0;
-    for (let i = 0; i < this.life.length; i++) {
-      if (!this.isOpponentAlive(i)) continue;
-      const opponentPowers = this.arena!.board(this, i)
-        .sort((first, second) => second - first)
-        .slice(mine);
-      worst = Math.max(
-        worst,
-        opponentPowers.reduce((total, value) => total + value, 0),
-      );
-    }
-    return worst;
+    return damageOfBiggestAttackNextTurn(this);
   }
 
   /** An opponent cast this spell and we hold a counterspell for it: do we counter it? By default, a spell worth
