@@ -16,6 +16,7 @@ export function resolveCardSelection(
   game: GameCore,
   otherCard: CardDef,
   fromGraveyard: boolean,
+  mode: string | null,
 ): boolean {
   switch (otherCard.name) {
     case 'Brainstorm': {
@@ -91,6 +92,17 @@ export function resolveCardSelection(
       game.discard(2);
       game.untapLands(3);
       return true;
+    case 'Tune the Narrative':
+      game.draw(1);
+      game.gainEnergy(2);
+      return true;
+    case 'Pull from Tomorrow': {
+      // the mode is 'x=N'
+      const xValue = parseInt((mode ?? 'x=0').slice(2), 10);
+      game.draw(xValue);
+      game.discard(1);
+      return true;
+    }
     default:
       return false;
   }

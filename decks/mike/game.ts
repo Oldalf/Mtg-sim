@@ -785,10 +785,7 @@ export class MikeGame extends GameWithoutKillSearch {
       this.arena!.bounceColour(this, mode as 'W' | 'U' | 'B' | 'R' | 'G', name);
       return;
     }
-    if (name === 'Tune the Narrative') {
-      this.draw(1);
-      this.gainEnergy(2);
-    } else if (name === 'Flux') {
+    if (name === 'Flux') {
       const all =
         this.isSafeToEmptyLibrary() &&
         this.refillDraws(this.hand.length, true) >= this.library.length;
@@ -817,10 +814,6 @@ export class MikeGame extends GameWithoutKillSearch {
           ? this.arena!.wheel(this, handSize)
           : Math.max(handSize, 7),
       );
-    } else if (name === 'Pull from Tomorrow') {
-      const xValue = parseInt((mode ?? 'x=0').slice(2), 10);
-      this.draw(xValue);
-      this.discard(1);
     } else super.resolve(card, fromGraveyard, mode);
   }
   /** Slick Imitator at max speed: {1}, sacrifice it: copy a spell we cast (a copy of a draw spell draws again). */

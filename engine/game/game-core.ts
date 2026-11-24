@@ -791,7 +791,7 @@ export abstract class GameCore<S = unknown> {
     fromGraveyard = false,
     mode: string | null = null,
   ): void {
-    if (resolveCardSelection(this, card, fromGraveyard)) return;
+    if (resolveCardSelection(this, card, fromGraveyard, mode)) return;
     if (resolveSacrificeDrawSpell(this, card)) return;
     if (resolveManaOrTutor(this, card, mode)) return;
     if (resolveLandSearch(this, card)) return;
