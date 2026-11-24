@@ -526,13 +526,9 @@ function filterSignetFeeder(
       ? kind === 'F'
       : Facts.FILTER_COLOURS[kind].includes(short);
   const hasUntappedFilterSignet = game.battlefield.some((permanent) => {
+    if (permanent.tapped) return false; // (first: a board of tokens is big)
     const kind = game.manaSourceKind(permanent);
-    return (
-      !permanent.tapped &&
-      kind !== null &&
-      Facts.isFilterKind(kind) &&
-      canMakeShort(kind)
-    );
+    return kind !== null && Facts.isFilterKind(kind) && canMakeShort(kind);
   });
   return hasUntappedFilterSignet
     ? pickSource(game, 'N', isInstantOrSorcery)

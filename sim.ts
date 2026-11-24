@@ -20,9 +20,10 @@
  *                                                        every run writes its games to session-logs/ unless --no-log is given
  *   npm run app                                          the app: a local server and a page in the browser
  *                                                        (see app/server/app-command.ts)
- *   npm run sim -- gale --test                           the deck's kill-finder tests
+ *   npm run sim -- gale --test                           the deck's kill-finder tests (--no-kill-misses skips the
+ *                                                        300-seed kill-miss check, which --regress check also does)
  *   npm run sim -- gale --regress check                  after a refactor: results must be IDENTICAL
- *                                                        (--regress record saves a new baseline)
+ *                                                        (--regress record saves a new baseline; -n 100 checks seeds 1-100 only)
  *
  * Lists and logs are looked up as given, then inside the deck's folder.
  */
@@ -104,7 +105,12 @@ async function runSpecialCommand(
     const isBoardRight = runBoardTests(deck);
     const areTagsRight = runTagTests();
     const areTokensRight = runTokenTests();
-    const areKillLinesPlayable = runKillMissTests(deck);
+    // verify passes --no-kill-misses when it also runs the deck's regress, which checks more seeds for them
+    const areKillLinesPlayable = args.testKillMisses
+      ? runKillMissTests(deck)
+      : true;
+    if (!args.testKillMisses)
+      console.log('(kill misses not checked here: --regress check does)');
     // a deck without tests of its own (the goldfish) only gets the log checks above
     const deckTestsPassed = deck.tests ? deck.tests() : true;
     const logTestsPassed =
@@ -126,6 +132,7 @@ async function runSpecialCommand(
       { ...deck.regress, tests: deck.tests ?? (() => true) },
       args.regress,
       args.workers,
+      args.gamesGiven ? args.games : undefined,
     );
     process.exit(identical ? 0 : 1);
   }

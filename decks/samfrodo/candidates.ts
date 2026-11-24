@@ -210,6 +210,10 @@ function addAbilityCandidates(
   hasSanguineBond: boolean,
 ): void {
   const spareFodder = game.spareSacrifices();
+  // (counted once: a board can hold hundreds of tokens)
+  const spareFoodCount = spareFodder.filter(
+    (candidate) => candidate.card === FOOD,
+  ).length;
   const foodCost = new Cost(game.isOnBattlefield(SAM) ? 1 : 2);
   const familiar = game.graveyard.find(
     (card) => card.name === 'Cauldron Familiar',
@@ -224,6 +228,7 @@ function addAbilityCandidates(
       main2,
       hasSanguineBond,
       spareFodder,
+      spareFoodCount,
     );
   // crack a Clue (one candidate, whichever Clue)
   const clue = game.battlefield.find((permanent) => permanent.card === CLUE);
@@ -251,13 +256,14 @@ function addPermanentAbilityCandidate(
   main2: boolean,
   hasSanguineBond: boolean,
   spareFodder: Permanent[],
+  spareFoodCount: number,
 ): void {
+  // (the common tokens have no ability here; skipping them is quick on a board of hundreds)
+  const card = permanent.card;
+  if (card === FOOD || card === CLUE || card === TREASURE) return;
   const name = permanent.card.name;
   const isReady =
     !permanent.tapped && !(permanent.isCreature && permanent.sick);
-  const spareFoodCount = spareFodder.filter(
-    (candidate) => candidate.card === FOOD,
-  ).length;
   if (name === "Witch's Oven" && !permanent.tapped) {
     const familiar = game.findPermanent('Cauldron Familiar');
     const victim =

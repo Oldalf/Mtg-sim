@@ -33,6 +33,7 @@ export interface Args {
   analyzeRuns: number; // --ai: how many games the analyzer plays from each point
   analyzeBudget: number; // --budget: kill-search effort of the analyzer
   test: boolean; // --test
+  testKillMisses: boolean; // off with --no-kill-misses: --test skips its kill-miss check (regress covers it)
   diag: boolean; // --diag
   hands: boolean; // --hands
   regress: string | null; // --regress record | check
@@ -71,6 +72,7 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     analyzeRuns: 200,
     analyzeBudget: 20000,
     test: false,
+    testKillMisses: true,
     diag: false,
     hands: false,
     regress: null,
@@ -120,6 +122,7 @@ export function parseArgs(argv: string[], deckNames: string[]): Args {
     else if (option === '--ai') args.analyzeRuns = nextNumber();
     else if (option === '--budget') args.analyzeBudget = nextNumber();
     else if (option === '--test') args.test = true;
+    else if (option === '--no-kill-misses') args.testKillMisses = false;
     else if (option === '--diag') args.diag = true;
     else if (option === '--hands') args.hands = true;
     else if (option === '--regress') args.regress = nextValue();

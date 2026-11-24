@@ -50,6 +50,7 @@ npm run app -- --test                                # the app's server tests (A
 npm test --prefix app/web -- --watch=false           # the page's tests (Angular, Vitest)
 npm run check                                        # type-check the code
 npm run verify                                       # every check a change must pass (must end with VERIFY OK; -- --eco for power-save)
+npm run verify -- --quick                            # while editing: regress on seeds 1-100, no pod run (the plain verify before a commit)
 ```
 
 `npm run sim` bundles the code with esbuild (a few milliseconds) and runs it. Games run in parallel on all cores but one (`-w N` to change).

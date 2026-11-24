@@ -106,6 +106,8 @@ type WinTurnAndCards = [number | null, string[]];
 
 export type JobResult = {
   kills?: KillTurns[];
+  /** kills: the seeds whose game had a kill miss (a line the search found that the real game could not play). */
+  killMissSeeds?: number[];
   seen4?: WinTurnAndCards[];
   diag?: DiagRow[];
   hands?: WinTurnAndCards[];
@@ -190,7 +192,10 @@ export function runJob(deck: Deck, job: Job): JobResult {
   if (job.what === 'seen4') result.seen4 = [];
   else if (job.what === 'diag') result.diag = [];
   else if (job.what === 'hands') result.hands = [];
-  else result.kills = [];
+  else {
+    result.kills = [];
+    result.killMissSeeds = [];
+  }
 
   const logFolder = job.logFolder;
   const isLogged = logFolder !== undefined;
@@ -248,7 +253,10 @@ export function runJob(deck: Deck, job: Job): JobResult {
       else if (job.what === 'seen4') {
         if (game.seen4 !== null)
           result.seen4!.push([anyKillTurn, [...game.seen4]]);
-      } else result.kills!.push(killTurns);
+      } else {
+        result.kills!.push(killTurns);
+        if (game.killMisses > 0) result.killMissSeeds!.push(seed);
+      }
       keepLog(seed, game, killTurns);
     } catch (error) {
       // a simulator bug in one game must not kill the whole run
@@ -332,7 +340,12 @@ function mergeResults(what: JobKind, results: JobResult[]): JobResult {
     merged.diag = results.flatMap((result) => result.diag ?? []);
   else if (what === 'hands')
     merged.hands = results.flatMap((result) => result.hands ?? []);
-  else merged.kills = results.flatMap((result) => result.kills ?? []);
+  else {
+    merged.kills = results.flatMap((result) => result.kills ?? []);
+    merged.killMissSeeds = results.flatMap(
+      (result) => result.killMissSeeds ?? [],
+    );
+  }
   if (results.some((result) => result.logRows))
     merged.logRows = results.flatMap((result) => result.logRows ?? []);
   merged.errors = results.flatMap((result) => result.errors);

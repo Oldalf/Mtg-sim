@@ -4,6 +4,9 @@
  *   npm run sim -- gale --regress check      run again and compare (must print IDENTICAL)
  * It records, per seed, the first kill turn ("any" and "with counter backup") for each list, the full
  * output of the log analyzer for every game log, and the kill-test output.
+ * The games of the deck's own list are also checked for kill misses (as --test does, on more seeds), so
+ * scripts/verify.mjs skips that part of --test for a deck whose regress it runs.
+ *   npm run sim -- gale --regress check -n 100   only seeds 1-100 (a quick check while editing)
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -38,22 +41,30 @@ function capture(action: () => void): string {
   return out.join('\n');
 }
 
-async function collect(deck: Deck, spec: RegressSpec, workers: number) {
+async function collect(
+  deck: Deck,
+  spec: RegressSpec,
+  workers: number,
+  seeds: number,
+) {
   const results = {
     games: {} as Record<string, unknown>,
     logs: {} as Record<string, string>,
     tests: '',
   };
+  let killMissSeeds: number[] = [];
   for (const listFile of spec.lists) {
     const result = await simulate(
       deck,
       path.join(deck.dir, listFile),
-      SEEDS,
+      seeds,
       { ...deck.config },
       workers,
     );
     results.games[listFile] = result.kills;
-    console.log(`  ${listFile}: ${SEEDS} games`);
+    if (listFile === deck.defaultList)
+      killMissSeeds = result.killMissSeeds ?? [];
+    console.log(`  ${listFile}: ${seeds} games`);
   }
   const logDir = path.join(deck.dir, 'logs');
   for (const logFile of fs.existsSync(logDir)
@@ -72,22 +83,44 @@ async function collect(deck: Deck, spec: RegressSpec, workers: number) {
   results.tests = capture(() => {
     spec.tests();
   });
-  return results;
+  return { results, killMissSeeds };
 }
 
+/** The kill-miss check of --test (kill-line.test.ts), on the games regress played with the deck's own list. */
+function reportKillMisses(
+  deck: Deck,
+  killMissSeeds: number[],
+  seeds: number,
+): boolean {
+  const isGood = killMissSeeds.length === 0;
+  console.log(
+    `${isGood ? 'OK ' : 'BAD'} kill lines played for real: ${seeds} seeds of ${deck.defaultList}, ` +
+      `${killMissSeeds.length} with a kill miss` +
+      (isGood
+        ? ''
+        : ` (seeds ${killMissSeeds.slice(0, 10).join(', ')}; KILL_MISS_LOG_SEED=<seed> with --test shows the log)`),
+  );
+  return isGood;
+}
+
+/** seeds: how many seeds to play and compare (fewer than the baseline's 600 only for a check). */
 export async function regress(
   deck: Deck,
   spec: RegressSpec,
   mode: string,
   workers: number,
+  seeds = SEEDS,
 ): Promise<boolean> {
   const file = path.join(C.ROOT, 'regress_baseline', `${deck.name}.json`);
-  const results = await collect(deck, spec, workers);
+  if (mode === 'record' && seeds !== SEEDS)
+    throw new Error(`a baseline is always recorded with ${SEEDS} seeds`);
+  const { results, killMissSeeds } = await collect(deck, spec, workers, seeds);
+  const hasNoKillMisses = reportKillMisses(deck, killMissSeeds, seeds);
   if (mode === 'record') {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(results), 'utf-8');
     console.log(`recorded to ${file}`);
-    return true;
+    return hasNoKillMisses;
   }
   const base = JSON.parse(fs.readFileSync(file, 'utf-8')) as typeof results;
   let bad = 0;
@@ -100,13 +133,13 @@ export async function regress(
       number | null,
     ][];
     const diff: number[] = [];
-    rows.forEach((row, i) => {
+    rows.slice(0, seeds).forEach((row, i) => {
       if (!current[i] || current[i][0] !== row[0] || current[i][1] !== row[1])
         diff.push(i + 1);
     });
     bad += diff.length;
     console.log(
-      `${diff.length ? 'BAD' : 'OK '} ${listFile}: ${diff.length} of ${rows.length} seeds differ` +
+      `${diff.length ? 'BAD' : 'OK '} ${listFile}: ${diff.length} of ${Math.min(seeds, rows.length)} seeds differ` +
         (diff.length ? ` (first: ${diff.slice(0, 10).join(', ')})` : ''),
     );
   }
@@ -119,5 +152,5 @@ export async function regress(
   if (!same) bad++;
   console.log(`${same ? 'OK ' : 'BAD'} kill-finder tests`);
   console.log(bad ? 'DIFFERENT' : 'IDENTICAL');
-  return !bad;
+  return !bad && hasNoKillMisses;
 }

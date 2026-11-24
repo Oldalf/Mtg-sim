@@ -4,6 +4,8 @@
  *   npm run verify                 the checks the change needs, at full power
  *   npm run verify -- --eco        the simulations in power-save mode (slower, same results)
  *   npm run verify -- --full       every check, whatever changed
+ *   npm run verify -- --quick      for the edit-test loop: regress on seeds 1-100 only and no pod run; run the
+ *                                  plain verify before a commit
  *   npm run verify -- --jobs N     how many checks run at once (default 4, 2 with --eco)
  *   npm run verify -- --record-pod save the pod report as the new baseline (after a change that is meant to alter it)
  *
@@ -11,12 +13,16 @@
  * `--test` (no BAD line); then the pod tests, the app's tests, and a pod run with fixed seeds whose report must equal the saved one
  * (regress_baseline/pod.txt), because `--regress` does not cover pod games.
  *
- * The regress checks and the pod run are the slow ones, so they run only where the change can alter results: it
- * looks at the files changed since the branch left main (committed, uncommitted and new). A change to the shared
- * simulator (engine/, cli/, sim.ts, the card data, ...) checks every deck; a change inside decks/<name>/ checks that
- * deck (and the pod run if it plays in it); a change elsewhere (the app, the docs) checks none. The page's own build
- * and tests (`ng build`, `ng test` in app/web/) run when the page, app/api-types.ts or shared/ changed. Each check
- * prints how long it took.
+ * The simulations are the slow part, so they run only where the change can alter results: it looks at the files
+ * changed since the branch left main (committed, uncommitted and new). A change to the shared simulator (engine/,
+ * cli/, sim.ts, the card data, ...) checks every deck; a change inside decks/<name>/ checks that deck's regress and
+ * --test (and the pod run if it plays in it); the pod and app tests run for any simulator or deck change (the app's
+ * also for app/); a change elsewhere (the docs) runs only the type-check and the formatting. The page's own build
+ * and tests (`ng build`, `ng test` in app/web/) run when the page, app/api-types.ts or shared/ changed.
+ * A deck whose regress runs gets `--test --no-kill-misses`: regress checks its 600 games for kill misses instead of
+ * --test playing 300 of them again.
+ * Each check prints how long it took. The times are kept in dist/verify-times.json, and the next run starts the
+ * slowest checks first, so the last ones to finish are short.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import * as os from 'node:os';
@@ -30,6 +36,10 @@ const PROJECT_FOLDER = path.resolve(
 );
 const BUNDLE = path.join('dist', 'sim.js');
 const POD_BASELINE_FILE = path.join('regress_baseline', 'pod.txt');
+/** Each check's seconds in the last run that ran it (for the order: slowest first). Not in git. */
+const TIMES_FILE = path.join(PROJECT_FOLDER, 'dist', 'verify-times.json');
+/** verify --quick: the regress checks play only these seeds. */
+const QUICK_REGRESS_SEEDS = 100;
 /** The decks in the fixed-seed pod run (its report is regress_baseline/pod.txt: change it only on purpose). */
 const POD_DECKS = ['gale', 'meren', 'samfrodo', 'aesi', 'edgar'];
 const POD_ARGUMENTS = ['pod', ...POD_DECKS, '-n', '200', '--no-log'];
@@ -49,6 +59,7 @@ const options = process.argv.slice(2);
 const powerSaveOptions = options.includes('--eco') ? ['--eco'] : [];
 const isRecordingPod = options.includes('--record-pod');
 const isFullRun = options.includes('--full');
+const isQuickRun = options.includes('--quick') && !isFullRun;
 const verifyStartTime = Date.now();
 /** How many checks run at once: --jobs N, else 4 (2 with --eco), never more than the cores. */
 const jobsOption = options.indexOf('--jobs');
@@ -119,21 +130,52 @@ function report(label, isGood, commandRun) {
   }
 }
 
-/** Runs the checks `maxAtOnce` at a time, then reports them in the order they were listed.
- *  A check is an async function returning the reports of its result: [{ label, isGood, commandRun }]. */
+/** Runs the checks `maxAtOnce` at a time, slowest first (by the last run's times: the last ones to finish are
+ *  then short; a check without a time yet goes first, as it may be slow), then reports them in the order they
+ *  were listed. A check is { key, run }: run is an async function returning the reports of its result,
+ *  [{ label, isGood, commandRun }]. Returns the seconds each check took, by its key. */
 async function runChecks(checks, maxAtOnce) {
+  const lastTimes = readLastTimes();
+  const lastSeconds = (index) => lastTimes[checks[index].key] ?? 1e9;
+  const startOrder = checks
+    .map((_, index) => index)
+    .sort((first, second) => lastSeconds(second) - lastSeconds(first));
   const results = new Array(checks.length);
+  const secondsByKey = {};
   let nextCheck = 0;
   const worker = async () => {
     while (nextCheck < checks.length) {
-      const index = nextCheck++;
-      results[index] = await checks[index]();
+      const index = startOrder[nextCheck++];
+      const startTime = Date.now();
+      results[index] = await checks[index].run();
+      secondsByKey[checks[index].key] = Math.round(
+        (Date.now() - startTime) / 1000,
+      );
     }
   };
   await Promise.all(Array.from({ length: maxAtOnce }, worker));
   for (const reports of results)
     for (const { label, isGood, commandRun } of reports)
       report(label, isGood, commandRun);
+  return secondsByKey;
+}
+
+/** The seconds each check took when it last ran ({} before the first run). */
+function readLastTimes() {
+  try {
+    return JSON.parse(fs.readFileSync(TIMES_FILE, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveTimes(secondsByKey) {
+  try {
+    const times = { ...readLastTimes(), ...secondsByKey };
+    fs.writeFileSync(TIMES_FILE, JSON.stringify(times, null, 1) + '\n');
+  } catch {
+    // only the order of the next run depends on it
+  }
 }
 
 /** The files changed since this branch left main, with forward slashes; null when git cannot tell. */
@@ -157,24 +199,39 @@ function isSharedSimulatorFile(file) {
   return topFolder === 'decks' && fileInDeck === undefined && deckFolder !== '';
 }
 
-/** The decks whose regress check the change needs, and whether it needs the pod run. */
-function chooseSlowChecks(changedFiles) {
-  if (isFullRun || changedFiles === null)
-    return { decksToRegress: DECKS_WITH_BASELINE, needsPodRun: true };
-  if (changedFiles.some(isSharedSimulatorFile))
-    return { decksToRegress: DECKS_WITH_BASELINE, needsPodRun: true };
+/** The simulations the change needs: the decks whose regress check and --test it needs, the pod run, and the
+ *  pod and app tests. */
+function chooseSimulationChecks(changedFiles) {
+  const everything = {
+    decksToRegress: DECKS_WITH_BASELINE,
+    decksToTest: DECKS_WITH_TESTS,
+    needsPodRun: true,
+    needsPodTests: true,
+    needsAppTests: true,
+  };
+  if (isFullRun || changedFiles === null) return everything;
+  if (changedFiles.some(isSharedSimulatorFile)) return everything;
   const isDeckChanged = (deck) =>
     changedFiles.some(
       (file) =>
         file.startsWith(`decks/${deck}/`) ||
         file === `regress_baseline/${deck}.json`,
     );
+  const isAnyDeckChanged = DECKS_WITH_TESTS.some(isDeckChanged);
   return {
     decksToRegress: DECKS_WITH_BASELINE.filter(isDeckChanged),
+    decksToTest: DECKS_WITH_TESTS.filter(isDeckChanged),
     needsPodRun:
       isRecordingPod ||
       changedFiles.includes(POD_BASELINE_FILE.replace(/\\/g, '/')) ||
       POD_DECKS.some(isDeckChanged),
+    // the pod tests and the app's (its deck list, runs and logs) play several decks
+    needsPodTests: isAnyDeckChanged,
+    needsAppTests:
+      isAnyDeckChanged ||
+      changedFiles.some(
+        (file) => file.startsWith('app/') && !file.startsWith('app/web/'),
+      ),
   };
 }
 
@@ -287,29 +344,51 @@ const { withBaseline: DECKS_WITH_BASELINE, all: DECKS_WITH_TESTS } =
   listDecks();
 
 const changedFiles = filesChangedSinceMain();
-const { decksToRegress, needsPodRun } = chooseSlowChecks(changedFiles);
+const {
+  decksToRegress,
+  decksToTest,
+  needsPodTests,
+  needsAppTests,
+  needsPodRun: podRunNeeded,
+} = chooseSimulationChecks(changedFiles);
+const needsPodRun = podRunNeeded && !isQuickRun;
 const runsPageChecks = needsPageChecks(changedFiles);
-const skippedDecks = DECKS_WITH_BASELINE.filter(
-  (deck) => !decksToRegress.includes(deck),
-);
-if (skippedDecks.length || !needsPodRun || !runsPageChecks)
+const skipped = [
+  ...DECKS_WITH_BASELINE.filter((deck) => !decksToRegress.includes(deck)).map(
+    (deck) => `${deck} --regress`,
+  ),
+  ...DECKS_WITH_TESTS.filter((deck) => !decksToTest.includes(deck)).map(
+    (deck) => `${deck} --test`,
+  ),
+  ...(needsPodTests ? [] : ['pod --test']),
+  ...(needsAppTests ? [] : ['app --test']),
+  ...(podRunNeeded ? [] : ['the pod run']),
+  ...(runsPageChecks ? [] : ['the page build and tests']),
+];
+if (skipped.length)
   console.log(
-    `Skipped, as the change cannot alter their results (--full runs them): ` +
-      [
-        ...skippedDecks.map((deck) => `${deck} --regress`),
-        ...(needsPodRun ? [] : ['the pod run']),
-        ...(runsPageChecks ? [] : ['the page build and tests']),
-      ].join(', ') +
-      '\n',
+    `Skipped, as the change cannot alter their results (--full runs them): ${skipped.join(', ')}\n`,
+  );
+if (isQuickRun)
+  console.log(
+    `Quick: regress on seeds 1-${QUICK_REGRESS_SEEDS} only` +
+      (podRunNeeded ? ', no pod run' : '') +
+      '. Run the plain verify before a commit.\n',
   );
 
 /** One check that is a single command: its label, the command, and what makes it good. */
-const commandCheck = (label, startCommand, isGoodOutput) => async () => {
-  const commandRun = await startCommand();
-  return [{ label, isGood: isGoodOutput(commandRun), commandRun }];
-};
+const commandCheck = (label, startCommand, isGoodOutput) => ({
+  key: label,
+  run: async () => {
+    const commandRun = await startCommand();
+    return [{ label, isGood: isGoodOutput(commandRun), commandRun }];
+  },
+});
 const hasNoBadLine = (commandRun) =>
   commandRun.exitCode === 0 && !/^BAD/m.test(commandRun.output);
+const regressSeedOptions = isQuickRun
+  ? ['-n', String(QUICK_REGRESS_SEEDS)]
+  : [];
 
 const checks = [
   commandCheck(
@@ -324,46 +403,58 @@ const checks = [
   ),
   ...decksToRegress.map((deck) =>
     commandCheck(
-      `${deck}: --regress check is IDENTICAL`,
+      `${deck}: --regress check is IDENTICAL` +
+        (isQuickRun ? ` (seeds 1-${QUICK_REGRESS_SEEDS})` : '') +
+        ', no kill misses',
       () =>
-        runSimulatorAsync([deck, '--regress', 'check', ...powerSaveOptions]),
+        runSimulatorAsync([
+          deck,
+          '--regress',
+          'check',
+          ...regressSeedOptions,
+          ...powerSaveOptions,
+        ]),
       (commandRun) =>
-        commandRun.output.includes('IDENTICAL') &&
-        !commandRun.output.includes('DIFFERENT'),
+        commandRun.output.includes('IDENTICAL') && hasNoBadLine(commandRun),
     ),
   ),
-  ...DECKS_WITH_TESTS.map((deck) =>
-    commandCheck(
+  ...decksToTest.map((deck) => {
+    // the deck's regress checks its games for kill misses, on more seeds
+    const killMissOptions = decksToRegress.includes(deck)
+      ? ['--no-kill-misses']
+      : [];
+    return commandCheck(
       `${deck}: --test`,
-      () => runSimulatorAsync([deck, '--test']),
+      () => runSimulatorAsync([deck, '--test', ...killMissOptions]),
+      hasNoBadLine,
+    );
+  }),
+];
+if (needsPodTests)
+  checks.push(
+    commandCheck(
+      'pod: --test',
+      () => runSimulatorAsync(['pod', '--test']),
       hasNoBadLine,
     ),
-  ),
-  commandCheck(
-    'pod: --test',
-    () => runSimulatorAsync(['pod', '--test']),
-    hasNoBadLine,
-  ),
-  commandCheck(
-    'app: --test',
-    () => runSimulatorAsync(['app', '--test']),
-    hasNoBadLine,
-  ),
-];
-if (needsPodRun) checks.push(checkPodRun);
-if (runsPageChecks) checks.push(checkPage);
+  );
+if (needsAppTests)
+  checks.push(
+    commandCheck(
+      'app: --test',
+      () => runSimulatorAsync(['app', '--test']),
+      hasNoBadLine,
+    ),
+  );
+if (needsPodRun) checks.push({ key: 'pod run', run: checkPodRun });
+if (runsPageChecks) checks.push({ key: 'page', run: checkPage });
 
-// The slowest checks start first, so the last ones to finish are short.
-const slowFirst = (check) =>
-  check === checkPodRun || check === checkPage ? 0 : 1;
-checks.sort((first, second) => slowFirst(first) - slowFirst(second));
-
-await runChecks(checks, checksAtOnce);
+saveTimes(await runChecks(checks, checksAtOnce));
 
 const totalSeconds = Math.round((Date.now() - verifyStartTime) / 1000);
 console.log(
   failedChecks === 0
-    ? `\nVERIFY OK (${totalSeconds}s)`
+    ? `\nVERIFY OK (${isQuickRun ? 'quick, ' : ''}${totalSeconds}s)`
     : `\nVERIFY BAD (${failedChecks} failed, ${totalSeconds}s)`,
 );
 process.exit(failedChecks === 0 ? 0 : 1);

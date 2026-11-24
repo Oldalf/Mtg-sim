@@ -38,7 +38,7 @@ Rules for every task:
 | 5 | T5 | Gale's leftovers: planner speed, kill-search mana leftovers | Opus 5.5 |
 | 6 | T6 | Meren: "no meaningful impact" and Pontus's changes (after P) | Sonnet 5.5 |
 | 7 | T7 | Sam & Frodo: analyze Pontus's logs (after P) | Sonnet 5.5 |
-| 8 | T8 | Faster tests and `verify` | Opus 5.5 |
+| 8 | T8 | Faster tests and `verify` (done 2026-11-24) | Opus 5.5 |
 | 9 | T9 | Meren: analyze Pontus's hand playtest logs (done 2026-11-23) | Sonnet 5.5 |
 
 T1 comes first because T3 to T6 all compare lists or settings; T2 before T3 so new engine rules land in the split files. T6 and T7 can run whenever Pontus's input arrives. T9 is done (2026-11-23).
@@ -133,8 +133,13 @@ A full-power `verify` after an engine change took 311 s (2026-11-18, T5). The sl
 **Measured 2026-11-23 (eco, `verify --full`): 542 s.** Codie's regress 420 s, Sam & Frodo's `--test` 123 s (77 s alone) and regress 76 s, Gale's regress 55 s, `app --test` 29 s, the page 21 + 21 s; everything else under 45 s. Inside `--test` (one thread): the 300-seed kill-miss check is most of every deck's time (Sam & Frodo 59 s, Codie 24, Aesi 21, Gale 15); the log checks (210 games) a quarter; the deck's own tests and the tag/token tests about 0 s. Regress logs: about 1 s each.
 
 - **Done: Codie's seed 329.** One game was 191 s of Codie's 244 s (600 seeds, one thread): almost every state of its kill search had the library in hand and started a 1,500-state next-turn search. Those states now count against the search's 4,000 (`decks/codie/solver.ts` findNextTurnKill): 600 seeds in 52 s, regress IDENTICAL, 3,000 seeds give the same table (eco 301 s -> 99 s). A cache of next-turn searches by the full state was tried first and dropped: only 355 of 3,987 states repeat (graveyard and exile differ), 7% faster.
-- **Sam & Frodo's slow seeds:** 374 (25 s) and 256 (16 s) of 600 (157 s); the time is in the planner's rollouts (candidates for permanents' abilities). Not looked into yet.
-- **Proposed, not picked (2026-11-23):** B kill misses counted in the regress games (600 seeds) and the 300-seed check skipped in `--test` where regress runs (about -150 s CPU on engine changes); C `--test` skipped by the same changed-file rule as regress; D `verify --quick` (changed decks, regress on seeds 1-100) and slowest-first ordering from the last run's times.
+- **Done 2026-11-24: Sam & Frodo's slow seeds.** Seeds 374 and 256 end with 1,026 and 626 permanents (hundreds of Clues, Treasures and Foods), and each candidate list in each planner rollout counted the spare Foods once per permanent (n²). The count is now made once per list, the three common tokens skip the ability checks (`decks/samfrodo/candidates.ts`), and the engine's filter-Signet check looks at `tapped` before the mana kind (`engine/game/mana-payment.ts`). Seed 374: 24.5 s -> 6.3 s; 600 seeds on one thread 157 s -> 48 s; every deck's regress IDENTICAL.
+- **Done 2026-11-24 (Pontus picked B, C and D):**
+  - B: the regress games of the deck's own list (600 seeds) are checked for kill misses (`engine/tools/regress.ts`, a BAD line), and verify runs `--test --no-kill-misses` for a deck whose regress it runs. Same seeds, mode and settings as the 300-seed check, so it catches the same misses and more.
+  - C: a deck's `--test` runs by the same changed-file rule as its regress; the pod and app tests run for any simulator or deck change (the app's also for `app/`); a docs-only change runs the type-check and formatting only.
+  - D: `verify --quick` (regress on seeds 1-100 with `--regress check -n 100`, no pod run) for the edit-test loop; every verify starts the slowest checks first, by the last run's times (`dist/verify-times.json`).
+  - Shown to still fail (step 3): every game counting a kill miss (play unchanged) gives IDENTICAL plus BAD kill lines; Treasures making only colourless mana fails `verify --quick` on 4 decks' regress and the pod tests (69 s).
+  - Full power, engine changed: `verify --full` before B-D 155 s (with the page, 85 s); plain `verify` after 113 s (page not needed), the decks' `--test` 4-15 s each (was 13-112 s); `verify --quick` 69 s.
 
 ## T9. Meren: analyze Pontus's hand playtest logs (Sonnet 5.5, after P)
 

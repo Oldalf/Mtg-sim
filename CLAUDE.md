@@ -13,7 +13,7 @@ A goldfish simulator for Commander decks, written in TypeScript and run on Node.
 ## Commands
 
 - `npm run sim -- <deck> ...`: run a deck (see README.md).
-- `npm run verify`: every check a change must pass, in one go (type-check, formatting, `--regress check` and `--test` for every deck, the pod tests, the app tests, a fixed-seed pod run, and the page's `ng build` and `ng test` when the page, `app/api-types.ts` or `shared/` changed). It must end with VERIFY OK. `-- --eco` runs it in power-save mode. The slow regress checks and the pod run only run where the files changed since `main` can alter results (all decks for `engine/`, `cli/`, `sim.ts`, `data/`; one deck for its own folder; none for the app or docs); `-- --full` runs everything.
+- `npm run verify`: every check a change must pass, in one go (type-check, formatting, `--regress check` and `--test` for every deck, the pod tests, the app tests, a fixed-seed pod run, and the page's `ng build` and `ng test` when the page, `app/api-types.ts` or `shared/` changed). It must end with VERIFY OK. `-- --eco` runs it in power-save mode. The simulations only run where the files changed since `main` can alter results (every deck's regress and `--test` for `engine/`, `cli/`, `sim.ts`, `data/`; one deck's for its own folder; the pod and app tests for any of those; none for docs); `-- --full` runs everything. Kill misses are checked in the regress games, so a deck whose regress runs skips that part of `--test`. `-- --quick` is for the edit-test loop (regress on seeds 1-100, no pod run); run the plain `verify` before a commit.
 - `npm run check`: type-check.
 - `npm run format`: format all code with Prettier. Run it before finishing a change.
 - `npm run format:check`: check formatting without changing files.
