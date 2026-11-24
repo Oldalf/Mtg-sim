@@ -4,8 +4,9 @@
  *
  * Files:
  *   cards.ts       the card names and the facts about them (values, which cards ramp, the moonfolk table...)
- *   game.ts        this file: AesiGame, its state, mana, the turn steps and combat
+ *   game.ts        this file: AesiGame, its state, mana and the turn steps
  *   land-drops.ts  which way and which land goes onto the battlefield, and a land entering
+ *   combat.ts      the attacks and the Siege
  *   loops.ts       the loop solver: finds the loops on the battlefield, applies them and looks for a win
  *   candidates.ts  everything the AI may do now, with a score each (cast, play a land, abilities)
  *   actions.ts     what the abilities do when the AI picks them
@@ -64,6 +65,7 @@ import { findLoops, solveLoops } from './loops';
 import type { Loops } from './loops';
 import { buildCandidates, chooseLandTutorTarget } from './candidates';
 import { resolveAesiSpell } from './spells';
+import { attackAsAesi, attackTheSiege, defeatTheSiege } from './combat';
 import {
   entersUntapped,
   creaturesReadyToPutALand,
@@ -762,131 +764,16 @@ export class AesiGame extends Game<AesiGame> {
   /** Flyers attack whenever they can; ground creatures only if attacking with everything kills the table
    *  (opponents block half of them, the biggest). No crackback. */
   override combat(): void {
-    if (this.attacked) return;
-    const ready = this.creatures().filter(
-      (permanent) =>
-        !permanent.tapped &&
-        (!permanent.sick || permanent.card.haste) &&
-        this.power(permanent) > 0,
-    );
-    const flyers = ready.filter((permanent) => permanent.card.flying);
-    const ground = ready
-      .filter((permanent) => !permanent.card.flying)
-      .sort(
-        (permanent, otherPermanent) =>
-          this.power(otherPermanent) - this.power(permanent),
-      );
-    let druidLandSize = 0;
-    const druid = this.findPermanent(DRUID);
-    if (druid && druid.counters >= 3)
-      druidLandSize = this.landsOnBattlefield().length; // a land creature with haste
-    const flyerDamage = flyers.reduce(
-      (total, permanent) => total + this.power(permanent),
-      0,
-    );
-    // lands that are 2/2 creatures (Nature's Revolt, Natural Affinity, Sylvan Awakening): untapped ones that
-    // aren't summoning sick (Awakening gives haste)
-    const landAttackers = this.landsCreatures()
-      ? this.landsOnBattlefield().filter(
-          (permanent) =>
-            !permanent.tapped && (!permanent.sick || this.awakened),
-        )
-      : [];
-    if (this.inArena()) {
-      // a pod: real blockers decide. Land creatures are 2/2; the Druid Class land is as big as our land count
-      const anotherPermanent = druidLandSize
-        ? (landAttackers[0] ??
-          this.landsOnBattlefield().find((permanent) => !permanent.tapped) ??
-          null)
-        : null;
-      const pool = [
-        ...ready,
-        ...landAttackers,
-        ...(anotherPermanent && !landAttackers.includes(anotherPermanent)
-          ? [anotherPermanent]
-          : []),
-      ];
-      const size = (permanent: Permanent) =>
-        permanent === anotherPermanent ? druidLandSize : 2;
-      if (pool.length)
-        this.arenaCombat(
-          pool,
-          (permanent) =>
-            permanent.land !== null ? size(permanent) : this.power(permanent),
-          (permanent) =>
-            permanent.land !== null
-              ? size(permanent)
-              : this.toughness(permanent),
-        );
-      this.checkKill();
-      return;
-    }
-    const attackPowers = [
-      ...ground.map((permanent) => this.power(permanent)),
-      ...(druidLandSize ? [druidLandSize] : []),
-      ...landAttackers.map(() => 2),
-    ].sort((first, second) => second - first);
-    const groundDamage = attackPowers
-      .slice(Math.floor(attackPowers.length / 2))
-      .reduce((total, value) => total + value, 0);
-    let attackers = flyers,
-      damage = flyerDamage;
-    const isAllIn =
-      attackPowers.length > 0 && this.winsWith(flyerDamage + groundDamage);
-    if (isAllIn) {
-      attackers = [...flyers, ...ground, ...landAttackers];
-      damage = flyerDamage + groundDamage;
-    }
-    if (damage <= 0) return;
-    this.attacked = true;
-    for (const attacker of attackers) attacker.tapped = true;
-    const siege = this.findPermanent(INVASION);
-    if (siege && !isAllIn) damage -= this.attackSiege(siege, flyers);
-    let left = damage;
-    while (left > 0) {
-      const target = this.chooseTargetOpponent();
-      if (target === null) break;
-      const damageToOpponent = Math.min(left, this.life[target]);
-      this.damageOpponent(target, damageToOpponent);
-      left -= damageToOpponent;
-    }
-    this.say(
-      `attack with ${attackers.length} creature(s)${druidLandSize && attackers.length > flyers.length ? ' + the Druid Class land' : ''}: ` +
-        `${damage} damage, ${this.describeOpponentLife()}`,
-    );
-    this.checkKill();
+    attackAsAesi(this);
   }
   /** Flyers attack Invasion of Zendikar first, the smallest ones until its defense is gone (the opponent
    *  protecting it can't block flyers in a goldfish game). Returns the power sent at it. */
   attackSiege(siege: Permanent, flyers: Permanent[]): number {
-    const smallestFirst = flyers
-      .filter((permanent) => permanent.card !== TOK.illusionArmy)
-      .sort(
-        (permanent, otherPermanent) =>
-          this.power(permanent) - this.power(otherPermanent),
-      );
-    let powerSent = 0;
-    for (const flyer of smallestFirst) {
-      if (powerSent >= siege.counters) break;
-      powerSent += this.power(flyer);
-    }
-    if (powerSent === 0) return 0;
-    siege.counters -= powerSent;
-    this.say(
-      `attack Invasion of Zendikar with ${powerSent} power (defense ${Math.max(0, siege.counters)} left)`,
-    );
-    if (siege.counters <= 0) this.defeatSiege(siege);
-    return powerSent;
+    return attackTheSiege(this, siege, flyers);
   }
   /** A defeated Siege is exiled and cast transformed: Awakened Skyclave enters as a land (a landfall trigger). */
   defeatSiege(siege: Permanent): void {
-    this.takeFromBattlefieldIfThere(siege);
-    this.putCard(siege.card, 'exile'); // for the log: the Siege goes to exile first
-    this.takeCard(siege.card, 'exile');
-    const skyclave = new Permanent(SKYCLAVE, SKYCLAVE.land);
-    this.putOntoBattlefield(skyclave);
-    this.say('Invasion of Zendikar defeated: cast Awakened Skyclave (a land)');
-    this.onLandEnter(skyclave, false);
+    defeatTheSiege(this, siege);
   }
   loops(): Loops {
     return findLoops(this);
