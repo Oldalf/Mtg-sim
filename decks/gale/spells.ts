@@ -13,9 +13,6 @@ export function resolveGaleSpell(
   _mode: string | null,
 ): void {
   switch (spell.name) {
-    case 'Mission Briefing':
-      resolveMissionBriefing(game, spell);
-      break;
     case 'Prologue to Phyresis':
       for (let i = 0; i < game.life.length; i++)
         if (game.life[i] > 0 && game.opponentLibrarySizes[i] > 0)
@@ -28,25 +25,6 @@ export function resolveGaleSpell(
     case 'Gifts Ungiven':
       resolveGiftsUngiven(game);
       break;
-  }
-}
-
-/** Scry 2, then recast an instant or sorcery from the graveyard. */
-function resolveMissionBriefing(game: GaleGame, spell: CardDef): void {
-  game.scry(2, true);
-  const options = game.graveyard.filter(
-    (card) =>
-      card.isInstantOrSorcery &&
-      card !== spell &&
-      game.instantOrSorceryDevValue(card, true) > 0 &&
-      game.canPay(game.effectiveCost(card, null, true), true),
-  );
-  if (options.length) {
-    const recast = firstMax(options, (card) =>
-      game.instantOrSorceryDevValue(card, true),
-    );
-    game.say('  Mission Briefing recasts', recast);
-    game.castInstantOrSorcery(recast, true);
   }
 }
 

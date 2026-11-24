@@ -231,7 +231,6 @@ export const DRAW_SPELLS: Record<string, number> = {
   'Read the Bones': 2.0,
   'Pieces of the Puzzle': 2.0,
   'Fact or Fiction': 2.3,
-  'Mission Briefing': 1.5, // surveil 2, then recast an instant/sorcery from the graveyard
 };
 
 /** Which lands a land-search spell may find: basic = a basic land, forest = a Forest card, plains = a Plains card,

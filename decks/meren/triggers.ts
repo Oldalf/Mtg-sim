@@ -127,12 +127,6 @@ function resolveCardAdvantageOnEnter(
     game.fetchBasic();
   } else if (enterTriggerOfCommonCard(game, permanent)) {
     // Solemn Simulacrum, Wood Elves, the Witnesses: the engine's rules
-  } else if (name === 'Gravedigger') {
-    const best = game.bestCreatureInGraveyard(() => true);
-    if (best) {
-      game.takeCardIfThere(best, 'graveyard');
-      game.putCard(best, 'hand');
-    }
   } else if (name === "Stitcher's Supplier") {
     game.millOurselves(3);
   } else if (name === 'Rune-Scarred Demon') {

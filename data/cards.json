@@ -1219,21 +1219,6 @@
   "oracle_id": "7b599b4d-95bc-4ed2-a167-84a697944747",
   "scryfall_id": "69204c83-2e43-4ca1-a4cd-d75399a7d6dd"
  },
- "Mission Briefing": {
-  "name": "Mission Briefing",
-  "full_name": "Mission Briefing",
-  "mana_cost": "{U}{U}",
-  "type_line": "Instant",
-  "oracle": "Surveil 2, then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead. (To surveil 2, look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)",
-  "power": null,
-  "toughness": null,
-  "keywords": [
-   "Surveil"
-  ],
-  "layout": "normal",
-  "oracle_id": "c3a68018-9eff-47e6-a612-182886d28fe3",
-  "scryfall_id": "5ed398e7-9d2b-4bd2-9a4b-2885e4749003"
- },
  "Fact or Fiction": {
   "name": "Fact or Fiction",
   "full_name": "Fact or Fiction",
@@ -4706,19 +4691,6 @@
   "layout": "normal",
   "oracle_id": "76b003e0-15af-4f22-bdf2-1ade5430964a",
   "scryfall_id": "c43609fb-3cee-44e0-98d0-3ecaba1d5767"
- },
- "Gravedigger": {
-  "name": "Gravedigger",
-  "full_name": "Gravedigger",
-  "mana_cost": "{3}{B}",
-  "type_line": "Creature — Zombie",
-  "oracle": "When this creature enters, you may return target creature card from your graveyard to your hand.",
-  "power": "2",
-  "toughness": "2",
-  "keywords": [],
-  "layout": "normal",
-  "oracle_id": "1a2030cc-d7ee-4059-b2d7-fb95ea8e267b",
-  "scryfall_id": "883989d7-0efd-4f17-8eaa-cdcf51c09d04"
  },
  "Ophiomancer": {
   "name": "Ophiomancer",

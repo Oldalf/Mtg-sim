@@ -105,8 +105,8 @@ Lines are `wc -l`. "Who plays it" is every `decklist.txt` and `lists/*.txt`.
   - The tests of these cards go too. The regress then shows DIFFERENT only in Edgar's tests, so re-record Edgar's baseline for the tests alone.
 - Named in other decks' code but in none of that deck's lists (each to check: a row in a values table is harmless, code for the card is not):
   - Aesi: Guildless Commons, Sylvan Awakening, Sylvan Scrying, Expedition Map, Crop Rotation, Myriad Landscape, Fabled Passage.
-  - Meren: Grim Backwoods, Costly Plunder, Plumb the Forbidden, Reassembling Skeleton, Elvish Mystic, Zulaport Cutthroat, Sylvan Caryatid, Elvish Visionary, Gravedigger.
-  - Gale: Mnemonic Wall, Rewind, Cabal Ritual, Sapphire Medallion, Cloud of Faeries, Mission Briefing.
+  - Meren: Grim Backwoods, Costly Plunder, Plumb the Forbidden, Reassembling Skeleton, Elvish Mystic, Zulaport Cutthroat, Sylvan Caryatid, Elvish Visionary.
+  - Gale: Mnemonic Wall, Rewind, Cabal Ritual, Sapphire Medallion, Cloud of Faeries.
   - Sam & Frodo: Farmer Cotton, Idol of Oblivion, Pristine Talisman, Graypelt Refuge.
   - A test list a deck's `PLAN.md` still wants to try keeps its cards.
 
@@ -138,7 +138,7 @@ What stayed in the decks, and why:
 - Aesi's enter and landfall cards (Haru-Onna, Invasion of Zendikar, Lotus Cobra, Druid Class, Khalni Heart Expedition, Azusa's Many Journeys) and Mike's Mystic Sanctuary, The Water Crystal, Roil Cartographer and the looters. Those decks' `onEnter` and `onLandEnter` don't call the engine's, so moving these cards changes what the decks run. That is a change of its own, for U3 or later.
 - Meren's Decode Transmissions, Deadly Brew, Dina's Guidance, Breach the Multiverse and Buried Alive: they hang on Meren's own state and choices, and Teval and Thantis play the last two.
 
-Unused code: Edgar's code for the 6 removed cards and his own copies for Marionette Apprentice and Swords to Plowshares are gone (Edgar's tests re-recorded, Pontus OK'd). The cards in the other decks' code that their lists don't play (Aesi, Meren, Gale, Sam & Frodo) stay. Nearly all are swaps those decks tried, and their `PLAN.md` names them. Meren's Gravedigger and Gale's Mission Briefing are named nowhere; Pontus decides whether their code goes.
+Unused code: Edgar's code for the 6 removed cards and his own copies for Marionette Apprentice and Swords to Plowshares are gone (Edgar's tests re-recorded, Pontus OK'd). The cards in the other decks' code that their lists don't play (Aesi, Meren, Gale, Sam & Frodo) stay. Nearly all are swaps those decks tried, and their `PLAN.md` names them. Two that were named nowhere were removed on 2026-11-25 (Pontus).
 
 ## U2. One board, not two (Sonnet 5.5)
 
