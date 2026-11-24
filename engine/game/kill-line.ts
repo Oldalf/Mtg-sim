@@ -211,3 +211,21 @@ export function checkForKill(game: GameCore): number {
   }
   return killLevel;
 }
+
+/** The win stands: the copy the kill line was played on becomes the game, with its log and card moves. */
+export function adoptKillLineCopyAsTheGame(game: GameCore): void {
+  const copy = game.killLineCopy;
+  if (copy === null) return;
+  const log = game.log;
+  const logLengthAtCopy = game.killLineLogLength;
+  // the kill was recorded on the game after the copy was made
+  const { unprotectedKillTurn, protectedKillTurn, lastKillLine } = game;
+  Object.assign(game, copy);
+  Object.assign(game, {
+    unprotectedKillTurn,
+    protectedKillTurn,
+    lastKillLine,
+  });
+  game.killLineCopy = null;
+  game.log = [...log, ...copy.log.slice(logLengthAtCopy)];
+}

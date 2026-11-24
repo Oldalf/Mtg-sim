@@ -32,7 +32,14 @@ import { Cost, CardDef } from '../cards/cards';
 import { CLUE, ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
 import { Rng } from '../util/rng';
 import { MulliganRule } from './mulligan';
-import { drawOpeningHand, playTurn } from './turn';
+import {
+  beginNextTurn,
+  developUntilTheWinStands,
+  drawOpeningHand,
+  moveToStep,
+  playTurn,
+  startOurTurn,
+} from './turn';
 import { formatLogPart, formatList } from './log-format';
 import {
   EventKind,
@@ -57,7 +64,7 @@ import {
   Zone,
   emptyPool,
 } from './game-types';
-import { checkForKill } from './kill-line';
+import { adoptKillLineCopyAsTheGame, checkForKill } from './kill-line';
 import {
   BlinkedCard,
   resolveBlinkSpell,
@@ -1170,45 +1177,14 @@ export abstract class GameCore<S = unknown> {
   }
 
   startTurn(): void {
-    if (this.turn > 0) this.spentEnd[this.turn] = this.spent;
-    this.beginNewTurn();
-    for (const otherPermanent of this.battlefield) {
-      if (
-        otherPermanent.card.name === 'Curious Homunculus' &&
-        !otherPermanent.transformed &&
-        this.graveyard.filter((card) => card.isInstantOrSorcery).length >= 3
-      ) {
-        otherPermanent.transformed = true;
-        this.say('Curious Homunculus transforms');
-      }
-    }
+    startOurTurn(this);
   }
 
   /** Our next turn begins: the turn number moves on, the opponents have each drawn a card, everything untaps, the
    *  pool empties and this turn's flags reset (a new land drop, no spells cast yet). startTurn does it, and so does
    *  copyAtNextTurn for a search. A deck with per-turn state of its own that a search reads resets it here. */
   beginNewTurn(): void {
-    this.turn += 1;
-    if (this.turn > 1)
-      this.opponentLibrarySizes = this.opponentLibrarySizes.map(
-        (librarySize, i) =>
-          this.life[i] > 0 ? Math.max(0, librarySize - 1) : librarySize,
-      );
-    for (const permanent of this.battlefield) {
-      permanent.tapped = false;
-      permanent.sick = false;
-    }
-    this.pool = emptyPool();
-    this.highTidesThisTurn = this.muck = 0;
-    this.isEnergybendingActive = false;
-    this.spellsCast = this.isCast = 0;
-    this.firstDrawDone = false;
-    this.attacked = false;
-    this.landPlayed = false;
-    this.wallUsed = false;
-    this.lastKey = null;
-    this.sorceriesHaveFlashThisTurn = this.nextSorceryHasFlash = false;
-    this.copiesOfNextInstantOrSorcery = 0;
+    beginNextTurn(this);
   }
 
   /** A quiet copy of the game for a search to play moves on: no log, and it never plays kill lines of its own. */
@@ -1230,17 +1206,7 @@ export abstract class GameCore<S = unknown> {
   /** Moves the turn on to `step`. Mana left in the pool is lost (rule 106.4: it empties at the end of each step
    *  and phase). Lost mana usually means the AI wasted it, so the log says so. */
   enterStep(step: TurnStep): void {
-    const manaLost = Object.values(this.pool).reduce(
-      (total, amount) => total + amount,
-      0,
-    );
-    if (manaLost > 0)
-      this.say(
-        `${manaLost} mana left in the pool is lost at the end of ${this.step}`,
-      );
-    this.pool = emptyPool();
-    this.step = step;
-    this.onEnterStep(step);
+    moveToStep(this, step);
   }
 
   /** Deck hook: something happens at the start of a step (e.g. mana added to the pool). */
@@ -1286,36 +1252,12 @@ export abstract class GameCore<S = unknown> {
 
   /** develop(), but in a pod a declared win may be answered: then the turn goes on without the card it was stopped at. */
   developWin(main2 = false): boolean {
-    for (let tries = 0; tries < 4; tries++) {
-      if (!this.develop(main2)) return false;
-      if (this.died || !this.podAnswersWin()) {
-        this.adoptKillLineCopy();
-        return true;
-      }
-      this.killLineCopy = null;
-      this.unprotectedKillTurn = this.protectedKillTurn = null;
-      this.killNow = false;
-      this.lastKey = null;
-    }
-    return false;
+    return developUntilTheWinStands(this, main2);
   }
 
   /** The win stands: the copy the kill line was played on becomes the game, with its log and card moves. */
   adoptKillLineCopy(): void {
-    const copy = this.killLineCopy;
-    if (copy === null) return;
-    const log = this.log;
-    const logLengthAtCopy = this.killLineLogLength;
-    // the kill was recorded on the game after the copy was made
-    const { unprotectedKillTurn, protectedKillTurn, lastKillLine } = this;
-    Object.assign(this, copy);
-    Object.assign(this, {
-      unprotectedKillTurn,
-      protectedKillTurn,
-      lastKillLine,
-    });
-    this.killLineCopy = null;
-    this.log = [...log, ...copy.log.slice(logLengthAtCopy)];
+    adoptKillLineCopyAsTheGame(this);
   }
 
   /** Play the game. Returns [first turn with any kill, first turn with a kill + counter backup]. */

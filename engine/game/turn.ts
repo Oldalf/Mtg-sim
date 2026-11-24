@@ -1,9 +1,11 @@
 /**
- * The turn: the opening hand with its mulligans, and one full turn of ours (upkeep, draw, land, the first main phase,
- * combat, the second main phase, the end step). GameCore's setup and takeTurn call these; every step calls the
- * game's own methods, so a deck's hooks (upkeep, combat, endStep, ...) run as before.
+ * The turn: the opening hand with its mulligans, the start of our turn (untap, the per-turn flags), moving from step to
+ * step, and one full turn of ours (upkeep, draw, land, the first main phase, combat, the second main phase, the end
+ * step). GameCore's setup, takeTurn, startTurn, beginNewTurn, enterStep and developWin call these; every step calls
+ * the game's own methods, so a deck's hooks (upkeep, combat, endStep, ...) run as before.
  */
-import type { GameCore } from './game-core';
+import type { GameCore, TurnStep } from './game-core';
+import { emptyPool } from './game-types';
 import { DEFAULT_MULLIGAN, keepsHand } from './mulligan';
 import { formatList } from './log-format';
 import { playOpponentsEndStep } from './instant-speed';
@@ -96,5 +98,81 @@ export function playTurn(game: GameCore): boolean {
     'end: hand',
     formatList(game.hand.map((card) => card.name)),
   );
+  return false;
+}
+
+/** Our turn starts: the mana spent last turn is noted, beginNewTurn, and Curious Homunculus transforms with three
+ *  instants and sorceries in the graveyard. */
+export function startOurTurn(game: GameCore): void {
+  if (game.turn > 0) game.spentEnd[game.turn] = game.spent;
+  game.beginNewTurn();
+  for (const otherPermanent of game.battlefield) {
+    if (
+      otherPermanent.card.name === 'Curious Homunculus' &&
+      !otherPermanent.transformed &&
+      game.graveyard.filter((card) => card.isInstantOrSorcery).length >= 3
+    ) {
+      otherPermanent.transformed = true;
+      game.say('Curious Homunculus transforms');
+    }
+  }
+}
+
+/** See GameCore.beginNewTurn. */
+export function beginNextTurn(game: GameCore): void {
+  game.turn += 1;
+  if (game.turn > 1)
+    game.opponentLibrarySizes = game.opponentLibrarySizes.map(
+      (librarySize, i) =>
+        game.life[i] > 0 ? Math.max(0, librarySize - 1) : librarySize,
+    );
+  for (const permanent of game.battlefield) {
+    permanent.tapped = false;
+    permanent.sick = false;
+  }
+  game.pool = emptyPool();
+  game.highTidesThisTurn = game.muck = 0;
+  game.isEnergybendingActive = false;
+  game.spellsCast = game.isCast = 0;
+  game.firstDrawDone = false;
+  game.attacked = false;
+  game.landPlayed = false;
+  game.wallUsed = false;
+  game.lastKey = null;
+  game.sorceriesHaveFlashThisTurn = game.nextSorceryHasFlash = false;
+  game.copiesOfNextInstantOrSorcery = 0;
+}
+
+/** See GameCore.enterStep. */
+export function moveToStep(game: GameCore, step: TurnStep): void {
+  const manaLost = Object.values(game.pool).reduce(
+    (total, amount) => total + amount,
+    0,
+  );
+  if (manaLost > 0)
+    game.say(
+      `${manaLost} mana left in the pool is lost at the end of ${game.step}`,
+    );
+  game.pool = emptyPool();
+  game.step = step;
+  game.onEnterStep(step);
+}
+
+/** See GameCore.developWin. */
+export function developUntilTheWinStands(
+  game: GameCore,
+  main2: boolean,
+): boolean {
+  for (let tries = 0; tries < 4; tries++) {
+    if (!game.develop(main2)) return false;
+    if (game.died || !game.podAnswersWin()) {
+      game.adoptKillLineCopy();
+      return true;
+    }
+    game.killLineCopy = null;
+    game.unprotectedKillTurn = game.protectedKillTurn = null;
+    game.killNow = false;
+    game.lastKey = null;
+  }
   return false;
 }
