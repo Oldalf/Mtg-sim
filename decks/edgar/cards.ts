@@ -15,7 +15,6 @@ export const VANQUISHERS_BANNER = "Vanquisher's Banner";
 export const BARON_BERTRAM = 'Baron Bertram Graywater';
 export const LEGIONS_LANDING = "Legion's Landing";
 export const SKULLCLAMP = 'Skullclamp';
-export const NINE_LIVES_FAMILIAR = 'Nine-Lives Familiar';
 export const BONTUS_MONUMENT = "Bontu's Monument";
 export const OKETRAS_MONUMENT = "Oketra's Monument";
 export const HERALDS_HORN = "Herald's Horn";
@@ -33,7 +32,6 @@ export const TOKENS = {
   /** Bloodline Keeper's tokens. */
   flyingVampire: makeToken('Vampire', 2, 2, 'black', ['flying']),
   shapeshifter: makeToken('Shapeshifter', 3, 2),
-  army: makeToken('Zombie Army', 0, 0, 'black'),
   servo: makeArtifactToken('Servo', 1, 1),
 };
 
@@ -61,14 +59,12 @@ export const VALUE: Record<string, number> = {
   'Legion Lieutenant': 78,
   'Stromkirk Captain': 76,
   'Markov Baron': 76,
-  'Marionette Apprentice': 76,
   'Elenda, the Dusk Rose': 74,
   [BARON_BERTRAM]: 72,
   'Preacher of the Schism': 72,
   "Commander's Sphere": 70,
   'Fellwar Stone': 70,
   'Viscera Seer': 70,
-  'Arnyn, Deathbloom Botanist': 70,
   'Mayhem Devil': 70,
   'Carmen, Cruel Skymarcher': 70,
   'Captivating Vampire': 70,
@@ -79,18 +75,15 @@ export const VALUE: Record<string, number> = {
   'Emeritus of Woe': 66,
   'Phyrexian Arena': 66,
   [LEGIONS_LANDING]: 64,
-  'Indulgent Aristocrat': 64,
   'Black Market Connections': 62,
   'Pitiless Plunderer': 62,
   'Pawn of Ulamog': 62,
   'Forerunner of the Legion': 62,
   'Sceptre of Eternal Glory': 60,
-  [NINE_LIVES_FAMILIAR]: 60,
   'Pitiless Pontiff': 58,
   'Scheming Silvertongue': 58,
   'Vampiric Rites': 55,
   'Vampire Gourmand': 55,
-  'Keen Duelist': 55,
   'Master of Dark Rites': 55,
   'Clavileño, First of the Blessed': 55,
   'Vampire of the Dire Moon': 50,
@@ -103,17 +96,14 @@ export const VALUE: Record<string, number> = {
   [HERALDS_HORN]: 50,
   [OKETRAS_MONUMENT]: 45,
   [ELDRAZI_MONUMENT]: 45,
-  'Dreadhorde Invasion': 40,
 };
 
 /** Removal and cards that do nothing in a goldfish game (never cast, the first to discard). */
 export const HOLD = new Set([
   'Flare of Malice',
-  'Swords to Plowshares',
   'Feed the Swarm',
   'New Blood',
   'Kindred Dominance',
-  'Blasphemous Act',
   'Saw in Half',
   'Culling the Weak',
   'Songs of the Damned',

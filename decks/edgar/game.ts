@@ -60,12 +60,6 @@ import { MULLIGAN } from './mulligan';
 /** Where damage to an opponent comes from: attacking, drain triggers (and pings), or Evereth's explosion. */
 export type DamageSource = 'combat' | 'drain' | 'explosion';
 
-/** A Nine-Lives Familiar that comes back at the next end step. */
-interface Revival {
-  card: CardDef;
-  revivalCounters: number;
-}
-
 export class EdgarGame extends CreatureDeckGame {
   readonly values = VALUE;
   override mulliganRule(): MulliganRule | null {
@@ -81,7 +75,6 @@ export class EdgarGame extends CreatureDeckGame {
   welcomingVampireUsed = false;
   /** Emeritus of Woe and Scheming Silvertongue: their spell can be cast once. */
   prepared = new Set<Permanent>();
-  revivals: Revival[] = [];
   /** A pod: Evereth stays on the battlefield while the others may answer her last pump (see winAttempt). */
   explosionPending: Permanent | null = null;
   // ---- where the damage to the opponents came from (for --diag: how the deck wins)
@@ -179,7 +172,6 @@ export class EdgarGame extends CreatureDeckGame {
           drain += 1;
           break;
         case 'Cruel Celebrant':
-        case 'Marionette Apprentice':
           drain += alive;
           break;
         case 'Mayhem Devil':
@@ -347,11 +339,6 @@ export class EdgarGame extends CreatureDeckGame {
     onPermanentDied(this, permanent);
   }
 
-  /** A Nine-Lives Familiar that dies with a revival counter comes back at the next end step with one fewer. */
-  reviveAtEndStep(card: CardDef, revivalCounters: number): void {
-    this.revivals = [...this.revivals, { card, revivalCounters }];
-  }
-
   // ================================================================ mana
   override manaSourceKind(
     permanent: Permanent,
@@ -387,8 +374,6 @@ export class EdgarGame extends CreatureDeckGame {
     this.fogUsed = false;
     upkeepOfCommonCards(this);
     this.upkeepOfNewCards();
-    if (this.isOnBattlefield('Dreadhorde Invasion')) this.amassZombies();
-    if (this.isOnBattlefield('Keen Duelist')) this.revealWithKeenDuelist();
     if (this.isOnBattlefield('Black Market Connections'))
       this.chooseBlackMarketModes();
   }
@@ -427,26 +412,6 @@ export class EdgarGame extends CreatureDeckGame {
     }
   }
 
-  /** Dreadhorde Invasion: lose 1 life and put a +1/+1 counter on our Army (made first if we have none). */
-  amassZombies(): void {
-    this.loseLife(1);
-    const army =
-      this.battlefield.find((permanent) => permanent.card === TOKENS.army) ??
-      this.createTokens(TOKENS.army)[0];
-    army.counters += 1;
-  }
-
-  /** Keen Duelist: we reveal our top card, the opponent loses its mana value and we lose that of a card of theirs
-   *  (a goldfish opponent: an average card, 0 to 5). We put the card into our hand. */
-  revealWithKeenDuelist(): void {
-    const top = this.library[0];
-    if (!top) return;
-    this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
-    const target = this.chooseTargetOpponent();
-    if (target !== null) this.damageOpponent(target, top.manaValue);
-    this.loseLife(this.rng.below(6));
-  }
-
   /** Black Market Connections: a card (2 life) when we can afford it, a Treasure early on, a 3/2 when life is high. */
   chooseBlackMarketModes(): void {
     if (this.myLife > 12) {
@@ -464,13 +429,6 @@ export class EdgarGame extends CreatureDeckGame {
   }
 
   override endStep(): void {
-    for (const revival of this.revivals) {
-      if (!this.takeCardIfThere(revival.card, 'graveyard')) continue;
-      const permanent = this.enter(revival.card, 'graveyard');
-      permanent.marks = revival.revivalCounters;
-      this.say('  revives with', String(revival.revivalCounters), 'counters');
-    }
-    this.revivals = [];
     for (const permanent of this.battlefield) {
       if (
         permanent.card.name === 'Emeritus of Woe' &&
@@ -509,7 +467,6 @@ export class EdgarGame extends CreatureDeckGame {
       'Cruel Celebrant',
       'Vengeful Bloodwitch',
       'Susurian Voidborn',
-      'Marionette Apprentice',
     ].includes(card.name);
     if (isDrainEngine && this.drainPerDeath() === 0) value += 20;
     if (card.name === EVERETH && findOutlets(this).length > 0) value += 10;

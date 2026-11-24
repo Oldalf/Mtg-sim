@@ -6,13 +6,7 @@ import { Rng } from '../../../engine/util/rng';
 import { ANSWERS } from '../../../engine/game/answers';
 import { CFG } from '../config';
 import { EdgarGame } from '../game';
-import {
-  EDGAR,
-  EVERETH,
-  NINE_LIVES_FAMILIAR,
-  TOKENS,
-  VANQUISHERS_BANNER,
-} from '../cards';
+import { EDGAR, EVERETH, TOKENS, VANQUISHERS_BANNER } from '../cards';
 import {
   clampToken,
   sacrificeEverything,
@@ -145,26 +139,12 @@ export function runEdgarTests(): boolean {
     [game.life, game.myLife],
     [[39, 39, 39], 41],
   );
-  game = board(['Marionette Apprentice']);
-  game.sacrifice(game.createTokens(TOKENS.servo)[0]);
-  check(
-    'Marionette Apprentice: an artifact creature goes to the graveyard, each opponent loses 1 (no life for us)',
-    [game.life, game.myLife],
-    [[39, 39, 39], 40],
-  );
   game = board(['Susurian Voidborn']);
   game.sacrifice(game.createTokens(TREASURE)[0]);
   check(
     'Susurian Voidborn: a Treasure (artifact) dying drains 1',
     game.life,
     [39, 40, 40],
-  );
-  game = board(['Arnyn, Deathbloom Botanist']);
-  game.sacrifice(game.createTokens(TOKENS.vampire)[0]);
-  check(
-    'Arnyn: a 1/1 dies, target opponent loses 2 and we gain 2',
-    [game.life, game.myLife],
-    [[38, 40, 40], 42],
   );
   game = board(['Cordial Vampire']);
   vampire = game.createTokens(TOKENS.vampire)[0];
@@ -236,14 +216,6 @@ export function runEdgarTests(): boolean {
     'Baron Bertram: one extra Vampire token each turn',
     tokensOf(game, TOKENS.lifelinkVampire).length,
     1,
-  );
-  game = board(['Dreadhorde Invasion']);
-  game.upkeep();
-  game.upkeep();
-  check(
-    'Dreadhorde Invasion: an Army that grows, 1 life each upkeep',
-    [tokensOf(game, TOKENS.army).map((army) => army.counters), game.myLife],
-    [[2], 38],
   );
 
   // ---- mana from Treasures and Spawn
@@ -382,27 +354,6 @@ export function runEdgarTests(): boolean {
     game.winSource,
     'drain',
   );
-
-  // ---- Nine-Lives Familiar
-  game = board([]);
-  const familiar = game.enter(C.get(NINE_LIVES_FAMILIAR), 'hand');
-  check(
-    'Nine-Lives Familiar: cast, it has 8 revival counters',
-    familiar.marks,
-    8,
-  );
-  game.sacrifice(familiar);
-  check(
-    'Nine-Lives Familiar dies: it waits in the graveyard for the end step',
-    [
-      game.battlefield.some((permanent) => permanent === familiar),
-      game.graveyard.length,
-    ],
-    [false, 1],
-  );
-  game.endStep();
-  const revived = game.findPermanent(NINE_LIVES_FAMILIAR)!;
-  check('it returns at the end step with 7 counters', revived.marks, 7);
 
   // ---- Skullclamp
   game = board(['Skullclamp']);

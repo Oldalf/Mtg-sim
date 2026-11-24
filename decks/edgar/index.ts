@@ -173,7 +173,7 @@ export const deck = {
       matches: anyOf(DRAIN_ENGINES),
     },
     {
-      label: 'a sacrifice outlet (Evereth, Seer, an Altar, Aristocrat...)',
+      label: 'a sacrifice outlet (Evereth, Seer, an Altar, Pontiff...)',
       matches: anyOf(OUTLETS),
     },
     {

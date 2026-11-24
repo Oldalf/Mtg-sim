@@ -5,7 +5,6 @@ import {
   EDGAR,
   EVERETH,
   LEGIONS_LANDING,
-  NINE_LIVES_FAMILIAR,
   TOKENS,
   isVampire,
 } from './cards';
@@ -64,16 +63,8 @@ function resolveEntersEffect(
     case 'Emeritus of Woe':
       if (wasCast) game.prepared.add(permanent);
       break;
-    case NINE_LIVES_FAMILIAR:
-      if (wasCast) permanent.marks = 8; // revival counters
-      break;
     case 'Forerunner of the Legion':
       game.doTutor((card) => isVampire(card) && card.land === null, true);
-      break;
-    case 'Marionette Apprentice':
-      // fabricate 1: a Servo to sacrifice when we have a drain engine, otherwise a counter
-      if (game.drainPerDeath() > 0) game.createTokens(TOKENS.servo);
-      else permanent.counters += 1;
       break;
   }
 }
@@ -101,18 +92,6 @@ export function onPermanentDied(game: EdgarGame, dead: Permanent): void {
         break;
       case 'Cruel Celebrant':
         if (wasCreature) game.drainAllOpponents(1);
-        break;
-      case 'Marionette Apprentice':
-        if (!isDeadItself && (wasCreature || wasArtifact))
-          game.drainAllOpponents(1, false);
-        break;
-      case 'Arnyn, Deathbloom Botanist':
-        if (
-          wasCreature &&
-          (game.power(dead) <= 1 || game.toughness(dead) <= 1)
-        ) {
-          game.drainOne(2);
-        }
         break;
       case 'Cordial Vampire':
         if (wasCreature) addCounterToEachVampire(game);
@@ -155,9 +134,6 @@ function resolveDeathEffect(game: EdgarGame, dead: Permanent): void {
   switch (dead.card.name) {
     case 'Elenda, the Dusk Rose':
       game.createTokens(TOKENS.lifelinkVampire, game.power(dead));
-      break;
-    case NINE_LIVES_FAMILIAR:
-      if (dead.marks > 0) game.reviveAtEndStep(dead.card, dead.marks - 1);
       break;
     case EVERETH: {
       // may pay {1}{B/R}: damage equal to its power to each opponent

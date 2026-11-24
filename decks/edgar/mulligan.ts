@@ -19,15 +19,12 @@ export const DRAIN_ENGINES = [
   'Cruel Celebrant',
   'Vengeful Bloodwitch',
   'Susurian Voidborn',
-  'Marionette Apprentice',
-  'Arnyn, Deathbloom Botanist',
 ];
 export const OUTLETS = [
   'Evereth, Viceroy of Plunder',
   'Viscera Seer',
   "Ashnod's Altar",
   'Phyrexian Altar',
-  'Indulgent Aristocrat',
   'Pitiless Pontiff',
 ];
 export const TOKEN_MAKERS = [

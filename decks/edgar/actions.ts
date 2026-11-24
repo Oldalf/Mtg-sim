@@ -1,14 +1,7 @@
 /** What Edgar's abilities and spells do when the AI picks them: sacrifice outlets, the all-in sacrifice turn,
  *  prepared spells and the activated abilities of permanents. */
 import { ELDRAZI_SPAWN, TREASURE } from '../../engine/cards/tokens';
-import {
-  EDGAR,
-  EVERETH,
-  NINE_LIVES_FAMILIAR,
-  SKULLCLAMP,
-  TOKENS,
-  isVampire,
-} from './cards';
+import { EDGAR, EVERETH, SKULLCLAMP, TOKENS, isVampire } from './cards';
 import type { EdgarGame } from './game';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { Permanent } from '../../engine/game/game-types';
@@ -27,8 +20,6 @@ function outletCost(permanent: Permanent): Cost | null {
     case 'Phyrexian Altar':
     case EVERETH:
       return new Cost();
-    case 'Indulgent Aristocrat':
-      return new Cost(2);
     case 'Pitiless Pontiff':
       return new Cost(1);
     case 'Vampiric Rites':
@@ -54,7 +45,6 @@ function outletGivesValue(outlet: Outlet): boolean {
     EVERETH,
     'Vampiric Rites',
     'Baron Bertram Graywater',
-    'Indulgent Aristocrat',
     "Ashnod's Altar",
     'Phyrexian Altar',
   ].includes(outlet.permanent.card.name);
@@ -82,9 +72,6 @@ export function sacrificeInto(
     case 'Phyrexian Altar':
       game.pool.B += 1;
       break;
-    case 'Indulgent Aristocrat':
-      for (const vampire of game.vampires()) vampire.counters += 1;
-      break;
     case 'Vampiric Rites':
       game.gainLife(1);
       game.draw(1);
@@ -100,8 +87,7 @@ export function sacrificeInto(
 /** How much we mind losing this permanent (lower = sacrificed first). Infinity = never. */
 export function sacrificeCost(game: EdgarGame, permanent: Permanent): number {
   const card = permanent.card;
-  if (card.name === EDGAR || card === TOKENS.army) return Infinity;
-  if (card.name === NINE_LIVES_FAMILIAR && permanent.marks > 0) return 4;
+  if (card.name === EDGAR) return Infinity;
   if (card === TOKENS.servo) return 8;
   if (card === ELDRAZI_SPAWN) return game.turn < 6 ? 12 : 9;
   if (card === TREASURE) return game.turn < 7 ? 14 : 10;
@@ -329,12 +315,7 @@ export function skullclampToken(game: EdgarGame): Permanent | null {
   return (
     game
       .creatures()
-      .filter(
-        (permanent) =>
-          permanent.token &&
-          permanent.card !== TOKENS.army &&
-          game.toughness(permanent) <= 1,
-      )
+      .filter((permanent) => permanent.token && game.toughness(permanent) <= 1)
       .sort((first, second) => game.power(first) - game.power(second))[0] ??
     null
   );
