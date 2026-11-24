@@ -15,55 +15,42 @@
  */
 import {
   DEATH_VALUE,
-  DISCIPLE_CARD_WORTH,
-  DGHOR_BLOODLETTER,
   DISCARD_CARDS,
   DRAW_CARDS,
   DRAW_SOURCE_COUNTS_FOR,
-  DGHOR_BLOODLETTER_MANA_VALUE,
-  EDICT_ETB,
-  ENTER_AGAIN,
   FREE_OUTLETS,
   GRAY_MERCHANT,
-  GREATER_GOOD_MIN_LIBRARY,
   GREATER_GOOD_MIN_POWER,
   PLUMB_LIFE_FLOOR,
   STOLEN_MARK,
   SURPLUS_LANDS,
   PLUMB_MOST,
   HOLD,
-  MANA_ELVES,
   MEREN,
-  SHRINK_KILLS_AT_LEAST,
   TOKENS,
   VALUE,
 } from './cards';
 import { buildCandidates } from './candidates';
 import {
-  keepsJunjiForOpponentsTurn,
+  howMuchWeMindSacrificing,
+  creaturesInSacrificeOrder,
+  discipleSacrificeChoice,
+  bloodletterShouldShrink,
+  sacrificeForDrawSpell,
+  greaterGoodSacrifice,
+  sacrificeToCheapestOutlet,
+  canSacrificeNow,
+} from './sacrifice';
+import { scoreForMerenToReturn, feedMeren } from './end-step';
+import {
   playAtOpponentsEndStep,
   playsOnOpponentsTurns,
   resetOnceEachTurnAbilities,
 } from './opponents-turns';
-import { JUNJI } from './junji';
-import { activateVampiricRites } from './actions';
-import {
-  EVOLUTIONARY_LEAP,
-  HIGH_MARKET,
-  PROMISE_OF_ACLAZOTZ,
-  fiendArtisanBonus,
-  isDemon,
-  sacrificeToEvolutionaryLeap,
-  sacrificeToHighMarket,
-  sacrificeToPromiseOfAclazotz,
-} from '../../engine/game/sacrifice-outlets';
+import { fiendArtisanBonus } from '../../engine/game/sacrifice-outlets';
 import { onPermanentDied, onPermanentEntered } from './triggers';
 import { CardDef, Cost } from '../../engine/cards/cards';
-import { CLUE, TREASURE } from '../../engine/cards/tokens';
-import {
-  GREATER_GOOD,
-  sacrificeToGreaterGood,
-} from '../../engine/game/card-draw';
+import { GREATER_GOOD } from '../../engine/game/card-draw';
 import {
   Candidate,
   LogBoardView,
@@ -72,7 +59,7 @@ import {
 } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
-import { firstMax, firstMin, sortDesc } from '../../engine/util/lists';
+import { firstMax, firstMin } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
@@ -400,31 +387,11 @@ export class MerenGame extends CreatureDeckGame {
   /** Our creatures in the order we'd sacrifice them (cheapest loss first). */
   /** How much we mind sacrificing this creature (low = a good one to sacrifice). */
   sacrificeCost(permanent: Permanent): number {
-    if (this.isStolen(permanent)) return 80;
-    if (permanent.token) return 5 + this.power(permanent);
-    if (DEATH_VALUE.has(permanent.card.name) && this.isOnBattlefield(MEREN))
-      return 10;
-    if (MANA_ELVES.has(permanent.card.name) && this.turn >= 5) return 15;
-    if (
-      EDICT_ETB.has(permanent.card.name) ||
-      permanent.card.name === 'Satyr Wayfinder' ||
-      permanent.card.name === 'Studious First-Year'
-    )
-      return 20;
-    return this.battlefieldValue(permanent.card);
+    return howMuchWeMindSacrificing(this, permanent);
   }
 
   sacrificeOrder(exclude: Permanent[] = []): Permanent[] {
-    return sortDesc(
-      this.creatures().filter(
-        (permanent) =>
-          !exclude.includes(permanent) &&
-          permanent.card.name !== MEREN &&
-          permanent.card.name !== 'Spore Frog' &&
-          permanent.card.name !== 'Twilight Diviner',
-      ),
-      (permanent) => -this.sacrificeCost(permanent),
-    );
+    return creaturesInSacrificeOrder(this, exclude);
   }
 
   /** Creatures we are happy to sacrifice for value (Priest of Forgotten Gods, Village Rites, Wight of the
@@ -441,59 +408,19 @@ export class MerenGame extends CreatureDeckGame {
   /** Disciple of Bolas sacrifices for the most cards: power is cards and life; a creature whose death is worth
    *  something, or whose enter trigger Meren can give us again this turn, is a good one to lose. */
   chooseDiscipleSacrifice(disciple: Permanent): Permanent | null {
-    const choices = this.sacrificeOrder([disciple]);
-    if (!choices.length) return null;
-    const merenOut = this.isOnBattlefield(MEREN);
-    const worth = (permanent: Permanent) => {
-      const comesBackThisTurn =
-        merenOut &&
-        !permanent.token &&
-        permanent.card.manaValue <= this.experienceCounters + 1;
-      const triggerBonus =
-        merenOut &&
-        (DEATH_VALUE.has(permanent.card.name) ||
-          (comesBackThisTurn && ENTER_AGAIN.has(permanent.card.name)))
-          ? 15
-          : 0;
-      return (
-        DISCIPLE_CARD_WORTH * this.power(permanent) +
-        triggerBonus -
-        this.sacrificeCost(permanent)
-      );
-    };
-    return firstMax(choices, worth);
+    return discipleSacrificeChoice(this, disciple);
   }
 
   /** D'Ghor Bloodletter's mode in a pod: -1/-1 to all other creatures (true) or the edict. The -1/-1 when it kills
    *  enough opposing creatures now, or when Meren can bring it back at our end step for a second -1/-1 that would. */
   shouldShrinkWithBloodletter(): boolean {
-    if (this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST)
-      return true;
-    // the outlet must live through the first -1/-1 (Viscera Seer and Carrion Feeder are 1/1s)
-    const outlet = this.findFreeSacrificeOutlet();
-    const canLoopAtEndStep =
-      this.isOnBattlefield(MEREN) &&
-      outlet !== null &&
-      this.toughness(outlet) > 1 &&
-      this.experienceCounters + 1 >= DGHOR_BLOODLETTER_MANA_VALUE;
-    return (
-      canLoopAtEndStep &&
-      this.podCreaturesShrinkWouldKill(2) >= SHRINK_KILLS_AT_LEAST
-    );
+    return bloodletterShouldShrink(this);
   }
 
   /** What to sacrifice for a draw spell: a creature we don't mind losing, else (when the spell allows it) a Treasure,
    *  then a Clue. */
   chooseSacrificeForDraw(artifactAllowed: boolean): Permanent | null {
-    const creature = this.expendableCreatures()[0];
-    if (creature || !artifactAllowed) return creature ?? null;
-    for (const token of [TREASURE, CLUE]) {
-      const artifact = this.battlefield.find(
-        (permanent) => permanent.card === token,
-      );
-      if (artifact) return artifact;
-    }
-    return null;
+    return sacrificeForDrawSpell(this, artifactAllowed);
   }
 
   /** Plumb the Forbidden: the creatures we don't mind losing (up to a few), each is a card for 1 life: not below the
@@ -506,76 +433,19 @@ export class MerenGame extends CreatureDeckGame {
   /** Greater Good: the creature to sacrifice for the cards (power GREATER_GOOD_MIN_POWER or more):
    *  one we don't mind losing, or one Meren can bring back at once. */
   chooseGreaterGoodSacrifice(): Permanent | null {
-    if (this.library.length < GREATER_GOOD_MIN_LIBRARY) return null;
-    const choices = this.sacrificeOrder().filter(
-      (creature) =>
-        this.power(creature) >= GREATER_GOOD_MIN_POWER &&
-        (this.expendableCreatures().includes(creature) ||
-          (this.isOnBattlefield(MEREN) &&
-            !creature.token &&
-            creature.card.manaValue <= this.experienceCounters + 1)),
-    );
-    return choices.length
-      ? firstMax(choices, (creature) => this.power(creature))
-      : null;
+    return greaterGoodSacrifice(this);
   }
 
   /** Sacrifice this creature to the cheapest outlet we can use now: a free creature outlet (Viscera Seer may sacrifice
    *  itself, the others only another creature), High Market (once, it taps), then with mana left Evolutionary Leap
    *  ({G}: a creature card) and Vampiric Rites ({1}{B}: a card). False when none can take it. */
   sacrificeToOutlet(creature: Permanent): boolean {
-    const freeOutlet = this.battlefield.find(
-      (permanent) =>
-        FREE_OUTLETS.includes(permanent.card.name) &&
-        (permanent !== creature || permanent.card.name === 'Viscera Seer'),
-    );
-    if (freeOutlet) {
-      this.sacrifice(creature);
-      return true;
-    }
-    const highMarket = this.battlefield.find(
-      (permanent) => permanent.card.name === HIGH_MARKET && !permanent.tapped,
-    );
-    if (highMarket) return sacrificeToHighMarket(this, highMarket, creature);
-    if (
-      this.isOnBattlefield(EVOLUTIONARY_LEAP) &&
-      sacrificeToEvolutionaryLeap(this, creature)
-    )
-      return true;
-    return (
-      this.isOnBattlefield('Vampiric Rites') &&
-      activateVampiricRites(this, creature)
-    );
+    return sacrificeToCheapestOutlet(this, creature);
   }
 
   /** Could sacrificeToOutlet take a creature now (without doing it)? */
   hasOutletNow(): boolean {
-    return (
-      this.findFreeSacrificeOutlet() !== null ||
-      this.battlefield.some(
-        (permanent) => permanent.card.name === HIGH_MARKET && !permanent.tapped,
-      ) ||
-      (this.isOnBattlefield(EVOLUTIONARY_LEAP) &&
-        this.canPay(Cost.parse('{G}'), false)) ||
-      (this.isOnBattlefield('Vampiric Rites') &&
-        this.canPay(Cost.parse('{1}{B}'), false))
-    );
-  }
-
-  /** Promise of Aclazotz at our end step: sacrifice a token or a creature whose death is worth something (not a
-   *  Demon), then populate. A nontoken one first, so the token copy has a token to copy. */
-  private usePromiseOfAclazotz(): void {
-    if (!this.isOnBattlefield(PROMISE_OF_ACLAZOTZ)) return;
-    const choices = this.sacrificeOrder().filter(
-      (permanent) =>
-        !this.isStolen(permanent) &&
-        !FREE_OUTLETS.includes(permanent.card.name) &&
-        !isDemon(permanent.card) &&
-        (permanent.token || DEATH_VALUE.has(permanent.card.name)),
-    );
-    const choice =
-      choices.find((permanent) => !permanent.token) ?? choices[0] ?? null;
-    if (choice) sacrificeToPromiseOfAclazotz(this, choice);
+    return canSacrificeNow(this);
   }
 
   findFreeSacrificeOutlet(): Permanent | null {
@@ -762,115 +632,12 @@ export class MerenGame extends CreatureDeckGame {
   /** How much Meren wants to return this card at her end step with this much experience: its value when it comes back
    *  to the battlefield, much less when it can only go to the hand. */
   merenReturnScore(card: CardDef, experience: number): number {
-    if (card.manaValue > experience) return this.battlefieldValue(card) * 0.4;
-    if (
-      card.name === DGHOR_BLOODLETTER &&
-      this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
-    )
-      return 1000; // a pod: wipes the wide board
-    return this.battlefieldValue(card);
-  }
-
-  /** Fodder (Pontus, 2026-11-24): one creature sacrificed at Meren's end step when the experience counter of its death
-   *  is free. Either she returns it at once (its mana value is at most her experience after its death, and nothing in
-   *  the graveyard comes first): it is back, with its enter trigger again (Wood Elves, Satyr Wayfinder). Or its death
-   *  lets her return a better card that would otherwise only go to the hand (mana value exactly her experience after
-   *  the death, worth more than the creature). One a turn, since Meren returns one card. Off with --set
-   *  end_step_fodder=0. */
-  private sacrificeOneMerenReturnsAtOnce(): void {
-    if (!this.hasOutletNow()) return;
-    const experienceAfter = this.experienceCounters + 1;
-    const graveyardCreatures = this.graveyard.filter((card) => card.isCreature);
-    const bestInGraveyardAfter = graveyardCreatures.length
-      ? firstMax(graveyardCreatures, (card) =>
-          this.merenReturnScore(card, experienceAfter),
-        )
-      : null;
-    const scoreAfter = bestInGraveyardAfter
-      ? this.merenReturnScore(bestInGraveyardAfter, experienceAfter)
-      : 0;
-    // mana value exactly the new experience: before the death it could only have gone to the hand
-    const unlocksBetterCard =
-      bestInGraveyardAfter !== null &&
-      bestInGraveyardAfter.manaValue === experienceAfter;
-    const isFodder = (permanent: Permanent) =>
-      !permanent.token &&
-      !this.isStolen(permanent) &&
-      !FREE_OUTLETS.includes(permanent.card.name) &&
-      !(permanent.card.name === JUNJI && keepsJunjiForOpponentsTurn(this));
-    const comesBackAtOnce = (permanent: Permanent) =>
-      permanent.card.manaValue <= experienceAfter &&
-      this.merenReturnScore(permanent.card, experienceAfter) >= scoreAfter;
-    const isWorthLessThanUnlocked = (permanent: Permanent) =>
-      unlocksBetterCard &&
-      this.battlefieldValue(permanent.card) <
-        this.battlefieldValue(bestInGraveyardAfter);
-    const choices = this.sacrificeOrder().filter(
-      (permanent) =>
-        isFodder(permanent) &&
-        (comesBackAtOnce(permanent) || isWorthLessThanUnlocked(permanent)),
-    );
-    const choice =
-      choices.find(
-        (permanent) =>
-          comesBackAtOnce(permanent) && ENTER_AGAIN.has(permanent.card.name),
-      ) ?? choices[0];
-    if (!choice) return;
-    this.say('sacrifice', choice.card, 'to feed Meren at once');
-    this.sacrificeToOutlet(choice);
+    return scoreForMerenToReturn(this, card, experience);
   }
 
   /** Feed Meren with a free sacrifice outlet, then return the best creature card from the graveyard. */
   feedMerenAtEndStep(): void {
-    // Greater Good: a big creature Meren can return now, for cards and a full graveyard
-    const toGreaterGood = this.isOnBattlefield(GREATER_GOOD)
-      ? this.chooseGreaterGoodSacrifice()
-      : null;
-    if (toGreaterGood) sacrificeToGreaterGood(this, toGreaterGood);
-    this.usePromiseOfAclazotz();
-    // sacrifice tokens and creatures whose death is worth something: each one is an experience counter
-    for (const permanent of this.sacrificeOrder()) {
-      if (
-        this.isStolen(permanent) ||
-        FREE_OUTLETS.includes(permanent.card.name) ||
-        (permanent.card.name === JUNJI && keepsJunjiForOpponentsTurn(this))
-      )
-        continue;
-      if (permanent.token || DEATH_VALUE.has(permanent.card.name))
-        if (!this.sacrificeToOutlet(permanent)) break;
-    }
-    // the Gray Merchant loop: sacrifice it and let Meren bring it back (drain again)
-    const grayMerchant = this.findPermanent(GRAY_MERCHANT);
-    if (grayMerchant && !grayMerchant.token && this.experienceCounters + 1 >= 5)
-      this.sacrificeToOutlet(grayMerchant);
-    // a pod: sacrifice D'Ghor Bloodletter so Meren brings it back for a second -1/-1 (it stacks this turn)
-    const bloodletter = this.findPermanent(DGHOR_BLOODLETTER);
-    if (
-      bloodletter &&
-      !bloodletter.token &&
-      this.experienceCounters + 1 >= bloodletter.card.manaValue &&
-      this.podCreaturesShrinkWouldKill(1) >= SHRINK_KILLS_AT_LEAST
-    )
-      this.sacrificeToOutlet(bloodletter);
-    if (this.config.end_step_fodder !== 0)
-      this.sacrificeOneMerenReturnsAtOnce();
-    const candidates = this.graveyard.filter((card) => card.isCreature);
-    if (!candidates.length) return;
-    const best = firstMax(candidates, (card) =>
-      this.merenReturnScore(card, this.experienceCounters),
-    );
-    if (best.manaValue <= this.experienceCounters) {
-      this.say(`Meren (${this.experienceCounters} experience) returns`, best);
-      this.reanimate(best);
-    } else {
-      this.takeCardIfThere(best, 'graveyard');
-      this.putCard(best, 'hand');
-      this.merenReturnsToHand++;
-      this.say(
-        `Meren (${this.experienceCounters} experience) returns to hand`,
-        best,
-      );
-    }
+    feedMeren(this);
   }
 
   // ================================================================ combat
