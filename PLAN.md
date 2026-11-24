@@ -51,6 +51,77 @@ The roadmap's goal is a heavy engine and light decks (the engine owns what a car
 3. `game-core.ts`: `ENGINE.md` names casting (about 150 lines) and the turn's small steps (about 130) as the next parts to move (`casting.ts`, `turn.ts`). `game.ts`: split its pod parts by topic (blocks, removal and counterspells, the threat score), as `engine/pod/` already is.
 4. Done when each of these files is about 800 lines or `ENGINE.md` has a short list of why not, and `ENGINE.md`'s folder table and "What the engine provides" name the new files. Removing unused card code changes nothing a list plays, so it stays IDENTICAL too.
 
+### Survey (2026-11-24)
+
+Lines are `wc -l`. "Who plays it" is every `decklist.txt` and `lists/*.txt`.
+
+**One rule for the deck moves.** Most cards below are played by one simulated deck only, and some by a pod-only deck that has no code for them (Tatyova: Teval; Buried Alive and Breach the Multiverse: Teval, Thantis). If the engine handled them by default, those decks would change, and that is not a move. So a moved card rule is an engine function that the deck calls (as `upkeepOfCommonCards` is today); the deck's choices come in as hooks or arguments. Making it the engine's default for every deck is a separate change with its own before / after (U3 or later).
+
+**`engine/game/game-core.ts` (1,755)**
+- To `casting.ts` (new): `castInstantOrSorcery`, `castReboundCards`, `onCastInstantOrSorcery`, `castPerm`, `flashback`, `wishclaw`, `transmute`, `cycle` (lines 996-1176, about 180).
+- To `turn.ts` (exists): `startTurn`, `beginNewTurn`, `enterStep`, `endTurn`, `upkeepTriggersOfTheGame`, `takeInitiative`, `developWin`; `adoptKillLineCopy` to `kill-line.ts` (about 150).
+- To `mana-payment.ts`: `cabalMana`, `drainPowerMana`, `energyTapTarget`, `canTapForEnergy` (about 35).
+- What is left is about 1,400 lines: state and `clone` (200), the hooks with their default bodies (300), zone changes (200), creatures, life and damage (140), log lines (90). `ENGINE.md`'s list of why not gets the new numbers.
+
+**`engine/game/game.ts` (1,099, the pod parts)**
+- To `pod-attacks.ts` (new, in `engine/game/`): our side of a pod combat: `fighter`, `strike`, `planAttack`, `pickDefender`, `homeGuard`, forced attackers, `arenaCombat`, `podDefence` (lines 104-522, about 420).
+- To `pod-answers.ts` (new): removal and counterspells: `podWantsToCounter`, `answerCost`, Force of Will and Daze, `podCast`, `podRespond`, board counters, `podCanTarget`, `podShield`, `podGet`, `podRemove`, `podLose`, `podBurnCounters`, `podTargets` (lines 562-1052, about 490).
+- The hooks a deck overrides (`evasion`, `blockValue`, `fogPrevent`, `podClose`, `podShield`, `winAttempt`, `podWinStopped`, `combatHit`), `threat` and the small pod hooks stay as methods. What is left is about 350 lines.
+
+**`engine/pod/pod-interaction.ts` (1,037; added to U1 by Pontus on 2026-11-24)**
+- To `pod-win-answers.ts` (new): answering a win and countering a spell: `answerWin`, `sayProtection`, `opponentWithMostInteraction`, `counterspellsAgainst`, `counterSpell`, `shouldGoForKill` (lines 529-769, about 240).
+- To `pod-card-effects.ts` (new): what one player's card does to the others. That is Volatile Stormdrake's exchange, goad, weaken, stop attacking, the edicts, discard, fight, the graveyards, bouncing a colour, and -1/-1 to all (lines 133-382 and 809-1037, about 500).
+- What stays is about 330 lines: removal and wipes after a turn (`useRemovalAfterTurn`, `castTargetedRemoval`, `castBoardWipe`, `bestRemovalTarget`, `hitWithRemoval`, `snipeBestTarget`, `bounceEveryOpponentsCreatures`) and the attack preference.
+
+**`decks/aesi/game.ts` (1,192)**
+- Card facts that can move: Lotus Cobra, Druid Class and Khalni Heart Expedition on landfall; Haru-Onna's draw; Invasion of Zendikar's two basics; Azusa's Many Journeys' chapters; Omniscience's free spells; Blue Sun's Zenith going back into the library; Graceful Adept in `hasNoMaximumHandSize` (about 80 lines). Wood Elves is already an engine card (`common-permanents.ts`); Aesi keeps its own copy. Use the engine's only if the two are the same.
+- These stay in the deck, because they go through Aesi's own land drops (`putLand`, `chooseLand`, `dropsUsed`): Kodama of the East Tree, Case of the Locked Hothouse, Into the Wilds, Search for Tomorrow's suspend, Retreat to Coralhelm and Elven Raft-Steerer (which permanent to untap). Simic Growth Chamber too: the engine's bounce lands do it in `land-play.ts`, but Aesi picks the land with the Retreat loop in mind. Compare the two, and merge only with a hook and an IDENTICAL result.
+- Also staying: the win, the loops, the kill search, combat and Siege, the values, the epic copies, the diag.
+- Split within the deck folder: the land drops (lines 310-600, about 290) go to `decks/aesi/land-drops.ts`. With the card facts moved out, `game.ts` is about 800.
+
+**`decks/meren/game.ts` (1,073)**
+- Card facts that can move:
+  - The spells in `resolveOther` (Decode Transmissions, Village Rites, Grisly Salvage, Songs of the Damned, Breach the Multiverse, Deadly Brew, Buried Alive, Dina's Guidance; about 60 lines). Meren's choices stay hooks: which creature to sacrifice, what to put into the graveyard.
+  - Ophiomancer's Snake, Grave Researcher's upkeep, Grave Titan's and Avenger of the Fallen's attack tokens, Wight of the Reliquary's power.
+  - Spore Frog as the fog (`canAttack`, `fogBlocker`, `blockValue`, `fogPrevent`).
+- `fetchBasic` repeats the engine's `fetchLand`, and it repeats `chooseLandToFetch`'s Forest-or-Swamp choice. Replace it only if the result is IDENTICAL: the order of shuffle and enter may differ.
+- Staying in the deck: the sacrifice choices, Meren's end step and the fodder rule, the tutor priorities, the diag measures, stealing creatures.
+- Split within the deck folder: the sacrifice choices and outlets (lines 400-590, about 190) go to `decks/meren/sacrifice.ts`, and Meren's end step (lines 760-875, about 115) to `decks/meren/end-step.ts`. `game.ts` is then about 700.
+
+**`decks/mike/game.ts` (969)**
+- Duplicate: Mike's Frantic Search is the engine's (`common-spells.ts`), word for word. Delete Mike's copy.
+- Windfall is written three times, and the three differ:
+  - Mike: the pod's `wheel`, else at least 7.
+  - Codie: always at least 7, also in a pod.
+  - Gale: the goldfish opponents' hands, and the kill search's opponent state.
+  - One engine Windfall changes Codie's pod results, so that is a behaviour change for later, not U1. DnD plays Windfall and has no code for it: it is cast, and nothing happens. That is a bug found on the way; it gets its own commit, which changes DnD's pod results.
+- Card facts that can move with hooks for the choices: Mystic Sanctuary (it enters tapped with fewer than 3 Islands, and puts a spell on top), The Water Crystal's cost cut, Roil Cartographer's energy, Tune the Narrative, Pull from Tomorrow, and the looters' combat damage.
+- Staying in the deck: the cards that hang on Mike's own draw counting and its speed. These are the draw triggers (Psychosis Crawler, Ominous Seas, Skymage, Oneirophage, Messenger, Mystic, Krang), Laboratory Maniac, Jace and Ormos on an empty library, Flux (it uses `refillDraws`), Slick Imitator, Aurora Shifter, the Toad and Fblthp.
+- Split within the deck folder: drawing (lines 338-487, about 150) goes to `decks/mike/drawing.ts`. `game.ts` is then about 780.
+
+**Card code that no list plays any more**
+- Edgar (`PLAN.md` says so; checked against every list): Arnyn, Blasphemous Act, Dreadhorde Invasion, Indulgent Aristocrat, Keen Duelist, Nine-Lives Familiar.
+  - Marionette Apprentice and Swords to Plowshares are played by other decks. Delete only Edgar's own code for them; the engine's answer for Swords stays.
+  - The tests of these cards go too. The regress then shows DIFFERENT only in Edgar's tests, so re-record Edgar's baseline for the tests alone.
+- Named in other decks' code but in none of that deck's lists (each to check: a row in a values table is harmless, code for the card is not):
+  - Aesi: Guildless Commons, Sylvan Awakening, Sylvan Scrying, Expedition Map, Crop Rotation, Myriad Landscape, Fabled Passage.
+  - Meren: Grim Backwoods, Costly Plunder, Plumb the Forbidden, Reassembling Skeleton, Elvish Mystic, Zulaport Cutthroat, Sylvan Caryatid, Elvish Visionary, Gravedigger.
+  - Gale: Mnemonic Wall, Rewind, Cabal Ritual, Sapphire Medallion, Cloud of Faeries, Mission Briefing.
+  - Sam & Frodo: Farmer Cotton, Idol of Oblivion, Pristine Talisman, Graypelt Refuge.
+  - A test list a deck's `PLAN.md` still wants to try keeps its cards.
+
+**Order of the commits** (each IDENTICAL: every deck's regress and the pod run)
+1. `casting.ts`, then the turn steps, then the mana helpers (game-core).
+2. `pod-attacks.ts`, then `pod-answers.ts` (game.ts); then `pod-win-answers.ts` and `pod-card-effects.ts` (pod-interaction.ts).
+3. Edgar's unused code (the tests' baseline re-recorded, after asking).
+4. Mike: delete the Frantic Search copy, then `drawing.ts`, then its card facts.
+5. Meren: `sacrifice.ts` and `end-step.ts`, then its card facts.
+6. Aesi: `land-drops.ts`, then its card facts.
+7. The other decks' unused card code, as checked.
+8. `ENGINE.md` (the folders, how the game class is split, what the engine provides).
+
+DnD's Windfall is a separate commit, with a before / after of the pod run.
+
 ## U2. One board, not two (Sonnet 5.5)
 
 The analyzer and `npm run logs` rebuild the board from the logged card moves in `engine/tools/log-board.ts` (395 lines); the game viewer does it in `shared/game-log-board.ts` (286 lines). A fix in one can be missed in the other (roadmap idea 1, `ENGINE.md` "Ideas for later").
