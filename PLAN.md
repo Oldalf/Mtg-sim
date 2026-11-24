@@ -120,6 +120,8 @@ Pontus will add real games to `decks/samfrodo/logs/` (one so far, `game1_t8_pipp
 2. For each game: a row in `decks/samfrodo/PLAN.md` ("Pontus's games"), as Gale's table does: the result, missed kills, and AI fixes it led to. Logs contain misplays: use them for draws and the board, flag missed triggers, don't copy mistakes into the AI.
 3. Add each log to the deck's regress (`regress.logLists` in `decks/samfrodo/index.ts` if the list differs) and re-record the baseline for the new log only.
 
+Done 2026-11-23 (commit d97ee19) for the logs there are: game 2 (`game2_t9_marionette_master.txt`) is analyzed in `decks/samfrodo/PLAN.md` ("Pontus's game 2") and in the regress (baseline recorded for the new log only). It led to the Marionette Master finish (`drain-finish.ts`, setting `drain_finish`, on by default; within noise). The analyzer needed no new token names. New logs from Pontus are deck work from here on, in the deck's `PLAN.md`.
+
 ## T8. Faster tests and `verify` (Opus 5.5)
 
 Pontus (2026-11-18): a large share of development time goes to verifying after each change. Not everything needs every test; some things certainly do. Make the checks cheaper without losing what they protect.
