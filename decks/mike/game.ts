@@ -807,14 +807,6 @@ export class MikeGame extends GameWithoutKillSearch {
         this.toGraveyard(discardedCard);
       }
       this.draw(bad.length + 1);
-    } else if (name === 'Windfall') {
-      const handSize = this.hand.length;
-      for (const card of this.takeAllCards('hand')) this.toGraveyard(card);
-      this.draw(
-        this.inArena()
-          ? this.arena!.wheel(this, handSize)
-          : Math.max(handSize, 7),
-      );
     } else super.resolve(card, fromGraveyard, mode);
   }
   /** Slick Imitator at max speed: {1}, sacrifice it: copy a spell we cast (a copy of a draw spell draws again). */

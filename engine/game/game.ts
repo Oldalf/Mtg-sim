@@ -496,6 +496,24 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return card && this.podCast(card) ? 'bounce' : 'none';
   }
 
+  /** Windfall: each player discards their hand and draws as many cards as the biggest hand discarded (in a goldfish
+   *  game at least 7, a goldfish opponent's hand). A deck with its own Windfall (Gale, Codie) resolves it first. */
+  override resolveOther(
+    card: CardDef,
+    _fromGraveyard: boolean,
+    _mode: string | null,
+  ): void {
+    if (card.name !== 'Windfall') return;
+    const handSize = this.hand.length;
+    for (const discarded of this.takeAllCards('hand'))
+      this.toGraveyard(discarded);
+    this.draw(
+      this.inArena()
+        ? this.arena!.wheel(this, handSize)
+        : Math.max(handSize, 7),
+    );
+  }
+
   // ================================================================ change of control (a pod only)
   override enter(
     card: CardDef,
