@@ -21,3 +21,7 @@ export const ZOMBIE = makeToken('Zombie', 2, 2, 'black');
 export const LIFELINK_VAMPIRE = makeToken('Vampire', 1, 1, 'white', [
   'lifelink',
 ]);
+/** A 2/2 black Zombie Druid (Teval, Teval's Judgment). */
+export const ZOMBIE_DRUID = makeToken('Zombie Druid', 2, 2, 'black');
+/** A 4/4 green Beast (Rampaging Baloths). */
+export const BEAST = makeToken('Beast', 4, 4, 'green');

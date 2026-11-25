@@ -9,6 +9,16 @@ export const LEGIONS_LANDING = "Legion's Landing";
 
 export const ATTACK_TRIGGERS: CardRules[] = [
   {
+    names: ['Beastmaster Ascension'],
+    onWeAttack(_game, permanent, attackers) {
+      // a quest counter for each attacking creature (put on directly: as the deck had it, a doubler doesn't double them)
+      permanent.counters += attackers.length;
+    },
+    powerAndToughnessBonus(_game, permanent) {
+      return permanent.counters >= 7 ? 5 : 0;
+    },
+  },
+  {
     names: ['Edgar Markov'],
     onAttacks(game) {
       addCounterToEachVampire(game);

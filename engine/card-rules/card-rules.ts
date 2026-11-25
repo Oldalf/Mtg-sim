@@ -5,11 +5,12 @@
  *
  * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
  * ramp-spells.ts, landfall.ts,
- * graveyard-creatures.ts, damage-spells.ts) list
+ * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
  */
+import { CARD_RULES } from '../cards/cards';
 import type { CardDef } from '../cards/cards';
 import type { GameCore } from '../game/game-core';
 import type { Permanent, Zone } from '../game/game-types';
@@ -21,6 +22,8 @@ import {
 import { ARISTOCRATS } from './aristocrats';
 import { ATTACK_TRIGGERS } from './attack-triggers';
 import { DAMAGE_SPELLS } from './damage-spells';
+import { DOUBLERS } from './doublers';
+import { SELF_MILL } from './self-mill';
 import { DRAW_SPELLS } from './draw-spells';
 import { GRAVEYARD_CREATURES } from './graveyard-creatures';
 import { LANDFALL } from './landfall';
@@ -90,6 +93,29 @@ export interface CardRules {
     permanent: Permanent,
     attackers: Permanent[],
   ): void;
+  /** One or more creature cards were milled from our library (millOurselves), while it is on the battlefield. */
+  onCreatureCardsMilled?(
+    game: GameCore,
+    permanent: Permanent,
+    creatureCards: CardDef[],
+  ): void;
+  /** One or more cards left our graveyard, while it is on the battlefield. One trigger per event: a spell's
+   *  resolution, or an effect run as GameCore.asOneGraveyardEvent, is one event however many cards leave. */
+  onCardsLeaveOurGraveyard?(game: GameCore, permanent: Permanent): void;
+  /** While it is on the battlefield: the tokens we create are multiplied by this (Doubling Season: 2). */
+  tokenMultiplier?(game: GameCore, permanent: Permanent): number;
+  /** While it is on the battlefield: the counters put on our permanents (GameCore.addCounters) are multiplied by this. */
+  counterMultiplier?(game: GameCore, permanent: Permanent): number;
+  /** While it is on the battlefield: the mana a permanent we tap makes is multiplied by this. */
+  manaMultiplier?(game: GameCore, permanent: Permanent): number;
+  /** While it is on the battlefield: the power and toughness it gives this creature of ours (itself or another). */
+  powerAndToughnessBonus?(
+    game: GameCore,
+    permanent: Permanent,
+    creature: Permanent,
+  ): number;
+  /** While this card is in our graveyard: do our creatures have flying? */
+  givesOurCreaturesFlyingFromGraveyard?(game: GameCore): boolean;
 }
 
 const RULES_BY_NAME = new Map<string, CardRules>();
@@ -103,6 +129,8 @@ for (const rules of [
   ...LANDFALL,
   ...GRAVEYARD_CREATURES,
   ...DAMAGE_SPELLS,
+  ...SELF_MILL,
+  ...DOUBLERS,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
@@ -111,7 +139,13 @@ for (const rules of [
 
 /** The engine's rules for this card, or undefined if it has none here. */
 export function rulesOf(card: CardDef): CardRules | undefined {
-  return RULES_BY_NAME.get(card.name);
+  // looked up once per card: the static-effect hooks ask at every power and mana check
+  let rules = card[CARD_RULES] as CardRules | null | undefined;
+  if (rules === undefined) {
+    rules = RULES_BY_NAME.get(card.name) ?? null;
+    card[CARD_RULES] = rules;
+  }
+  return rules ?? undefined;
 }
 
 /** Resolves a spell the engine has rules for. False if it has none (the next topic file or the deck handles it). */
@@ -230,6 +264,81 @@ export function landDropsFromPermanents(game: GameCore): number {
   for (const permanent of game.battlefield)
     drops += rulesOf(permanent.card)?.landDropsItGives?.(game, permanent) ?? 0;
   return drops;
+}
+
+/** One permanent's upkeep trigger (a deck with upkeep cards of its own runs them in the same loop, so the order stays
+ *  the battlefield's). */
+export function upkeepTriggerOf(game: GameCore, permanent: Permanent): void {
+  rulesOf(permanent.card)?.onUpkeep?.(game, permanent);
+}
+
+/** The triggers of our permanents for creature cards milled from our library. GameCore.millOurselves runs them. */
+export function millTriggers(game: GameCore, creatureCards: CardDef[]): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  ))
+    rulesOf(permanent.card)?.onCreatureCardsMilled?.(
+      game,
+      permanent,
+      creatureCards,
+    );
+}
+
+/** The triggers of our permanents for cards leaving our graveyard (GameCore.takeCard runs them, once per event). */
+export function graveyardLeaveTriggers(game: GameCore): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  ))
+    rulesOf(permanent.card)?.onCardsLeaveOurGraveyard?.(game, permanent);
+}
+
+/** Does the card have a static effect (a multiplier, a power bonus, flying from the graveyard)? GameCore skips those
+ *  checks until a card with one could be on its battlefield (mayHaveStaticEffects). */
+export function hasStaticEffect(card: CardDef): boolean {
+  const rules = rulesOf(card);
+  return (
+    rules !== undefined &&
+    (rules.tokenMultiplier !== undefined ||
+      rules.counterMultiplier !== undefined ||
+      rules.manaMultiplier !== undefined ||
+      rules.powerAndToughnessBonus !== undefined ||
+      rules.givesOurCreaturesFlyingFromGraveyard !== undefined)
+  );
+}
+
+/** The product of a multiplier our permanents give (tokens, counters, mana); 1 without one. */
+export function multiplierFromPermanents(
+  game: GameCore,
+  which: 'tokenMultiplier' | 'counterMultiplier' | 'manaMultiplier',
+): number {
+  let multiplier = 1;
+  for (const permanent of game.battlefield)
+    multiplier *= rulesOf(permanent.card)?.[which]?.(game, permanent) ?? 1;
+  return multiplier;
+}
+
+/** The power and toughness our permanents give this creature. */
+export function powerAndToughnessBonusOf(
+  game: GameCore,
+  creature: Permanent,
+): number {
+  let bonus = 0;
+  for (const permanent of game.battlefield)
+    bonus +=
+      rulesOf(permanent.card)?.powerAndToughnessBonus?.(
+        game,
+        permanent,
+        creature,
+      ) ?? 0;
+  return bonus;
+}
+
+/** Does a card in our graveyard give our creatures flying (Wonder)? */
+export function ourCreaturesFlyFromGraveyard(game: GameCore): boolean {
+  return game.graveyard.some(
+    (card) =>
+      rulesOf(card)?.givesOurCreaturesFlyingFromGraveyard?.(game) ?? false,
+  );
 }
 
 /** What our permanents replace the first draw of the turn with. The engine's draw runs it. */

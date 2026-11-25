@@ -1,6 +1,6 @@
-/** Teval, the Balanced Scale's deck: card names, values, tokens. The rules are in game.ts. */
+/** Teval, the Balanced Scale's deck: card names and values. Its cards' rules are the engine's (engine/card-rules/). */
 import * as C from '../../engine/cards/cards';
-import { CardDef, hasCreatureType, makeToken } from '../../engine/cards/cards';
+import { CardDef, hasCreatureType } from '../../engine/cards/cards';
 
 export const TEVAL = 'Teval, the Balanced Scale';
 export const TORMOD = 'Tormod, the Desecrator';
@@ -8,12 +8,6 @@ export const TEVALS_JUDGMENT = "Teval's Judgment";
 export const SIDISI_BROOD_TYRANT = 'Sidisi, Brood Tyrant';
 export const COLOSSAL_GRAVE_REAVER = 'Colossal Grave-Reaver';
 export const MULDROTHA = 'Muldrotha, the Gravetide';
-
-export const TOKENS = {
-  zombieDruid: makeToken('Zombie Druid', 2, 2, 'black'),
-  zombie: makeToken('Zombie', 2, 2, 'black'),
-  beast: makeToken('Beast', 4, 4, 'green'),
-};
 
 export function isZombie(card: CardDef): boolean {
   return hasCreatureType(card, 'Zombie');

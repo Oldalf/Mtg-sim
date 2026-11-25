@@ -116,6 +116,12 @@ import {
   triggersOnDeath,
   triggersOnOtherPlayersCreatureDeath,
   replacementsOfFirstDraw,
+  graveyardLeaveTriggers,
+  hasStaticEffect,
+  millTriggers,
+  multiplierFromPermanents,
+  ourCreaturesFlyFromGraveyard,
+  powerAndToughnessBonusOf,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
@@ -241,6 +247,10 @@ export abstract class GameCore<S = unknown> {
   firstOpponentDeadTurn: number | null = null;
   /** We lost: our life reached 0. */
   died = false;
+  /** Could a card with a static effect (Doubling Season, Nyxbloom Ancient, Multani, Wonder...) be on our battlefield
+   *  or in our graveyard? Set when the deck has one, or one enters or changes control to us; it never goes back.
+   *  Until then the power, token, counter, mana and flying checks skip the card-rules loops (they run very often). */
+  mayHaveStaticEffects = false;
 
   /**
    * mode "any": go for the first kill found.  mode "protected": only go when a counterspell can
@@ -258,6 +268,9 @@ export abstract class GameCore<S = unknown> {
     rng.shuffle(this.library);
     this.command = commanders.map((cardName) => C.get(cardName));
     this.commanderNames = commanders.slice();
+    this.mayHaveStaticEffects = [...this.library, ...this.command].some(
+      hasStaticEffect,
+    );
     const opponentCount = config.opponents as number;
     this.life = new Array(opponentCount).fill(config.opp_life);
     this.opponentLibrarySizes = new Array(opponentCount).fill(
@@ -503,7 +516,18 @@ export abstract class GameCore<S = unknown> {
 
   /** Taps a source for the mana we are short of (a colour, H = hybrid, N = generic) and adds it to the pool. */
   tap(permanent: Permanent, short: string): void {
+    const multiplier = this.mayHaveStaticEffects
+      ? multiplierFromPermanents(this, 'manaMultiplier')
+      : 1;
+    if (multiplier === 1) {
+      tapForMana(this, permanent, short);
+      return;
+    }
+    const poolBefore = { ...this.pool };
     tapForMana(this, permanent, short);
+    for (const manaType of Object.keys(this.pool) as (keyof typeof this.pool)[])
+      this.pool[manaType] +=
+        (multiplier - 1) * (this.pool[manaType] - poolBefore[manaType]);
   }
 
   takeSnapshot(): Snap {
@@ -596,6 +620,26 @@ export abstract class GameCore<S = unknown> {
   takeCard(card: CardDef, fromZone: CardListZone): void {
     removeOrThrow(this[fromZone], card);
     this.moveRecorder?.noteCardLeft(card, LOG_ZONE[fromZone]);
+    if (fromZone !== 'graveyard') return;
+    if (this.graveyardEventDepth > 0) this.cardsLeftDuringGraveyardEvent = true;
+    else graveyardLeaveTriggers(this);
+  }
+
+  /** While one effect moves several cards out of the graveyard, "one or more cards leave" triggers once. */
+  graveyardEventDepth = 0;
+  cardsLeftDuringGraveyardEvent = false;
+  /** Runs an effect that may move several cards out of the graveyard: their triggers fire once, after it. */
+  asOneGraveyardEvent(effect: () => void): void {
+    this.graveyardEventDepth++;
+    try {
+      effect();
+    } finally {
+      this.graveyardEventDepth--;
+    }
+    if (this.graveyardEventDepth === 0 && this.cardsLeftDuringGraveyardEvent) {
+      this.cardsLeftDuringGraveyardEvent = false;
+      graveyardLeaveTriggers(this);
+    }
   }
 
   /** Takes a card out of a zone if it is there. Returns whether it was. */
@@ -662,6 +706,8 @@ export abstract class GameCore<S = unknown> {
     else if (permanent.owner === newController) permanent.owner = null;
     permanent.sick = permanent.card.isCreature;
     newController.battlefield.push(permanent);
+    if (hasStaticEffect(permanent.card))
+      newController.mayHaveStaticEffects = true;
     if (permanent.token)
       newController.moveRecorder?.noteCardArrived(
         permanent.card,
@@ -705,6 +751,7 @@ export abstract class GameCore<S = unknown> {
   /** Puts a permanent onto the battlefield (a token comes from nowhere, a card from where it was taken). */
   putOntoBattlefield(permanent: Permanent): void {
     this.battlefield.push(permanent);
+    if (hasStaticEffect(permanent.card)) this.mayHaveStaticEffects = true;
     this.moveRecorder?.noteCardArrived(
       permanent.card,
       'battlefield',
@@ -804,6 +851,15 @@ export abstract class GameCore<S = unknown> {
     fromGraveyard = false,
     mode: string | null = null,
   ): void {
+    this.asOneGraveyardEvent(() =>
+      this.resolveWithoutBatching(card, fromGraveyard, mode),
+    );
+  }
+  private resolveWithoutBatching(
+    card: CardDef,
+    fromGraveyard: boolean,
+    mode: string | null,
+  ): void {
     if (resolveSpellByRules(this, card, { fromGraveyard, mode })) return;
     if (resolveSacrificeDrawSpell(this, card)) return;
     if (resolveLandSearch(this, card)) return;
@@ -869,7 +925,10 @@ export abstract class GameCore<S = unknown> {
     options: { tapped?: boolean } = {},
   ): Permanent[] {
     const out: Permanent[] = [];
-    for (let i = 0; i < count; i++)
+    const tokenCount = this.mayHaveStaticEffects
+      ? count * multiplierFromPermanents(this, 'tokenMultiplier')
+      : count;
+    for (let i = 0; i < tokenCount; i++)
       out.push(
         this.enter(card, 'token', { token: true, tapped: options.tapped }),
       );
@@ -954,8 +1013,35 @@ export abstract class GameCore<S = unknown> {
   }
   /** The top cards of our library into our graveyard. */
   millOurselves(count: number): void {
-    for (let i = 0; i < count && this.library.length; i++)
-      this.toGraveyard(this.takeTopCardsOfLibrary(1)[0], true);
+    const milled: CardDef[] = [];
+    for (let i = 0; i < count && this.library.length; i++) {
+      const card = this.takeTopCardsOfLibrary(1)[0];
+      milled.push(card);
+      this.toGraveyard(card, true);
+    }
+    const creatureCards = milled.filter((card) => card.isCreature);
+    if (creatureCards.length) millTriggers(this, creatureCards);
+  }
+  /** Land cards from our graveyard to the battlefield tapped: all of them, or the first few. One graveyard event. */
+  returnLandsFromGraveyard(maxCount = Infinity): void {
+    const lands = this.graveyard
+      .filter((card) => card.land !== null)
+      .slice(0, maxCount);
+    this.asOneGraveyardEvent(() => {
+      for (const card of lands) {
+        this.takeCard(card, 'graveyard');
+        const land = new Permanent(card, card.land, true);
+        land.sick = false;
+        this.putOntoBattlefield(land);
+        this.onLandEnter(land, false);
+      }
+    });
+  }
+  /** Puts counters on a permanent of ours (a doubler multiplies them). */
+  addCounters(permanent: Permanent, count: number): void {
+    permanent.counters += this.mayHaveStaticEffects
+      ? count * multiplierFromPermanents(this, 'counterMultiplier')
+      : count;
   }
   creaturesInGraveyard(): number {
     return this.graveyard.filter((card) => card.isCreature).length;
@@ -1469,10 +1555,14 @@ export abstract class GameCore<S = unknown> {
   }
   /** Extra power / toughness from static effects (e.g. +1/+1 per creature card in the graveyard). */
   powerBonus(permanent: Permanent): number {
-    return 0;
+    return this.mayHaveStaticEffects
+      ? powerAndToughnessBonusOf(this, permanent)
+      : 0;
   }
   toughnessBonus(permanent: Permanent): number {
-    return 0;
+    return this.mayHaveStaticEffects
+      ? powerAndToughnessBonusOf(this, permanent)
+      : 0;
   }
   /** At the beginning of our end step (before cleanup). */
   endStep(): void {}
@@ -1526,7 +1616,10 @@ export abstract class GameCore<S = unknown> {
 
   /** Can this attacker not be blocked (flying, shadow, "can't be blocked")? Decks override it. */
   evasive(permanent: Permanent): boolean {
-    return permanent.card.flying;
+    return (
+      permanent.card.flying ||
+      (this.mayHaveStaticEffects && ourCreaturesFlyFromGraveyard(this))
+    );
   }
   /** After combat damage: the attackers that connected and the total damage dealt. */
   onCombatDamage(_connected: Permanent[], _damage: number): void {}

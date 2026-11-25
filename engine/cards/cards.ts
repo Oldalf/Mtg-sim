@@ -160,7 +160,14 @@ const TYPE_WORDS = [
   'legendary',
 ];
 
+/** The key a card keeps its engine card rules under once looked up (rulesOf in engine/card-rules/card-rules.ts). A
+ *  symbol keeps it out of the card's JSON, which tests print. */
+export const CARD_RULES = Symbol('card rules');
+
 export class CardDef {
+  /** Its engine card rules: undefined until rulesOf looks them up, null when it has none. Declared here so every
+   *  card has the same shape (the static-effect hooks read it at every power and mana check). */
+  [CARD_RULES]: unknown = undefined;
   readonly types: Set<string>;
   readonly cost: Cost;
   readonly manaValue: number;

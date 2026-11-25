@@ -1,9 +1,26 @@
 /**
  * Landfall ("whenever a land enters under your control") and the permanents that give extra land drops.
  */
+import { BEAST } from '../cards/tokens';
 import type { CardRules } from './card-rules';
 
 export const LANDFALL: CardRules[] = [
+  {
+    names: ['Rampaging Baloths'],
+    onLandfall(game) {
+      game.createTokens(BEAST);
+    },
+  },
+  {
+    names: ['Ob Nixilis, the Fallen'],
+    onLandfall(game, permanent) {
+      // may have an opponent lose 3 life; then three +1/+1 counters on it
+      const target = game.chooseTargetOpponent();
+      if (target === null) return;
+      game.damageOpponent(target, 3);
+      game.addCounters(permanent, 3);
+    },
+  },
   {
     names: ['Aesi, Tyrant of Gyre Strait'],
     onLandfall(game) {
