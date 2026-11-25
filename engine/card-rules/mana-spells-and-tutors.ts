@@ -16,6 +16,13 @@ export const MANA_SPELLS_AND_TUTORS: CardRules[] = [
     },
   },
   {
+    names: ['Turnabout'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: only the "untap all lands you control" mode is modelled.
+    resolve(game) {
+      game.untapLands(game.landsOnBattlefield().length);
+    },
+  },
+  {
     names: ['Songs of the Damned'],
     resolve(game) {
       game.pool.B += game.graveyard.filter(
@@ -112,6 +119,19 @@ export const MANA_SPELLS_AND_TUTORS: CardRules[] = [
       game.doTutor(
         (otherCard) => otherCard.isInstant && otherCard.isBlue,
         false,
+      );
+    },
+  },
+  {
+    names: ['Gifts Ungiven'],
+    resolve(game) {
+      // which cards, and which two the opponent bins, are choices (giftsUngivenPile)
+      const { searched, toGraveyard } = game.giftsUngivenPile();
+      game.shuffle();
+      for (const card of toGraveyard) game.toGraveyard(card);
+      game.putCards(
+        searched.filter((card) => !toGraveyard.includes(card)),
+        'hand',
       );
     },
   },

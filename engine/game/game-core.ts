@@ -21,7 +21,7 @@
  * A deck subclasses Game (see decks/goldfish/index.ts for the smallest one, decks/gale for a full one) and fills in:
  *   must have:    buildKillSearchState / killSearchStateKey / killSearch (or extend GameWithoutKillSearch), candidates
  *   what it wants: cardValue, discardValue, instantOrSorceryDevValue, tutorTarget, positionValue, landWant, landBias
- *   card effects: resolveOther, castTriggers, beforeDraw, onToGraveyard, onEnter, onDies, onLandEnter, powerBonus,
+ *   card effects: resolveOther, castTriggers, onToGraveyard, onEnter, onDies, onLandEnter, powerBonus,
  *                 toughnessBonus, upkeep, endStep, commanderCost, onCommanderCast
  *   combat:       canAttack, fogBlocker, evasive, winsWith, onAttack, onCombatDamage (or combat() itself)
  *   setup:        initDeck, mulliganRule, diag (numbers to report per game)
@@ -115,6 +115,7 @@ import {
   triggersOfOthersOnEnter,
   triggersOnDeath,
   triggersOnOtherPlayersCreatureDeath,
+  replacementsOfFirstDraw,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
@@ -738,7 +739,7 @@ export abstract class GameCore<S = unknown> {
   draw(count = 1, _source: string | null = null): void {
     for (let i = 0; i < count; i++) {
       if (!this.library.length) return;
-      this.beforeDraw();
+      if (!this.firstDrawDone) replacementsOfFirstDraw(this);
       this.firstDrawDone = true;
       this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
     }
@@ -1414,6 +1415,24 @@ export abstract class GameCore<S = unknown> {
       ? firstMax(candidates, (card) => this.cardValue(card))
       : null;
   }
+  /** Gifts Ungiven: the cards we search for (up to four with different names, already taken from the library) and
+   *  the two of them the opponent puts into our graveyard. By default the best card of each name, and the opponent
+   *  bins the two we value most. */
+  giftsUngivenPile(): { searched: CardDef[]; toGraveyard: CardDef[] } {
+    const searched: CardDef[] = [];
+    for (let i = 0; i < 4; i++) {
+      const pickedNames = new Set(searched.map((card) => card.name));
+      const target = this.tutorTarget(
+        (card) => !pickedNames.has(card.name),
+        false,
+      );
+      if (target === null) break;
+      searched.push(target);
+      this.takeCard(target, 'library');
+    }
+    sortDesc(searched, (card) => this.cardValue(card));
+    return { searched, toGraveyard: searched.slice(0, 2) };
+  }
   /** Rough value of a position when no kill is in sight (higher is better). */
   positionValue(): number {
     return 0;
@@ -1626,8 +1645,6 @@ export abstract class GameCore<S = unknown> {
   /** We attacked relying on the fog blocker: it must be used (sacrificed) before our next turn. */
   fogUsed = false;
   onToGraveyard(_card: CardDef): void {}
-  /** Replacement effects on a draw (e.g. look at the top cards first). */
-  beforeDraw(): void {}
   /** A land taken from the library enters the battlefield, and the library is shuffled (engine/game/land-search.ts).
    *  By default shuffled first, so landfall draws come from the shuffled library. */
   putSearchedLand(land: CardDef, tapped: boolean): void {

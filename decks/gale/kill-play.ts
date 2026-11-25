@@ -353,9 +353,6 @@ function resolveKillSpell(
     case 'Unearth':
     case 'Zombify':
       return unearthCreature(game, variant);
-    case 'Turnabout':
-      game.untapLands(game.landsOnBattlefield().length);
-      return null;
     default:
       game.resolve(card);
       return null;

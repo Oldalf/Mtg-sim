@@ -23,7 +23,6 @@ import {
   GALE,
   PACKAGES,
   PERM_SCORE,
-  SCION,
   isUnearthLike,
   permScore,
   unearthMaxManaValue,
@@ -44,7 +43,11 @@ import {
 } from './candidates';
 import { BORNE_UPON_A_WIND, QUICKEN } from '../../engine/game/instant-speed';
 import { buildKillSearchState } from './snapshot';
-import { resolveGaleSpell, resolveUnearth } from './spells';
+import {
+  chooseGiftsUngivenPile,
+  resolveGaleSpell,
+  resolveUnearth,
+} from './spells';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -119,28 +122,6 @@ export class GaleGame extends Game<KillSearchState> {
   override onToGraveyard(card: CardDef): void {
     if (card.isCreature && this.isOnBattlefield('Syr Konrad, the Grim'))
       this.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, 1]);
-  }
-
-  override beforeDraw(): void {
-    // Scion of Halaster: the first draw each turn looks at the top two, one goes to the graveyard
-    if (
-      !this.firstDrawDone &&
-      this.isOnBattlefield(GALE) &&
-      this.isOnBattlefield(SCION) &&
-      this.library.length >= 2
-    ) {
-      this.firstDrawDone = true;
-      const [topCard, secondCard] = this.library;
-      const worse =
-        this.discardValue(topCard) < this.discardValue(secondCard)
-          ? topCard
-          : secondCard;
-      const keep = worse === topCard ? secondCard : topCard;
-      this.takeTopCardsOfLibrary(2);
-      this.putCardsOnTopOfLibrary([keep]);
-      this.toGraveyard(worse);
-      this.say(`Scion: ${worse.name} -> graveyard`);
-    }
   }
 
   override castTriggers(
@@ -410,6 +391,13 @@ export class GaleGame extends Game<KillSearchState> {
     rampOk = false,
   ): CardDef | null {
     return chooseTutorTarget(this, allowed, toTop, spent, rampOk);
+  }
+
+  override giftsUngivenPile(): {
+    searched: CardDef[];
+    toGraveyard: CardDef[];
+  } {
+    return chooseGiftsUngivenPile(this);
   }
 
   override instantOrSorceryDevValue(

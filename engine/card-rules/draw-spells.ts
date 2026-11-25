@@ -201,6 +201,16 @@ export const DRAW_SPELLS: CardRules[] = [
     },
   },
   {
+    names: ['Prologue to Phyresis'],
+    resolve(game) {
+      // a poison counter for each opponent still in the game
+      for (let i = 0; i < game.life.length; i++)
+        if (game.life[i] > 0 && game.opponentLibrarySizes[i] > 0)
+          game.poison[i] += 1;
+      game.draw(1);
+    },
+  },
+  {
     names: ['Pull from Tomorrow'],
     resolve(game, _spell, howCast) {
       // the mode is 'x=N'

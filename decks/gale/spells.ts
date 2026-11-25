@@ -1,4 +1,4 @@
-/** What the spells only Gale's deck uses do when they resolve (the engine handles the rest). */
+/** What Windfall and Unearth do in Gale's deck, and Gale's Gifts Ungiven pile (the engine handles the rest). */
 import { GALE, permScore, unearthMaxManaValue } from './roles';
 import { OPPONENT_EVENT } from './kill-state';
 import { chooseGiftsPile, chooseTutorTarget } from './tutoring';
@@ -13,17 +13,8 @@ export function resolveGaleSpell(
   _mode: string | null,
 ): void {
   switch (spell.name) {
-    case 'Prologue to Phyresis':
-      for (let i = 0; i < game.life.length; i++)
-        if (game.life[i] > 0 && game.opponentLibrarySizes[i] > 0)
-          game.poison[i] += 1;
-      game.draw(1);
-      break;
     case 'Windfall':
       resolveWindfall(game);
-      break;
-    case 'Gifts Ungiven':
-      resolveGiftsUngiven(game);
       break;
   }
 }
@@ -64,18 +55,16 @@ export function resolveUnearth(game: GaleGame, spellName: string): void {
     game.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, 1]);
 }
 
-/** Gifts Ungiven: the pile that is best against the opponent's worst split, or else the simple rule. */
-function resolveGiftsUngiven(game: GaleGame): void {
+/** Gifts Ungiven (the engine's rule asks for the pile): the pile that is best against the opponent's worst split, or
+ *  else the simple rule. The searched cards are taken from the library. */
+export function chooseGiftsUngivenPile(game: GaleGame): {
+  searched: CardDef[];
+  toGraveyard: CardDef[];
+} {
   const pile = game.inRollout ? null : chooseGiftsPile(game);
   if (pile !== null) {
     const [picks, binned] = pile;
     for (const card of picks) game.takeCard(card, 'library');
-    game.shuffle();
-    for (const card of binned) game.toGraveyard(card);
-    game.putCards(
-      picks.filter((card) => !binned.includes(card)),
-      'hand',
-    );
     game.say(
       'Gifts ->',
       picks,
@@ -83,7 +72,7 @@ function resolveGiftsUngiven(game: GaleGame): void {
       binned,
       game.everySplitWinsNextTurn ? '(every split wins next turn)' : '',
     );
-    return;
+    return { searched: picks, toGraveyard: binned };
   }
   const picks: CardDef[] = [];
   const galeOut = game.isOnBattlefield(GALE);
@@ -102,14 +91,12 @@ function resolveGiftsUngiven(game: GaleGame): void {
     picks.push(target);
     game.takeCard(target, 'library');
   }
-  game.shuffle();
   // opponent bins the two cards that hurt us most to lose from hand
   sortDesc(
     picks,
     (card) =>
       game.cardValue(card) * (card.isInstantOrSorcery && galeOut ? 0.3 : 1.0),
   );
-  for (const card of picks.slice(0, 2)) game.toGraveyard(card);
-  game.putCards(picks.slice(2), 'hand');
   game.say('Gifts ->', picks);
+  return { searched: picks, toGraveyard: picks.slice(0, 2) };
 }

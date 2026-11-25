@@ -34,6 +34,29 @@ export const PERMANENTS: CardRules[] = [
     },
   },
   {
+    names: ['Scion of Halaster'],
+    // Our commander creatures have: the first draw each turn looks at the top two, any number go to the graveyard.
+    // CHECK WHEN ANOTHER DECK PLAYS IT: exactly one of the two goes to the graveyard (the lower discardValue).
+    beforeFirstDrawEachTurn(game) {
+      const hasCommanderCreatureOut = game.battlefield.some(
+        (permanent) =>
+          permanent.card.isCreature &&
+          game.commanderNames.includes(permanent.card.name),
+      );
+      if (!hasCommanderCreatureOut || game.library.length < 2) return;
+      const [topCard, secondCard] = game.library;
+      const worse =
+        game.discardValue(topCard) < game.discardValue(secondCard)
+          ? topCard
+          : secondCard;
+      const keep = worse === topCard ? secondCard : topCard;
+      game.takeTopCardsOfLibrary(2);
+      game.putCardsOnTopOfLibrary([keep]);
+      game.toGraveyard(worse);
+      game.say(`Scion: ${worse.name} -> graveyard`);
+    },
+  },
+  {
     names: ['Wood Elves'],
     onEnter(game) {
       fetchLand(game, 'forest', false);

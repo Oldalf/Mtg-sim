@@ -78,6 +78,9 @@ export interface CardRules {
     permanent: Permanent,
     dead: Permanent,
   ): void;
+  /** The first time we would draw a card this turn, while it is on the battlefield (a replacement: it runs before
+   *  that draw). */
+  beforeFirstDrawEachTurn?(game: GameCore, permanent: Permanent): void;
   /** It attacks. */
   onAttacks?(game: GameCore, permanent: Permanent): void;
   /** We attack, while it is on the battlefield, after the attackers' own triggers ("whenever you attack with..."). */
@@ -225,6 +228,12 @@ export function landDropsFromPermanents(game: GameCore): number {
   for (const permanent of game.battlefield)
     drops += rulesOf(permanent.card)?.landDropsItGives?.(game, permanent) ?? 0;
   return drops;
+}
+
+/** What our permanents replace the first draw of the turn with. The engine's draw runs it. */
+export function replacementsOfFirstDraw(game: GameCore): void {
+  for (const permanent of game.battlefield.slice())
+    rulesOf(permanent.card)?.beforeFirstDrawEachTurn?.(game, permanent);
 }
 
 /** The triggers of our permanents for another player's creature dying (a pod). The engine's onOtherPlayersCreatureDies
