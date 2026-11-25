@@ -5,7 +5,7 @@
  *
  * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
  * ramp-spells.ts, landfall.ts,
- * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts, cost-and-mana.ts, life-loss.ts) list
+ * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts, cost-and-mana.ts, life-loss.ts, big-creatures.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
@@ -26,6 +26,7 @@ import { DAMAGE_SPELLS } from './damage-spells';
 import { DOUBLERS } from './doublers';
 import { COST_AND_MANA } from './cost-and-mana';
 import { LIFE_LOSS } from './life-loss';
+import { BIG_CREATURES } from './big-creatures';
 import { SELF_MILL } from './self-mill';
 import { DRAW_SPELLS } from './draw-spells';
 import { GRAVEYARD_CREATURES } from './graveyard-creatures';
@@ -111,12 +112,13 @@ export interface CardRules {
   counterMultiplier?(game: GameCore, permanent: Permanent): number;
   /** While it is on the battlefield: the mana a permanent we tap makes is multiplied by this. */
   manaMultiplier?(game: GameCore, permanent: Permanent): number;
-  /** While it is on the battlefield: the power and toughness it gives this creature of ours (itself or another). */
+  /** While it is on the battlefield: the power and toughness it gives this creature of ours (itself or another): one
+   *  number for both, or each its own (Kozilek, the Broken Reality: +3/+2). */
   powerAndToughnessBonus?(
     game: GameCore,
     permanent: Permanent,
     creature: Permanent,
-  ): number;
+  ): number | { power: number; toughness: number };
   /** While it is on the battlefield: the keywords our creatures have from it (Lavaleaper: haste). */
   givesOurCreaturesKeywords?(game: GameCore, permanent: Permanent): string[];
   /** While this card is in our graveyard: the keywords our creatures have from it (Wonder: flying, with an Island). */
@@ -130,6 +132,16 @@ export interface CardRules {
   ): void;
   /** It dealt combat damage to a player. */
   onCombatDamageToPlayer?(game: GameCore, permanent: Permanent): void;
+  /** A creature of ours dealt combat damage to a player, while it is on the battlefield (Ohran Frostfang). */
+  onOurCreatureDealsCombatDamage?(
+    game: GameCore,
+    permanent: Permanent,
+    creature: Permanent,
+  ): void;
+  /** "When you cast this spell" (it has resolved by then: the engine runs it after the spell, as the decks did). */
+  whenCast?(game: GameCore, spell: CardDef): void;
+  /** Its annihilator N while it attacks (the defending player sacrifices N permanents: a pod). */
+  annihilator?(game: GameCore, permanent: Permanent): number;
   /** An opponent cast this spell, while it is on the battlefield. */
   onOpponentCasts?(game: GameCore, permanent: Permanent, spell: CardDef): void;
   /** Creatures attacked us (a pod), while it is on the battlefield. */
@@ -182,6 +194,7 @@ for (const rules of [
   ...DOUBLERS,
   ...COST_AND_MANA,
   ...LIFE_LOSS,
+  ...BIG_CREATURES,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
@@ -427,20 +440,23 @@ export function multiplierFromPermanents(
   return multiplier;
 }
 
-/** The power and toughness our permanents give this creature. */
-export function powerAndToughnessBonusOf(
+/** The power (or toughness) our permanents give this creature. */
+export function bonusFromPermanents(
   game: GameCore,
   creature: Permanent,
+  which: 'power' | 'toughness',
 ): number {
-  let bonus = 0;
-  for (const permanent of game.battlefield)
-    bonus +=
-      rulesOf(permanent.card)?.powerAndToughnessBonus?.(
-        game,
-        permanent,
-        creature,
-      ) ?? 0;
-  return bonus;
+  let total = 0;
+  for (const permanent of game.battlefield) {
+    const bonus = rulesOf(permanent.card)?.powerAndToughnessBonus?.(
+      game,
+      permanent,
+      creature,
+    );
+    if (bonus === undefined) continue;
+    total += typeof bonus === 'number' ? bonus : bonus[which];
+  }
+  return total;
 }
 
 /** Do our creatures have this keyword from a permanent of ours (Lavaleaper) or a card in our graveyard (Wonder)? */
@@ -532,7 +548,8 @@ export function ourLifeLossTriggers(game: GameCore, amount: number): void {
   }
 }
 
-/** The triggers of our permanents for a permanent spell we cast. GameCore.castPerm runs them (after the spell). */
+/** The triggers for a permanent spell we cast: our permanents' (Helga), then its own "when you cast this spell"
+ *  (Kozilek). GameCore.castPerm runs them (after the spell), and so do the free casts (cascade). */
 export function permanentSpellCastTriggers(
   game: GameCore,
   spell: CardDef,
@@ -545,6 +562,7 @@ export function permanentSpellCastTriggers(
         rules.onWeCast!(game, permanent, spell, manaSpent),
       );
   }
+  rulesOf(spell)?.whenCast?.(game, spell);
 }
 
 /** The end step triggers of our permanents. GameCore.endStep runs them. */
@@ -572,16 +590,33 @@ export function replacementsAsAnotherOfOursEnters(
       );
 }
 
-/** One creature's "deals combat damage to a player" trigger (Glissa Sunslayer). */
+/** The triggers for one creature of ours dealing combat damage to a player: its own (Glissa Sunslayer), then our
+ *  permanents' "a creature you control deals combat damage" ones (Ohran Frostfang). */
 export function combatDamageTriggerOf(
   game: GameCore,
-  permanent: Permanent,
+  creature: Permanent,
 ): void {
-  const rules = rulesOf(permanent.card);
+  const rules = rulesOf(creature.card);
   if (rules?.onCombatDamageToPlayer)
-    runTrigger(game, permanent, () =>
-      rules.onCombatDamageToPlayer!(game, permanent),
+    runTrigger(game, creature, () =>
+      rules.onCombatDamageToPlayer!(game, creature),
     );
+  for (const permanent of game.battlefield.slice()) {
+    const permanentRules = rulesOf(permanent.card);
+    if (permanentRules?.onOurCreatureDealsCombatDamage)
+      runTrigger(game, permanent, () =>
+        permanentRules.onOurCreatureDealsCombatDamage!(
+          game,
+          permanent,
+          creature,
+        ),
+      );
+  }
+}
+
+/** An attacker's annihilator N (0 without one). */
+export function annihilatorOf(game: GameCore, attacker: Permanent): number {
+  return rulesOf(attacker.card)?.annihilator?.(game, attacker) ?? 0;
 }
 
 /** The triggers of our permanents for a spell an opponent cast. GameCore.onOpponentCast runs them. */

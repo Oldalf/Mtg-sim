@@ -119,6 +119,7 @@ export function castPermanentSpell(
     game.onCommanderCast(card);
   } else game.takeCard(card, 'hand');
   game.spellsCast += 1;
+  if (card.isCreature) game.creatureSpellsCastThisTurn += 1;
   game.sayEvent('cast', 'cast', card);
   game.podAnnounceCast(card);
   if (game.podCounters(card)) {

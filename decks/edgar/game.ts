@@ -63,7 +63,6 @@ export class EdgarGame extends CreatureDeckGame {
   }
   override colors = ['W', 'B', 'R'];
 
-  lifeGainedThisTurn = 0;
   creaturesDiedThisTurn = 0;
   /** True while a permanent is being sacrificed (Carmen and Mayhem Devil only care about sacrifices). */
   /** Emeritus of Woe and Scheming Silvertongue: their spell can be cast once. */
@@ -134,8 +133,7 @@ export class EdgarGame extends CreatureDeckGame {
 
   override gainLife(amount: number): void {
     if (amount <= 0) return;
-    super.gainLife(amount);
-    this.lifeGainedThisTurn += amount;
+    super.gainLife(amount); // (counts lifeGainedThisTurn)
   }
 
   /** How many life points the opponents lose each time one of our creatures dies (a rough count of the drain engines). */
@@ -336,7 +334,6 @@ export class EdgarGame extends CreatureDeckGame {
         (permanent) => permanent.land === null,
       ).length;
     super.startTurn();
-    this.lifeGainedThisTurn = 0;
     this.creaturesDiedThisTurn = 0;
     this.explosionPending = null;
   }

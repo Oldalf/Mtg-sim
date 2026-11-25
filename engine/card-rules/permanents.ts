@@ -255,6 +255,44 @@ export const PERMANENTS: CardRules[] = [
     },
   },
   {
+    names: ['Elemental Bond'],
+    onAnotherOfOursEnters(game, _permanent, entered) {
+      if (entered.card.isCreature && game.power(entered) >= 3) game.draw(1);
+    },
+  },
+  {
+    names: ['Guardian Project'],
+    onAnotherOfOursEnters(game, _permanent, entered) {
+      // a nontoken creature whose name no other creature of ours, nor a creature card in our graveyard, has
+      if (!entered.card.isCreature || entered.token) return;
+      const name = entered.card.name;
+      const sameNameOut = game.battlefield.filter(
+        (other) => other.card.name === name,
+      ).length;
+      if (
+        sameNameOut === 1 &&
+        !game.graveyard.some((card) => card.name === name)
+      )
+        game.draw(1);
+    },
+  },
+  {
+    names: ["Verdant Sun's Avatar"],
+    onEnter(game, permanent) {
+      game.gainLife(game.toughness(permanent));
+    },
+    onAnotherOfOursEnters(game, _permanent, entered) {
+      if (entered.card.isCreature) game.gainLife(game.toughness(entered));
+    },
+  },
+  {
+    names: ['Colossal Majesty'],
+    onUpkeep(game) {
+      if (game.creatures().some((creature) => game.power(creature) >= 4))
+        game.draw(1);
+    },
+  },
+  {
     names: ['Phyrexian Arena'],
     onUpkeep(game) {
       game.draw(1, 'Phyrexian Arena');

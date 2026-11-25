@@ -132,7 +132,7 @@ import {
   combatDamageTriggerOf,
   opponentCastTriggers,
   attackedByTriggers,
-  powerAndToughnessBonusOf,
+  bonusFromPermanents,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
@@ -264,6 +264,10 @@ export abstract class GameCore<S = unknown> {
   mayHaveStaticEffects = false;
   /** Each opponent's life when our turn began (after our upkeep; Archfiend of Despair). */
   opponentLifeAtTurnStart: number[] = [];
+  /** The creature spells we cast this turn (Radagast) and the life we gained (Ob Nixilis, the Ascended), counted from
+   *  after our upkeep. */
+  creatureSpellsCastThisTurn = 0;
+  lifeGainedThisTurn = 0;
 
   /**
    * mode "any": go for the first kill found.  mode "protected": only go when a counterspell can
@@ -912,6 +916,48 @@ export abstract class GameCore<S = unknown> {
     return permanent;
   }
 
+  /** Cascade: from the top, the first nonland card that costs less; a permanent is cast for free (its cast triggers
+   *  run), the rest (and an instant or sorcery found) go to the bottom. */
+  cascade(manaValue: number): void {
+    const exiled: CardDef[] = [];
+    let found: CardDef | null = null;
+    while (this.library.length) {
+      const card = this.takeTopCardsOfLibrary(1)[0];
+      if (card.land === null && card.manaValue < manaValue) {
+        found = card;
+        break;
+      }
+      exiled.push(card);
+    }
+    if (found && !found.isInstantOrSorcery) {
+      this.say('cascade into', found);
+      this.enter(found, 'library');
+      permanentSpellCastTriggers(this, found, 0);
+    } else if (found) exiled.push(found);
+    this.putCards(exiled, 'library');
+  }
+
+  /** "You may cast a spell with mana value N or less from your hand for free" (Rishkar's Expertise): the permanent
+   *  we want most on the battlefield (its cast triggers run). */
+  castFreePermanentFromHand(maxManaValue: number): void {
+    const choices = this.hand.filter(
+      (card) =>
+        card.land === null &&
+        !card.isInstantOrSorcery &&
+        card.manaValue <= maxManaValue,
+    );
+    if (!choices.length) return;
+    const best = choices.reduce((first, second) =>
+      this.battlefieldValue(second) > this.battlefieldValue(first)
+        ? second
+        : first,
+    );
+    this.takeCard(best, 'hand');
+    this.say('cast for free:', best);
+    this.enter(best);
+    permanentSpellCastTriggers(this, best, 0);
+  }
+
   /** Reveals cards from the top of the library until a creature card and takes it out; the rest go to the bottom in a
    *  random order. Null (nothing changes) if there is no creature card. */
   revealUntilCreature(): CardDef | null {
@@ -1210,6 +1256,22 @@ export abstract class GameCore<S = unknown> {
 
   gainLife(amount: number): void {
     this.myLife += amount;
+    if (amount > 0) this.lifeGainedThisTurn += amount;
+  }
+
+  /** Do we control one of our commanders? */
+  controlsACommander(): boolean {
+    return this.battlefield.some((permanent) =>
+      this.commanderNames.includes(permanent.card.name),
+    );
+  }
+
+  /** The greatest power among our creatures (0 with none). */
+  greatestPower(): number {
+    return Math.max(
+      0,
+      ...this.creatures().map((permanent) => this.power(permanent)),
+    );
   }
 
   gainEnergy(amount: number): void {
@@ -1415,6 +1477,8 @@ export abstract class GameCore<S = unknown> {
   startTurn(): void {
     startOurTurn(this);
     this.opponentLifeAtTurnStart = this.life.slice();
+    this.creatureSpellsCastThisTurn = 0;
+    this.lifeGainedThisTurn = 0;
   }
 
   /** Our next turn begins: the turn number moves on, the opponents have each drawn a card, everything untaps, the
@@ -1609,12 +1673,12 @@ export abstract class GameCore<S = unknown> {
   /** Extra power / toughness from static effects (e.g. +1/+1 per creature card in the graveyard). */
   powerBonus(permanent: Permanent): number {
     return this.mayHaveStaticEffects
-      ? powerAndToughnessBonusOf(this, permanent)
+      ? bonusFromPermanents(this, permanent, 'power')
       : 0;
   }
   toughnessBonus(permanent: Permanent): number {
     return this.mayHaveStaticEffects
-      ? powerAndToughnessBonusOf(this, permanent)
+      ? bonusFromPermanents(this, permanent, 'toughness')
       : 0;
   }
   /** At the beginning of our end step (before cleanup). */
@@ -1713,6 +1777,14 @@ export abstract class GameCore<S = unknown> {
     _includeOwn: boolean,
     _except: Permanent | null,
     _sourceName: string,
+  ): void {}
+  /** Removal on an enter or cast trigger: up to `count` of the opponents' permanents this answer hits, each worth at
+   *  least `minimumValue` (a pod only: in a goldfish game they have none worth taking). */
+  podSnipeUpTo(
+    _answer: Answer,
+    _sourceName: string,
+    _count: number,
+    _minimumValue: number,
   ): void {}
   /** Goad the creatures of every opponent until our next turn (a pod only: Kardur). */
   podGoadEachOpponentsCreatures(): void {}

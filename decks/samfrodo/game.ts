@@ -67,7 +67,6 @@ export class SamFrodoGame extends CreatureDeckGame {
   }
   override colors = ['W', 'B', 'G'];
   phase: Phase = 'main1';
-  lifeGainedThisTurn = 0; // life gained this turn
   firstLifeGainHappened = false; // Cat Collector: first life gain this turn happened
   foodSacrificedThisTurn = false; // a Food was sacrificed this turn (Elanor)
   belladonnaTriggers = 0; // Belladonna Took: times its ability resolved this turn
@@ -122,8 +121,7 @@ export class SamFrodoGame extends CreatureDeckGame {
 
   override gainLife(amount: number): void {
     if (amount <= 0) return;
-    super.gainLife(amount);
-    this.lifeGainedThisTurn += amount;
+    super.gainLife(amount); // (counts lifeGainedThisTurn)
     if (!this.firstLifeGainHappened) {
       this.firstLifeGainHappened = true;
       for (const permanent of this.battlefield.filter(
@@ -465,7 +463,6 @@ export class SamFrodoGame extends CreatureDeckGame {
       ).length;
     super.startTurn();
     this.phase = 'main1';
-    this.lifeGainedThisTurn = 0;
     this.firstLifeGainHappened =
       this.foodSacrificedThisTurn =
       this.merryUsed =

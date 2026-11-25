@@ -11,6 +11,20 @@ import type { CardRules } from './card-rules';
 
 export const COST_AND_MANA: CardRules[] = [
   {
+    names: ['Goreclaw, Terror of Qal Sisma'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its attack trigger (+1/+1 and trample for our big creatures) is not modelled.
+    costReduction(_game, _permanent, spell) {
+      return spell.isCreature && spell.power >= 4 ? 2 : 0;
+    },
+  },
+  {
+    names: ['Radagast of Rhosgobel'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the flash for that spell is not modelled.
+    costReduction(game, _permanent, spell) {
+      return spell.isCreature && game.creatureSpellsCastThisTurn === 0 ? 2 : 0;
+    },
+  },
+  {
     names: ['Lavaleaper'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: only our creatures have haste and only our basic lands add more (the card: every
     // player's).

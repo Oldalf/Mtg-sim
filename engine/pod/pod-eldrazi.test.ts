@@ -7,6 +7,7 @@ import { Game } from '../game/game';
 import { Permanent } from '../game/game-types';
 import { Deck } from '../run/runner';
 import { HelgaGame } from '../../decks/helga/game';
+import { permanentSpellCastTriggers } from '../card-rules/card-rules';
 import { podSpec, seatPlayers } from './pod';
 
 const HELGA_SEAT = 0;
@@ -67,7 +68,7 @@ export function runEldraziTests(allDecks: Record<string, Deck>): boolean {
   putOnBattlefield(meren, 'Sol Ring');
   putOnBattlefield(meren, 'Grave Titan');
   putOnBattlefield(meren, 'Forest');
-  helga.creatureCastTriggers(C.get('Ulamog, the Ceaseless Hunger'));
+  permanentSpellCastTriggers(helga, C.get('Ulamog, the Ceaseless Hunger'), 0);
   check(
     'Ulamog, the Ceaseless Hunger exiles two nonland permanents',
     namesOnBattlefield(meren),

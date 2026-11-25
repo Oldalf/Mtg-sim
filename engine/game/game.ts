@@ -8,6 +8,7 @@
  */
 import { Cost, CardDef } from '../cards/cards';
 import { ANSWERS, Answer, KEY_SPELLS } from './answers';
+import { annihilatorOf } from '../card-rules/card-rules';
 import { GameCore } from './game-core';
 import {
   AnswerUsed,
@@ -87,6 +88,16 @@ export abstract class Game<S = unknown> extends GameCore<S> {
   ): void {
     if (this.inArena())
       this.arena!.shrinkCreatures(this, amount, includeOwn, except, sourceName);
+  }
+  override podSnipeUpTo(
+    answer: Answer,
+    sourceName: string,
+    count: number,
+    minimumValue: number,
+  ): void {
+    if (!this.inArena()) return;
+    for (let i = 0; i < count; i++)
+      if (!this.arena!.snipe(this, answer, sourceName, minimumValue)) return;
   }
   override podGoadEachOpponentsCreatures(): void {
     if (!this.inArena()) return;
@@ -196,6 +207,12 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     powerOf?: (permanent: Permanent) => number,
     toughnessOf?: (permanent: Permanent) => number,
   ): { damage: number; connected: Permanent[] } {
+    // annihilator: the defending player sacrifices that many permanents, before blocks
+    for (const attacker of attackers) {
+      const sacrifices = annihilatorOf(this, attacker);
+      if (sacrifices > 0)
+        this.arena!.annihilate(this, slot, sacrifices, attacker.card.name);
+    }
     return attackOpponentForReal(this, slot, attackers, powerOf, toughnessOf);
   }
 

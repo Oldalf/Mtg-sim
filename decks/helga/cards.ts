@@ -1,6 +1,5 @@
-/** Helga, Skittish Seer's deck: card names, values and tokens. The rules are in game.ts. */
+/** Helga, Skittish Seer's deck: card names and values. The rules are in engine/card-rules/ and game.ts. */
 import * as C from '../../engine/cards/cards';
-import { makeToken } from '../../engine/cards/cards';
 
 export const HELGA = 'Helga, Skittish Seer';
 export const GORECLAW = 'Goreclaw, Terror of Qal Sisma';
@@ -13,27 +12,6 @@ export const KOMA = 'Koma, World-Eater';
 export const REGAL_BEHEMOTH = 'Regal Behemoth';
 
 export const ULAMOG_THE_DEFILER = 'Ulamog, the Defiler';
-
-/** Annihilator N of each card that has a fixed N (Ulamog, the Defiler's X is its +1/+1 counters). */
-export const ANNIHILATOR: Record<string, number> = {
-  'Kozilek, Butcher of Truth': 4,
-  "Ulamog's Crusher": 2,
-  'It That Betrays': 2,
-};
-
-/** Ulamog, the Defiler enters with counters equal to the greatest mana value in exile, after an opponent exiles the
- *  top half of their library. We do not look at that library: with about 50 cards exiled it is nearly always a
- *  6-drop or bigger. */
-export const DEFILER_COUNTERS_IN_A_POD = 6;
-
-/** Terastodon only blows up a permanent worth this much: the owner gets a 3/3 for it. */
-export const TERASTODON_MINIMUM_TARGET_VALUE = 45;
-
-export const TOKENS = {
-  eldrazi: makeToken('Eldrazi', 10, 10),
-  angel: makeToken('Angel', 4, 4, 'white', ['flying']),
-  serpent: makeToken("Koma's Coil", 3, 3, 'blue'),
-};
 
 /** How much the AI wants each card on the battlefield (the rest: 40 for a creature, 30 otherwise). */
 export const VALUE: Record<string, number> = {

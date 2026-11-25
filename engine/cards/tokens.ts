@@ -25,3 +25,10 @@ export const LIFELINK_VAMPIRE = makeToken('Vampire', 1, 1, 'white', [
 export const ZOMBIE_DRUID = makeToken('Zombie Druid', 2, 2, 'black');
 /** A 4/4 green Beast (Rampaging Baloths). */
 export const BEAST = makeToken('Beast', 4, 4, 'green');
+
+/** Desolation Twin's. */
+export const ELDRAZI = makeToken('Eldrazi', 10, 10);
+/** Ob Nixilis, the Ascended's. */
+export const FLYING_ANGEL = makeToken('Angel', 4, 4, 'white', ['flying']);
+/** Koma, World-Eater's. */
+export const KOMAS_COIL = makeToken("Koma's Coil", 3, 3, 'blue');

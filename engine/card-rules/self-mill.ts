@@ -108,7 +108,7 @@ export const SELF_MILL: CardRules[] = [
       // lands on our creature with the most power
       game.millOurselves(3);
       game.returnLandsFromGraveyard();
-      if (!controlsACommander(game)) return;
+      if (!game.controlsACommander()) return;
       const creatures = game.creatures();
       if (!creatures.length) return;
       const best = creatures.reduce((first, second) =>
@@ -123,7 +123,7 @@ export const SELF_MILL: CardRules[] = [
     // creature comes back.
     resolve(game) {
       // with a commander out (both modes) each opponent loses 3 life; a creature card from our graveyard comes back
-      if (controlsACommander(game)) game.drainEach(3);
+      if (game.controlsACommander()) game.drainEach(3);
       const creature = game.bestCreatureInGraveyard();
       if (creature) game.reanimate(creature);
     },
@@ -187,12 +187,6 @@ function zombiesOf(game: GameCore): Permanent[] {
   return game
     .creatures()
     .filter((permanent) => C.hasCreatureType(permanent.card, 'Zombie'));
-}
-
-function controlsACommander(game: GameCore): boolean {
-  return game.battlefield.some((permanent) =>
-    game.commanderNames.includes(permanent.card.name),
-  );
 }
 
 /** The best creature card in our graveyard to our hand (paying life if lifeCost is set). */
