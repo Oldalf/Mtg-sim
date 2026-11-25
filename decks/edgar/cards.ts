@@ -5,6 +5,7 @@ import {
   makeArtifactToken,
   makeToken,
 } from '../../engine/cards/cards';
+import { LIFELINK_VAMPIRE } from '../../engine/cards/tokens';
 
 export const EDGAR = 'Edgar Markov';
 export const YAHENNI = 'Yahenni, Undying Partisan';
@@ -26,7 +27,7 @@ export const TOKENS = {
   /** Edgar's eminence and Bloodline-less Vampire tokens: no lifelink. */
   vampire: makeToken('Vampire', 1, 1, 'black'),
   /** Preacher of the Schism, Legion's Landing, Baron Bertram, Elenda. */
-  lifelinkVampire: makeToken('Vampire', 1, 1, 'white', ['lifelink']),
+  lifelinkVampire: LIFELINK_VAMPIRE,
   /** Oketra's Monument. */
   warrior: makeToken('Warrior', 1, 1, 'white', ['vigilance']),
   /** Bloodline Keeper's tokens. */

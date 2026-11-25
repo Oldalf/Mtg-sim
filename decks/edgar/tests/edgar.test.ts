@@ -15,7 +15,6 @@ import {
   skullclampToken,
   sacrificeTurnWins,
 } from '../actions';
-import { onPermanentAttacks } from '../triggers';
 
 const repeatName = (cardName: string, count: number) =>
   new Array(count).fill(cardName) as string[];
@@ -106,7 +105,7 @@ export function runEdgarTests(): boolean {
   );
   game = board([EDGAR, 'Cordial Vampire', 'Sol Ring']);
   vampire = game.createTokens(TOKENS.vampire)[0];
-  onPermanentAttacks(game, [permanentNamed(game, EDGAR)]);
+  game.onAttack([permanentNamed(game, EDGAR)]);
   check(
     'Edgar attacks: each Vampire gets a +1/+1 counter, a non-Vampire does not',
     [

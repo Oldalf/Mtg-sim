@@ -109,6 +109,9 @@ import {
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
   resolveSpellByRules,
+  attackTriggers,
+  triggersOfOthersOnEnter,
+  triggersOnDeath,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
@@ -917,9 +920,23 @@ export abstract class GameCore<S = unknown> {
   }
 
   sacrifice(permanent: Permanent): void {
+    const wasSacrificing = this.isSacrificing;
+    this.isSacrificing = true;
     this.say('sacrifice', permanent.card);
     this.dies(permanent);
     if (permanent.card === CLUE) clueSacrificed(this);
+    this.isSacrificing = wasSacrificing;
+  }
+  /** True while a sacrifice is resolving (for "whenever you sacrifice" triggers, Mayhem Devil, Carmen). */
+  isSacrificing = false;
+
+  /** The "once each turn" triggers used this turn, by card name (startTurn clears it). */
+  onceEachTurnUsed: string[] = [];
+  /** Uses a card's "once each turn" trigger: true the first time this turn, false after. */
+  useOnceEachTurn(cardName: string): boolean {
+    if (this.onceEachTurnUsed.includes(cardName)) return false;
+    this.onceEachTurnUsed.push(cardName);
+    return true;
   }
 
   /** Devotion to a colour: its pips in the mana costs of our permanents (token copies count too). */
@@ -943,6 +960,21 @@ export abstract class GameCore<S = unknown> {
     if (this.life[i] <= 0 && this.firstOpponentDeadTurn === null)
       this.firstOpponentDeadTurn = this.turn;
     return lost;
+  }
+
+  /** "Target opponent loses N life and you gain N": the opponent closest to dead. */
+  drainOne(amount: number): void {
+    const target = this.chooseTargetOpponent();
+    if (target === null) return;
+    this.damageOpponent(target, amount);
+    this.gainLife(amount);
+  }
+
+  /** "Each opponent loses N life and you gain N". */
+  drainAllOpponents(amount: number, gainsLife = true): void {
+    if (this.countOpponentsAlive() === 0) return;
+    this.drainEach(amount);
+    if (gainsLife) this.gainLife(amount);
   }
 
   /** Each opponent still alive loses n. Returns the total lost. */
@@ -1329,6 +1361,7 @@ export abstract class GameCore<S = unknown> {
   combat(): void {}
   /** Something entered the battlefield (ETB triggers, "whenever a creature enters"). */
   onEnter(permanent: Permanent, _from: Zone): void {
+    triggersOfOthersOnEnter(this, permanent);
     enterTriggerOfCommonCard(this, permanent);
   }
   /** A permanent of ours left the battlefield: it died, was blinked, or an opponent removed it ("leaves the
@@ -1350,6 +1383,7 @@ export abstract class GameCore<S = unknown> {
   }
   /** A creature died (death triggers). It's already off the battlefield (and in the graveyard if a card). */
   onDies(permanent: Permanent): void {
+    triggersOnDeath(this, permanent);
     deathTriggerOfCommonCard(this, permanent);
     if (permanent.card.isCreature) drawWhenCreatureDies(this, permanent);
   }
@@ -1399,7 +1433,8 @@ export abstract class GameCore<S = unknown> {
 
   /** Attack triggers, called with the attackers before damage. Returns creatures that join the attack
    *  (e.g. tokens put onto the battlefield tapped and attacking); they count for blocking too. */
-  onAttack(_attackers: Permanent[]): Permanent[] {
+  onAttack(attackers: Permanent[]): Permanent[] {
+    attackTriggers(this, attackers);
     return [];
   }
 
@@ -1562,6 +1597,10 @@ export abstract class GameCore<S = unknown> {
    *  it (a Windfall that throws away the hand). */
   wantsToCastCopy(_card: CardDef): boolean {
     return true;
+  }
+  /** How much we want this card on the battlefield (a card a rule puts there from the graveyard: Carmen). */
+  battlefieldValue(card: CardDef): number {
+    return this.cardValue(card);
   }
   /** How much we want this creature back from the graveyard (reanimation spells). */
   reanimationValue(card: CardDef): number {

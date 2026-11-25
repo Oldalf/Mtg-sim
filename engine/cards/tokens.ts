@@ -13,3 +13,7 @@ export const CLUE = makeArtifactToken('Clue');
 
 /** "Sacrifice this token: Add {C}." Spent like a Treasure: last. */
 export const ELDRAZI_SPAWN = makeToken('Eldrazi Spawn', 0, 1);
+/** A 1/1 white Vampire with lifelink (Legion's Landing, Baron Bertram Graywater, Elenda, Preacher of the Schism). */
+export const LIFELINK_VAMPIRE = makeToken('Vampire', 1, 1, 'white', [
+  'lifelink',
+]);

@@ -623,7 +623,7 @@ export class AesiGame extends Game<AesiGame> {
   spiritCast(): void {}
 
   // ================================================================ card values
-  battlefieldValue(card: CardDef): number {
+  override battlefieldValue(card: CardDef): number {
     return VALUE[card.name] ?? (card.isCreature ? 40 : 30);
   }
   override cardValue(card: CardDef): number {

@@ -13,7 +13,7 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
   /** How much the AI wants each card on the battlefield (the deck's VALUE table). */
   abstract readonly values: Record<string, number>;
 
-  battlefieldValue(card: CardDef): number {
+  override battlefieldValue(card: CardDef): number {
     return this.values[card.name] ?? (card.isCreature ? 40 : 30);
   }
 

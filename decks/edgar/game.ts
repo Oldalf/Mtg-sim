@@ -38,11 +38,7 @@ import {
 } from './cards';
 import { buildCandidates } from './candidates';
 import { findOutlets, spareFodder } from './actions';
-import {
-  onPermanentAttacks,
-  onPermanentDied,
-  onPermanentEntered,
-} from './triggers';
+import { onPermanentDied, onPermanentEntered } from './triggers';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -70,9 +66,6 @@ export class EdgarGame extends CreatureDeckGame {
   lifeGainedThisTurn = 0;
   creaturesDiedThisTurn = 0;
   /** True while a permanent is being sacrificed (Carmen and Mayhem Devil only care about sacrifices). */
-  isSacrificing = false;
-  baronBertramUsed = false;
-  welcomingVampireUsed = false;
   /** Emeritus of Woe and Scheming Silvertongue: their spell can be cast once. */
   prepared = new Set<Permanent>();
   /** A pod: Evereth stays on the battlefield while the others may answer her last pump (see winAttempt). */
@@ -137,21 +130,6 @@ export class EdgarGame extends CreatureDeckGame {
     this.damageSource = source;
     deal();
     this.damageSource = before;
-  }
-
-  /** "Target opponent loses N life and you gain N": the opponent closest to dead. */
-  drainOne(amount: number): void {
-    const target = this.chooseTargetOpponent();
-    if (target === null) return;
-    this.damageOpponent(target, amount);
-    this.gainLife(amount);
-  }
-
-  /** "Each opponent loses N life and you gain N". */
-  drainAllOpponents(amount: number, gainsLife = true): void {
-    if (this.countOpponentsAlive() === 0) return;
-    this.drainEach(amount);
-    if (gainsLife) this.gainLife(amount);
   }
 
   override gainLife(amount: number): void {
@@ -325,17 +303,19 @@ export class EdgarGame extends CreatureDeckGame {
   // ================================================================ sacrifice, death and triggers
   override sacrifice(permanent: Permanent): void {
     if (!this.battlefield.includes(permanent)) return;
-    const wasSacrificing = this.isSacrificing;
-    this.isSacrificing = true;
     super.sacrifice(permanent);
-    this.isSacrificing = wasSacrificing;
   }
 
+  /** The engine's card rules (Welcoming Vampire, Baron Bertram, the enter triggers), then Edgar's own. */
   override onEnter(permanent: Permanent, from: Zone): void {
+    super.onEnter(permanent, from);
     onPermanentEntered(this, permanent, from);
   }
 
+  /** The engine's death triggers (the drains, Elenda...), then Evereth. */
   override onDies(permanent: Permanent): void {
+    if (permanent.card.isCreature) this.creaturesDiedThisTurn++;
+    super.onDies(permanent);
     onPermanentDied(this, permanent);
   }
 
@@ -358,8 +338,6 @@ export class EdgarGame extends CreatureDeckGame {
     super.startTurn();
     this.lifeGainedThisTurn = 0;
     this.creaturesDiedThisTurn = 0;
-    this.baronBertramUsed = false;
-    this.welcomingVampireUsed = false;
     this.explosionPending = null;
   }
 
@@ -447,10 +425,6 @@ export class EdgarGame extends CreatureDeckGame {
   // ================================================================ combat
   override combat(): void {
     this.withDamageSource('combat', () => this.creatureCombat());
-  }
-
-  override onAttack(attackers: Permanent[]): Permanent[] {
-    return onPermanentAttacks(this, attackers);
   }
 
   // ================================================================ tutors

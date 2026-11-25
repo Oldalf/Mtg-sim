@@ -106,6 +106,7 @@ export function playTurn(game: GameCore): boolean {
 export function startOurTurn(game: GameCore): void {
   if (game.turn > 0) game.spentEnd[game.turn] = game.spent;
   game.beginNewTurn();
+  game.onceEachTurnUsed = [];
   for (const otherPermanent of game.battlefield) {
     if (
       otherPermanent.card.name === 'Curious Homunculus' &&

@@ -2,7 +2,9 @@
  * Permanents: what they do when they enter, die or at our upkeep. Which card to take (a land, a card from the
  * graveyard) is the deck's choice (chooseLandToFetch, returnToHandValue).
  */
+import * as C from '../cards/cards';
 import type { CardDef } from '../cards/cards';
+import { LIFELINK_VAMPIRE } from '../cards/tokens';
 import type { GameCore } from '../game/game-core';
 import { corpseAugurDies, CORPSE_AUGUR } from '../game/card-draw';
 import { fetchLand } from '../game/land-search';
@@ -62,6 +64,38 @@ export const PERMANENTS: CardRules[] = [
     names: [CORPSE_AUGUR],
     onDies(game, permanent) {
       corpseAugurDies(game, permanent);
+    },
+  },
+  {
+    names: ['Welcoming Vampire'],
+    onOtherPermanentEnters(game, _permanent, entered) {
+      // another creature with power 2 or less enters: draw a card (once each turn)
+      if (!entered.card.isCreature || game.power(entered) > 2) return;
+      if (game.useOnceEachTurn('Welcoming Vampire')) game.draw(1);
+    },
+  },
+  {
+    names: ['Baron Bertram Graywater'],
+    onOtherPermanentEnters(game, _permanent, entered) {
+      // tokens enter: create a 1/1 lifelink Vampire (once each turn)
+      if (!entered.token) return;
+      if (game.useOnceEachTurn('Baron Bertram Graywater'))
+        game.createTokens(LIFELINK_VAMPIRE);
+    },
+  },
+  {
+    names: ['Gas Guzzler'],
+    onEnter(_game, permanent) {
+      permanent.tapped = true;
+    },
+  },
+  {
+    names: ['Forerunner of the Legion'],
+    onEnter(game) {
+      game.doTutor(
+        (card) => C.hasCreatureType(card, 'Vampire') && card.land === null,
+        true,
+      );
     },
   },
   {

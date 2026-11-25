@@ -3,7 +3,8 @@
  * choice methods (cardValue, returnToHandValue, chooseLandToFetch, tutorTarget...) wherever the card asks its
  * controller to choose, so the deck decides without knowing how the card works.
  *
- * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts) list the cards; this file collects them
+ * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts) list
+ * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
  */
@@ -15,6 +16,8 @@ import {
   ventureIntoDungeon,
   venturesOnEnter,
 } from '../game/dungeons';
+import { ARISTOCRATS } from './aristocrats';
+import { ATTACK_TRIGGERS } from './attack-triggers';
 import { DRAW_SPELLS } from './draw-spells';
 import { MANA_SPELLS_AND_TUTORS } from './mana-spells-and-tutors';
 import { PERMANENTS } from './permanents';
@@ -38,10 +41,33 @@ export interface CardRules {
   onDies?(game: GameCore, permanent: Permanent): void;
   /** At the beginning of our upkeep, while it is on the battlefield. */
   onUpkeep?(game: GameCore, permanent: Permanent): void;
+  /** Another permanent entered while this one is on the battlefield ("whenever another creature enters"). */
+  onOtherPermanentEnters?(
+    game: GameCore,
+    permanent: Permanent,
+    entered: Permanent,
+  ): void;
+  /** A permanent of ours died: runs for each of our permanents on the battlefield and for the dead one itself
+   *  ("whenever this or another creature dies"; permanent === dead when it is itself). */
+  onPermanentDies?(game: GameCore, permanent: Permanent, dead: Permanent): void;
+  /** It attacks. */
+  onAttacks?(game: GameCore, permanent: Permanent): void;
+  /** We attack, while it is on the battlefield, after the attackers' own triggers ("whenever you attack with..."). */
+  onWeAttack?(
+    game: GameCore,
+    permanent: Permanent,
+    attackers: Permanent[],
+  ): void;
 }
 
 const RULES_BY_NAME = new Map<string, CardRules>();
-for (const rules of [...DRAW_SPELLS, ...MANA_SPELLS_AND_TUTORS, ...PERMANENTS])
+for (const rules of [
+  ...DRAW_SPELLS,
+  ...MANA_SPELLS_AND_TUTORS,
+  ...PERMANENTS,
+  ...ARISTOCRATS,
+  ...ATTACK_TRIGGERS,
+])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
     RULES_BY_NAME.set(name, rules);
@@ -100,4 +126,34 @@ export function deathTriggerOfCommonCard(
 export function upkeepOfCommonCards(game: GameCore): void {
   for (const permanent of game.battlefield.slice())
     rulesOf(permanent.card)?.onUpkeep?.(game, permanent);
+}
+
+/** The "whenever another permanent enters" triggers of our other permanents. The engine's onEnter runs them before the
+ *  entering permanent's own trigger. */
+export function triggersOfOthersOnEnter(
+  game: GameCore,
+  entered: Permanent,
+): void {
+  for (const permanent of game.battlefield.slice())
+    if (permanent !== entered)
+      rulesOf(permanent.card)?.onOtherPermanentEnters?.(
+        game,
+        permanent,
+        entered,
+      );
+}
+
+/** The "whenever this or another permanent dies" triggers: our permanents on the battlefield, then the dead one. The
+ *  engine's onDies runs them before the dead permanent's own death trigger. */
+export function triggersOnDeath(game: GameCore, dead: Permanent): void {
+  for (const permanent of [...game.battlefield, dead])
+    rulesOf(permanent.card)?.onPermanentDies?.(game, permanent, dead);
+}
+
+/** The attack triggers: each attacker's own, then our permanents' "whenever you attack" ones. */
+export function attackTriggers(game: GameCore, attackers: Permanent[]): void {
+  for (const attacker of attackers)
+    rulesOf(attacker.card)?.onAttacks?.(game, attacker);
+  for (const permanent of game.battlefield.slice())
+    rulesOf(permanent.card)?.onWeAttack?.(game, permanent, attackers);
 }
