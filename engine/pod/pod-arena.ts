@@ -4,7 +4,7 @@
  */
 import { Arena } from '../game/game-types';
 import { coloursOf } from '../cards/cards';
-import { MASSACRE_WURM } from '../game/common-permanents';
+import { MASSACRE_WURM } from '../card-rules/permanents';
 import { Game } from '../game/game';
 import { fightOpponent } from './pod-combat';
 import { answerWin, counterSpell, shouldGoForKill } from './pod-win-answers';

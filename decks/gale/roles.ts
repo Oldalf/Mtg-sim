@@ -70,7 +70,7 @@ C.registerKnown([
   ...ENGINES,
   GALE,
   SCION,
-  'Mnemonic Wall', // its enter trigger is the engine's (common-permanents.ts)
+  'Mnemonic Wall', // its enter trigger is the engine's (engine/card-rules/permanents.ts)
 ]);
 
 export const PACKAGES: Set<string>[][] = [

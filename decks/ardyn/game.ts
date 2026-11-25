@@ -25,7 +25,7 @@ import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
-} from '../../engine/game/common-permanents';
+} from '../../engine/card-rules/card-rules';
 import {
   enterTriggerCount,
   triggerCount,

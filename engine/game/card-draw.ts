@@ -4,7 +4,7 @@
  *   - the sacrifice spells (Deadly Dispute, Costly Plunder, Plumb the Forbidden): castSacrificeDrawSpell;
  *   - the death payoffs: Midnight Reaper, Moldervine Reclamation, Corpse Augur (drawWhenCreatureDies, corpseAugurDies);
  *   - Tireless Tracker's Clues (landfall, crackClue), Skullclamp (clampCreature), Greater Good and Ayara's outlets;
- *   - Elvish Visionary draws when it enters (common-permanents.ts).
+ *   - Elvish Visionary draws when it enters (engine/card-rules/permanents.ts).
  * Every draw says which card it came from, so a deck can count what each card gave it (GameCore.draw).
  */
 import { CardDef, Cost } from '../cards/cards';

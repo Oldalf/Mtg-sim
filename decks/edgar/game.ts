@@ -52,7 +52,7 @@ import {
 } from '../../engine/game/game-types';
 import { Answer } from '../../engine/game/answers';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
-import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
+import { upkeepOfCommonCards } from '../../engine/card-rules/card-rules';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { firstMax } from '../../engine/util/lists';
 import { MULLIGAN } from './mulligan';

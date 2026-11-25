@@ -59,23 +59,45 @@ Knowingly not followed:
 | Folder | Files | What it is |
 |---|---|---|
 | `engine/cards/` | `cards`, `card-facts`, `land-text`, `scryfall`, `card-images` | Card data and facts that hold in any deck |
-| `engine/game/` | `game-core`, `game`, `game-types`; the topic files `mana-payment`, `payment-search`, `search-mana`, `common-spells`, `common-permanents`, `land-play`, `land-search`, `planner`, `kill-line`, `turn`, `casting`, `pod-attacks`, `pod-answers`, `goldfish-combat`, `creature-deck`, `blink`, `dungeons`, `reanimation`, `spell-copies`, `instant-speed`, `firebending`, `trigger-doublers`, `opponent-cast-triggers`, `creature-enter-triggers`, `mulligan`, `answers`, `search`, `log-format`; their `.test` files | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
+| `engine/card-rules/` | `card-rules` (the hooks and the lookup), `draw-spells`, `mana-spells-and-tutors`, `permanents` | What a card does, one object per card (see "Card rules") |
+| `engine/game/` | `game-core`, `game`, `game-types`; the topic files `mana-payment`, `payment-search`, `search-mana`, `untap-lands`, `land-play`, `land-search`, `planner`, `kill-line`, `turn`, `casting`, `pod-attacks`, `pod-answers`, `goldfish-combat`, `creature-deck`, `blink`, `dungeons`, `reanimation`, `spell-copies`, `instant-speed`, `firebending`, `trigger-doublers`, `opponent-cast-triggers`, `creature-enter-triggers`, `mulligan`, `answers`, `search`, `log-format`; their `.test` files | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
 | `engine/game-log/` | `game-log`, `game-log-moves`, `-text`, `-tags`, `-files`, `-run`, `-replay`, `-archidekt`, `logged-runs`, `game-log.test` | Logging a game and reading logs back |
 | `engine/pod/` | `pod`, `pod-arena`, `pod-table`, `pod-combat`, `pod-blocking`, `pod-interaction`, `pod-win-answers`, `pod-card-effects`, `pod-report`, `pod.test` | Decks playing each other |
 | `engine/run/` | `runner`, `worker-pool`, `worker-pool.test`, `power-save`, `setting-descriptions` | Running many games |
 | `engine/tools/` | `report`, `ranking`, `regress`, `analyze`, `log-board`, `diag-metrics` | Reports and the command line tools (`--rank`, `--cut`, `--analyze`, `--diag`, `--regress`) |
 | `engine/util/` | `lists`, `rng` | Small helpers with no imports |
 
+## Card rules
+
+The goal (Pontus, 2026-11-25): the engine knows what every card does, the deck only decides (what to cast, which target, what a card is worth). A card's rules are one plain object in `engine/card-rules/<topic>.ts`:
+
+```ts
+{
+  names: ['Eternal Witness', 'Timeless Witness'], // the cards that share these rules word for word
+  onEnter(game) { returnBestCardToHand(game); },   // the deck chooses through game.returnToHandValue
+}
+```
+
+The hooks (`CardRules` in `card-rules.ts`): `resolve` (an instant or sorcery resolves), `onEnter`, `onDies` (its own death), `onUpkeep` (each of our upkeeps while it is out). A new kind of moment (a cast trigger, another creature dying, landfall) gets a new hook when the first card needs it, run from the place the game already handles that moment. The engine runs them:
+- `resolveSpellByRules`: the first thing `GameCore.resolve` asks; then the engine's topic files (sacrifice-draw spells, land search, reanimation, blink...) and last the deck's `resolveOther`.
+- `enterTriggerOfCommonCard`, `deathTriggerOfCommonCard`, `upkeepOfCommonCards`: the engine's default `onEnter` / `onDies` / `upkeep` call them, and a deck that overrides those hooks calls them where it wants them (so a card's rule there runs only for the decks that call it).
+
+A rule never decides for the deck: wherever the card's text lets its controller choose, it asks the game (`cardValue`, `returnToHandValue`, `tutorTarget` through `doTutor`, `chooseLandToFetch`...). Two rules for the same name throw when the engine loads.
+
+Moving a deck's card here changes every deck whose list plays it and reaches the hook, so a move is IDENTICAL only for a card no other deck plays (or whose other decks never reach the hook). A card that two decks code differently gets one version, with a before / after.
+
+Cards still handled outside `card-rules/` (to move here step by step): the per-card tables (`ANSWERS`, `BLINK_SPELLS`, `SACRIFICE_DRAW_SPELLS`, `LAND_SEARCH`, `REANIMATION_SPELLS`), the if-chains in the other topic files of `engine/game/`, Baleful Strix and the untap-on-enter cards in `GameCore.enter`, Windfall in `Game.resolveOther`, and the decks' own card code.
+
 ## How the game class is split
 
 `GameCore` (`engine/game/game-core.ts`) is the class a deck subclasses. It keeps its state (the fields), the constructor, `clone`, the log lines (`say`, `sayEvent`), the hooks a deck fills in, and every method a deck calls on the game (`this.pay(...)`, `game.draw(...)`), under the same names, so no deck changes when code moves. Methods of a few lines stay as they are.
 
-A large method body lives in a topic file as a plain function that takes the game first, as `blink.ts`, `instant-speed.ts` and `common-permanents.ts` already did. The method stays as one line that calls it (`pay(cost, ...) { return payCost(this, cost, ...); }`); a private helper moves with no method left. Inside a topic file the game's own methods are called on the game (`game.tap(...)`, `game.manaSourceKind(...)`), never as the topic file's function, so a deck's override still runs wherever it ran before. Moving code changes no logic: every deck stays IDENTICAL.
+A large method body lives in a topic file as a plain function that takes the game first, as `blink.ts`, `instant-speed.ts` and `land-search.ts` already did. The method stays as one line that calls it (`pay(cost, ...) { return payCost(this, cost, ...); }`); a private helper moves with no method left. Inside a topic file the game's own methods are called on the game (`game.tap(...)`, `game.manaSourceKind(...)`), never as the topic file's function, so a deck's override still runs wherever it ran before. Moving code changes no logic: every deck stays IDENTICAL.
 
 | File | What lives there |
 |---|---|
 | `mana-payment.ts` | What a mana source makes (`manaSourceKind`), what the pool is short of, which source to tap, tapping (`tap`), paying (`pay`), and the taps and untaps a kill search planned |
-| `common-spells.ts` | The draw, scry, ritual, untap and tutor spells the engine knows (`resolve` asks it first), and untapping lands (`untapLands`) |
+| `untap-lands.ts` | Which tapped lands an untap effect untaps (`untapLands`) |
 | `land-play.ts` | Whether a land enters tapped (`entersTapped`), which land to play and playing it (`playLand`, Evolving Wilds, bounce lands) |
 | `planner.ts` | What to do next: the deck's candidates in order (rituals that help, a rock first), `develop`, and the turn planner with its rollouts |
 | `kill-line.ts` | `checkKill` (the kill search at each step of the turn) and playing a found line on a copy |

@@ -186,7 +186,7 @@ export const EDICT_ETB = new Set([
   'Fleshbag Marauder',
   DGHOR_BLOODLETTER, // its other mode, -1/-1 to all other creatures, only in a pod (triggers.ts)
 ]);
-// Solemn Simulacrum, Wood Elves and the Witnesses are engine cards (engine/game/common-permanents.ts)
+// Solemn Simulacrum, Wood Elves and the Witnesses are engine cards (engine/card-rules/permanents.ts)
 // removal: no targets in a goldfish game, and only ever for an opponent's permanent in a pod (engine/game/answers.ts)
 export const HOLD = new Set([
   'Heartless Act',

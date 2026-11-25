@@ -77,7 +77,7 @@ import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
-} from '../../engine/game/common-permanents';
+} from '../../engine/card-rules/card-rules';
 import { triggersOfCreatureEntering } from '../../engine/game/creature-enter-triggers';
 import {
   BLINK_SPELLS,

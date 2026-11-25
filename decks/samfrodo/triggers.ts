@@ -1,6 +1,6 @@
 import { TREASURE } from '../../engine/cards/tokens';
 import { AGENT_OF_THE_IRON_THRONE, FOOD, SAGA, TOK } from './cards';
-import { enterTriggerOfCommonCard } from '../../engine/game/common-permanents';
+import { enterTriggerOfCommonCard } from '../../engine/card-rules/card-rules';
 import type { SamFrodoGame } from './game';
 import { Cost } from '../../engine/cards/cards';
 import { Permanent, Zone } from '../../engine/game/game-types';

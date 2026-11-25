@@ -33,7 +33,7 @@ import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
-} from '../../engine/game/common-permanents';
+} from '../../engine/card-rules/card-rules';
 
 export class TevalGame extends CreatureDeckGame {
   override colors = ['B', 'G', 'U'];

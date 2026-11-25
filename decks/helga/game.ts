@@ -32,7 +32,7 @@ import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
-} from '../../engine/game/common-permanents';
+} from '../../engine/card-rules/card-rules';
 
 type Colour = 'W' | 'U' | 'G';
 

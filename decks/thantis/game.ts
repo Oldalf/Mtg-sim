@@ -52,7 +52,7 @@ import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
-} from '../../engine/game/common-permanents';
+} from '../../engine/card-rules/card-rules';
 import type { GameCore } from '../../engine/game/game-core';
 
 export class ThantisGame extends CreatureDeckGame {

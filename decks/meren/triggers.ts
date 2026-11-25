@@ -16,7 +16,7 @@ import { triggersOfCreatureEntering } from '../../engine/game/creature-enter-tri
 import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
-} from '../../engine/game/common-permanents';
+} from '../../engine/card-rules/card-rules';
 
 // ================================================================ entering the battlefield
 export function onPermanentEntered(

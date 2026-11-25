@@ -34,6 +34,7 @@ Rules for every task:
 | # | Task | What | Model |
 |---|---|---|---|
 | 1 | U1 | Card rules out of the big deck files, and the engine's big files split | Opus 5.5 |
+| 1b | U1b | Every card's rules in the engine (card objects with hooks), the decks only decide | Opus 5.5 |
 | 2 | U2 | One board, not two (the analyzer's and the viewer's) | Sonnet 5.5 |
 | 3 | U3 | The cards not modelled yet: Edgar, Aesi, Gale, then Codie | Opus 5.5 |
 | 4 | U4 | The app: the commands it is missing, editing lists, a card's print | Opus 5.5 (design), Sonnet 5.5 (each feature) |
@@ -139,6 +140,24 @@ What stayed in the decks, and why:
 - Meren's Decode Transmissions, Deadly Brew, Dina's Guidance, Breach the Multiverse and Buried Alive: they hang on Meren's own state and choices, and Teval and Thantis play the last two.
 
 Unused code: Edgar's code for the 6 removed cards and his own copies for Marionette Apprentice and Swords to Plowshares are gone (Edgar's tests re-recorded, Pontus OK'd). The cards in the other decks' code that their lists don't play (Aesi, Meren, Gale, Sam & Frodo) stay. Nearly all are swaps those decks tried, and their `PLAN.md` names them. Two that were named nowhere were removed on 2026-11-25 (Pontus).
+
+## U1b. Every card's rules in the engine, the decks only decide (Opus 5.5)
+
+Pontus, 2026-11-25: the engine handles the cards, the decks are the strategy (what to prioritise), with no card rules of their own. He picked one plain object per card with hooks the engine runs (`ENGINE.md`, "Card rules"), and this order: the IDENTICAL moves first, then the cards that change results.
+
+Survey (2026-11-25, the `case '...'` and `=== '...'` card names in each deck's code, against every `decklist.txt`):
+- 133 cards are coded in one deck and played by no other deck: they move IDENTICAL.
+- 11 cards are coded in two or three decks: Breach the Multiverse and Buried Alive (Meren, Teval), Disciple of Bolas and Rune-Scarred Demon (Ardyn, Meren), Explore (Aesi, Helga), Growth Spiral (Aesi, Codie, Teval), Indulgent Tormentor (Ardyn, Thantis), Sheoldred, Whispering One (Ardyn, Teval), Susurian Voidborn (Edgar, Sam & Frodo), Viscera Seer (Edgar, Meren), Windfall (Codie, Gale; the engine has one too).
+- About 20 are played by decks that don't code them, e.g. Dark Ritual (Ardyn, Edgar, Meren), Cultivate and Farseek (Sam & Frodo codes them; Aesi, Codie, Helga, Teval, Thantis play them), Swords to Plowshares and Path to Exile, Unearth (Meren), Vampiric Rites (Meren), Gray Merchant (Meren). Some hits are a deck's card values, not rules (Sol Ring, basic lands).
+- Gale's kill search (`kill-state.ts`, `kill-moves.ts`) and Codie's solver keep their own model of the cards: they are the deck's planning (what a line of moves would do), not the game's rules. They stay.
+
+Steps, each one commit with `verify` VERIFY OK:
+1. The hooks and the engine's own switches as card objects (`engine/card-rules/`). IDENTICAL.
+2. The 133 single-deck cards, one deck per commit (biggest first: Edgar, Aesi, Meren, Gale, Codie, Teval, Ardyn...). A new hook (cast triggers, another creature dying, landfall, activated abilities) is added when the first card needs it. A deck whose override doesn't call the engine's hook calls the card-rules dispatcher at the place its own switch was, so the order stays. IDENTICAL.
+3. The 11 cards coded twice: show Pontus each difference, pick one version, report before / after, ask before re-recording.
+4. The cards other decks play but don't code: they start working there. Report before / after (goldfish and the pod run), ask before re-recording.
+
+**Step 1 done (2026-11-25).** `engine/card-rules/`: `card-rules.ts` (the `CardRules` hooks `resolve`, `onEnter`, `onDies`, `onUpkeep`; the lookup; the dispatchers `resolveSpellByRules`, `enterTriggerOfCommonCard`, `deathTriggerOfCommonCard`, `upkeepOfCommonCards`), `draw-spells.ts`, `mana-spells-and-tutors.ts`, `permanents.ts`. `common-spells.ts` and `common-permanents.ts` are gone (their untap code is `engine/game/untap-lands.ts`). Every deck IDENTICAL.
 
 ## U2. One board, not two (Sonnet 5.5)
 

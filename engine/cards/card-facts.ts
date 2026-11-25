@@ -307,7 +307,7 @@ export const REANIMATION_SPELLS: Record<string, ReanimationSpell> = {
   'Rise of the Dark Realms': { count: 'all' },
 };
 
-/** Permanents the engine gives their enter, death or upkeep rules (engine/game/common-permanents.ts). */
+/** Permanents the engine gives their enter, death or upkeep rules (engine/card-rules/permanents.ts and engine/game/card-draw.ts). */
 export const COMMON_PERMANENTS = [
   'Solemn Simulacrum',
   'Wood Elves',

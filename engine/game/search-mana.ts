@@ -5,7 +5,7 @@
  * on adds {U}; an untap spell: a land that was tapped for an earlier cost can be tapped again) come out right.
  *
  * What the search tapped is recorded (`payments`), and the real game plays the same taps (sourcesPlannedFor in
- * mana-payment.ts and landsToUntap in common-spells.ts), so a line the search found is paid for the way it counted.
+ * mana-payment.ts and landsToUntap in untap-lands.ts), so a line the search found is paid for the way it counted.
  */
 import { Cost } from '../cards/cards';
 import { TREASURE } from '../cards/tokens';

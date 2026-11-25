@@ -60,7 +60,7 @@ import {
   Zone,
 } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
-import { upkeepOfCommonCards } from '../../engine/game/common-permanents';
+import { upkeepOfCommonCards } from '../../engine/card-rules/card-rules';
 import { firstMax, firstMin } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';

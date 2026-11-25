@@ -10,7 +10,7 @@
  *   state and helpers -> mana -> zones and drawing -> effects of common cards -> creatures -> life and damage
  *   -> casting -> lands -> choosing what to do (candidates, the turn planner) -> the turn -> deck hooks -> combat.
  * This class keeps the state, the hooks and every method a deck calls; the larger bodies live in topic files as
- * functions that take the game (ENGINE.md, "How the game class is split"): mana-payment.ts, common-spells.ts,
+ * functions that take the game (ENGINE.md, "How the game class is split"): mana-payment.ts, untap-lands.ts,
  * land-play.ts, planner.ts, kill-line.ts (checkKill), turn.ts, goldfish-combat.ts.
  *
  * A turn (takeTurn): startTurn, upkeep, draw, playLand, developWin (cast things until nothing is worth doing; each
@@ -79,11 +79,7 @@ import {
   ventureIntoDungeon,
 } from './dungeons';
 import { PaymentRecord } from './search-mana';
-import {
-  resolveCardSelection,
-  resolveManaOrTutor,
-  untapBestLands,
-} from './common-spells';
+import { untapBestLands } from './untap-lands';
 import { triggerOnOpponentCast } from './opponent-cast-triggers';
 import { enterTriggerCount } from './trigger-doublers';
 import { resolveGraveyardCopySpell } from './spell-copies';
@@ -112,7 +108,8 @@ import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
   upkeepOfCommonCards,
-} from './common-permanents';
+  resolveSpellByRules,
+} from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
 import {
@@ -793,15 +790,15 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ effects of common cards
-  /** What a spell does when it resolves, for the cards the engine knows. Other cards go to the deck's resolveOther(). */
+  /** What a spell does when it resolves: the engine's card rules (engine/card-rules/) first, then the engine's topic
+   *  files. Other cards go to the deck's resolveOther(). */
   resolve(
     card: CardDef,
     fromGraveyard = false,
     mode: string | null = null,
   ): void {
-    if (resolveCardSelection(this, card, fromGraveyard, mode)) return;
+    if (resolveSpellByRules(this, card, { fromGraveyard, mode })) return;
     if (resolveSacrificeDrawSpell(this, card)) return;
-    if (resolveManaOrTutor(this, card, mode)) return;
     if (resolveLandSearch(this, card)) return;
     if (resolveReanimationSpell(this, card)) return;
     if (resolveBlinkSpell(this, card)) return;
@@ -810,7 +807,7 @@ export abstract class GameCore<S = unknown> {
     this.resolveOther(card, fromGraveyard, mode);
   }
 
-  /** Untaps up to count tapped lands, the ones that make the most mana first (common-spells.ts). */
+  /** Untaps up to count tapped lands, the ones that make the most mana first (untap-lands.ts). */
   untapLands(count: number): void {
     untapBestLands(this, count);
   }
