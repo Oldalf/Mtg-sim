@@ -158,9 +158,27 @@ export const SELF_MILL: CardRules[] = [
     },
   },
   {
+    names: ['Anger'],
+    givesOurCreaturesKeywordsFromGraveyard(game) {
+      return game.battlefield.some((permanent) => permanent.land?.mountain)
+        ? ['haste']
+        : [];
+    },
+  },
+  {
+    names: ['Brawn'],
+    givesOurCreaturesKeywordsFromGraveyard(game) {
+      return game.battlefield.some((permanent) => permanent.land?.forest)
+        ? ['trample']
+        : [];
+    },
+  },
+  {
     names: ['Wonder'],
-    givesOurCreaturesFlyingFromGraveyard(game) {
-      return game.landsOnBattlefield().some((land) => game.islandTyped(land));
+    givesOurCreaturesKeywordsFromGraveyard(game) {
+      return game.landsOnBattlefield().some((land) => game.islandTyped(land))
+        ? ['flying']
+        : [];
     },
   },
 ];

@@ -127,7 +127,11 @@ import {
   ourLifeLossTriggers,
   permanentSpellCastTriggers,
   endStepTriggers,
-  ourCreaturesFlyFromGraveyard,
+  ourCreaturesHaveKeywordFromCards,
+  replacementsAsAnotherOfOursEnters,
+  combatDamageTriggerOf,
+  opponentCastTriggers,
+  attackedByTriggers,
   powerAndToughnessBonusOf,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
@@ -908,6 +912,18 @@ export abstract class GameCore<S = unknown> {
     return permanent;
   }
 
+  /** Reveals cards from the top of the library until a creature card and takes it out; the rest go to the bottom in a
+   *  random order. Null (nothing changes) if there is no creature card. */
+  revealUntilCreature(): CardDef | null {
+    const index = this.library.findIndex((card) => card.isCreature);
+    if (index < 0) return null;
+    const revealed = this.takeTopCardsOfLibrary(index);
+    const [creature] = this.takeTopCardsOfLibrary(1);
+    this.rng.shuffle(revealed);
+    this.putCards(revealed, 'library');
+    return creature;
+  }
+
   /** Put a creature card from our graveyard onto the battlefield. */
   reanimate(
     card: CardDef,
@@ -1563,6 +1579,7 @@ export abstract class GameCore<S = unknown> {
   combat(): void {}
   /** Something entered the battlefield (ETB triggers, "whenever a creature enters"). */
   onEnter(permanent: Permanent, from: Zone): void {
+    replacementsAsAnotherOfOursEnters(this, permanent);
     triggersOfOthersOnEnter(this, permanent, from);
     enterTriggerOfCommonCard(this, permanent);
   }
@@ -1621,7 +1638,9 @@ export abstract class GameCore<S = unknown> {
     return (
       permanent.card.isCreature &&
       !permanent.tapped &&
-      (!permanent.sick || permanent.card.haste) &&
+      (!permanent.sick ||
+        permanent.card.haste ||
+        this.ourCreaturesHave('haste')) &&
       this.power(permanent) > 0
     );
   }
@@ -1642,8 +1661,7 @@ export abstract class GameCore<S = unknown> {
   /** Attack triggers, called with the attackers before damage. Returns creatures that join the attack
    *  (e.g. tokens put onto the battlefield tapped and attacking); they count for blocking too. */
   onAttack(attackers: Permanent[]): Permanent[] {
-    attackTriggers(this, attackers);
-    return [];
+    return attackTriggers(this, attackers);
   }
 
   /** Goldfish combat for creature decks (goldfish-combat.ts): fliers connect, opponents block half of the others,
@@ -1654,13 +1672,20 @@ export abstract class GameCore<S = unknown> {
 
   /** Can this attacker not be blocked (flying, shadow, "can't be blocked")? Decks override it. */
   evasive(permanent: Permanent): boolean {
+    return permanent.card.flying || this.ourCreaturesHave('flying');
+  }
+  /** Do our creatures have this keyword from a card of ours (Lavaleaper's haste, Wonder's flying from the
+   *  graveyard)? A creature's own keywords are on its card. */
+  ourCreaturesHave(keyword: string): boolean {
     return (
-      permanent.card.flying ||
-      (this.mayHaveStaticEffects && ourCreaturesFlyFromGraveyard(this))
+      this.mayHaveStaticEffects &&
+      ourCreaturesHaveKeywordFromCards(this, keyword)
     );
   }
   /** After combat damage: the attackers that connected and the total damage dealt. */
-  onCombatDamage(_connected: Permanent[], _damage: number): void {}
+  onCombatDamage(connected: Permanent[], _damage: number): void {
+    for (const permanent of connected) combatDamageTriggerOf(this, permanent);
+  }
 
   // ================================================================ hooks for pod games (game.ts fills them in)
   // A goldfish game has no other players, so these do nothing. Game (game.ts) overrides them with the pod rules.
@@ -1689,6 +1714,10 @@ export abstract class GameCore<S = unknown> {
     _except: Permanent | null,
     _sourceName: string,
   ): void {}
+  /** Goad the creatures of every opponent until our next turn (a pod only: Kardur). */
+  podGoadEachOpponentsCreatures(): void {}
+  /** Goad the creatures of the opponent with the most power on the board (a pod only: Geode Rager). */
+  podGoadStrongestOpponentsCreatures(): void {}
   /** Each opponent sacrifices a creature (a pod only; nontoken: Accursed Marauder). */
   podEdict(_nontoken: boolean): void {}
   /** An enter trigger's removal takes the biggest threat's best legal target (a pod only: Shriekmaw). */
@@ -1709,10 +1738,13 @@ export abstract class GameCore<S = unknown> {
     triggersOnOtherPlayersCreatureDeath(this, permanent);
   }
   /** Creatures attack us (a pod, after the attacker's removal answers): "whenever a creature attacks you" (Thantis). */
-  onAttackedBy(_attackerCount: number): void {}
+  onAttackedBy(attackerCount: number): void {
+    attackedByTriggers(this, attackerCount);
+  }
   /** An opponent cast this spell: run our triggers for it (see opponent-cast-triggers.ts). A deck may add its own. */
   onOpponentCast(spell: CardDef, caster: GameCore<unknown>): void {
     triggerOnOpponentCast(this, caster, spell);
+    opponentCastTriggers(this, spell);
   }
   /** We declared a win: do the others answer it (true = it was stopped)? */
   podAnswersWin(): boolean {
@@ -1844,6 +1876,15 @@ export abstract class GameCore<S = unknown> {
   /** The creature type we name for this card as it enters (Roaming Throne, Urza's Incubator), or null for none. */
   chosenCreatureType(_card: CardDef): string | null {
     return null;
+  }
+  /** Riot: does this creature take haste (true) or a +1/+1 counter? By default haste for one with power 4 or more. */
+  riotTakesHaste(permanent: Permanent): boolean {
+    return this.power(permanent) >= 4;
+  }
+  /** A revealed card that we may put on the bottom of the library (Lurking Predators): do we? By default a land once
+   *  we have seven mana sources. */
+  putsRevealedCardOnBottom(card: CardDef): boolean {
+    return card.land !== null && this.manaSources() >= 7;
   }
   /** The colour we choose for this card as it enters (Caged Sun, Gauntlet of Power): by default our first colour. */
   chosenColour(_card: CardDef): string {

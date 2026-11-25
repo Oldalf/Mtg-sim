@@ -11,6 +11,7 @@ import { corpseAugurDies, CORPSE_AUGUR } from '../game/card-draw';
 import { fetchLand } from '../game/land-search';
 import { firstMax } from '../util/lists';
 import type { CardRules } from './card-rules';
+import { returnBestCreatureCardToHand } from './self-mill';
 
 export const MASSACRE_WURM = 'Massacre Wurm';
 
@@ -204,6 +205,53 @@ export const PERMANENTS: CardRules[] = [
     onUpkeep(game) {
       game.draw(1);
       game.loseLife(1);
+    },
+  },
+  {
+    names: ['Graveshifter'],
+    onEnter(game) {
+      returnBestCreatureCardToHand(game);
+    },
+  },
+  {
+    names: ['Kardur, Doomscourge'],
+    onEnter(game) {
+      game.podGoadEachOpponentsCreatures();
+    },
+  },
+  {
+    names: ['Neyith of the Dire Hunt'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: a card and 1 life at each upkeep stand in for its draws (the card: draws when
+    // our creatures fight or become blocked, and doubles a creature's power at combat for {2}{R/G}).
+    onUpkeep(game) {
+      game.draw(1);
+      game.loseLife(1);
+    },
+  },
+  {
+    names: ['Rhythm of the Wild'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: "creature spells can't be countered" is not modelled.
+    asAnotherOfOursEnters(game, _permanent, entering) {
+      // riot for our nontoken creatures: haste or a +1/+1 counter (the deck's choice)
+      if (!entering.card.isCreature || entering.token) return;
+      if (game.riotTakesHaste(entering)) entering.sick = false;
+      else game.addCounters(entering, 1);
+    },
+  },
+  {
+    names: ['Lurking Predators'],
+    onOpponentCasts(game, _permanent, spell) {
+      // reveal the top card: a creature enters, anything else may go to the bottom
+      if (!game.library.length) return;
+      const top = game.library[0];
+      game.say(`${spell.name} was cast: Lurking Predators reveals`, top);
+      if (top.isCreature) {
+        game.takeCard(top, 'library');
+        game.enter(top, 'library');
+      } else if (game.putsRevealedCardOnBottom(top)) {
+        game.takeCard(top, 'library');
+        game.putCard(top, 'library'); // to the bottom
+      }
     },
   },
   {

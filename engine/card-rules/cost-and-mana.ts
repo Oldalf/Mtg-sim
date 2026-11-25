@@ -1,5 +1,6 @@
 /**
- * Cost reducers and the permanents that add mana when a land is tapped or pump creatures of a colour. The colour and the
+ * Cost reducers and the permanents that add mana when a land is tapped (or give haste: Lavaleaper) or pump creatures
+ * of a colour. The colour and the
  * creature type a card names as it enters are the deck's choice (chosenColour, chosenCreatureType).
  */
 import * as C from '../cards/cards';
@@ -9,6 +10,17 @@ import type { Permanent } from '../game/game-types';
 import type { CardRules } from './card-rules';
 
 export const COST_AND_MANA: CardRules[] = [
+  {
+    names: ['Lavaleaper'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: only our creatures have haste and only our basic lands add more (the card: every
+    // player's).
+    givesOurCreaturesKeywords() {
+      return ['haste'];
+    },
+    onLandTappedForMana(game, _permanent, land) {
+      if (land.land?.basic) addMana(game, land.land.mana);
+    },
+  },
   {
     names: ['Jet Medallion'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: only spells with a {B} pip count (the card: every black spell, also {B/P} and

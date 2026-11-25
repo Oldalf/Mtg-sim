@@ -11,6 +11,28 @@ import type { CardRules } from './card-rules';
 
 export const ARISTOCRATS: CardRules[] = [
   {
+    names: ['Spinner of Souls'],
+    onOurPermanentDies(game, permanent, dead) {
+      // another nontoken creature of ours died: the first creature card from the top to our hand
+      if (!isAnotherCreature(permanent, dead) || dead.token) return;
+      const creature = game.revealUntilCreature();
+      if (creature) game.putCard(creature, 'hand');
+    },
+  },
+  {
+    names: ['Dictate of Erebos'],
+    onOurPermanentDies(game, permanent, dead) {
+      if (isAnotherCreature(permanent, dead)) game.podEdict(false);
+    },
+  },
+  {
+    names: ['Sangromancer'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its life for an opponent's discard is not modelled.
+    onOtherPlayersCreatureDies(game) {
+      game.gainLife(3);
+    },
+  },
+  {
     names: ['Harvester of Souls'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: only our creatures dying count (the card: any player's).
     onOurPermanentDies(game, permanent, dead) {

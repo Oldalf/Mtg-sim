@@ -4,7 +4,7 @@ Jund forced combat, bracket 2-3. A friend's deck, **pod-only** (Pontus, 2026-11-
 
 ## Files
 
-- `cards.ts`: names, `VALUE`, `HOLD`. `game.ts`: `ThantisGame` (extends `CreatureDeckGame`). `candidates.ts`. `tests/thantis.test.ts`.
+- `cards.ts`: names, `VALUE`, `HOLD`. `game.ts`: `ThantisGame` (extends `CreatureDeckGame`): the cards the engine doesn't have yet (Zopandrel and Pyrewood Gearhulk's until-end-of-turn pumps, Grave Venerations's monarch, Avacyn's return, Professor Dellian Fel, Ruric Thar on our own spells) and the cards other decks code or play too (Syr Konrad, Morbid Opportunist, Meren's end step, Garruk's Uprising, Whip of Erebos, Indulgent Tormentor, Selvala; U1b steps 3 and 4). Every other card's rules are in `engine/card-rules/`. `candidates.ts`. `tests/thantis.test.ts`.
 
 ## How the deck wins (Pontus, 2026-11-15)
 

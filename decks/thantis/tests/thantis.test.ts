@@ -23,15 +23,17 @@ function board(
     const card = C.get(landName);
     const permanent = new Permanent(card, card.land);
     permanent.sick = false;
-    game.battlefield.push(permanent);
+    game.putOntoBattlefield(permanent);
   }
   for (const cardName of battlefieldNames) {
     const permanent = new Permanent(C.get(cardName));
     permanent.sick = false;
-    game.battlefield.push(permanent);
+    game.putOntoBattlefield(permanent);
   }
   game.hand = hand.map((cardName) => C.get(cardName));
   game.graveyard = graveyardNames.map((cardName) => C.get(cardName));
+  // a graveyard set by hand: the engine's static effects (Anger, Brawn) are looked at only once one could be there
+  game.mayHaveStaticEffects = true;
   return game;
 }
 
@@ -81,7 +83,10 @@ export function runThantisTests(): boolean {
     const withoutMountain = board([], [], ['Anger'], ['Swamp']);
     check(
       'Anger in the graveyard: haste only with a Mountain',
-      [withMountain.grantsHaste(), withoutMountain.grantsHaste()],
+      [
+        withMountain.ourCreaturesHave('haste'),
+        withoutMountain.ourCreaturesHave('haste'),
+      ],
       [true, false],
     );
   }

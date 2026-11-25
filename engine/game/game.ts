@@ -88,6 +88,28 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     if (this.inArena())
       this.arena!.shrinkCreatures(this, amount, includeOwn, except, sourceName);
   }
+  override podGoadEachOpponentsCreatures(): void {
+    if (!this.inArena()) return;
+    for (let slot = 0; slot < this.life.length; slot++)
+      if (this.isOpponentAlive(slot)) this.arena!.goadCreatures(this, slot);
+  }
+  override podGoadStrongestOpponentsCreatures(): void {
+    if (!this.inArena()) return;
+    let target: number | null = null;
+    let mostPower = 0;
+    for (let slot = 0; slot < this.life.length; slot++) {
+      if (!this.isOpponentAlive(slot)) continue;
+      const power = this.arena!.board(this, slot).reduce(
+        (total, creaturePower) => total + creaturePower,
+        0,
+      );
+      if (target === null || power > mostPower) {
+        target = slot;
+        mostPower = power;
+      }
+    }
+    if (target !== null) this.arena!.goadCreatures(this, target);
+  }
   override podEdict(nontoken: boolean): void {
     if (this.inArena()) this.arena!.edict(this, nontoken);
   }

@@ -88,8 +88,8 @@ export interface CardRules {
   /** The first time we would draw a card this turn, while it is on the battlefield (a replacement: it runs before
    *  that draw). */
   beforeFirstDrawEachTurn?(game: GameCore, permanent: Permanent): void;
-  /** It attacks. */
-  onAttacks?(game: GameCore, permanent: Permanent): void;
+  /** It attacks. Returns the creatures its trigger puts onto the battlefield attacking (Raph & Mikey), if any. */
+  onAttacks?(game: GameCore, permanent: Permanent): Permanent[] | void;
   /** We attack, while it is on the battlefield, after the attackers' own triggers ("whenever you attack with..."). */
   onWeAttack?(
     game: GameCore,
@@ -117,8 +117,27 @@ export interface CardRules {
     permanent: Permanent,
     creature: Permanent,
   ): number;
-  /** While this card is in our graveyard: do our creatures have flying? */
-  givesOurCreaturesFlyingFromGraveyard?(game: GameCore): boolean;
+  /** While it is on the battlefield: the keywords our creatures have from it (Lavaleaper: haste). */
+  givesOurCreaturesKeywords?(game: GameCore, permanent: Permanent): string[];
+  /** While this card is in our graveyard: the keywords our creatures have from it (Wonder: flying, with an Island). */
+  givesOurCreaturesKeywordsFromGraveyard?(game: GameCore): string[];
+  /** Another creature of ours is entering, while it is on the battlefield: what it enters with (a replacement, before
+   *  any trigger: Rhythm of the Wild's riot). */
+  asAnotherOfOursEnters?(
+    game: GameCore,
+    permanent: Permanent,
+    entering: Permanent,
+  ): void;
+  /** It dealt combat damage to a player. */
+  onCombatDamageToPlayer?(game: GameCore, permanent: Permanent): void;
+  /** An opponent cast this spell, while it is on the battlefield. */
+  onOpponentCasts?(game: GameCore, permanent: Permanent, spell: CardDef): void;
+  /** Creatures attacked us (a pod), while it is on the battlefield. */
+  onCreaturesAttackUs?(
+    game: GameCore,
+    permanent: Permanent,
+    attackerCount: number,
+  ): void;
   /** While it is on the battlefield: how much less (generic mana) this spell of ours costs. */
   costReduction?(game: GameCore, permanent: Permanent, spell: CardDef): number;
   /** We tapped this land of ours for mana, while it is on the battlefield (it adds its extra mana to the pool). */
@@ -275,13 +294,15 @@ export function triggersOnDeath(game: GameCore, dead: Permanent): void {
   }
 }
 
-/** The attack triggers: each attacker's own, then our permanents' "whenever you attack" ones. */
-export function attackTriggers(game: GameCore, attackers: Permanent[]): void {
-  for (const attacker of attackers) {
-    const rules = rulesOf(attacker.card);
-    if (rules?.onAttacks)
-      runTrigger(game, attacker, () => rules.onAttacks!(game, attacker));
-  }
+/** The attack triggers: each attacker's own, then our permanents' "whenever you attack" ones. Returns the creatures
+ *  they put onto the battlefield attacking. */
+export function attackTriggers(
+  game: GameCore,
+  attackers: Permanent[],
+): Permanent[] {
+  const joined: Permanent[] = [];
+  for (const attacker of attackers)
+    joined.push(...attackTriggerOf(game, attacker));
   for (const permanent of game.battlefield.slice()) {
     const rules = rulesOf(permanent.card);
     if (rules?.onWeAttack)
@@ -289,6 +310,21 @@ export function attackTriggers(game: GameCore, attackers: Permanent[]): void {
         rules.onWeAttack!(game, permanent, attackers),
       );
   }
+  return joined;
+}
+
+/** One attacker's own attack trigger. Returns the creatures it put onto the battlefield attacking. */
+export function attackTriggerOf(
+  game: GameCore,
+  attacker: Permanent,
+): Permanent[] {
+  const joined: Permanent[] = [];
+  const rules = rulesOf(attacker.card);
+  if (rules?.onAttacks)
+    runTrigger(game, attacker, () =>
+      joined.push(...(rules.onAttacks!(game, attacker) ?? [])),
+    );
+  return joined;
 }
 
 /** One permanent's landfall trigger. False if it has none (a deck with landfall cards of its own runs them in the same
@@ -365,7 +401,8 @@ export function hasStaticEffect(card: CardDef): boolean {
       rules.counterMultiplier !== undefined ||
       rules.manaMultiplier !== undefined ||
       rules.powerAndToughnessBonus !== undefined ||
-      rules.givesOurCreaturesFlyingFromGraveyard !== undefined ||
+      rules.givesOurCreaturesKeywords !== undefined ||
+      rules.givesOurCreaturesKeywordsFromGraveyard !== undefined ||
       rules.costReduction !== undefined ||
       rules.onLandTappedForMana !== undefined ||
       rules.opponentLifeLossMultiplier !== undefined ||
@@ -406,11 +443,23 @@ export function powerAndToughnessBonusOf(
   return bonus;
 }
 
-/** Does a card in our graveyard give our creatures flying (Wonder)? */
-export function ourCreaturesFlyFromGraveyard(game: GameCore): boolean {
+/** Do our creatures have this keyword from a permanent of ours (Lavaleaper) or a card in our graveyard (Wonder)? */
+export function ourCreaturesHaveKeywordFromCards(
+  game: GameCore,
+  keyword: string,
+): boolean {
+  for (const permanent of game.battlefield)
+    if (
+      rulesOf(permanent.card)
+        ?.givesOurCreaturesKeywords?.(game, permanent)
+        .includes(keyword)
+    )
+      return true;
   return game.graveyard.some(
     (card) =>
-      rulesOf(card)?.givesOurCreaturesFlyingFromGraveyard?.(game) ?? false,
+      rulesOf(card)
+        ?.givesOurCreaturesKeywordsFromGraveyard?.(game)
+        .includes(keyword) ?? false,
   );
 }
 
@@ -506,5 +555,56 @@ export function endStepTriggers(game: GameCore): void {
     const rules = rulesOf(permanent.card);
     if (rules?.onEndStep)
       runTrigger(game, permanent, () => rules.onEndStep!(game, permanent));
+  }
+}
+
+/** What another creature of ours enters with (Rhythm of the Wild's riot), before any trigger. */
+export function replacementsAsAnotherOfOursEnters(
+  game: GameCore,
+  entering: Permanent,
+): void {
+  for (const permanent of game.battlefield.slice())
+    if (permanent !== entering)
+      rulesOf(permanent.card)?.asAnotherOfOursEnters?.(
+        game,
+        permanent,
+        entering,
+      );
+}
+
+/** One creature's "deals combat damage to a player" trigger (Glissa Sunslayer). */
+export function combatDamageTriggerOf(
+  game: GameCore,
+  permanent: Permanent,
+): void {
+  const rules = rulesOf(permanent.card);
+  if (rules?.onCombatDamageToPlayer)
+    runTrigger(game, permanent, () =>
+      rules.onCombatDamageToPlayer!(game, permanent),
+    );
+}
+
+/** The triggers of our permanents for a spell an opponent cast. GameCore.onOpponentCast runs them. */
+export function opponentCastTriggers(game: GameCore, spell: CardDef): void {
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onOpponentCasts)
+      runTrigger(game, permanent, () =>
+        rules.onOpponentCasts!(game, permanent, spell),
+      );
+  }
+}
+
+/** The triggers of our permanents for creatures attacking us (a pod). GameCore.onAttackedBy runs them. */
+export function attackedByTriggers(
+  game: GameCore,
+  attackerCount: number,
+): void {
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onCreaturesAttackUs)
+      runTrigger(game, permanent, () =>
+        rules.onCreaturesAttackUs!(game, permanent, attackerCount),
+      );
   }
 }

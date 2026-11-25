@@ -3,11 +3,62 @@
  */
 import { LIFELINK_VAMPIRE } from '../cards/tokens';
 import { addCounterToEachVampire } from './aristocrats';
+import type { GameCore } from '../game/game-core';
 import type { CardRules } from './card-rules';
 
 export const LEGIONS_LANDING = "Legion's Landing";
 
 export const ATTACK_TRIGGERS: CardRules[] = [
+  {
+    names: ['Archon of Cruelty'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the opponent's sacrifice and discard are not modelled.
+    onEnter(game) {
+      archonStrikes(game);
+    },
+    onAttacks(game) {
+      archonStrikes(game);
+    },
+  },
+  {
+    names: ['Alesha, Who Laughs at Fate'],
+    onAttacks(game, permanent) {
+      game.addCounters(permanent, 1);
+    },
+    onEndStep(game, permanent) {
+      // raid: a creature card with mana value up to her power comes back
+      if (!game.attacked) return;
+      const creature = game.bestCreatureInGraveyard(
+        (card) => card.manaValue <= game.power(permanent),
+      );
+      if (creature) game.reanimate(creature);
+    },
+  },
+  {
+    names: ['Raph & Mikey, Troublemakers'],
+    onAttacks(game) {
+      // the first creature card from the top enters tapped and attacking
+      const creature = game.revealUntilCreature();
+      return creature
+        ? [game.enter(creature, 'library', { tapped: true })]
+        : [];
+    },
+  },
+  {
+    names: ['Glissa Sunslayer'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: always the draw mode, above 5 life (its other modes are not modelled).
+    onCombatDamageToPlayer(game) {
+      if (game.myLife <= 5) return;
+      game.draw(1);
+      game.loseLife(1);
+    },
+  },
+  {
+    names: ['Thantis, the Warweaver'],
+    // (all creatures attacking each combat is the pod's: makesAllCreaturesAttack)
+    onCreaturesAttackUs(game, permanent, attackerCount) {
+      game.addCounters(permanent, attackerCount);
+    },
+  },
   {
     names: ['Beastmaster Ascension'],
     onWeAttack(_game, permanent, attackers) {
@@ -65,3 +116,10 @@ export const ATTACK_TRIGGERS: CardRules[] = [
     },
   },
 ];
+
+/** Archon of Cruelty: the target opponent loses 3 life, we draw a card and gain 3 life. */
+function archonStrikes(game: GameCore): void {
+  game.targetOpponentLosesLife(3);
+  game.draw(1);
+  game.gainLife(3);
+}

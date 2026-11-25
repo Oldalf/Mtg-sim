@@ -6,6 +6,15 @@ import type { CardRules } from './card-rules';
 
 export const LANDFALL: CardRules[] = [
   {
+    names: ['Geode Rager'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: a land that is gone at once (Evolving Wilds) doesn't trigger it (the card: it
+    // does).
+    onLandfall(game, _permanent, land) {
+      if (game.battlefield.includes(land))
+        game.podGoadStrongestOpponentsCreatures();
+    },
+  },
+  {
     names: ['Rampaging Baloths'],
     onLandfall(game) {
       game.createTokens(BEAST);

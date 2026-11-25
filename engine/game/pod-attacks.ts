@@ -27,7 +27,7 @@ export function describeFighter(
     deathtouch: keywords.has('deathtouch'),
     value: game.blockValue(permanent),
     commander: game.isCommander(permanent),
-    trample: keywords.has('trample'),
+    trample: keywords.has('trample') || game.ourCreaturesHave('trample'),
     first: keywords.has('first strike') || keywords.has('double strike'),
     menace: keywords.has('menace'),
     legendary: permanent.card.types.has('legendary'),
