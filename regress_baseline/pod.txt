@@ -2,29 +2,29 @@
 Noise: about +/-7 points on a win rate.
 
 deck           wins  avg turn  10%-90% turn  declared  standing  out first    seat 1  seat 2  seat 3  seat 4  seat 5
-gale          31.5%      7.24           6-8     28.6%     71.4%      23.5%     38.1%   40.0%   34.2%   28.9%   16.7%
-meren         24.0%      9.19          8-11      4.2%     95.8%      19.0%     28.6%   26.8%   24.3%   18.9%   24.4%
-samfrodo      15.5%      9.61          8-11      3.2%     96.8%      13.0%     20.4%    6.1%   17.9%   11.4%   17.9%
+gale          32.0%      7.27           6-9     28.1%     71.9%      22.5%     38.1%   42.5%   34.2%   28.9%   16.7%
+meren         23.0%      9.13          8-11      4.3%     95.7%      19.0%     28.6%   26.8%   21.6%   18.9%   22.0%
+samfrodo      15.5%      9.61          8-11      3.2%     96.8%      14.0%     20.4%    6.1%   17.9%   11.4%   17.9%
 aesi          22.0%      7.82          6-10     95.5%      4.5%      22.5%     17.6%   27.9%   30.6%    8.3%   21.1%
-edgar          7.0%      9.14          8-10      0.0%    100.0%      10.5%      7.1%   11.6%   10.8%    0.0%    5.0%
+edgar          7.5%      9.13          8-10      0.0%    100.0%      10.5%      7.1%   11.6%   10.8%    2.6%    5.0%
 
 Won by the end of round (share of all games):
 deck              4      5      6      7      8      9     10     11     12     14
-gale           0.0%   1.5%   8.5%  20.0%  28.5%  30.5%  31.0%  31.0%  31.0%  31.5%
-meren          0.0%   0.0%   0.0%   1.5%   9.5%  15.0%  18.5%  23.0%  24.0%  24.0%
+gale           0.0%   1.5%   8.5%  20.0%  28.5%  31.0%  31.5%  31.5%  31.5%  32.0%
+meren          0.0%   0.0%   0.0%   1.5%   9.0%  14.5%  18.5%  22.5%  23.0%  23.0%
 samfrodo       0.0%   0.0%   0.0%   0.0%   2.0%   8.0%  12.0%  15.0%  15.5%  15.5%
 aesi           0.0%   0.5%   5.5%  10.0%  15.5%  19.0%  20.5%  21.0%  22.0%  22.0%
-edgar          0.0%   0.0%   0.0%   0.5%   2.0%   4.5%   6.5%   6.5%   7.0%   7.0%
+edgar          0.0%   0.0%   0.0%   0.5%   2.0%   5.0%   7.0%   7.0%   7.5%   7.5%
 
-No winner by round 17: 0.0%. Average game length: 8.34 rounds.
+No winner by round 17: 0.0%. Average game length: 8.32 rounds.
 
 Interaction, per game:
 deck          win attempts   stopped  turns waited  spells countered  removal taken  shielded  answers used  removal / wipes cast
-gale                  0.34     13.0%          0.00              0.00           0.04      0.00          0.63                  0.17
+gale                  0.35     12.9%          0.00              0.00           0.04      0.00          0.62                  0.16
 meren                 0.00         -          0.00              0.18           0.14      0.00          0.03                  0.10
-samfrodo              0.00         -          0.00              0.07           0.48      0.00          0.08                  0.20
+samfrodo              0.00         -          0.00              0.07           0.47      0.00          0.08                  0.20
 aesi                  0.25     16.0%          0.00              0.24           0.14      0.02          0.17                  0.06
-edgar                 0.01      0.0%          0.00              0.23           0.40      0.01          0.00                  0.00
+edgar                 0.01      0.0%          0.00              0.21           0.40      0.01          0.00                  0.00
 
-How each deck went out (share of its games): gale: life 54.5%, decked 1.0%; meren: life 45.0%, poison 6.5%, decked 2.0%, its own doing 1.5%; samfrodo: life 51.0%, poison 7.5%, decked 0.5%, its own doing 0.5%; aesi: life 67.0%, poison 5.5%; edgar: life 63.0%, commander 0.5%, poison 6.0%, decked 1.0%, its own doing 0.5%.
+How each deck went out (share of its games): gale: life 54.0%, decked 1.0%; meren: life 46.0%, poison 6.5%, decked 2.0%, its own doing 1.5%; samfrodo: life 51.0%, poison 7.5%, decked 0.5%, its own doing 0.5%; aesi: life 67.0%, poison 5.5%; edgar: life 63.0%, commander 0.5%, poison 6.0%, decked 1.0%.
 "declared" = the deck's own win (a combo, a kill line, its win rule) with others still alive; "standing" = it was the last one left.

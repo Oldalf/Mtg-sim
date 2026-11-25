@@ -39,7 +39,10 @@ export function junjiTargetWorth(game: MerenGame, card: CardDef): number {
   const isOurs = !game.inArena() || game.graveyard.includes(card);
   let worth = game.battlefieldValue(card);
   if (isOurs && ENTER_AGAIN.has(card.name)) worth += ENTER_TRIGGER_WORTH;
-  if (game.isOnBattlefield('Twilight Diviner') && !game.divinerUsed)
+  if (
+    game.isOnBattlefield('Twilight Diviner') &&
+    !game.hasUsedOnceEachTurn('Twilight Diviner')
+  )
     worth *= DIVINER_COPY_FACTOR;
   if (game.myLife <= LOW_LIFE) worth -= LOW_LIFE_COST;
   return worth;

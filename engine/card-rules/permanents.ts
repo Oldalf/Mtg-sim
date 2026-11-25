@@ -4,7 +4,8 @@
  */
 import * as C from '../cards/cards';
 import type { CardDef } from '../cards/cards';
-import { LIFELINK_VAMPIRE } from '../cards/tokens';
+import { GOAT, LIFELINK_VAMPIRE, ZOMBIE } from '../cards/tokens';
+import { SHRIEKMAW } from '../game/answers';
 import type { GameCore } from '../game/game-core';
 import { corpseAugurDies, CORPSE_AUGUR } from '../game/card-draw';
 import { fetchLand } from '../game/land-search';
@@ -102,6 +103,43 @@ export const PERMANENTS: CardRules[] = [
         (card) => C.hasCreatureType(card, 'Vampire') && card.land === null,
         true,
       );
+    },
+  },
+  {
+    names: ["Garruk's Packleader"],
+    onAnotherOfOursEnters(game, _permanent, entered) {
+      if (entered.card.isCreature && game.power(entered) >= 3)
+        game.draw(1, "Garruk's Packleader");
+    },
+  },
+  {
+    names: ['Grim Servant'],
+    onEnter(game) {
+      // a card with mana value up to our devotion to black to hand; we lose 3 life
+      const devotion = game.devotion('B');
+      game.doTutor((card) => card.manaValue <= devotion, false);
+      game.loseLife(3);
+    },
+  },
+  {
+    names: ['Woe Strider'],
+    onEnter(game) {
+      game.createTokens(GOAT);
+    },
+  },
+  {
+    names: ['Grave Titan'],
+    notModelled: 'its attack trigger (two more Zombies) is not modelled',
+    onEnter(game) {
+      game.createTokens(ZOMBIE, 2);
+    },
+  },
+  {
+    names: ['Shriekmaw'],
+    notModelled:
+      "its target is the biggest threat's best creature: nonartifact and nonblack are not checked",
+    onEnter(game) {
+      game.podSnipe(SHRIEKMAW, 'Shriekmaw');
     },
   },
   {

@@ -88,6 +88,12 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     if (this.inArena())
       this.arena!.shrinkCreatures(this, amount, includeOwn, except, sourceName);
   }
+  override podEdict(nontoken: boolean): void {
+    if (this.inArena()) this.arena!.edict(this, nontoken);
+  }
+  override podSnipe(answer: Answer, sourceName: string): void {
+    if (this.inArena()) this.arena!.snipe(this, answer, sourceName);
+  }
   override podFightBestCreature(fighter: Permanent, sourceName: string): void {
     if (this.inArena())
       this.arena!.fightBestCreature(this, fighter, sourceName);

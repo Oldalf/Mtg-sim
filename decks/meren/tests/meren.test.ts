@@ -551,7 +551,7 @@ function checkOpponentsTurns(check: Check): void {
   // fresh in this one) copies it. The copy enters before the drains resolve: devotion 6 (two Gray Merchants 4, Diviner 1,
   // Seer 1) for each drain.
   game = board([JUNJI, 'Twilight Diviner', 'Viscera Seer', GRAY_MERCHANT]);
-  game.divinerUsed = true;
+  game.useOnceEachTurn('Twilight Diviner');
   game.opponentUpkeep();
   game.opponentEndStep();
   check(
@@ -570,7 +570,7 @@ function checkOpponentsTurns(check: Check): void {
     [],
     [GRAY_MERCHANT],
   );
-  game.divinerUsed = true;
+  game.useOnceEachTurn('Twilight Diviner');
   game.endStep();
   check(
     "... and kept at our end step when Diviner's copy is used up this turn",

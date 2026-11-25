@@ -27,6 +27,7 @@
  *   setup:        initDeck, mulliganRule, diag (numbers to report per game)
  */
 import * as C from '../cards/cards';
+import type { Answer } from './answers';
 import * as Facts from '../cards/card-facts';
 import { Cost, CardDef } from '../cards/cards';
 import { CLUE, ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
@@ -950,6 +951,29 @@ export abstract class GameCore<S = unknown> {
       lands[0]
     );
   }
+  /** The top cards of our library into our graveyard. */
+  millOurselves(count: number): void {
+    for (let i = 0; i < count && this.library.length; i++)
+      this.toGraveyard(this.takeTopCardsOfLibrary(1)[0], true);
+  }
+  creaturesInGraveyard(): number {
+    return this.graveyard.filter((card) => card.isCreature).length;
+  }
+  /** "Search your library for a card, put it into your graveyard" (Vile Entomber): cardToPutInGraveyard picks it. */
+  tutorToGraveyard(allowed: (card: CardDef) => boolean): void {
+    const candidates = this.library.filter(
+      (card) => allowed(card) && !this.graveyard.includes(card),
+    );
+    if (!candidates.length) return;
+    const chosen = this.cardToPutInGraveyard(candidates);
+    this.takeCardIfThere(chosen, 'library');
+    this.toGraveyard(chosen, true);
+    this.shuffle();
+  }
+  /** Which card a graveyard tutor puts into our graveyard: the one we most want on the battlefield (to reanimate). */
+  cardToPutInGraveyard(candidates: CardDef[]): CardDef {
+    return firstMax(candidates, (card) => this.battlefieldValue(card));
+  }
   /** Cards we leave in the library so we don't draw from an empty one (a "look at the top X" counts only the rest). */
   libraryCardsToKeep(): number {
     return 0;
@@ -959,6 +983,15 @@ export abstract class GameCore<S = unknown> {
 
   /** The "once each turn" triggers used this turn, by card name (startTurn clears it). */
   onceEachTurnUsed: string[] = [];
+  /** The order our triggers from these permanents resolve in, when they trigger at the same time (the controller's
+   *  choice). Default: battlefield order. */
+  orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
+    return permanents;
+  }
+  /** Has this card's "once each turn" trigger been used this turn? */
+  hasUsedOnceEachTurn(cardName: string): boolean {
+    return this.onceEachTurnUsed.includes(cardName);
+  }
   /** Uses a card's "once each turn" trigger: true the first time this turn, false after. */
   useOnceEachTurn(cardName: string): boolean {
     if (this.onceEachTurnUsed.includes(cardName)) return false;
@@ -1388,8 +1421,8 @@ export abstract class GameCore<S = unknown> {
   /** Attack (the default goldfish deals no combat damage). */
   combat(): void {}
   /** Something entered the battlefield (ETB triggers, "whenever a creature enters"). */
-  onEnter(permanent: Permanent, _from: Zone): void {
-    triggersOfOthersOnEnter(this, permanent);
+  onEnter(permanent: Permanent, from: Zone): void {
+    triggersOfOthersOnEnter(this, permanent, from);
     enterTriggerOfCommonCard(this, permanent);
   }
   /** A permanent of ours left the battlefield: it died, was blinked, or an opponent removed it ("leaves the
@@ -1506,6 +1539,10 @@ export abstract class GameCore<S = unknown> {
     _except: Permanent | null,
     _sourceName: string,
   ): void {}
+  /** Each opponent sacrifices a creature (a pod only; nontoken: Accursed Marauder). */
+  podEdict(_nontoken: boolean): void {}
+  /** An enter trigger's removal takes the biggest threat's best legal target (a pod only: Shriekmaw). */
+  podSnipe(_answer: Answer, _sourceName: string): void {}
   /** Our creature fights the opponents' best creature it can kill (a pod only: Bushwhack). */
   podFightBestCreature(_fighter: Permanent, _sourceName: string): void {}
   /** How many opposing creatures a -X/-X would kill now (0 in a goldfish game). */

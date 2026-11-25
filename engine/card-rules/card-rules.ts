@@ -4,14 +4,15 @@
  * controller to choose, so the deck decides without knowing how the card works.
  *
  * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
- * ramp-spells.ts, landfall.ts) list
+ * ramp-spells.ts, landfall.ts,
+ * graveyard-creatures.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
  */
 import type { CardDef } from '../cards/cards';
 import type { GameCore } from '../game/game-core';
-import type { Permanent } from '../game/game-types';
+import type { Permanent, Zone } from '../game/game-types';
 import {
   takesInitiativeOnEnter,
   ventureIntoDungeon,
@@ -20,6 +21,7 @@ import {
 import { ARISTOCRATS } from './aristocrats';
 import { ATTACK_TRIGGERS } from './attack-triggers';
 import { DRAW_SPELLS } from './draw-spells';
+import { GRAVEYARD_CREATURES } from './graveyard-creatures';
 import { LANDFALL } from './landfall';
 import { MANA_SPELLS_AND_TUTORS } from './mana-spells-and-tutors';
 import { PERMANENTS } from './permanents';
@@ -59,6 +61,7 @@ export interface CardRules {
     game: GameCore,
     permanent: Permanent,
     entered: Permanent,
+    from: Zone,
   ): void;
   /** A permanent of ours died: runs for each of our permanents on the battlefield and for the dead one itself
    *  ("whenever this or another creature you control dies"; permanent === dead when it is itself). */
@@ -97,6 +100,7 @@ for (const rules of [
   ...ATTACK_TRIGGERS,
   ...RAMP_SPELLS,
   ...LANDFALL,
+  ...GRAVEYARD_CREATURES,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
@@ -154,7 +158,9 @@ export function deathTriggerOfCommonCard(
 
 /** The upkeep triggers of our permanents that the engine has rules for. */
 export function upkeepOfCommonCards(game: GameCore): void {
-  for (const permanent of game.battlefield.slice())
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  ))
     rulesOf(permanent.card)?.onUpkeep?.(game, permanent);
 }
 
@@ -163,20 +169,27 @@ export function upkeepOfCommonCards(game: GameCore): void {
 export function triggersOfOthersOnEnter(
   game: GameCore,
   entered: Permanent,
+  from: Zone,
 ): void {
-  for (const permanent of game.battlefield.slice())
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  ))
     if (permanent !== entered)
       rulesOf(permanent.card)?.onAnotherOfOursEnters?.(
         game,
         permanent,
         entered,
+        from,
       );
 }
 
 /** The "whenever this or another permanent dies" triggers: our permanents on the battlefield, then the dead one. The
  *  engine's onDies runs them before the dead permanent's own death trigger. */
 export function triggersOnDeath(game: GameCore, dead: Permanent): void {
-  for (const permanent of [...game.battlefield, dead])
+  for (const permanent of game.orderSimultaneousTriggers([
+    ...game.battlefield,
+    dead,
+  ]))
     rulesOf(permanent.card)?.onOurPermanentDies?.(game, permanent, dead);
 }
 
@@ -203,7 +216,9 @@ export function landfallTriggerOf(
 
 /** The landfall triggers of our permanents. The engine's onLandEnter runs them. */
 export function landfallTriggers(game: GameCore, land: Permanent): void {
-  for (const permanent of game.battlefield.slice())
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  ))
     landfallTriggerOf(game, permanent, land);
 }
 

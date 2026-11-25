@@ -97,6 +97,32 @@ export const ARISTOCRATS: CardRules[] = [
     },
   },
   {
+    names: ['Butcher of Malakir'],
+    onOurPermanentDies(game, _permanent, dead) {
+      // each opponent sacrifices a creature (a pod: a goldfish opponent has none)
+      if (dead.card.isCreature) game.podEdict(false);
+    },
+  },
+  {
+    names: ['Meren of Clan Nel Toth'],
+    onOurPermanentDies(game, permanent, dead) {
+      if (permanent !== dead && dead.card.isCreature) game.gainExperience();
+    },
+  },
+  {
+    names: ['Grim Haruspex'],
+    onOurPermanentDies(game, permanent, dead) {
+      if (permanent !== dead && dead.card.isCreature && !dead.token)
+        game.draw(1, 'Grim Haruspex');
+    },
+  },
+  {
+    names: ['Zulaport Cutthroat'],
+    onOurPermanentDies(game, _permanent, dead) {
+      if (dead.card.isCreature) game.drainAllOpponents(1);
+    },
+  },
+  {
     names: ['Mayhem Devil'],
     notModelled:
       "counts only our sacrifices, not other players'; it always pings the opponent closest to dead",

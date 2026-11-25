@@ -65,6 +65,13 @@ import { firstMax, firstMin } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
+/** The order Meren resolves the triggers of these cards in when they trigger together. */
+const TRIGGER_ORDER = [
+  'Liliana the Repentant',
+  "Garruk's Packleader",
+  'Twilight Diviner',
+];
+
 export class MerenGame extends CreatureDeckGame {
   readonly values = VALUE;
   override mulliganRule(): MulliganRule | null {
@@ -140,7 +147,6 @@ export class MerenGame extends CreatureDeckGame {
     };
   }
   morbidUsed = false; // Morbid Opportunist: once each turn
-  divinerUsed = false; // Twilight Diviner: once each turn
   leftThisTurn = false; // a nonland permanent left the battlefield this turn (Decode Transmissions' void)
   prepared = new Set<Permanent>(); // Studious First-Year / Grave Researcher can cast their spell copy
   lilianaUsed = false;
@@ -262,10 +268,6 @@ export class MerenGame extends CreatureDeckGame {
     return this.cardValue(card) - 25 - (merenReturnsItAtOnce ? 15 : 0);
   }
 
-  creaturesInGraveyard(): number {
-    return this.graveyard.filter((card) => card.isCreature).length;
-  }
-
   override ritualsEnableSeveralPlays(): boolean {
     return this.config.ritual_several_plays === 1;
   }
@@ -338,11 +340,6 @@ export class MerenGame extends CreatureDeckGame {
   }
 
   // ================================================================ zones
-  millOurselves(count: number): void {
-    for (let i = 0; i < count && this.library.length; i++)
-      this.toGraveyard(this.takeTopCardsOfLibrary(1)[0], true);
-  }
-
   /** A basic land from the library onto the battlefield tapped. */
   fetchBasic(): void {
     const want =
@@ -464,6 +461,18 @@ export class MerenGame extends CreatureDeckGame {
     onPermanentEntered(this, permanent, from);
   }
 
+  /** Liliana's mill, then Packleader's draw, then Twilight Diviner's copy (whose own triggers come in between); the
+   *  others in battlefield order. */
+  override orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
+    const rank = (permanent: Permanent) => {
+      const index = TRIGGER_ORDER.indexOf(permanent.card.name);
+      return index < 0 ? TRIGGER_ORDER.length : index;
+    };
+    return permanents
+      .slice()
+      .sort((first, second) => rank(first) - rank(second));
+  }
+
   override onDies(permanent: Permanent): void {
     onPermanentDied(this, permanent);
   }
@@ -569,11 +578,7 @@ export class MerenGame extends CreatureDeckGame {
         this.findFreeSacrificeOutlet() !== null;
     }
     super.startTurn();
-    this.morbidUsed =
-      this.divinerUsed =
-      this.leftThisTurn =
-      this.gristUsed =
-        false;
+    this.morbidUsed = this.leftThisTurn = this.gristUsed = false;
   }
 
   override upkeep(): void {
@@ -749,11 +754,8 @@ export class MerenGame extends CreatureDeckGame {
   }
 
   /** A card from the library into the graveyard (Vile Entomber, Buried Alive). */
-  tutorToGraveyard(allowed: (card: CardDef) => boolean): void {
-    const candidates = this.library.filter(
-      (card) => allowed(card) && !this.graveyard.includes(card),
-    );
-    if (!candidates.length) return;
+  /** The payoffs to reanimate first, else the creature we most want on the battlefield. */
+  override cardToPutInGraveyard(candidates: CardDef[]): CardDef {
     const order = [
       GRAY_MERCHANT,
       'Sepulchral Primordial',
@@ -762,14 +764,12 @@ export class MerenGame extends CreatureDeckGame {
       'Protean Hulk',
       'Rune-Scarred Demon',
     ];
-    const chosen =
+    return (
       order
         .map((name) => candidates.find((card) => card.name === name))
         .find((card) => card) ??
-      firstMax(candidates, (card) => this.battlefieldValue(card));
-    this.takeCardIfThere(chosen, 'library');
-    this.toGraveyard(chosen, true);
-    this.shuffle();
+      firstMax(candidates, (card) => this.battlefieldValue(card))
+    );
   }
 
   // ================================================================ spells

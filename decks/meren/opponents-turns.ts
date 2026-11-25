@@ -28,7 +28,8 @@ export function playsOnOpponentsTurns(game: MerenGame): boolean {
 
 /** Another player's turn starts: our "once each turn" abilities can trigger again. */
 export function resetOnceEachTurnAbilities(game: MerenGame): void {
-  game.morbidUsed = game.divinerUsed = false;
+  game.morbidUsed = false;
+  game.onceEachTurnUsed = []; // the engine's "once each turn" cards (Twilight Diviner)
 }
 
 /** At another player's end step: Junji for Gray Merchant, then the Snake. */
@@ -89,7 +90,7 @@ export function keepsJunjiForOpponentsTurn(game: MerenGame): boolean {
   return (
     playsOnOpponentsTurns(game) &&
     game.isOnBattlefield('Twilight Diviner') &&
-    game.divinerUsed &&
+    game.hasUsedOnceEachTurn('Twilight Diviner') &&
     (game.graveyard.some((card) => card.name === GRAY_MERCHANT) ||
       game.isOnBattlefield(GRAY_MERCHANT))
   );

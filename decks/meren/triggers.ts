@@ -1,21 +1,18 @@
-/** What happens when a permanent enters the battlefield or dies: the triggers of Meren's creatures. */
-import {
-  DGHOR_BLOODLETTER,
-  EDICT_ETB,
-  GRAY_MERCHANT,
-  MEREN,
-  TOKENS,
-} from './cards';
+/** What happens when a permanent enters the battlefield or dies: the engine's card rules (engine/card-rules/) in the
+ *  order Meren had them, and the triggers of Meren's own cards (the ones other decks code too, or that hang on
+ *  Meren's state and choices). */
+import { DGHOR_BLOODLETTER, EDICT_ETB, GRAY_MERCHANT, MEREN } from './cards';
 import type { MerenGame } from './game';
 import { Permanent, Zone } from '../../engine/game/game-types';
 import { firstMax } from '../../engine/util/lists';
-import { SHRIEKMAW } from '../../engine/game/answers';
 import { drawWhenCreatureDies } from '../../engine/game/card-draw';
 import { JUNJI, resolveJunjiDeath } from './junji';
 import { triggersOfCreatureEntering } from '../../engine/game/creature-enter-triggers';
 import {
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
+  triggersOfOthersOnEnter,
+  triggersOnDeath,
 } from '../../engine/card-rules/card-rules';
 
 // ================================================================ entering the battlefield
@@ -27,10 +24,8 @@ export function onPermanentEntered(
   const name = permanent.card.name;
   if (name === MEREN && game.merenOut === null) game.merenOut = game.turn;
   if (from === 'graveyard' && !permanent.token) game.reanimated++;
-  if (permanent.card.isCreature || name === 'Grist, the Hunger Tide')
-    triggerLilianaAndPackleader(game, permanent);
+  triggersOfOthersOnEnter(game, permanent, from); // Liliana, Packleader, Twilight Diviner
   triggersOfCreatureEntering(game, permanent); // Ayara
-  triggerTwilightDiviner(game, permanent, from);
   // enters-the-battlefield effects (token copies have them too)
   if (resolveDrainOnEnter(game, permanent)) return;
   if (resolveCardAdvantageOnEnter(game, permanent)) return;
@@ -38,46 +33,7 @@ export function onPermanentEntered(
   resolveRemovalOnEnter(game, permanent);
 }
 
-/** Liliana the Repentant (another creature or planeswalker enters: mill two) and Garruk's Packleader (power 3+: draw). */
-function triggerLilianaAndPackleader(
-  game: MerenGame,
-  permanent: Permanent,
-): void {
-  const name = permanent.card.name;
-  if (
-    name !== 'Liliana the Repentant' &&
-    game.isOnBattlefield('Liliana the Repentant')
-  )
-    game.millOurselves(2);
-  if (
-    permanent.card.isCreature &&
-    name !== "Garruk's Packleader" &&
-    game.isOnBattlefield("Garruk's Packleader") &&
-    game.power(permanent) >= 3
-  )
-    game.draw(1, "Garruk's Packleader");
-}
-
-/** Twilight Diviner: creatures entering from a graveyard make a token copy of one of them (once a turn). */
-function triggerTwilightDiviner(
-  game: MerenGame,
-  permanent: Permanent,
-  from: Zone,
-): void {
-  if (
-    from === 'graveyard' &&
-    permanent.card.isCreature &&
-    permanent.card.name !== 'Twilight Diviner' &&
-    !game.divinerUsed &&
-    game.isOnBattlefield('Twilight Diviner')
-  ) {
-    game.divinerUsed = true;
-    game.say('  Twilight Diviner copies', permanent.card);
-    game.enter(permanent.card, 'token', { token: true });
-  }
-}
-
-/** Gray Merchant and Lotleth Giant. Returns true if the permanent was one of them. */
+/** Gray Merchant. Returns true if the permanent was it. */
 function resolveDrainOnEnter(game: MerenGame, permanent: Permanent): boolean {
   const name = permanent.card.name;
   if (name === GRAY_MERCHANT) {
@@ -86,15 +42,6 @@ function resolveDrainOnEnter(game: MerenGame, permanent: Permanent): boolean {
     game.gainLife(drained);
     game.say(
       `  Gray Merchant drains ${devotion} each (devotion ${devotion}), ${game.describeOpponentLife()}`,
-    );
-    return true;
-  }
-  if (name === 'Lotleth Giant') {
-    const target = game.chooseTargetOpponent();
-    if (target !== null)
-      game.damageOpponent(target, game.creaturesInGraveyard());
-    game.say(
-      `  Lotleth Giant deals ${game.creaturesInGraveyard()}, ${game.describeOpponentLife()}`,
     );
     return true;
   }
@@ -107,9 +54,7 @@ function resolveCardAdvantageOnEnter(
   permanent: Permanent,
 ): boolean {
   const name = permanent.card.name;
-  if (name === 'Twilight Diviner') {
-    game.scry(2, true);
-  } else if (name === 'Disciple of Bolas') {
+  if (name === 'Disciple of Bolas') {
     const sacrificed = game.chooseDiscipleSacrifice(permanent);
     if (sacrificed) {
       const power = game.power(sacrificed);
@@ -117,26 +62,13 @@ function resolveCardAdvantageOnEnter(
       game.gainLife(power);
       game.draw(power, 'Disciple of Bolas');
     }
-  } else if (name === 'Satyr Wayfinder') {
-    const top = game.takeTopCardsOfLibrary(4);
-    const land = top.find((card) => card.land !== null);
-    for (const card of top)
-      if (card === land) game.putCard(card, 'hand');
-      else game.toGraveyard(card, true);
   } else if (name === 'Simulacrum Shaper') {
     game.fetchBasic();
   } else if (enterTriggerOfCommonCard(game, permanent)) {
-    // Solemn Simulacrum, Wood Elves, the Witnesses: the engine's rules
-  } else if (name === "Stitcher's Supplier") {
-    game.millOurselves(3);
+    // the engine's rules (Satyr Wayfinder, Stitcher's Supplier, Vile Entomber, Grim Servant, Woe Strider, Grave
+    // Titan, Shriekmaw, Lotleth Giant, Twilight Diviner, Solemn, the Witnesses...)
   } else if (name === 'Rune-Scarred Demon') {
     game.doTutor(() => true, false);
-  } else if (name === 'Vile Entomber') {
-    game.tutorToGraveyard(() => true);
-  } else if (name === 'Grim Servant') {
-    const devotion = game.devotion('B');
-    game.doTutor((card) => card.manaValue <= devotion, false);
-    game.loseLife(3);
   } else if (name === 'Studious First-Year') {
     game.prepared.add(permanent);
   } else {
@@ -158,24 +90,15 @@ function resolveTokensOnEnter(game: MerenGame, permanent: Permanent): boolean {
     case 'Sepulchral Primordial':
       game.stealCreatures(1);
       return true;
-    case 'Woe Strider':
-      game.createTokens(TOKENS.goat);
-      return true;
-    case 'Grave Titan':
-      game.createTokens(TOKENS.zombie, 2);
-      return true;
     default:
       return false;
   }
 }
 
-/** Shriekmaw and the edicts (each player sacrifices a creature). */
+/** D'Ghor Bloodletter and the edicts (each player sacrifices a creature). */
 function resolveRemovalOnEnter(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
-  if (name === 'Shriekmaw') {
-    // a pod: destroy the biggest threat's best creature (nonartifact, nonblack isn't checked)
-    if (game.inArena()) game.arena!.snipe(game, SHRIEKMAW, name);
-  } else if (name === DGHOR_BLOODLETTER && game.shouldShrinkWithBloodletter()) {
+  if (name === DGHOR_BLOODLETTER && game.shouldShrinkWithBloodletter()) {
     // a pod with a wide board: all other creatures get -1/-1 (ours die too: Meren's experience)
     game.podShrinkCreatures(1, true, permanent, name);
   } else if (EDICT_ETB.has(name)) {
@@ -197,16 +120,13 @@ function resolveRemovalOnEnter(game: MerenGame, permanent: Permanent): void {
 
 // ================================================================ dying
 export function onPermanentDied(game: MerenGame, permanent: Permanent): void {
-  const name = permanent.card.name;
   if (!permanent.card.land) game.leftThisTurn = true;
-  if (permanent.card.isCreature) triggerCreatureDeathPayoffs(game, permanent);
+  triggersOnDeath(game, permanent); // Butcher of Malakir, Meren's experience, Grim Haruspex
+  if (permanent.card.isCreature) {
+    triggerMorbidOpportunist(game);
+    drawWhenCreatureDies(game, permanent); // Midnight Reaper, Moldervine Reclamation
+  }
   game.prepared.delete(permanent);
-  if (
-    name === 'Zulaport Cutthroat' ||
-    game.isOnBattlefield('Zulaport Cutthroat')
-  )
-    game.drainEach(1);
-  if (name === "Stitcher's Supplier") game.millOurselves(3);
   resolveDeathEffect(game, permanent);
   // persist: comes back with a -1/-1 counter if it had none
   if (
@@ -220,31 +140,12 @@ export function onPermanentDied(game: MerenGame, permanent: Permanent): void {
   }
 }
 
-/** Butcher of Malakir, Meren's experience, Morbid Opportunist and Grim Haruspex when a creature dies. */
-function triggerCreatureDeathPayoffs(
-  game: MerenGame,
-  permanent: Permanent,
-): void {
-  const name = permanent.card.name;
-  // a pod: Butcher of Malakir (it or another creature of ours dies: each opponent sacrifices a creature)
-  if (
-    game.inArena() &&
-    (name === 'Butcher of Malakir' ||
-      game.isOnBattlefield('Butcher of Malakir'))
-  )
-    game.arena!.edict(game, false);
-  if (name !== MEREN && game.isOnBattlefield(MEREN)) game.gainExperience();
+/** Morbid Opportunist: a creature died: draw a card (once each turn). Thantis codes it too (U1b step 3). */
+function triggerMorbidOpportunist(game: MerenGame): void {
   if (game.isOnBattlefield('Morbid Opportunist') && !game.morbidUsed) {
     game.morbidUsed = true;
     game.draw(1, 'Morbid Opportunist');
   }
-  if (
-    !permanent.token &&
-    name !== 'Grim Haruspex' &&
-    game.isOnBattlefield('Grim Haruspex')
-  )
-    game.draw(1, 'Grim Haruspex');
-  drawWhenCreatureDies(game, permanent); // Midnight Reaper, Moldervine Reclamation
 }
 
 /** Vindictive Lich in a pod: each mode on a different opponent. The 5 life to the one closest to dead, the sacrifice
@@ -285,7 +186,7 @@ function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
   if (name === 'Simulacrum Shaper') {
     game.draw(1, name);
   } else if (deathTriggerOfCommonCard(game, permanent)) {
-    // Solemn Simulacrum: the engine's rule
+    // the engine's rules (Stitcher's Supplier, Protean Hulk, Solemn Simulacrum)
   } else if (name === 'Vindictive Lich') {
     if (game.inArena()) resolveVindictiveLichInPod(game);
     else {
@@ -294,19 +195,5 @@ function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
     }
   } else if (name === JUNJI) {
     resolveJunjiDeath(game);
-  } else if (name === 'Protean Hulk') {
-    // creatures with total mana value 6 or less onto the battlefield
-    let budget = 6;
-    for (;;) {
-      const choices = game.library.filter(
-        (card) => card.isCreature && card.manaValue <= budget,
-      );
-      if (!choices.length) break;
-      const best = firstMax(choices, (card) => game.battlefieldValue(card));
-      game.takeCardIfThere(best, 'library');
-      budget -= best.manaValue;
-      game.enter(best, 'library');
-    }
-    game.shuffle();
   }
 }
