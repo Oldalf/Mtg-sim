@@ -59,7 +59,7 @@ Knowingly not followed:
 | Folder | Files | What it is |
 |---|---|---|
 | `engine/cards/` | `cards`, `card-facts`, `land-text`, `scryfall`, `card-images` | Card data and facts that hold in any deck |
-| `engine/card-rules/` | `card-rules` (the hooks and the lookup), `draw-spells`, `mana-spells-and-tutors`, `permanents`, `aristocrats`, `attack-triggers`, `ramp-spells`, `landfall`, `graveyard-creatures` | What a card does, one object per card (see "Card rules") |
+| `engine/card-rules/` | `card-rules` (the hooks and the lookup), `draw-spells`, `mana-spells-and-tutors`, `permanents`, `aristocrats`, `attack-triggers`, `ramp-spells`, `landfall`, `graveyard-creatures`, `damage-spells` | What a card does, one object per card (see "Card rules") |
 | `engine/game/` | `game-core`, `game`, `game-types`; the topic files `mana-payment`, `payment-search`, `search-mana`, `untap-lands`, `land-play`, `land-search`, `planner`, `kill-line`, `turn`, `casting`, `pod-attacks`, `pod-answers`, `goldfish-combat`, `creature-deck`, `blink`, `dungeons`, `reanimation`, `spell-copies`, `instant-speed`, `firebending`, `trigger-doublers`, `opponent-cast-triggers`, `creature-enter-triggers`, `mulligan`, `answers`, `search`, `log-format`; their `.test` files | One game: zones, mana, turns, kill lines played for real, the hooks a deck fills in |
 | `engine/game-log/` | `game-log`, `game-log-moves`, `-text`, `-tags`, `-files`, `-run`, `-replay`, `-archidekt`, `logged-runs`, `game-log.test` | Logging a game and reading logs back |
 | `engine/pod/` | `pod`, `pod-arena`, `pod-table`, `pod-combat`, `pod-blocking`, `pod-interaction`, `pod-win-answers`, `pod-card-effects`, `pod-report`, `pod.test` | Decks playing each other |

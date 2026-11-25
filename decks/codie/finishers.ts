@@ -156,7 +156,7 @@ export function castFinisher(
     resolveTorment(game, resolutionCount * xValue);
   else
     for (let resolution = 0; resolution < resolutionCount; resolution++)
-      resolveFinisherOnce(game, name, xValue);
+      game.resolve(card, false, `x=${xValue}`);
   game.putCard(card, 'graveyard');
   game.say(
     `  ${name} resolves ${resolutionCount} time(s): ${game.describeOpponentLife()}`,
@@ -175,25 +175,6 @@ function moveFromHandToGraveyard(game: CodieGame, name: string): void {
  *  discards) the first times and loses 3 life for each of the rest. */
 function resolveTorment(game: CodieGame, totalX: number): void {
   game.drainEach(3 * Math.max(0, totalX - game.tormentPayments()));
-}
-
-/** One resolution of a finisher. Exsanguinate: each opponent loses X, we gain it. Crackle with Power: 5 times X to each
- *  of up to X targets, the opponents with the most life first. */
-function resolveFinisherOnce(
-  game: CodieGame,
-  name: string,
-  xValue: number,
-): void {
-  if (name === EXSANGUINATE) {
-    game.gainLife(game.drainEach(xValue));
-    return;
-  }
-  const targets = game.life
-    .map((life, slot) => ({ life, slot }))
-    .filter(({ slot }) => game.isOpponentAlive(slot))
-    .sort((first, second) => second.life - first.life)
-    .slice(0, xValue);
-  for (const { slot } of targets) game.damageOpponent(slot, 5 * xValue);
 }
 
 /** Does this finisher with X and n resolutions kill every opponent? */

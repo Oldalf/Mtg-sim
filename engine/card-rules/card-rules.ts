@@ -5,7 +5,7 @@
  *
  * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
  * ramp-spells.ts, landfall.ts,
- * graveyard-creatures.ts) list
+ * graveyard-creatures.ts, damage-spells.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
@@ -20,6 +20,7 @@ import {
 } from '../game/dungeons';
 import { ARISTOCRATS } from './aristocrats';
 import { ATTACK_TRIGGERS } from './attack-triggers';
+import { DAMAGE_SPELLS } from './damage-spells';
 import { DRAW_SPELLS } from './draw-spells';
 import { GRAVEYARD_CREATURES } from './graveyard-creatures';
 import { LANDFALL } from './landfall';
@@ -101,6 +102,7 @@ for (const rules of [
   ...RAMP_SPELLS,
   ...LANDFALL,
   ...GRAVEYARD_CREATURES,
+  ...DAMAGE_SPELLS,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);

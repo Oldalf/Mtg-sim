@@ -1659,20 +1659,7 @@ export abstract class GameCore<S = unknown> {
    *  the deck's colours, the most pips of it one card in hand (or a commander not cast yet) needs, minus our lands
    *  that make it. With no card waiting for a colour, that is the colour we have the fewest lands for. */
   chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
-    const landsMaking = (colour: string) =>
-      this.landsOnBattlefield().filter((permanent) =>
-        C.landMakes(permanent.card, colour),
-      ).length;
-    const waitingCards = [...this.hand, ...this.command].filter(
-      (card) => card.land === null,
-    );
-    const mostPipsOneCardNeeds = (colour: string) =>
-      Math.max(
-        0,
-        ...waitingCards.map((card) => C.colouredPips(card.cost, colour)),
-      );
-    const shortfall = (colour: string) =>
-      mostPipsOneCardNeeds(colour) - landsMaking(colour);
+    const shortfall = (colour: string) => this.colourShortfall(colour);
     const biggestShortfall = Math.max(...this.colors.map(shortfall));
     const shortColours = this.colors.filter(
       (colour) => shortfall(colour) === biggestShortfall,
@@ -1682,6 +1669,46 @@ export abstract class GameCore<S = unknown> {
       (card) =>
         shortColours.filter((colour) => C.landMakes(card, colour)).length,
     );
+  }
+  /** How short we are of a colour: the most pips of it one card in hand (or a commander not cast yet) needs, minus our
+   *  lands that make it. */
+  colourShortfall(colour: string): number {
+    const landsMaking = this.landsOnBattlefield().filter((permanent) =>
+      C.landMakes(permanent.card, colour),
+    ).length;
+    const waitingCards = [...this.hand, ...this.command].filter(
+      (card) => card.land === null,
+    );
+    const mostPipsOneCardNeeds = Math.max(
+      0,
+      ...waitingCards.map((card) => C.colouredPips(card.cost, colour)),
+    );
+    return mostPipsOneCardNeeds - landsMaking;
+  }
+  /** The colours of mana a spell that adds "mana in any combination of colours" makes (Manamorphose): by default
+   *  the colours we are shortest of. */
+  manaColoursToAdd(count: number): string[] {
+    const ranked = sortDesc(this.colors.slice(), (colour) =>
+      this.colourShortfall(colour),
+    );
+    return Array.from({ length: count }, (_, i) => ranked[i % ranked.length]);
+  }
+  /** Valakut Awakening: the cards in hand we put on the bottom to draw as many again (by default none). */
+  handCardsToRedraw(_spell: CardDef): CardDef[] {
+    return [];
+  }
+  /** Ad Nauseam: do we reveal this next card (and lose life equal to its mana value)? By default while we stay
+   *  above 10 life. */
+  keepsRevealingForAdNauseam(card: CardDef): boolean {
+    return this.myLife - card.manaValue > 10;
+  }
+  /** Lim-Dûl's Vault: how many times we pay 1 life to look at the next five instead (by default none). */
+  limDulsVaultWindow(): number {
+    return 0;
+  }
+  /** The order to put these cards on top of the library in, the first on top (by default the best first). */
+  orderForTopOfLibrary(cards: CardDef[]): CardDef[] {
+    return sortDesc(cards, (card) => this.cardValue(card));
   }
   /** The creature type named for Roaming Throne (engine/game/trigger-doublers.ts), or null. */
   roamingThroneType(): string | null {

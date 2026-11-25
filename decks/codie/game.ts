@@ -36,16 +36,24 @@ import {
   TORMENT_OF_HAILFIRE,
   VALUE,
   JESKAS_WILL,
+  PROFANE_TUTOR,
 } from './cards';
 import { buildCandidates } from './candidates';
 import {
   chooseCodieLand,
   chooseTutorTarget,
+  coloursWeAreShortOf,
   resolveCodieSpell,
 } from './spells';
 import { CodieKillStep, findKillLine } from './solver';
 import { castFinisher } from './finishers';
-import { beginReiterateLoop, manaPerLoopCopy } from './solver-actions';
+import {
+  beginReiterateLoop,
+  chooseVaultWindow,
+  manaPerLoopCopy,
+  orderVaultWindow,
+} from './solver-actions';
+import * as C from '../../engine/cards/cards';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -92,7 +100,7 @@ export class CodieGame extends Game<CodieGame> {
       this.suspended = this.suspended.filter((turnsLeft) => turnsLeft > 0);
       for (let i = 0; i < due; i++) {
         this.say('Profane Tutor arrives');
-        this.doTutor(() => true, false);
+        this.resolve(C.get(PROFANE_TUTOR));
       }
     }
   }
@@ -234,6 +242,33 @@ export class CodieGame extends Game<CodieGame> {
   }
   override tutorTarget(allowed: (card: CardDef) => boolean): CardDef | null {
     return chooseTutorTarget(this, allowed);
+  }
+  /** Manamorphose: the two colours we are short of (red and black when we have them all). */
+  override manaColoursToAdd(_count: number): string[] {
+    const colours = coloursWeAreShortOf(this);
+    return [colours[0] ?? 'R', colours[1] ?? colours[0] ?? 'B'];
+  }
+  /** Valakut Awakening: lands and the cards we would not develop with go to the bottom; the held cards stay. */
+  override handCardsToRedraw(spell: CardDef): CardDef[] {
+    return this.hand.filter(
+      (card) =>
+        card !== spell &&
+        (HOLD.has(card.name)
+          ? false
+          : card.land !== null || this.developmentValue(card) < 45),
+    );
+  }
+  /** Ad Nauseam: reveal while life stays at the floor or above (with Teferi's Protection, the whole library). */
+  override keepsRevealingForAdNauseam(card: CardDef): boolean {
+    return this.myLife - card.manaValue >= (this.config.ad_floor as number);
+  }
+  override limDulsVaultWindow(): number {
+    return chooseVaultWindow(this);
+  }
+  /** The best cards for a kill on top; the player then knows them (the kill search may use a draw spell). */
+  override orderForTopOfLibrary(cards: CardDef[]): CardDef[] {
+    this.knownTop = cards.length;
+    return orderVaultWindow(this, cards);
   }
   override chooseLandToFetch(candidates: CardDef[], toHand: boolean): CardDef {
     return chooseCodieLand(this, candidates, toHand);

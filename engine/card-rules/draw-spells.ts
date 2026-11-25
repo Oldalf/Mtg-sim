@@ -4,7 +4,7 @@
 import type { CardDef } from '../cards/cards';
 import type { GameCore } from '../game/game-core';
 import { firstMax, firstMin, sortDesc } from '../util/lists';
-import type { CardRules } from './card-rules';
+import type { CardRules, HowCast } from './card-rules';
 
 export const DRAW_SPELLS: CardRules[] = [
   {
@@ -128,11 +128,40 @@ export const DRAW_SPELLS: CardRules[] = [
   {
     names: ['Stock Up'],
     resolve(game) {
-      // the two best of the top five to hand, the rest to the bottom
-      const top = game.takeTopCardsOfLibrary(5);
-      sortDesc(top, (card) => game.cardValue(card));
-      for (const card of top.slice(0, 2)) game.putCard(card, 'hand');
-      for (const card of top.slice(2)) game.putCard(card, 'library');
+      keepBestOfTopRestToBottom(game, 5, 2);
+    },
+  },
+  {
+    names: ['Flow State'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the "instant and sorcery in your graveyard: two to hand" part is not modelled.
+    resolve(game) {
+      keepBestOfTopRestToBottom(game, 3, 1);
+    },
+  },
+  {
+    names: ['Valakut Awakening'],
+    resolve(game, spell) {
+      // any cards from hand to the bottom (handCardsToRedraw), then draw that many plus one
+      const putBack = game.handCardsToRedraw(spell);
+      for (const card of putBack) {
+        game.takeCardIfThere(card, 'hand');
+        game.putCard(card, 'library');
+      }
+      game.draw(putBack.length + 1);
+    },
+  },
+  {
+    names: ['Ad Nauseam'],
+    resolve(game) {
+      // reveal the top card, to hand, lose life equal to its mana value; again as long as we want
+      while (game.library.length && !game.died) {
+        const card = game.library[0];
+        if (!game.keepsRevealingForAdNauseam(card)) break;
+        game.takeTopCardsOfLibrary(1);
+        game.putCard(card, 'hand');
+        game.loseLife(card.manaValue);
+      }
+      game.say('Ad Nauseam: hand', game.hand.length, 'life', game.myLife);
     },
   },
   {
@@ -213,13 +242,28 @@ export const DRAW_SPELLS: CardRules[] = [
   {
     names: ['Pull from Tomorrow'],
     resolve(game, _spell, howCast) {
-      // the mode is 'x=N'
-      const xValue = parseInt((howCast.mode ?? 'x=0').slice(2), 10);
-      game.draw(xValue);
+      game.draw(xValueOf(howCast));
       game.discard(1);
     },
   },
 ];
+
+/** The X a spell was cast with: its mode is 'x=N'. */
+export function xValueOf(howCast: HowCast): number {
+  return parseInt((howCast.mode ?? 'x=0').slice(2), 10);
+}
+
+/** The best cards of the top ones to hand, the rest to the bottom. */
+function keepBestOfTopRestToBottom(
+  game: GameCore,
+  lookCount: number,
+  keepCount: number,
+): void {
+  const top = game.takeTopCardsOfLibrary(lookCount);
+  sortDesc(top, (card) => game.cardValue(card));
+  game.putCards(top.slice(0, keepCount), 'hand');
+  game.putCards(top.slice(keepCount), 'library');
+}
 
 /** The kept cards go to hand, the other looked-at cards to the graveyard. */
 function keepTheseRestToGraveyard(

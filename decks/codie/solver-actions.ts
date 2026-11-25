@@ -16,6 +16,7 @@ import {
 import { manamorphoseCost } from './candidates';
 import { lookAtTopAndKeep, putCardsBackOnLibrary } from './spells';
 import type { CodieGame } from './game';
+import * as C from '../../engine/cards/cards';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import { firstMin } from '../../engine/util/lists';
 
@@ -329,7 +330,8 @@ export function windowWeight(game: CodieGame, card: CardDef): number {
 /** Lim-Dul's Vault: look at the top five, pay 1 life to put them on the bottom and look at the next five, as often as we like; the
  *  last five go on top in the order we want. We take the best of the first twelve windows (1 life each, never below 15 life). Under
  *  Teferi's Protection no life can be paid, so this must be cast before it. */
-export function stackLibraryWithVault(game: CodieGame): void {
+/** Lim-Dûl's Vault: the five-card window best for a kill (each window passed costs 1 life; never below 15 life). */
+export function chooseVaultWindow(game: CodieGame): number {
   const maxLooks = Math.min(
     12,
     Math.floor(game.library.length / 5),
@@ -348,23 +350,25 @@ export function stackLibraryWithVault(game: CodieGame): void {
       bestScore = score;
     }
   }
-  const skipped = game.takeTopCardsOfLibrary(5 * best);
-  const win = game
-    .takeTopCardsOfLibrary(5)
-    .sort(
-      (first, second) => windowWeight(game, second) - windowWeight(game, first),
-    );
-  game.putCards(skipped, 'library');
-  game.shuffle();
-  game.putCardsOnTopOfLibrary(win);
-  game.loseLife(best);
-  game.knownTop = win.length;
-  game.say("Lim-Dul's Vault: window", best + 1, 'on top, life', game.myLife);
+  game.say(
+    "Lim-Dul's Vault: window",
+    best + 1,
+    'on top, life',
+    game.myLife - best,
+  );
+  return best;
+}
+
+/** The window's cards in the order to put them on top: the most useful for a kill first. */
+export function orderVaultWindow(game: CodieGame, cards: CardDef[]): CardDef[] {
+  return cards.sort(
+    (first, second) => windowWeight(game, second) - windowWeight(game, first),
+  );
 }
 
 export function castVault(game: CodieGame): boolean {
   if (!spendSpell(game, LIM_DUL_VAULT)) return false;
-  stackLibraryWithVault(game);
+  game.resolve(C.get(LIM_DUL_VAULT));
   return true;
 }
 

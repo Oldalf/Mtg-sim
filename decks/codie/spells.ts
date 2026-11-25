@@ -1,5 +1,4 @@
-/** What a spell does when it resolves, for the cards Codie's deck knows. Returns false for other cards (the engine handles them). */
-import { TREASURE } from '../../engine/cards/tokens';
+/** What a spell does when it resolves, for the cards only Codie's deck codes (the engine's card rules have the rest). Returns false for other cards (the engine handles them). */
 import * as C from '../../engine/cards/cards';
 import {
   AD_NAUSEAM,
@@ -8,28 +7,20 @@ import {
   EXSANGUINATE,
   FINISHERS,
   MANA_GEYSER,
-  HOLD,
   MANA_SPELLS,
-  PROFANE_TUTOR,
   REITERATE,
   RETURN_THE_FAVOR,
   TEFERIS_PROTECTION,
   TORMENT_OF_HAILFIRE,
-  LIM_DUL_VAULT,
   JESKAS_WILL,
 } from './cards';
 import { findKillLine } from './solver';
-import { stackLibraryWithVault } from './solver-actions';
 import type { CodieGame } from './game';
 import { CardDef } from '../../engine/cards/cards';
 import { firstMax } from '../../engine/util/lists';
 
 export function resolveCodieSpell(game: CodieGame, spell: CardDef): boolean {
-  return (
-    resolveManaSpell(game, spell) ||
-    resolveCardSelection(game, spell) ||
-    resolveTutor(game, spell)
-  );
+  return resolveManaSpell(game, spell) || resolveCardSelection(game, spell);
 }
 
 /** Rituals, Treasure makers and Manamorphose. */
@@ -38,30 +29,12 @@ function resolveManaSpell(game: CodieGame, spell: CardDef): boolean {
     case 'Seething Song':
       game.pool.R += 5;
       return true;
-    case 'Pyretic Ritual':
-      game.pool.R += 3;
-      return true;
-    case 'Dark Ritual':
-      game.pool.B += 3;
-      return true;
     case JESKAS_WILL:
       game.pool.R += game.opponentHandSize();
       return true;
     case MANA_GEYSER:
       game.pool.R += game.opponentTappedLands();
       return true;
-    case BRASS_BOUNTY:
-      game.createTokens(TREASURE, game.landsOnBattlefield().length);
-      return true;
-    case 'Manamorphose': {
-      const colours = coloursWeAreShortOf(game);
-      const first = colours[0] ?? 'R';
-      const second = colours[1] ?? colours[0] ?? 'B';
-      game.pool[first as 'R'] += 1;
-      game.pool[second as 'R'] += 1;
-      game.draw(1);
-      return true;
-    }
     default:
       return false;
   }
@@ -77,27 +50,9 @@ function resolveCardSelection(game: CodieGame, spell: CardDef): boolean {
       game.draw(3);
       putCardsBackOnLibrary(game, 2);
       return true;
-    case 'Flow State':
-      lookAtTopAndKeep(game, 3, 1);
-      return true;
     case 'Stock Up':
       lookAtTopAndKeep(game, 5, 2);
       return true;
-    case 'Valakut Awakening': {
-      const unwanted = game.hand.filter(
-        (card) =>
-          card !== spell &&
-          (HOLD.has(card.name)
-            ? false
-            : card.land !== null || game.developmentValue(card) < 45),
-      );
-      for (const card of unwanted) {
-        game.takeCardIfThere(card, 'hand');
-        game.putCard(card, 'library');
-      }
-      game.draw(unwanted.length + 1);
-      return true;
-    }
     case 'Windfall': {
       const handSize = game.hand.length;
       for (const card of game.takeAllCards('hand')) game.toGraveyard(card);
@@ -109,24 +64,6 @@ function resolveCardSelection(game: CodieGame, spell: CardDef): boolean {
   }
 }
 
-/** Tutors, Ad Nauseam and Lim-Dul's Vault. */
-function resolveTutor(game: CodieGame, spell: CardDef): boolean {
-  switch (spell.name) {
-    case AD_NAUSEAM:
-      resolveAdNauseam(game);
-      return true;
-    case PROFANE_TUTOR:
-      game.doTutor(() => true, false);
-      return true;
-    case LIM_DUL_VAULT:
-      stackLibraryWithVault(game);
-      return true;
-    default:
-      return false;
-  }
-}
-
-/** Put a land from the library onto the battlefield (or into the hand). Returns the land or null. */
 /** Which land a land-search spell takes: one of a colour we are short of, a nonbasic before a basic, never a
  *  land that hurts us (Glacial Chasm, Maze of Ith, Volatile Fault). */
 export function chooseCodieLand(
@@ -239,17 +176,4 @@ export function tutorPriorityList(game: CodieGame): string[] {
     RETURN_THE_FAVOR,
   );
   return out;
-}
-
-/** Ad Nauseam: reveal cards until a limit on life (always the whole library with Teferi's Protection). */
-export function resolveAdNauseam(game: CodieGame): void {
-  const floor = game.config.ad_floor as number;
-  while (game.library.length && game.isStillAlive()) {
-    const card = game.library[0];
-    if (game.myLife - card.manaValue < floor) break;
-    game.takeTopCardsOfLibrary(1);
-    game.putCard(card, 'hand');
-    game.loseLife(card.manaValue);
-  }
-  game.say('Ad Nauseam: hand', game.hand.length, 'life', game.myLife);
 }

@@ -6,6 +6,7 @@ import * as Facts from '../cards/card-facts';
 import * as C from '../cards/cards';
 import type { GameCore } from '../game/game-core';
 import type { Permanent } from '../game/game-types';
+import { TREASURE } from '../cards/tokens';
 import type { CardRules } from './card-rules';
 
 export const MANA_SPELLS_AND_TUTORS: CardRules[] = [
@@ -34,6 +35,27 @@ export const MANA_SPELLS_AND_TUTORS: CardRules[] = [
     names: ['Dark Ritual'],
     resolve(game) {
       game.pool.B += 3;
+    },
+  },
+  {
+    names: ['Pyretic Ritual'],
+    resolve(game) {
+      game.pool.R += 3;
+    },
+  },
+  {
+    names: ["Brass's Bounty"],
+    resolve(game) {
+      game.createTokens(TREASURE, game.landsOnBattlefield().length);
+    },
+  },
+  {
+    names: ['Manamorphose'],
+    resolve(game) {
+      // two mana in any combination of colours (manaColoursToAdd), then draw
+      const pool = game.pool as unknown as Record<string, number>;
+      for (const colour of game.manaColoursToAdd(2)) pool[colour] += 1;
+      game.draw(1);
     },
   },
   {
@@ -77,7 +99,7 @@ export const MANA_SPELLS_AND_TUTORS: CardRules[] = [
     },
   },
   {
-    names: ['Diabolic Tutor', 'Demonic Tutor'],
+    names: ['Diabolic Tutor', 'Demonic Tutor', 'Profane Tutor'],
     resolve(game) {
       game.doTutor(() => true, false);
     },
@@ -133,6 +155,20 @@ export const MANA_SPELLS_AND_TUTORS: CardRules[] = [
         searched.filter((card) => !toGraveyard.includes(card)),
         'hand',
       );
+    },
+  },
+  {
+    names: ["Lim-Dûl's Vault"],
+    resolve(game) {
+      // look at the top five; pay 1 life to put them on the bottom and look at the next five, as often as we like
+      // (limDulsVaultWindow); then shuffle and put the five on top in any order
+      const windowIndex = game.limDulsVaultWindow();
+      const passed = game.takeTopCardsOfLibrary(5 * windowIndex);
+      const kept = game.orderForTopOfLibrary(game.takeTopCardsOfLibrary(5));
+      game.putCards(passed, 'library');
+      game.shuffle();
+      game.putCardsOnTopOfLibrary(kept);
+      game.loseLife(windowIndex);
     },
   },
   {
