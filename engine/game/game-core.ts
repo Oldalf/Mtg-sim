@@ -133,6 +133,9 @@ import {
   opponentCastTriggers,
   attackedByTriggers,
   bonusFromPermanents,
+  leaveTriggers,
+  opponentUpkeepTriggers,
+  creaturesDealtCombatDamageTriggers,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
@@ -268,6 +271,9 @@ export abstract class GameCore<S = unknown> {
    *  after our upkeep. */
   creatureSpellsCastThisTurn = 0;
   lifeGainedThisTurn = 0;
+  /** Did a creature enter under our control since the last upkeep (ours or an opponent's)? The upkeep dispatchers
+   *  clear it (Ephara). */
+  hasCreatureEnteredSinceLastUpkeep = false;
 
   /**
    * mode "any": go for the first kill found.  mode "protected": only go when a counterspell can
@@ -1151,6 +1157,19 @@ export abstract class GameCore<S = unknown> {
   orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
     return permanents;
   }
+  /** A d20 (Djinni Windseer). */
+  rollD20(): number {
+    const roll = 1 + Math.floor(this.rng.random() * 20);
+    this.say(`  d20: ${roll}`);
+    return roll;
+  }
+  /** "If an opponent controls more lands than you" (Land Tax, Knight of the White Orchid). We don't see the
+   *  opponents' lands, so the opponent with the most is taken to have played a land each turn, plus one from turn 3
+   *  (at a table of four, someone ramps). */
+  opponentHasMoreLands(): boolean {
+    const mostLandsOfAnOpponent = this.turn + (this.turn >= 3 ? 1 : 0);
+    return this.landsOnBattlefield().length < mostLandsOfAnOpponent;
+  }
   /** Has this card's "once each turn" trigger been used this turn? */
   hasUsedOnceEachTurn(cardName: string): boolean {
     return this.onceEachTurnUsed.includes(cardName);
@@ -1646,10 +1665,14 @@ export abstract class GameCore<S = unknown> {
     replacementsAsAnotherOfOursEnters(this, permanent);
     triggersOfOthersOnEnter(this, permanent, from);
     enterTriggerOfCommonCard(this, permanent);
+    if (this.isCreatureNow(permanent))
+      this.hasCreatureEnteredSinceLastUpkeep = true;
   }
   /** A permanent of ours left the battlefield: it died, was blinked, or an opponent removed it ("leaves the
    *  battlefield" triggers). It's already off the battlefield. */
-  onLeave(_permanent: Permanent): void {}
+  onLeave(permanent: Permanent): void {
+    leaveTriggers(this, permanent);
+  }
   /** Which dungeon "venture into the dungeon" enters when we are in none. */
   chooseDungeon(_dungeons: Dungeon[]): string {
     return 'Lost Mine of Phandelver';
@@ -1691,7 +1714,9 @@ export abstract class GameCore<S = unknown> {
   }
   /** At the beginning of another player's upkeep (for "each upkeep" triggers). Goldfish opponents take their turns
    *  between ours; a pod calls this for real turns. */
-  opponentUpkeep(): void {}
+  opponentUpkeep(): void {
+    opponentUpkeepTriggers(this);
+  }
   /** At the end step of another player's turn: what we do at instant speed there (sacrifice outlets, "once each turn"
    *  abilities that are fresh again). Goldfish opponents take their turns between ours; a pod calls this for real turns. */
   opponentEndStep(): void {}
@@ -1749,6 +1774,7 @@ export abstract class GameCore<S = unknown> {
   /** After combat damage: the attackers that connected and the total damage dealt. */
   onCombatDamage(connected: Permanent[], _damage: number): void {
     for (const permanent of connected) combatDamageTriggerOf(this, permanent);
+    creaturesDealtCombatDamageTriggers(this, connected);
   }
 
   // ================================================================ hooks for pod games (game.ts fills them in)
@@ -1779,13 +1805,15 @@ export abstract class GameCore<S = unknown> {
     _sourceName: string,
   ): void {}
   /** Removal on an enter or cast trigger: up to `count` of the opponents' permanents this answer hits, each worth at
-   *  least `minimumValue` (a pod only: in a goldfish game they have none worth taking). */
+   *  least `minimumValue` (a pod only: in a goldfish game they have none worth taking). Returns how many it took. */
   podSnipeUpTo(
     _answer: Answer,
     _sourceName: string,
     _count: number,
     _minimumValue: number,
-  ): void {}
+  ): number {
+    return 0;
+  }
   /** Goad the creatures of every opponent until our next turn (a pod only: Kardur). */
   podGoadEachOpponentsCreatures(): void {}
   /** Goad the creatures of the opponent with the most power on the board (a pod only: Geode Rager). */

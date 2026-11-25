@@ -17,6 +17,8 @@ export class Permanent {
   token = false;
   /** +1/+1 counters minus -1/-1 counters. */
   counters = 0;
+  /** Counters of another kind (quest counters: Airbender Ascension); unset until it gets one. */
+  otherCounters?: number;
   /** Power changes that aren't counters (e.g. Saw in Half copies at half power). */
   powerMod = 0;
   /** Toughness changes that aren't counters (-X/-X until end of turn: Massacre Wurm, D'Ghor Bloodletter). */
@@ -51,6 +53,8 @@ export class Permanent {
     permanent.transformed = this.transformed;
     permanent.token = this.token;
     permanent.counters = this.counters;
+    if (this.otherCounters !== undefined)
+      permanent.otherCounters = this.otherCounters;
     permanent.powerMod = this.powerMod;
     permanent.toughnessMod = this.toughnessMod;
     permanent.marks = this.marks;

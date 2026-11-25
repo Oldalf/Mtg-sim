@@ -26,6 +26,7 @@ import {
   BlinkSpell,
   blink,
   blinkTargets,
+  bestCreatureToBlink,
 } from '../../engine/game/blink';
 import { ventureIntoDungeon } from '../../engine/game/dungeons';
 import { firstMax } from '../../engine/util/lists';
@@ -142,7 +143,8 @@ function addPreparedSpellCandidates(game: DndGame, add: AddCandidate): void {
         game.castPreparedSpell(creature, ANCESTRAL_RECALL),
       );
     if (creature.card.name === SKYCOACH_CONDUCTOR) {
-      const target = game.bestCreatureToBlink(
+      const target = bestCreatureToBlink(
+        game,
         (other) => other.card.name !== SKYCOACH_CONDUCTOR,
       );
       const value = target ? game.blinkValue(target) : 0;
@@ -241,7 +243,8 @@ function addMainPhaseTwoCandidates(game: DndGame, add: AddCandidate): void {
 function addNikoCandidates(game: DndGame, add: AddCandidate): void {
   const niko = game.findPermanent(NIKO);
   if (niko && !niko.sick) {
-    const target = game.bestCreatureToBlink(
+    const target = bestCreatureToBlink(
+      game,
       (creature) => !creature.card.types.has('legendary'),
     );
     const value = target ? game.blinkValue(target) : 0;

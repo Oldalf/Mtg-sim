@@ -293,6 +293,47 @@ export const PERMANENTS: CardRules[] = [
     },
   },
   {
+    names: ['Land Tax'],
+    onUpkeep(game) {
+      if (game.opponentHasMoreLands())
+        for (let i = 0; i < 3; i++) fetchLand(game, 'basic', false, true);
+    },
+  },
+  {
+    names: ['Knight of the White Orchid'],
+    onEnter(game) {
+      if (game.opponentHasMoreLands()) fetchLand(game, 'plains', false);
+    },
+  },
+  {
+    names: ["Archaeomancer's Map"],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its land drop when an opponent's land enters is not modelled.
+    onEnter(game) {
+      fetchLand(game, 'plains', false, true);
+      fetchLand(game, 'plains', false, true);
+    },
+  },
+  {
+    names: ['Starfield Shepherd'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the choice is fixed (the deck does not make it): a basic Plains while we have
+    // fewer than five lands, else a creature card with mana value 1 or less. Warp is not modelled.
+    onEnter(game) {
+      const isShortOfLands =
+        game.landsOnBattlefield().length + game.countLandsHand() < 5;
+      const creature = game.library.find(
+        (card) => card.isCreature && card.manaValue <= 1,
+      );
+      if (!creature || isShortOfLands) {
+        fetchLand(game, 'plains', false, true);
+        return;
+      }
+      game.takeCard(creature, 'library');
+      game.shuffle();
+      game.putCard(creature, 'hand');
+      game.say('  search ->', creature);
+    },
+  },
+  {
     names: ['Phyrexian Arena'],
     onUpkeep(game) {
       game.draw(1, 'Phyrexian Arena');

@@ -5,7 +5,7 @@
  *
  * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
  * ramp-spells.ts, landfall.ts,
- * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts, cost-and-mana.ts, life-loss.ts, big-creatures.ts) list
+ * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts, cost-and-mana.ts, life-loss.ts, big-creatures.ts, blink-and-dungeons.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
@@ -19,7 +19,7 @@ import {
   ventureIntoDungeon,
   venturesOnEnter,
 } from '../game/dungeons';
-import { triggerCount } from '../game/trigger-doublers';
+import { triggerCount, triggerCountOnEnter } from '../game/trigger-doublers';
 import { ARISTOCRATS } from './aristocrats';
 import { ATTACK_TRIGGERS } from './attack-triggers';
 import { DAMAGE_SPELLS } from './damage-spells';
@@ -27,6 +27,7 @@ import { DOUBLERS } from './doublers';
 import { COST_AND_MANA } from './cost-and-mana';
 import { LIFE_LOSS } from './life-loss';
 import { BIG_CREATURES } from './big-creatures';
+import { BLINK_AND_DUNGEONS } from './blink-and-dungeons';
 import { SELF_MILL } from './self-mill';
 import { DRAW_SPELLS } from './draw-spells';
 import { GRAVEYARD_CREATURES } from './graveyard-creatures';
@@ -60,6 +61,16 @@ export interface CardRules {
   onDies?(game: GameCore, permanent: Permanent): void;
   /** At the beginning of our upkeep, while it is on the battlefield. */
   onUpkeep?(game: GameCore, permanent: Permanent): void;
+  /** At the beginning of each opponent's upkeep, while it is on the battlefield. */
+  onOpponentUpkeep?(game: GameCore, permanent: Permanent): void;
+  /** Its own leave trigger ("when this leaves the battlefield": it is already off the battlefield). */
+  onLeaves?(game: GameCore, permanent: Permanent): void;
+  /** Another permanent of ours left the battlefield (died, blinked, removed), while this one is on the battlefield. */
+  onAnotherOfOursLeaves?(
+    game: GameCore,
+    permanent: Permanent,
+    left: Permanent,
+  ): void;
   /** Another permanent of ours entered while this one is on the battlefield ("whenever another creature you control
    *  enters"). */
   onAnotherOfOursEnters?(
@@ -91,12 +102,13 @@ export interface CardRules {
   beforeFirstDrawEachTurn?(game: GameCore, permanent: Permanent): void;
   /** It attacks. Returns the creatures its trigger puts onto the battlefield attacking (Raph & Mikey), if any. */
   onAttacks?(game: GameCore, permanent: Permanent): Permanent[] | void;
-  /** We attack, while it is on the battlefield, after the attackers' own triggers ("whenever you attack with..."). */
+  /** We attack, while it is on the battlefield, after the attackers' own triggers ("whenever you attack with...").
+   *  Returns the creatures its trigger puts onto the battlefield attacking (Undercellar Sweep), if any. */
   onWeAttack?(
     game: GameCore,
     permanent: Permanent,
     attackers: Permanent[],
-  ): void;
+  ): Permanent[] | void;
   /** One or more creature cards were milled from our library (millOurselves), while it is on the battlefield. */
   onCreatureCardsMilled?(
     game: GameCore,
@@ -137,6 +149,13 @@ export interface CardRules {
     game: GameCore,
     permanent: Permanent,
     creature: Permanent,
+  ): void;
+  /** One or more creatures of ours dealt combat damage to a player (once per combat), while it is on the battlefield
+   *  (Midnight Pathlighter). */
+  onOurCreaturesDealCombatDamage?(
+    game: GameCore,
+    permanent: Permanent,
+    connected: Permanent[],
   ): void;
   /** "When you cast this spell" (it has resolved by then: the engine runs it after the spell, as the decks did). */
   whenCast?(game: GameCore, spell: CardDef): void;
@@ -195,6 +214,7 @@ for (const rules of [
   ...COST_AND_MANA,
   ...LIFE_LOSS,
   ...BIG_CREATURES,
+  ...BLINK_AND_DUNGEONS,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
@@ -266,12 +286,46 @@ export function deathTriggerOfCommonCard(
   return true;
 }
 
-/** The upkeep triggers of our permanents that the engine has rules for. */
+/** The upkeep triggers of our permanents that the engine has rules for. Then a new "since the last upkeep" begins
+ *  (Ephara). */
 export function upkeepOfCommonCards(game: GameCore): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
   ))
     upkeepTriggerOf(game, permanent);
+  game.hasCreatureEnteredSinceLastUpkeep = false;
+}
+
+/** The triggers of our permanents at an opponent's upkeep. Then a new "since the last upkeep" begins (Ephara).
+ *  GameCore.opponentUpkeep runs them. */
+export function opponentUpkeepTriggers(game: GameCore): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onOpponentUpkeep)
+      runTrigger(game, permanent, () =>
+        rules.onOpponentUpkeep!(game, permanent),
+      );
+  }
+  game.hasCreatureEnteredSinceLastUpkeep = false;
+}
+
+/** The leave triggers: the permanent's own, then our other permanents' "whenever another permanent you control
+ *  leaves". GameCore.onLeave runs them. */
+export function leaveTriggers(game: GameCore, left: Permanent): void {
+  const ownRules = rulesOf(left.card);
+  if (ownRules?.onLeaves)
+    runTrigger(game, left, () => ownRules.onLeaves!(game, left));
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (permanent !== left && rules?.onAnotherOfOursLeaves)
+      runTrigger(game, permanent, () =>
+        rules.onAnotherOfOursLeaves!(game, permanent, left),
+      );
+  }
 }
 
 /** The "whenever another permanent enters" triggers of our other permanents. The engine's onEnter runs them before the
@@ -285,10 +339,10 @@ export function triggersOfOthersOnEnter(
     game.battlefield.slice(),
   )) {
     const rules = rulesOf(permanent.card);
-    if (permanent !== entered && rules?.onAnotherOfOursEnters)
-      runTrigger(game, permanent, () =>
-        rules.onAnotherOfOursEnters!(game, permanent, entered, from),
-      );
+    if (permanent === entered || !rules?.onAnotherOfOursEnters) continue;
+    const times = triggerCountOnEnter(game, permanent, entered);
+    for (let i = 0; i < times; i++)
+      rules.onAnotherOfOursEnters(game, permanent, entered, from);
   }
 }
 
@@ -316,11 +370,22 @@ export function attackTriggers(
   const joined: Permanent[] = [];
   for (const attacker of attackers)
     joined.push(...attackTriggerOf(game, attacker));
+  joined.push(...weAttackTriggers(game, attackers));
+  return joined;
+}
+
+/** Our permanents' "whenever you attack" triggers (after the attackers' own). Returns the creatures they put onto the
+ *  battlefield attacking. */
+export function weAttackTriggers(
+  game: GameCore,
+  attackers: Permanent[],
+): Permanent[] {
+  const joined: Permanent[] = [];
   for (const permanent of game.battlefield.slice()) {
     const rules = rulesOf(permanent.card);
     if (rules?.onWeAttack)
       runTrigger(game, permanent, () =>
-        rules.onWeAttack!(game, permanent, attackers),
+        joined.push(...(rules.onWeAttack!(game, permanent, attackers) ?? [])),
       );
   }
   return joined;
@@ -610,6 +675,22 @@ export function combatDamageTriggerOf(
           permanent,
           creature,
         ),
+      );
+  }
+}
+
+/** The triggers of our permanents for one or more of our creatures dealing combat damage to a player (Midnight
+ *  Pathlighter): once per combat, after each creature's own. */
+export function creaturesDealtCombatDamageTriggers(
+  game: GameCore,
+  connected: Permanent[],
+): void {
+  if (!connected.length) return;
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onOurCreaturesDealCombatDamage)
+      runTrigger(game, permanent, () =>
+        rules.onOurCreaturesDealCombatDamage!(game, permanent, connected),
       );
   }
 }

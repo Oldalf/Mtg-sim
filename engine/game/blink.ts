@@ -13,6 +13,7 @@
 import { CardDef } from '../cards/cards';
 import type { GameCore } from './game-core';
 import { Permanent } from './game-types';
+import { firstMax } from '../util/lists';
 
 /** What a blink spell exiles and when it brings them back. */
 export interface BlinkSpell {
@@ -65,6 +66,30 @@ export interface BlinkOptions {
   inOpponentTurn?: boolean;
   tapped?: boolean;
   counters?: number;
+}
+
+/** Our creature most worth blinking (blinkValue above 0, the deck's choice), or null. */
+export function bestCreatureToBlink(
+  game: GameCore,
+  isAllowed: (creature: Permanent) => boolean = () => true,
+): Permanent | null {
+  const options = game
+    .creatures()
+    .filter((creature) => game.blinkValue(creature) > 0 && isAllowed(creature));
+  return options.length
+    ? firstMax(options, (creature) => game.blinkValue(creature))
+    : null;
+}
+
+/** Blinks our creature most worth it (Oji, Thassa, Airbender Ascension, All Aboard). False if none is. */
+export function blinkBestCreature(
+  game: GameCore,
+  isAllowed: (creature: Permanent) => boolean = () => true,
+): boolean {
+  const creature = bestCreatureToBlink(game, isAllowed);
+  if (!creature) return false;
+  blink(game, creature);
+  return true;
 }
 
 /** Blinks a permanent of ours. Returns the new permanent, or null when nothing comes back now (a token, or a card

@@ -94,10 +94,11 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     sourceName: string,
     count: number,
     minimumValue: number,
-  ): void {
-    if (!this.inArena()) return;
+  ): number {
+    if (!this.inArena()) return 0;
     for (let i = 0; i < count; i++)
-      if (!this.arena!.snipe(this, answer, sourceName, minimumValue)) return;
+      if (!this.arena!.snipe(this, answer, sourceName, minimumValue)) return i;
+    return count;
   }
   override podGoadEachOpponentsCreatures(): void {
     if (!this.inArena()) return;

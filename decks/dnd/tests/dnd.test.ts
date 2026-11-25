@@ -1,4 +1,5 @@
 /** Rules checks on hand-built boards. Run: npm run sim -- dnd --test */
+import { blinkBestCreature } from '../../../engine/game/blink';
 import * as C from '../../../engine/cards/cards';
 import { Arena, Permanent } from '../../../engine/game/game-types';
 import { Answer } from '../../../engine/game/answers';
@@ -32,6 +33,8 @@ function board(
     game.battlefield.push(permanent);
   }
   game.hand = hand.map((cardName) => C.get(cardName));
+  // (the deck has a static effect: Nadaar)
+  game.mayHaveStaticEffects = true;
   return game;
 }
 
@@ -195,8 +198,8 @@ export function runDndTests(): boolean {
   }
   {
     const game = board(['Genku, Future Shaper', 'Wall of Omens']);
-    game.blinkBestCreature();
-    game.blinkBestCreature();
+    blinkBestCreature(game);
+    blinkBestCreature(game);
     game.dies(game.battlefield.find((permanent) => permanent.token)!);
     check(
       'Genku: a Fox, then a Moonfolk; a token leaving makes none',
@@ -241,7 +244,8 @@ export function runDndTests(): boolean {
     const game = board(['Airbender Ascension']);
     for (let i = 0; i < 4; i++) game.enter(C.get('Wall of Omens'));
     const handBefore = game.hand.length;
-    const questCounters = game.airbenderQuestCounters;
+    const questCounters =
+      game.findPermanent('Airbender Ascension')!.otherCounters ?? 0;
     game.endStep();
     check(
       'Airbender Ascension: four creatures entered, the end step blinks one',

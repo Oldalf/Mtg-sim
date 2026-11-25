@@ -28,8 +28,19 @@ export function enterTriggerCount(
   game: GameCore,
   permanent: Permanent,
 ): number {
+  return triggerCountOnEnter(game, permanent, permanent);
+}
+
+/** How many times a triggered ability of `source` triggers on `entered` entering (its own enter trigger, or "whenever
+ *  a creature you control enters"): Roaming Throne for the source, Panharmonicon and Starfield Vocalist for what
+ *  entered. */
+export function triggerCountOnEnter(
+  game: GameCore,
+  source: Permanent,
+  entered: Permanent,
+): number {
   const isArtifactOrCreature =
-    permanent.card.isCreature || permanent.card.types.has('artifact');
+    entered.card.isCreature || entered.card.types.has('artifact');
   const panharmonicons = isArtifactOrCreature
     ? game.battlefield.filter((other) => other.card.name === 'Panharmonicon')
         .length
@@ -38,5 +49,5 @@ export function enterTriggerCount(
   const vocalists = game.battlefield.filter(
     (other) => other.card.name === 'Starfield Vocalist',
   ).length;
-  return triggerCount(game, permanent) + panharmonicons + vocalists;
+  return triggerCount(game, source) + panharmonicons + vocalists;
 }

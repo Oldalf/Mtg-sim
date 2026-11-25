@@ -8,7 +8,10 @@
 import { CardDef } from '../cards/cards';
 import { GameWithoutKillSearch } from './game';
 import { Permanent } from './game-types';
-import { combatDamageTriggerOf } from '../card-rules/card-rules';
+import {
+  combatDamageTriggerOf,
+  creaturesDealtCombatDamageTriggers,
+} from '../card-rules/card-rules';
 
 export abstract class CreatureDeckGame extends GameWithoutKillSearch {
   /** How much the AI wants each card on the battlefield (the deck's VALUE table). */
@@ -114,10 +117,12 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
     this.creatureCombat();
   }
 
-  /** Lifelink creatures that connected gain us their power; then the combat damage triggers (Glissa Sunslayer). */
+  /** Lifelink creatures that connected gain us their power; then the combat damage triggers (Glissa Sunslayer, then
+   *  Midnight Pathlighter's once per combat). */
   override onCombatDamage(connected: Permanent[]): void {
     this.gainLifeFromLifelink(connected);
     for (const permanent of connected) combatDamageTriggerOf(this, permanent);
+    creaturesDealtCombatDamageTriggers(this, connected);
   }
 
   /** The lifelink creatures among those that connected gain us their power. */

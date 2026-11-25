@@ -14,54 +14,37 @@
  * room's 5 life, three times with Hama Pashar and Dungeon Delver. See primer.txt (the owner's) and PLAN.md.
  */
 import {
-  AETHER_CHANNELER,
-  AGENT_OF_TREACHERY,
   AIRBENDER_ASCENSION,
   ALL_ABOARD,
   ANCESTRAL_RECALL,
-  ARCHAEOMANCERS_MAP,
-  BIRD,
   BLINK_VALUE,
   AVATARS_WRATH,
   BRAGO,
   CLOISTER_GARGOYLE,
   DELVERS_TORCH,
-  DJINNI_WINDSEER,
   EMERITUS_OF_IDEATION,
   EPHARA,
   EPHEMERATE,
   EQUIPPED_WITH_TORCH,
-  FOX,
   GENKU,
   GHOSTLY_FLICKER,
   HULLBREAKER_HORROR,
-  KNIGHT_OF_THE_WHITE_ORCHID,
   KYKAR,
   LAEZELS_ACROBATICS,
   LAND_TAX,
   MIDNIGHT_PATHLIGHTER,
-  MOMO,
-  MOONFOLK,
   MORNINGTIDES_LIGHT,
-  NADAAR,
-  NIKO,
   OJI,
   PENSIVE_PROFESSOR,
   PREPARED,
   RASPUTIN,
-  RAT,
-  SHARD,
   SKYCOACH_CONDUCTOR,
   SMALLEST_BLINK_WORTH_IT,
-  SOLDIER,
   SPIRIT,
-  STARFIELD_SHEPHERD,
   THASSA,
   TOMB_OF_HORRORS_ADVENTURER,
-  UNDERCELLAR_SWEEP,
   VALUE,
   WHITE_PLUME_ADVENTURER,
-  YUAN_TI_MALISON,
 } from './cards';
 import { buildCandidates } from './candidates';
 import { CardDef } from '../../engine/cards/cards';
@@ -75,18 +58,23 @@ import type { TurnStep } from '../../engine/game/game-core';
 import { Answer, Hit } from '../../engine/game/answers';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
+  attackTriggerOf,
+  combatDamageTriggerOf,
+  creaturesDealtCombatDamageTriggers,
   enterTriggerOfCommonCard,
-  upkeepOfCommonCards,
+  triggersOfOthersOnEnter,
+  weAttackTriggers,
 } from '../../engine/card-rules/card-rules';
 import { triggersOfCreatureEntering } from '../../engine/game/creature-enter-triggers';
 import {
   BLINK_SPELLS,
   BlinkAnswer,
+  bestCreatureToBlink,
   blink,
+  blinkBestCreature,
   resolveBlinkSpell,
 } from '../../engine/game/blink';
 import { ventureIntoDungeon } from '../../engine/game/dungeons';
-import { fetchLand } from '../../engine/game/land-search';
 import { enterTriggerCount } from '../../engine/game/trigger-doublers';
 import { firstMax } from '../../engine/util/lists';
 
@@ -96,15 +84,7 @@ const BLINK_DODGES = new Set([EPHEMERATE, GHOSTLY_FLICKER]);
 
 const NONLAND: Hit[] = ['creature', 'artifact', 'enchantment', 'planeswalker'];
 
-/** Agent of Treachery's "gain control of target permanent", as the pod's removal (we don't use what we take). */
-const AGENT_OF_TREACHERY_STEALS: Answer = {
-  kind: 'removal',
-  instant: false,
-  hits: NONLAND,
-  how: 'exile',
-};
-
-/** Aether Channeler's and Hullbreaker Horror's "return target nonland permanent to its owner's hand". */
+/** Hullbreaker Horror's "return target nonland permanent to its owner's hand". */
 const BOUNCE_NONLAND_PERMANENT: Answer = {
   kind: 'removal',
   instant: false,
@@ -112,29 +92,25 @@ const BOUNCE_NONLAND_PERMANENT: Answer = {
   how: 'bounce',
 };
 
-/** Aether Channeler bounces instead of drawing only a permanent worth at least this much to its owner (an
- *  opponent's commander always counts: it costs 2 more next time). */
-const CHANNELER_BOUNCE_MIN_VALUE = 60;
-
 /** Avatar's Wrath (and Morningtide's Light for its shield) when the strongest opponent's creatures have this much
  *  power in all, and what we lose has at most half of it (the pod's rule for a board wipe). */
 const BEHIND_ON_BOARD_POWER = 10;
 
-/** Genku's tokens, one of each a turn, in the order we take them. */
-const GENKU_TOKENS = [FOX, MOONFOLK, RAT];
+/** orderSimultaneousTriggers: later numbers resolve later (the rest: 0). */
+const TRIGGER_ORDER: Record<string, number> = {
+  [EPHARA]: 1,
+  [THASSA]: 1,
+  [LAND_TAX]: 2,
+  [WHITE_PLUME_ADVENTURER]: 2,
+  [AIRBENDER_ASCENSION]: 2,
+};
 
 export class DndGame extends CreatureDeckGame {
   override colors = ['W', 'U'];
   readonly values = VALUE;
 
-  /** Airbender Ascension's quest counters (one Ascension: it is the only one in the list). */
-  airbenderQuestCounters = 0;
   /** Rasputin's dream counters. */
   rasputinDreamCounters = 0;
-  /** Genku's tokens made this turn (each kind once a turn). */
-  genkuTokensThisTurn = 0;
-  /** Ephara: did a creature enter under our control since the last upkeep (ours or an opponent's)? */
-  hasCreatureEnteredSinceLastUpkeep = false;
   /** Morningtide's Light resolved: all damage to us is prevented until our next turn. */
   isDamagePreventedUntilOurTurn = false;
   /** While we cast a blink spell in an opponent's turn: what it saves (the engine's blink then uses it). */
@@ -142,142 +118,30 @@ export class DndGame extends CreatureDeckGame {
 
   override startTurn(): void {
     super.startTurn();
-    this.genkuTokensThisTurn = 0;
     this.isDamagePreventedUntilOurTurn = false;
   }
 
   // ================================================================ enter
-  /** Each enter trigger runs once more per doubler (Panharmonicon, Starfield Vocalist). */
-  override onEnter(permanent: Permanent, _from: Zone): void {
+  /** Each enter trigger runs once more per doubler (Panharmonicon, Starfield Vocalist). The engine's cards (their
+   *  enter triggers, then Cathars' Crusade and Radiant Solar, then Airbender Ascension's quest counter) in the deck's
+   *  old order. */
+  override onEnter(permanent: Permanent, from: Zone): void {
     const card = permanent.card;
     // "enters prepared" and the counters it starts with are not triggers
     if (card.name === SKYCOACH_CONDUCTOR || card.name === EMERITUS_OF_IDEATION)
       permanent.marks |= PREPARED;
-    if (card.name === AIRBENDER_ASCENSION) this.airbenderQuestCounters = 0;
     if (card.name === RASPUTIN) this.rasputinDreamCounters = 0;
     const triggerCount = enterTriggerCount(this, permanent);
     for (let i = 0; i < triggerCount; i++) {
       enterTriggerOfCommonCard(this, permanent);
-      this.enterTrigger(permanent);
+      if (card.name === RASPUTIN)
+        this.rasputinDreamCounters += this.countOpponentsAlive();
       // Cathars' Crusade, Radiant Solar
       triggersOfCreatureEntering(this, permanent);
     }
-    if (this.isCreatureNow(permanent)) {
+    if (this.isCreatureNow(permanent))
       this.hasCreatureEnteredSinceLastUpkeep = true;
-      if (this.isOnBattlefield(AIRBENDER_ASCENSION))
-        this.airbenderQuestCounters += triggerCount;
-    }
-  }
-
-  /** The enter triggers of the deck's own cards (the engine's are in enterTriggerOfCommonCard). */
-  enterTrigger(permanent: Permanent): void {
-    switch (permanent.card.name) {
-      case NIKO:
-        this.createTokens(SHARD, 2);
-        break;
-      case OJI:
-        this.gainLife(2);
-        this.scry(2);
-        break;
-      case AETHER_CHANNELER:
-        this.aetherChannelerChooses();
-        break;
-      case DJINNI_WINDSEER:
-        this.scry(this.rollD20() >= 10 ? 2 : 1);
-        break;
-      case RASPUTIN:
-        this.rasputinDreamCounters += this.countOpponentsAlive();
-        break;
-      case STARFIELD_SHEPHERD:
-        this.starfieldShepherdSearches();
-        break;
-      case ARCHAEOMANCERS_MAP:
-        fetchLand(this, 'plains', false, true);
-        fetchLand(this, 'plains', false, true);
-        break;
-      case KNIGHT_OF_THE_WHITE_ORCHID:
-        if (this.opponentHasMoreLands()) fetchLand(this, 'plains', false);
-        break;
-      case AGENT_OF_TREACHERY:
-        if (this.inArena())
-          this.arena!.snipe(
-            this,
-            AGENT_OF_TREACHERY_STEALS,
-            AGENT_OF_TREACHERY,
-          );
-        break;
-    }
-  }
-
-  /** Aether Channeler: in a pod, bounce an opponent's permanent worth it (the primer's control); else a card, or a
-   *  flying Bird when the hand is full. */
-  aetherChannelerChooses(): void {
-    if (
-      this.inArena() &&
-      this.arena!.snipe(
-        this,
-        BOUNCE_NONLAND_PERMANENT,
-        AETHER_CHANNELER,
-        CHANNELER_BOUNCE_MIN_VALUE,
-      )
-    )
-      return;
-    if (this.hand.length >= 6) this.createTokens(BIRD);
-    else this.draw(1);
-  }
-
-  /** A d20 (20 counts as 19: Djinni Windseer's scry 3 is not worth a rule of its own). */
-  rollD20(): number {
-    const roll = 1 + Math.floor(this.rng.random() * 20);
-    this.say(`  d20: ${roll}`);
-    return roll;
-  }
-
-  /** Starfield Shepherd: a basic Plains while we have fewer than five lands, else a creature card with mana value 1
-   *  or less (Momo), to hand. */
-  starfieldShepherdSearches(): void {
-    const isShortOfLands =
-      this.landsOnBattlefield().length + this.countLandsHand() < 5;
-    const creature = this.library.find(
-      (card) => card.isCreature && card.manaValue <= 1,
-    );
-    if (!creature || isShortOfLands) {
-      fetchLand(this, 'plains', false, true);
-      return;
-    }
-    this.takeCard(creature, 'library');
-    this.shuffle();
-    this.putCard(creature, 'hand');
-    this.say('  search ->', creature);
-  }
-
-  /** "If an opponent controls more lands than you": we don't see the opponents' lands, so the opponent with the
-   *  most is taken to have played a land each turn, plus one from turn 3 (at a table of four, someone ramps). */
-  opponentHasMoreLands(): boolean {
-    const mostLandsOfAnOpponent = this.turn + (this.turn >= 3 ? 1 : 0);
-    return this.landsOnBattlefield().length < mostLandsOfAnOpponent;
-  }
-
-  // ================================================================ leave
-  /** Momo's leave trigger; Genku makes a token when another nontoken permanent of ours leaves. */
-  override onLeave(permanent: Permanent): void {
-    if (permanent.card.name === MOMO) this.momoLeaves();
-    if (
-      !permanent.token &&
-      this.isOnBattlefield(GENKU) &&
-      this.genkuTokensThisTurn < GENKU_TOKENS.length
-    ) {
-      this.createTokens(GENKU_TOKENS[this.genkuTokensThisTurn]);
-      this.genkuTokensThisTurn += 1;
-    }
-  }
-
-  /** Momo: a +1/+1 counter on our best creature, or scry 2 when we have none (the Food is never the best). */
-  momoLeaves(): void {
-    const creatures = this.creatures();
-    if (creatures.length)
-      firstMax(creatures, (creature) => this.power(creature)).counters += 1;
-    else this.scry(2);
+    triggersOfOthersOnEnter(this, permanent, from);
   }
 
   // ================================================================ blink
@@ -303,28 +167,6 @@ export class DndGame extends CreatureDeckGame {
     )
       value += 2;
     return value - permanent.counters;
-  }
-
-  /** Our creature most worth blinking (above 0), or null. */
-  bestCreatureToBlink(
-    isAllowed: (creature: Permanent) => boolean = () => true,
-  ): Permanent | null {
-    const options = this.creatures().filter(
-      (creature) => this.blinkValue(creature) > 0 && isAllowed(creature),
-    );
-    return options.length
-      ? firstMax(options, (creature) => this.blinkValue(creature))
-      : null;
-  }
-
-  /** Blinks our best creature (Oji, Thassa, Airbender Ascension, All Aboard). Returns false if none is worth it. */
-  blinkBestCreature(
-    isAllowed: (creature: Permanent) => boolean = () => true,
-  ): boolean {
-    const creature = this.bestCreatureToBlink(isAllowed);
-    if (!creature) return false;
-    blink(this, creature);
-    return true;
   }
 
   /** Is this creature worth a blink spell to save it from removal? Our commander, or one with an enter trigger. */
@@ -393,14 +235,6 @@ export class DndGame extends CreatureDeckGame {
     }
   }
 
-  /** Brago: each nonland permanent of ours worth blinking. */
-  bragoBlinks(): void {
-    const permanents = this.battlefield.filter(
-      (permanent) => permanent.land === null && this.blinkValue(permanent) > 0,
-    );
-    for (const permanent of permanents) blink(this, permanent);
-  }
-
   // ================================================================ spells we cast
   /** Every spell we cast passes here (the engine announces it to a pod): Pensive Professor, Hullbreaker Horror,
    *  Kykar, and on our second spell of the turn Oji and Tomb of Horrors Adventurer. */
@@ -410,7 +244,7 @@ export class DndGame extends CreatureDeckGame {
     this.hullbreakerBounces();
     if (!card.isCreature) this.kykarTriggers();
     if (this.spellsCast !== 2) return;
-    if (this.isOnBattlefield(OJI)) this.blinkBestCreature();
+    if (this.isOnBattlefield(OJI)) blinkBestCreature(this);
     for (
       let i = 0;
       i < this.countOnBattlefield(TOMB_OF_HORRORS_ADVENTURER);
@@ -448,7 +282,8 @@ export class DndGame extends CreatureDeckGame {
     for (const kykar of this.battlefield.slice()) {
       if (kykar.card.name !== KYKAR) continue;
       const isBeforeCombat = this.step === 'main1' && !this.attacked;
-      const creature = this.bestCreatureToBlink(
+      const creature = bestCreatureToBlink(
+        this,
         (other) =>
           other !== kykar &&
           this.blinkValue(other) >= SMALLEST_BLINK_WORTH_IT &&
@@ -519,7 +354,8 @@ export class DndGame extends CreatureDeckGame {
     mode: string | null,
   ): void {
     if (card === ALL_ABOARD)
-      this.blinkBestCreature(
+      blinkBestCreature(
+        this,
         (creature) => creature.card.name !== SKYCOACH_CONDUCTOR,
       );
     else if (card === ANCESTRAL_RECALL) this.draw(3);
@@ -585,55 +421,28 @@ export class DndGame extends CreatureDeckGame {
       if (creature !== kept) this.podRemove(creature, 'bounce');
   }
 
-  // ================================================================ upkeep and end step
-  override upkeep(): void {
-    upkeepOfCommonCards(this);
-    this.epharaDraws();
-    if (this.isOnBattlefield(LAND_TAX) && this.opponentHasMoreLands())
-      for (let i = 0; i < 3; i++) fetchLand(this, 'basic', false, true);
-  }
-
-  override opponentUpkeep(): void {
-    super.opponentUpkeep();
-    this.epharaDraws();
-    this.whitePlumeUntaps();
-  }
-
-  /** Ephara: at each upkeep, a card if a creature entered under our control since the last one. */
-  epharaDraws(): void {
-    if (this.hasCreatureEnteredSinceLastUpkeep && this.isOnBattlefield(EPHARA))
-      this.draw(1);
-    this.hasCreatureEnteredSinceLastUpkeep = false;
-  }
-
-  /** White Plume Adventurer: at each opponent's upkeep, untap a creature of ours (all of them with a completed
-   *  dungeon): they can block. */
-  whitePlumeUntaps(): void {
-    if (!this.isOnBattlefield(WHITE_PLUME_ADVENTURER)) return;
-    const tapped = this.creatures().filter((creature) => creature.tapped);
-    if (!tapped.length) return;
-    if (this.completedDungeons > 0)
-      for (const creature of tapped) creature.tapped = false;
-    else firstMax(tapped, (creature) => this.power(creature)).tapped = false;
-  }
-
-  /** Thassa blinks another creature; Airbender Ascension with four quest counters blinks one. */
-  override endStep(): void {
-    if (this.isOnBattlefield(THASSA))
-      this.blinkBestCreature((creature) => creature.card.name !== THASSA);
-    if (
-      this.isOnBattlefield(AIRBENDER_ASCENSION) &&
-      this.airbenderQuestCounters >= 4
-    )
-      this.blinkBestCreature();
+  // ================================================================ trigger order
+  /** Our triggers at the same moment: the engine's cards first, then Ephara and Thassa, then Land Tax, White Plume
+   *  Adventurer and Airbender Ascension (the deck's old order: Ephara draws before Land Tax searches). */
+  override orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
+    return permanents
+      .map((permanent, index) => ({ permanent, index }))
+      .sort(
+        (first, second) =>
+          (TRIGGER_ORDER[first.permanent.card.name] ?? 0) -
+            (TRIGGER_ORDER[second.permanent.card.name] ?? 0) ||
+          first.index - second.index,
+      )
+      .map(({ permanent }) => permanent);
   }
 
   // ================================================================ combat
-  /** Nadaar and Delver's Torch venture, Emeritus of Ideation prepares again, Undercellar Sweep makes two Soldiers
-   *  attacking (when we have the initiative; an attacked opponent holding it is not modelled). */
+  /** Each attacker's engine trigger (Nadaar), Delver's Torch ventures, Emeritus of Ideation prepares again; then the
+   *  engine's "whenever you attack" (Undercellar Sweep's Soldiers). */
   override onAttack(attackers: Permanent[]): Permanent[] {
+    const joined: Permanent[] = [];
     for (const attacker of attackers) {
-      if (attacker.card.name === NADAAR) ventureIntoDungeon(this);
+      joined.push(...attackTriggerOf(this, attacker));
       if (attacker.marks & EQUIPPED_WITH_TORCH) ventureIntoDungeon(this);
       if (
         attacker.card.name === EMERITUS_OF_IDEATION &&
@@ -645,22 +454,19 @@ export class DndGame extends CreatureDeckGame {
         attacker.marks |= PREPARED;
       }
     }
-    const joined: Permanent[] = [];
-    if (this.hasInitiative)
-      for (let i = 0; i < this.countOnBattlefield(UNDERCELLAR_SWEEP); i++)
-        joined.push(...this.createTokens(SOLDIER, 2, { tapped: true }));
+    joined.push(...weAttackTriggers(this, attackers));
     return joined;
   }
 
-  /** Brago blinks, Yuan-Ti Malison and Midnight Pathlighter venture. */
+  /** The engine's combat damage triggers in the deck's old order: Brago's blink after Midnight Pathlighter's venture
+   *  (Yuan-Ti Malison's venture before both). */
   override onCombatDamage(connected: Permanent[]): void {
-    super.onCombatDamage(connected);
-    if (!connected.length) return;
-    for (const permanent of connected)
-      if (permanent.card.name === YUAN_TI_MALISON) ventureIntoDungeon(this);
-    if (this.isOnBattlefield(MIDNIGHT_PATHLIGHTER)) ventureIntoDungeon(this);
-    if (connected.some((permanent) => permanent.card.name === BRAGO))
-      this.bragoBlinks();
+    this.gainLifeFromLifelink(connected);
+    for (const creature of connected)
+      if (creature.card.name !== BRAGO) combatDamageTriggerOf(this, creature);
+    creaturesDealtCombatDamageTriggers(this, connected);
+    for (const creature of connected)
+      if (creature.card.name === BRAGO) combatDamageTriggerOf(this, creature);
   }
 
   /** Does it fly now? Cloister Gargoyle flies once a dungeon is completed. */
@@ -691,29 +497,21 @@ export class DndGame extends CreatureDeckGame {
     return this.isOnBattlefield(MIDNIGHT_PATHLIGHTER) ? 'legendary' : 'none';
   }
 
-  /** Nadaar (+1/+1 for the others once a dungeon is completed), Cloister Gargoyle (+3/+0), Delver's Torch (+1/+1). */
+  /** The engine's (Nadaar), Cloister Gargoyle (+3/+0), Delver's Torch (+1/+1). */
   override powerBonus(permanent: Permanent): number {
-    let bonus = this.sharedBonus(permanent);
+    let bonus = super.powerBonus(permanent) + this.torchBonus(permanent);
     if (permanent.card.name === CLOISTER_GARGOYLE && this.completedDungeons > 0)
       bonus += 3;
     return bonus;
   }
 
   override toughnessBonus(permanent: Permanent): number {
-    return this.sharedBonus(permanent);
+    return super.toughnessBonus(permanent) + this.torchBonus(permanent);
   }
 
-  /** The +1/+1 bonuses: Nadaar's for the others, Delver's Torch's. */
-  sharedBonus(permanent: Permanent): number {
-    let bonus = 0;
-    if (
-      this.completedDungeons > 0 &&
-      permanent.card.name !== NADAAR &&
-      this.isOnBattlefield(NADAAR)
-    )
-      bonus += this.countOnBattlefield(NADAAR);
-    if (permanent.marks & EQUIPPED_WITH_TORCH) bonus += 1;
-    return bonus;
+  /** Delver's Torch: +1/+1. */
+  torchBonus(permanent: Permanent): number {
+    return permanent.marks & EQUIPPED_WITH_TORCH ? 1 : 0;
   }
 
   /** Delver's Torch: attach it to the creature that attacks best (it falls off a blinked creature). */

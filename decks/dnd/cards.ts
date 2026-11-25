@@ -67,19 +67,8 @@ export const ANCESTRAL_RECALL = new C.CardDef('Ancestral Recall', {
 });
 
 // tokens
-export const SOLDIER = C.makeToken('Soldier', 1, 1, 'white');
 export const KNIGHT = C.makeToken('Knight', 2, 2, 'white');
-export const FOX = C.makeToken('Fox', 2, 2, 'white', ['vigilance']);
-export const MOONFOLK = C.makeToken('Moonfolk', 1, 2, 'blue', ['flying']);
-export const RAT = C.makeToken('Rat', 1, 1, 'black', ['lifelink']);
-export const BIRD = C.makeToken('Bird', 1, 1, 'white', ['flying']);
 export const SPIRIT = C.makeToken('Spirit', 1, 1, 'white', ['flying']);
-/** Niko's Shard: an enchantment token, "{2}, Sacrifice this token: Scry 1, then draw a card." */
-export const SHARD = new C.CardDef('Shard', {
-  name: 'Shard',
-  type_line: 'Token Enchantment — Shard',
-  token: true,
-} as C.CardData);
 
 /** How much the AI wants each card on the battlefield (the rest: 40 for a creature, 30 otherwise). */
 export const VALUE: Record<string, number> = {

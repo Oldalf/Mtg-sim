@@ -5,7 +5,7 @@ Azorius blink and dungeons, bracket 2-3. A friend's deck, **pod-only** (Pontus, 
 ## Files
 
 - `primer.txt`: the owner's primer, in the owner's own words (2026-11-16).
-- `cards.ts`: names, `VALUE`, `BLINK_VALUE` (how much a second enter trigger is worth), `HOLD`, the tokens and the prepared spells. `game.ts`: `DndGame` (extends `CreatureDeckGame`). `candidates.ts`. `tests/dnd.test.ts`.
+- `cards.ts`: names, `VALUE`, `BLINK_VALUE` (how much a second enter trigger is worth), `HOLD`, the tokens and the prepared spells. `game.ts`: `DndGame` (extends `CreatureDeckGame`): the cast triggers on every spell (Oji's second spell, Kykar, Hullbreaker Horror, Tomb of Horrors Adventurer, Pensive Professor), the prepared creatures, Morningtide's Light's shield, Avatar's Wrath, Rasputin, Delver's Torch, Cloister Gargoyle and Midnight Pathlighter's evasion, and the order of the engine's triggers. Every other card's rules are in the engine (`engine/card-rules/blink-and-dungeons.ts`, `permanents.ts`; U1b step 2, 2026-11-25). `candidates.ts` (also the activated abilities: Niko, Genku, Rasputin, the Dungeon Map and Descent). `tests/dnd.test.ts`.
 
 ## How the deck wins (the primer)
 
