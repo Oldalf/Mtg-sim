@@ -138,6 +138,7 @@ export function beginNextTurn(game: GameCore): void {
   game.firstDrawDone = false;
   game.attacked = false;
   game.landPlayed = false;
+  game.extraLandDropsThisTurn = 0;
   game.wallUsed = false;
   game.lastKey = null;
   game.sorceriesHaveFlashThisTurn = game.nextSorceryHasFlash = false;

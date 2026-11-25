@@ -88,6 +88,10 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     if (this.inArena())
       this.arena!.shrinkCreatures(this, amount, includeOwn, except, sourceName);
   }
+  override podFightBestCreature(fighter: Permanent, sourceName: string): void {
+    if (this.inArena())
+      this.arena!.fightBestCreature(this, fighter, sourceName);
+  }
   override podCreaturesShrinkWouldKill(amount: number): number {
     return this.inArena()
       ? this.arena!.creaturesShrinkWouldKill(this, amount)
@@ -244,15 +248,6 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       if (this.isOpponentAlive(slot) && this.arena.board(this, slot).length)
         return true;
     return false;
-  }
-  /** Our creature with the most power, or null without one. */
-  biggestCreature(): Permanent | null {
-    const creatures = this.creatures();
-    return creatures.length
-      ? creatures.reduce((biggest, creature) =>
-          this.power(creature) > this.power(biggest) ? creature : biggest,
-        )
-      : null;
   }
   /** A pod: the damage the biggest opposing board could deal us next turn, each untapped creature of ours blocking one
    *  of its biggest attackers. */

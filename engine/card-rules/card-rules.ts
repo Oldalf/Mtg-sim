@@ -3,7 +3,8 @@
  * choice methods (cardValue, returnToHandValue, chooseLandToFetch, tutorTarget...) wherever the card asks its
  * controller to choose, so the deck decides without knowing how the card works.
  *
- * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts) list
+ * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
+ * ramp-spells.ts, landfall.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
@@ -19,8 +20,10 @@ import {
 import { ARISTOCRATS } from './aristocrats';
 import { ATTACK_TRIGGERS } from './attack-triggers';
 import { DRAW_SPELLS } from './draw-spells';
+import { LANDFALL } from './landfall';
 import { MANA_SPELLS_AND_TUTORS } from './mana-spells-and-tutors';
 import { PERMANENTS } from './permanents';
+import { RAMP_SPELLS } from './ramp-spells';
 
 /** How a spell was cast, for a rule that cares. */
 export interface HowCast {
@@ -50,6 +53,10 @@ export interface CardRules {
   /** A permanent of ours died: runs for each of our permanents on the battlefield and for the dead one itself
    *  ("whenever this or another creature dies"; permanent === dead when it is itself). */
   onPermanentDies?(game: GameCore, permanent: Permanent, dead: Permanent): void;
+  /** A land entered under our control while this is on the battlefield (landfall). */
+  onLandfall?(game: GameCore, permanent: Permanent, land: Permanent): void;
+  /** The additional land drops it gives each turn while it is on the battlefield. */
+  landDropsItGives?(game: GameCore, permanent: Permanent): number;
   /** It attacks. */
   onAttacks?(game: GameCore, permanent: Permanent): void;
   /** We attack, while it is on the battlefield, after the attackers' own triggers ("whenever you attack with..."). */
@@ -67,6 +74,8 @@ for (const rules of [
   ...PERMANENTS,
   ...ARISTOCRATS,
   ...ATTACK_TRIGGERS,
+  ...RAMP_SPELLS,
+  ...LANDFALL,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
@@ -156,4 +165,31 @@ export function attackTriggers(game: GameCore, attackers: Permanent[]): void {
     rulesOf(attacker.card)?.onAttacks?.(game, attacker);
   for (const permanent of game.battlefield.slice())
     rulesOf(permanent.card)?.onWeAttack?.(game, permanent, attackers);
+}
+
+/** One permanent's landfall trigger. False if it has none (a deck with landfall cards of its own runs them in the same
+ *  loop, so the order stays the battlefield's). */
+export function landfallTriggerOf(
+  game: GameCore,
+  permanent: Permanent,
+  land: Permanent,
+): boolean {
+  const onLandfall = rulesOf(permanent.card)?.onLandfall;
+  if (!onLandfall) return false;
+  onLandfall(game, permanent, land);
+  return true;
+}
+
+/** The landfall triggers of our permanents. The engine's onLandEnter runs them. */
+export function landfallTriggers(game: GameCore, land: Permanent): void {
+  for (const permanent of game.battlefield.slice())
+    landfallTriggerOf(game, permanent, land);
+}
+
+/** The additional land drops our permanents give this turn (Azusa, Druid Class...). */
+export function landDropsFromPermanents(game: GameCore): number {
+  let drops = 0;
+  for (const permanent of game.battlefield)
+    drops += rulesOf(permanent.card)?.landDropsItGives?.(game, permanent) ?? 0;
+  return drops;
 }

@@ -110,6 +110,7 @@ import {
   upkeepOfCommonCards,
   resolveSpellByRules,
   attackTriggers,
+  landfallTriggers,
   triggersOfOthersOnEnter,
   triggersOnDeath,
 } from '../card-rules/card-rules';
@@ -873,6 +874,15 @@ export abstract class GameCore<S = unknown> {
   }
 
   // ================================================================ creatures
+  /** Our creature with the most power, or null without one. */
+  biggestCreature(): Permanent | null {
+    const creatures = this.creatures();
+    return creatures.length
+      ? creatures.reduce((biggest, creature) =>
+          this.power(creature) > this.power(biggest) ? creature : biggest,
+        )
+      : null;
+  }
   creatures(): Permanent[] {
     return this.battlefield.filter((permanent) =>
       this.isCreatureNow(permanent),
@@ -926,6 +936,22 @@ export abstract class GameCore<S = unknown> {
     this.dies(permanent);
     if (permanent.card === CLUE) clueSacrificed(this);
     this.isSacrificing = wasSacrificing;
+  }
+  /** Land drops added for this turn only (Summer Bloom, Explore); beginNewTurn clears it. A deck that plays more than
+   *  one land a turn counts it (Aesi's dropsAllowed). */
+  extraLandDropsThisTurn = 0;
+  /** The land a spell makes us sacrifice (Harrow, Entish Restoration): a tapped basic, else a tapped land, else any. */
+  chooseLandToSacrifice(): Permanent | undefined {
+    const lands = this.landsOnBattlefield();
+    return (
+      lands.find((permanent) => permanent.tapped && permanent.land!.basic) ??
+      lands.find((permanent) => permanent.tapped) ??
+      lands[0]
+    );
+  }
+  /** Cards we leave in the library so we don't draw from an empty one (a "look at the top X" counts only the rest). */
+  libraryCardsToKeep(): number {
+    return 0;
   }
   /** True while a sacrifice is resolving (for "whenever you sacrifice" triggers, Mayhem Devil, Carmen). */
   isSacrificing = false;
@@ -1102,8 +1128,9 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */
-  onLandEnter(_permanent: Permanent, _gone: boolean): void {
+  onLandEnter(permanent: Permanent, _gone: boolean): void {
     landfallOfCommonCards(this);
+    landfallTriggers(this, permanent);
   }
 
   // ================================================================ card actions
@@ -1478,6 +1505,8 @@ export abstract class GameCore<S = unknown> {
     _except: Permanent | null,
     _sourceName: string,
   ): void {}
+  /** Our creature fights the opponents' best creature it can kill (a pod only: Bushwhack). */
+  podFightBestCreature(_fighter: Permanent, _sourceName: string): void {}
   /** How many opposing creatures a -X/-X would kill now (0 in a goldfish game). */
   podCreaturesShrinkWouldKill(_amount: number): number {
     return 0;

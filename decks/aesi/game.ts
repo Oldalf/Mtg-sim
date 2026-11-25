@@ -24,6 +24,10 @@
  * (half of them blocked). No crackback.
  */
 import {
+  landDropsFromPermanents,
+  landfallTriggerOf,
+} from '../../engine/card-rules/card-rules';
+import {
   AESI,
   BSZ,
   BUDOKA,
@@ -31,12 +35,10 @@ import {
   COBRA,
   DOMINION,
   DRUID,
-  ELVES,
   FETCHES_TWO,
   HARU,
   HOLD,
   INVASION,
-  KHALNI,
   KIRI,
   KODAMA,
   MELOKU,
@@ -105,7 +107,6 @@ export class AesiGame extends Game<AesiGame> {
   }
   override colors = ['G', 'U'];
   dropsUsed = 0; // land drops used this turn
-  dropsBonus = 0; // extra drops for this turn only (Explore, Summer Bloom, the Saga)
   epic = false; // an epic spell resolved: no more spells for the rest of the game
   swarmCopies = 0; // Endless Swarm epic copies each upkeep
   dominionCopies = 0; // Eternal Dominion epic copies each upkeep
@@ -184,7 +185,7 @@ export class AesiGame extends Game<AesiGame> {
       lands6: this.landsEnd[6] ?? null,
     };
   }
-  libraryCardsToKeep(): number {
+  override libraryCardsToKeep(): number {
     return this.config.keep_library as number;
   }
   /** A pod: a loop win can be answered by countering its finisher (Blue Sun's Zenith, Endless Swarm, Eternal Dominion) or by
@@ -319,15 +320,7 @@ export class AesiGame extends Game<AesiGame> {
 
   // ================================================================ land drops and land puts
   dropsAllowed(): number {
-    let drops = 1 + this.dropsBonus;
-    for (const permanent of this.battlefield) {
-      const name = permanent.card.name;
-      if (name === AESI || name === 'Loot, Exuberant Explorer' || name === CASE)
-        drops += 1;
-      else if (name === 'Azusa, Lost but Seeking') drops += 2;
-      else if (name === DRUID && permanent.counters >= 2) drops += 1;
-    }
-    return drops;
+    return 1 + this.extraLandDropsThisTurn + landDropsFromPermanents(this);
   }
   canDrop(): boolean {
     return this.dropsUsed < this.dropsAllowed();
@@ -440,14 +433,9 @@ export class AesiGame extends Game<AesiGame> {
     if (permanent.land?.scry && !_gone) this.scry(1); // Temple of Mystery
     for (const otherPermanent of this.battlefield.slice()) {
       const name = otherPermanent.card.name;
-      if (name === AESI && this.library.length > this.libraryCardsToKeep())
-        this.draw(1);
-      else if (name === COBRA) {
-        if (this.pool.U <= this.pool.G) this.pool.U += 1;
-        else this.pool.G += 1;
-      } else if (name === DRUID) this.gainLife(1);
-      else if (name === KHALNI) otherPermanent.counters += 1;
-      else if (name === RETREAT) this.retreat(true);
+      // the engine's landfall cards (Aesi, Lotus Cobra, Druid Class, Khalni...), then Aesi's own, in battlefield order
+      if (landfallTriggerOf(this, otherPermanent, permanent)) continue;
+      if (name === RETREAT) this.retreat(true);
       else if (name === RAFT) this.retreat(false);
       else if (
         name === TATYOVA &&
@@ -530,11 +518,9 @@ export class AesiGame extends Game<AesiGame> {
   override onEnter(permanent: Permanent, _from: Zone): void {
     const name = permanent.card.name;
     if (name === AESI && this.aesiOut === null) this.aesiOut = this.turn;
-    if (name === HARU && !permanent.token) this.draw(1);
-    if (name === ELVES && !permanent.token)
-      this.fetchBasic({ only: 'Forest' }); // untapped
-    else if (name === DRUID || name === SAGA) permanent.counters = 1;
-    if (name === SAGA) this.dropsBonus += 1; // chapter I: an additional land this turn
+    super.onEnter(permanent, _from); // the engine's enter triggers (Haru-Onna, Wood Elves, Druid Class...)
+    if (name === SAGA) permanent.counters = 1;
+    if (name === SAGA) this.extraLandDropsThisTurn += 1; // chapter I: an additional land this turn
     if (name === REVOLT) this.revolt = true;
     if (name === INVASION && !permanent.token) {
       permanent.counters = SIEGE_DEFENSE; // (a battle: its defense counters)
@@ -646,7 +632,6 @@ export class AesiGame extends Game<AesiGame> {
   override beginNewTurn(): void {
     super.beginNewTurn();
     this.dropsUsed = 0;
-    this.dropsBonus = 0;
     this.infMana = false;
     this.comboKey = null;
     this.affinity = false;

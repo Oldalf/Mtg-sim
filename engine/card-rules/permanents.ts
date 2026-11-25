@@ -84,6 +84,12 @@ export const PERMANENTS: CardRules[] = [
     },
   },
   {
+    names: ['Haru-Onna'],
+    onEnter(game) {
+      game.draw(1);
+    },
+  },
+  {
     names: ['Gas Guzzler'],
     onEnter(_game, permanent) {
       permanent.tapped = true;
