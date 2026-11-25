@@ -106,6 +106,9 @@ export function manaSourceKindOf(
   }
   if (permanent.card.name === "Sarevok's Tome" && game.hasInitiative)
     return 'C2';
+  // four mana of the chosen colour, spent only on spells of that colour: played as four colourless (not a rock, which
+  // the planners would cast as early ramp)
+  if (permanent.card.name === 'Throne of Eldraine') return 'C4';
   if (permanent.card.rock) return permanent.card.rock;
   if (
     permanent.card.name === 'Curious Homunculus' &&

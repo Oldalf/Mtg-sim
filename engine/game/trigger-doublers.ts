@@ -3,8 +3,8 @@
  * Panharmonicon: an artifact or creature entering makes our enter triggers trigger again.
  * Starfield Vocalist: any permanent entering does.
  * Roaming Throne: each triggered ability of another creature of the chosen type triggers again
- * (the deck says which type: GameCore.roamingThroneType).
- * The engine counts; the deck runs its trigger that many times.
+ * (the deck says which type: GameCore.chosenCreatureType).
+ * The engine counts; the card-rules dispatchers run a trigger that many times.
  */
 import { hasCreatureType } from '../cards/cards';
 import type { GameCore } from './game-core';
@@ -12,13 +12,15 @@ import { Permanent } from './game-types';
 
 /** How many times a triggered ability of this permanent triggers (Roaming Throne). */
 export function triggerCount(game: GameCore, permanent: Permanent): number {
-  const chosenType = game.roamingThroneType();
-  if (chosenType === null || !permanent.card.isCreature) return 1;
-  if (!hasCreatureType(permanent.card, chosenType)) return 1;
-  const thrones = game.battlefield.filter(
-    (throne) => throne !== permanent && throne.card.name === 'Roaming Throne',
-  ).length;
-  return 1 + thrones;
+  if (!permanent.card.isCreature) return 1;
+  let count = 1;
+  for (const throne of game.battlefield) {
+    if (throne === permanent || throne.card.name !== 'Roaming Throne') continue;
+    const chosenType = game.chosenCreatureType(throne.card);
+    if (chosenType !== null && hasCreatureType(permanent.card, chosenType))
+      count++;
+  }
+  return count;
 }
 
 /** How many times this permanent's enter trigger triggers (Roaming Throne and Panharmonicon). */

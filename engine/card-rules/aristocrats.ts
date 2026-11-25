@@ -11,6 +11,29 @@ import type { CardRules } from './card-rules';
 
 export const ARISTOCRATS: CardRules[] = [
   {
+    names: ['Harvester of Souls'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: only our creatures dying count (the card: any player's).
+    onOurPermanentDies(game, permanent, dead) {
+      if (isAnotherCreature(permanent, dead) && !dead.token) game.draw(1);
+    },
+  },
+  {
+    names: ['Ob Nixilis, Unshackled', 'Venomcrawler'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: only our creatures dying count (the cards: any player's); Ob Nixilis's
+    // punishment for an opponent's search is not modelled.
+    onOurPermanentDies(game, permanent, dead) {
+      if (isAnotherCreature(permanent, dead)) game.addCounters(permanent, 1);
+    },
+  },
+  {
+    names: ["Taborax, Hope's Demise"],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its lifelink at five counters and the draw for a Cleric are not modelled.
+    onOurPermanentDies(game, permanent, dead) {
+      if (isAnotherCreature(permanent, dead) && !dead.token)
+        game.addCounters(permanent, 1);
+    },
+  },
+  {
     names: ['Blood Artist'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: its drain counts only our creatures dying, not other players' (a pod)
     onOurPermanentDies(game, _permanent, dead) {
@@ -140,4 +163,9 @@ function vampiresOf(game: GameCore): Permanent[] {
   return game
     .creatures()
     .filter((permanent) => C.hasCreatureType(permanent.card, 'Vampire'));
+}
+
+/** "Whenever another creature dies": the dead one is a creature and not this permanent. */
+function isAnotherCreature(permanent: Permanent, dead: Permanent): boolean {
+  return dead !== permanent && dead.card.isCreature;
 }

@@ -174,6 +174,39 @@ export const PERMANENTS: CardRules[] = [
     },
   },
   {
+    names: ['Burning-Rune Demon'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the best card to hand (the card: up to two with different names, an opponent
+    // picks which one goes to the hand and the other to the graveyard).
+    onEnter(game) {
+      game.doTutor(() => true, false);
+    },
+  },
+  {
+    names: ['Demonlord Belzenlok'],
+    onEnter(game) {
+      // the next nonland card goes to our hand, again while it costs 4 or more; 1 damage to us each
+      for (let i = 0; i < 10 && game.library.length; i++) {
+        const nonland = game.library.find((card) => card.land === null);
+        if (!nonland) return;
+        const exiled = game.takeTopCardsOfLibrary(
+          game.library.indexOf(nonland),
+        );
+        game.putCards(exiled, 'exile');
+        game.takeCard(nonland, 'library');
+        game.putCard(nonland, 'hand');
+        game.loseLife(1);
+        if (nonland.manaValue < 4) return;
+      }
+    },
+  },
+  {
+    names: ['Bloodgift Demon'],
+    onUpkeep(game) {
+      game.draw(1);
+      game.loseLife(1);
+    },
+  },
+  {
     names: ['Phyrexian Arena'],
     onUpkeep(game) {
       game.draw(1, 'Phyrexian Arena');

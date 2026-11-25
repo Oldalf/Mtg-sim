@@ -5,7 +5,7 @@
  *
  * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
  * ramp-spells.ts, landfall.ts,
- * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts) list
+ * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts, cost-and-mana.ts, life-loss.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
@@ -19,10 +19,13 @@ import {
   ventureIntoDungeon,
   venturesOnEnter,
 } from '../game/dungeons';
+import { triggerCount } from '../game/trigger-doublers';
 import { ARISTOCRATS } from './aristocrats';
 import { ATTACK_TRIGGERS } from './attack-triggers';
 import { DAMAGE_SPELLS } from './damage-spells';
 import { DOUBLERS } from './doublers';
+import { COST_AND_MANA } from './cost-and-mana';
+import { LIFE_LOSS } from './life-loss';
 import { SELF_MILL } from './self-mill';
 import { DRAW_SPELLS } from './draw-spells';
 import { GRAVEYARD_CREATURES } from './graveyard-creatures';
@@ -116,6 +119,33 @@ export interface CardRules {
   ): number;
   /** While this card is in our graveyard: do our creatures have flying? */
   givesOurCreaturesFlyingFromGraveyard?(game: GameCore): boolean;
+  /** While it is on the battlefield: how much less (generic mana) this spell of ours costs. */
+  costReduction?(game: GameCore, permanent: Permanent, spell: CardDef): number;
+  /** We tapped this land of ours for mana, while it is on the battlefield (it adds its extra mana to the pool). */
+  onLandTappedForMana?(
+    game: GameCore,
+    permanent: Permanent,
+    land: Permanent,
+  ): void;
+  /** While it is on the battlefield: what an opponent would lose is multiplied by this (Bloodletter of Aclazotz: 2). */
+  opponentLifeLossMultiplier?(game: GameCore, permanent: Permanent): number;
+  /** An opponent lost life (lost: how much), while it is on the battlefield. */
+  onOpponentLosesLife?(
+    game: GameCore,
+    permanent: Permanent,
+    lost: number,
+  ): void;
+  /** We lost life, while it is on the battlefield. */
+  onWeLoseLife?(game: GameCore, permanent: Permanent, amount: number): void;
+  /** We cast a permanent spell (manaSpent: the mana we paid for it), while it is on the battlefield. */
+  onWeCast?(
+    game: GameCore,
+    permanent: Permanent,
+    spell: CardDef,
+    manaSpent: number,
+  ): void;
+  /** At the beginning of our end step, while it is on the battlefield. */
+  onEndStep?(game: GameCore, permanent: Permanent): void;
 }
 
 const RULES_BY_NAME = new Map<string, CardRules>();
@@ -131,11 +161,23 @@ for (const rules of [
   ...DAMAGE_SPELLS,
   ...SELF_MILL,
   ...DOUBLERS,
+  ...COST_AND_MANA,
+  ...LIFE_LOSS,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
     RULES_BY_NAME.set(name, rules);
   }
+
+/** Runs a permanent's triggered ability as many times as it triggers (Roaming Throne: triggerCount). */
+function runTrigger(
+  game: GameCore,
+  permanent: Permanent,
+  trigger: () => void,
+): void {
+  const times = triggerCount(game, permanent);
+  for (let i = 0; i < times; i++) trigger();
+}
 
 /** The engine's rules for this card, or undefined if it has none here. */
 export function rulesOf(card: CardDef): CardRules | undefined {
@@ -197,7 +239,7 @@ export function upkeepOfCommonCards(game: GameCore): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
   ))
-    rulesOf(permanent.card)?.onUpkeep?.(game, permanent);
+    upkeepTriggerOf(game, permanent);
 }
 
 /** The "whenever another permanent enters" triggers of our other permanents. The engine's onEnter runs them before the
@@ -209,14 +251,13 @@ export function triggersOfOthersOnEnter(
 ): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
-  ))
-    if (permanent !== entered)
-      rulesOf(permanent.card)?.onAnotherOfOursEnters?.(
-        game,
-        permanent,
-        entered,
-        from,
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (permanent !== entered && rules?.onAnotherOfOursEnters)
+      runTrigger(game, permanent, () =>
+        rules.onAnotherOfOursEnters!(game, permanent, entered, from),
       );
+  }
 }
 
 /** The "whenever this or another permanent dies" triggers: our permanents on the battlefield, then the dead one. The
@@ -225,16 +266,29 @@ export function triggersOnDeath(game: GameCore, dead: Permanent): void {
   for (const permanent of game.orderSimultaneousTriggers([
     ...game.battlefield,
     dead,
-  ]))
-    rulesOf(permanent.card)?.onOurPermanentDies?.(game, permanent, dead);
+  ])) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onOurPermanentDies)
+      runTrigger(game, permanent, () =>
+        rules.onOurPermanentDies!(game, permanent, dead),
+      );
+  }
 }
 
 /** The attack triggers: each attacker's own, then our permanents' "whenever you attack" ones. */
 export function attackTriggers(game: GameCore, attackers: Permanent[]): void {
-  for (const attacker of attackers)
-    rulesOf(attacker.card)?.onAttacks?.(game, attacker);
-  for (const permanent of game.battlefield.slice())
-    rulesOf(permanent.card)?.onWeAttack?.(game, permanent, attackers);
+  for (const attacker of attackers) {
+    const rules = rulesOf(attacker.card);
+    if (rules?.onAttacks)
+      runTrigger(game, attacker, () => rules.onAttacks!(game, attacker));
+  }
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onWeAttack)
+      runTrigger(game, permanent, () =>
+        rules.onWeAttack!(game, permanent, attackers),
+      );
+  }
 }
 
 /** One permanent's landfall trigger. False if it has none (a deck with landfall cards of its own runs them in the same
@@ -244,9 +298,9 @@ export function landfallTriggerOf(
   permanent: Permanent,
   land: Permanent,
 ): boolean {
-  const onLandfall = rulesOf(permanent.card)?.onLandfall;
-  if (!onLandfall) return false;
-  onLandfall(game, permanent, land);
+  const rules = rulesOf(permanent.card);
+  if (!rules?.onLandfall) return false;
+  runTrigger(game, permanent, () => rules.onLandfall!(game, permanent, land));
   return true;
 }
 
@@ -269,31 +323,40 @@ export function landDropsFromPermanents(game: GameCore): number {
 /** One permanent's upkeep trigger (a deck with upkeep cards of its own runs them in the same loop, so the order stays
  *  the battlefield's). */
 export function upkeepTriggerOf(game: GameCore, permanent: Permanent): void {
-  rulesOf(permanent.card)?.onUpkeep?.(game, permanent);
+  const rules = rulesOf(permanent.card);
+  if (rules?.onUpkeep)
+    runTrigger(game, permanent, () => rules.onUpkeep!(game, permanent));
 }
 
 /** The triggers of our permanents for creature cards milled from our library. GameCore.millOurselves runs them. */
 export function millTriggers(game: GameCore, creatureCards: CardDef[]): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
-  ))
-    rulesOf(permanent.card)?.onCreatureCardsMilled?.(
-      game,
-      permanent,
-      creatureCards,
-    );
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onCreatureCardsMilled)
+      runTrigger(game, permanent, () =>
+        rules.onCreatureCardsMilled!(game, permanent, creatureCards),
+      );
+  }
 }
 
 /** The triggers of our permanents for cards leaving our graveyard (GameCore.takeCard runs them, once per event). */
 export function graveyardLeaveTriggers(game: GameCore): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
-  ))
-    rulesOf(permanent.card)?.onCardsLeaveOurGraveyard?.(game, permanent);
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onCardsLeaveOurGraveyard)
+      runTrigger(game, permanent, () =>
+        rules.onCardsLeaveOurGraveyard!(game, permanent),
+      );
+  }
 }
 
-/** Does the card have a static effect (a multiplier, a power bonus, flying from the graveyard)? GameCore skips those
- *  checks until a card with one could be on its battlefield (mayHaveStaticEffects). */
+/** Does the card have a static effect (a multiplier, a power bonus, a cost reduction, flying from the graveyard) or a
+ *  trigger on mana or life (a land tapped, life lost)? GameCore skips those checks, which run very often, until a card
+ *  with one could be on its battlefield (mayHaveStaticEffects). */
 export function hasStaticEffect(card: CardDef): boolean {
   const rules = rulesOf(card);
   return (
@@ -302,14 +365,24 @@ export function hasStaticEffect(card: CardDef): boolean {
       rules.counterMultiplier !== undefined ||
       rules.manaMultiplier !== undefined ||
       rules.powerAndToughnessBonus !== undefined ||
-      rules.givesOurCreaturesFlyingFromGraveyard !== undefined)
+      rules.givesOurCreaturesFlyingFromGraveyard !== undefined ||
+      rules.costReduction !== undefined ||
+      rules.onLandTappedForMana !== undefined ||
+      rules.opponentLifeLossMultiplier !== undefined ||
+      rules.onOpponentLosesLife !== undefined ||
+      rules.onWeLoseLife !== undefined)
   );
 }
 
-/** The product of a multiplier our permanents give (tokens, counters, mana); 1 without one. */
+/** The product of a multiplier our permanents give (tokens, counters, mana, the opponents' life loss); 1 without
+ *  one. */
 export function multiplierFromPermanents(
   game: GameCore,
-  which: 'tokenMultiplier' | 'counterMultiplier' | 'manaMultiplier',
+  which:
+    | 'tokenMultiplier'
+    | 'counterMultiplier'
+    | 'manaMultiplier'
+    | 'opponentLifeLossMultiplier',
 ): number {
   let multiplier = 1;
   for (const permanent of game.battlefield)
@@ -353,10 +426,85 @@ export function triggersOnOtherPlayersCreatureDeath(
   game: GameCore,
   dead: Permanent,
 ): void {
-  for (const permanent of game.battlefield.slice())
-    rulesOf(permanent.card)?.onOtherPlayersCreatureDies?.(
-      game,
-      permanent,
-      dead,
-    );
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onOtherPlayersCreatureDies)
+      runTrigger(game, permanent, () =>
+        rules.onOtherPlayersCreatureDies!(game, permanent, dead),
+      );
+  }
+}
+
+/** How much less (generic mana) our permanents make this spell cost. */
+export function costReductionFromPermanents(
+  game: GameCore,
+  spell: CardDef,
+): number {
+  let reduction = 0;
+  for (const permanent of game.battlefield)
+    reduction +=
+      rulesOf(permanent.card)?.costReduction?.(game, permanent, spell) ?? 0;
+  return reduction;
+}
+
+/** The triggers of our permanents for a land of ours tapped for mana (Crypt Ghast). GameCore.tap runs them. */
+export function landTappedForManaTriggers(
+  game: GameCore,
+  land: Permanent,
+): void {
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onLandTappedForMana)
+      runTrigger(game, permanent, () =>
+        rules.onLandTappedForMana!(game, permanent, land),
+      );
+  }
+}
+
+/** The triggers of our permanents for an opponent losing life. GameCore.damageOpponent runs them. */
+export function opponentLifeLossTriggers(game: GameCore, lost: number): void {
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onOpponentLosesLife)
+      runTrigger(game, permanent, () =>
+        rules.onOpponentLosesLife!(game, permanent, lost),
+      );
+  }
+}
+
+/** The triggers of our permanents for us losing life. GameCore.loseLife runs them. */
+export function ourLifeLossTriggers(game: GameCore, amount: number): void {
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onWeLoseLife)
+      runTrigger(game, permanent, () =>
+        rules.onWeLoseLife!(game, permanent, amount),
+      );
+  }
+}
+
+/** The triggers of our permanents for a permanent spell we cast. GameCore.castPerm runs them (after the spell). */
+export function permanentSpellCastTriggers(
+  game: GameCore,
+  spell: CardDef,
+  manaSpent: number,
+): void {
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onWeCast)
+      runTrigger(game, permanent, () =>
+        rules.onWeCast!(game, permanent, spell, manaSpent),
+      );
+  }
+}
+
+/** The end step triggers of our permanents. GameCore.endStep runs them. */
+export function endStepTriggers(game: GameCore): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onEndStep)
+      runTrigger(game, permanent, () => rules.onEndStep!(game, permanent));
+  }
 }

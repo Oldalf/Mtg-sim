@@ -26,12 +26,12 @@ function board(
     const card = C.get(landName);
     const permanent = new Permanent(card, card.land);
     permanent.sick = false;
-    game.battlefield.push(permanent);
+    game.putOntoBattlefield(permanent);
   }
   for (const cardName of battlefieldNames) {
     const permanent = new Permanent(C.get(cardName));
     permanent.sick = false;
-    game.battlefield.push(permanent);
+    game.putOntoBattlefield(permanent);
   }
   game.hand = hand.map((cardName) => C.get(cardName));
   game.graveyard = graveyardNames.map((cardName) => C.get(cardName));

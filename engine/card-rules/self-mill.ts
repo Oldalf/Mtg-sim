@@ -118,6 +118,17 @@ export const SELF_MILL: CardRules[] = [
     },
   },
   {
+    names: ['Will of the Abzan'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the opponents don't sacrifice a creature; without a commander out, only the
+    // creature comes back.
+    resolve(game) {
+      // with a commander out (both modes) each opponent loses 3 life; a creature card from our graveyard comes back
+      if (controlsACommander(game)) game.drainEach(3);
+      const creature = game.bestCreatureInGraveyard();
+      if (creature) game.reanimate(creature);
+    },
+  },
+  {
     names: ['Endless Ranks of the Dead'],
     onUpkeep(game) {
       const newZombies = Math.floor(zombiesOf(game).length / 2);

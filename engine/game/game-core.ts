@@ -20,7 +20,8 @@
  *
  * A deck subclasses Game (see decks/goldfish/index.ts for the smallest one, decks/gale for a full one) and fills in:
  *   must have:    buildKillSearchState / killSearchStateKey / killSearch (or extend GameWithoutKillSearch), candidates
- *   what it wants: cardValue, discardValue, instantOrSorceryDevValue, tutorTarget, positionValue, landWant, landBias
+ *   what it wants: cardValue, discardValue, instantOrSorceryDevValue, tutorTarget, positionValue, landWant, landBias,
+ *                 chosenCreatureType, chosenColour
  *   card effects: resolveOther, castTriggers, onToGraveyard, onEnter, onDies, onLandEnter, powerBonus,
  *                 toughnessBonus, upkeep, endStep, commanderCost, onCommanderCast
  *   combat:       canAttack, fogBlocker, evasive, winsWith, onAttack, onCombatDamage (or combat() itself)
@@ -120,6 +121,12 @@ import {
   hasStaticEffect,
   millTriggers,
   multiplierFromPermanents,
+  costReductionFromPermanents,
+  landTappedForManaTriggers,
+  opponentLifeLossTriggers,
+  ourLifeLossTriggers,
+  permanentSpellCastTriggers,
+  endStepTriggers,
   ourCreaturesFlyFromGraveyard,
   powerAndToughnessBonusOf,
 } from '../card-rules/card-rules';
@@ -251,6 +258,8 @@ export abstract class GameCore<S = unknown> {
    *  or in our graveyard? Set when the deck has one, or one enters or changes control to us; it never goes back.
    *  Until then the power, token, counter, mana and flying checks skip the card-rules loops (they run very often). */
   mayHaveStaticEffects = false;
+  /** Each opponent's life when our turn began (after our upkeep; Archfiend of Despair). */
+  opponentLifeAtTurnStart: number[] = [];
 
   /**
    * mode "any": go for the first kill found.  mode "protected": only go when a counterspell can
@@ -468,6 +477,8 @@ export abstract class GameCore<S = unknown> {
         if (Facts.REDUCE_FROM_GRAVEYARD_BY_2.has(anotherPermanent.card.name))
           reduction += 2;
     if (card.name === 'Focus the Mind' && this.spellsCast > 0) reduction += 2;
+    if (this.mayHaveStaticEffects)
+      reduction += costReductionFromPermanents(this, card);
     return cost.withGeneric(Math.max(0, cost.generic - reduction));
   }
 
@@ -519,15 +530,18 @@ export abstract class GameCore<S = unknown> {
     const multiplier = this.mayHaveStaticEffects
       ? multiplierFromPermanents(this, 'manaMultiplier')
       : 1;
-    if (multiplier === 1) {
+    if (multiplier === 1) tapForMana(this, permanent, short);
+    else {
+      const poolBefore = { ...this.pool };
       tapForMana(this, permanent, short);
-      return;
+      for (const manaType of Object.keys(
+        this.pool,
+      ) as (keyof typeof this.pool)[])
+        this.pool[manaType] +=
+          (multiplier - 1) * (this.pool[manaType] - poolBefore[manaType]);
     }
-    const poolBefore = { ...this.pool };
-    tapForMana(this, permanent, short);
-    for (const manaType of Object.keys(this.pool) as (keyof typeof this.pool)[])
-      this.pool[manaType] +=
-        (multiplier - 1) * (this.pool[manaType] - poolBefore[manaType]);
+    if (this.mayHaveStaticEffects && permanent.land !== null)
+      landTappedForManaTriggers(this, permanent);
   }
 
   takeSnapshot(): Snap {
@@ -1100,13 +1114,22 @@ export abstract class GameCore<S = unknown> {
   // ================================================================ life and damage
   /** Opponent i loses n life (damage or life loss). Returns the life actually lost. */
   damageOpponent(i: number, amount: number): number {
+    if (this.mayHaveStaticEffects)
+      amount *= multiplierFromPermanents(this, 'opponentLifeLossMultiplier');
     if (amount <= 0 || this.life[i] <= 0) return 0;
     const lost = Math.min(amount, this.life[i]);
     this.life[i] -= amount;
     this.damageDealt += lost;
     if (this.life[i] <= 0 && this.firstOpponentDeadTurn === null)
       this.firstOpponentDeadTurn = this.turn;
+    if (this.mayHaveStaticEffects) opponentLifeLossTriggers(this, lost);
     return lost;
+  }
+
+  /** "Target opponent loses N life": the opponent closest to dead. */
+  targetOpponentLosesLife(amount: number): void {
+    const target = this.chooseTargetOpponent();
+    if (target !== null) this.damageOpponent(target, amount);
   }
 
   /** "Target opponent loses N life and you gain N": the opponent closest to dead. */
@@ -1165,6 +1188,8 @@ export abstract class GameCore<S = unknown> {
       this.died = true;
       this.sayEvent('out', 'we die');
     }
+    if (amount > 0 && !this.died && this.mayHaveStaticEffects)
+      ourLifeLossTriggers(this, amount);
   }
 
   gainLife(amount: number): void {
@@ -1231,7 +1256,17 @@ export abstract class GameCore<S = unknown> {
   }
 
   castPerm(card: CardDef, fromCommand = false): boolean {
-    return castPermanentSpell(this, card, fromCommand);
+    const manaSpent = this.manaToCast(card, fromCommand);
+    if (!castPermanentSpell(this, card, fromCommand)) return false;
+    permanentSpellCastTriggers(this, card, manaSpent);
+    return true;
+  }
+
+  /** The mana we would pay to cast this permanent now (its cost after reductions, with the commander tax). */
+  manaToCast(card: CardDef, fromCommand = false): number {
+    let cost = this.effectiveCost(card);
+    if (fromCommand) cost = this.commanderCost(card, cost);
+    return cost.manaValue;
   }
 
   // ================================================================ lands
@@ -1363,6 +1398,7 @@ export abstract class GameCore<S = unknown> {
 
   startTurn(): void {
     startOurTurn(this);
+    this.opponentLifeAtTurnStart = this.life.slice();
   }
 
   /** Our next turn begins: the turn number moves on, the opponents have each drawn a card, everything untaps, the
@@ -1565,7 +1601,9 @@ export abstract class GameCore<S = unknown> {
       : 0;
   }
   /** At the beginning of our end step (before cleanup). */
-  endStep(): void {}
+  endStep(): void {
+    endStepTriggers(this);
+  }
   /** At the beginning of our upkeep (before the draw). */
   upkeep(): void {
     upkeepOfCommonCards(this);
@@ -1803,9 +1841,13 @@ export abstract class GameCore<S = unknown> {
   orderForTopOfLibrary(cards: CardDef[]): CardDef[] {
     return sortDesc(cards, (card) => this.cardValue(card));
   }
-  /** The creature type named for Roaming Throne (engine/game/trigger-doublers.ts), or null. */
-  roamingThroneType(): string | null {
+  /** The creature type we name for this card as it enters (Roaming Throne, Urza's Incubator), or null for none. */
+  chosenCreatureType(_card: CardDef): string | null {
     return null;
+  }
+  /** The colour we choose for this card as it enters (Caged Sun, Gauntlet of Power): by default our first colour. */
+  chosenColour(_card: CardDef): string {
+    return this.colors[0];
   }
   /** How much we want this card back from the graveyard to the hand (Eternal Witness). */
   returnToHandValue(card: CardDef): number {

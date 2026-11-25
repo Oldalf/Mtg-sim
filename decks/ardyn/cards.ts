@@ -15,11 +15,6 @@ export function isDemon(card: CardDef): boolean {
   return STARSCOURGE_COPIES.has(card) || hasCreatureType(card, 'Demon');
 }
 
-/** Black for anthems: a card with a black pip, or a token (Starscourge copies are black). */
-export function isBlack(card: CardDef): boolean {
-  return card.cost.black > 0 || card.cost.hybrid > 0 || card.isToken;
-}
-
 /** How much the AI wants each card on the battlefield (the rest: 40 for a creature, 30 otherwise). */
 export const VALUE: Record<string, number> = {
   [ARDYN]: 95,
