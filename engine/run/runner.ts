@@ -3,7 +3,6 @@
  * differences between lists come from the cards. The tables are printed by report.ts, the card ranking is in ranking.ts.
  */
 import * as fs from 'fs';
-import { notModelledNotes } from '../card-rules/card-rules';
 import * as os from 'os';
 import * as path from 'path';
 import * as C from '../cards/cards';
@@ -159,14 +158,6 @@ export function checkList(file: string): void {
     console.log(
       `Note (${path.basename(file)}): these cards have no special rules in the simulator and are played ` +
         `generically: ${decklist.generic.join(', ')}`,
-    );
-  const notModelled = notModelledNotes([
-    ...decklist.commanders,
-    ...decklist.library,
-  ]);
-  if (notModelled.length)
-    console.log(
-      `Note (${path.basename(file)}): engine card rules with something not modelled: ${notModelled.join('; ')}`,
     );
   if (total !== 100)
     console.log(

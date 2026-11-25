@@ -61,6 +61,7 @@ import {
 } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import { upkeepOfCommonCards } from '../../engine/card-rules/card-rules';
+import { fetchLand } from '../../engine/game/land-search';
 import { firstMax, firstMin } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
@@ -340,28 +341,10 @@ export class MerenGame extends CreatureDeckGame {
   }
 
   // ================================================================ zones
-  /** A basic land from the library onto the battlefield tapped. */
+  /** A basic land from the library onto the battlefield tapped (Studious First-Year, Sakura-Tribe Elder): the engine's
+   *  search; chooseLandToFetch picks which. */
   fetchBasic(): void {
-    const want =
-      this.landsOnBattlefield().filter(
-        (permanent) => permanent.land!.mana === 'G',
-      ).length <=
-      this.landsOnBattlefield().filter(
-        (permanent) => permanent.land!.mana === 'B',
-      ).length
-        ? 'Forest'
-        : 'Swamp';
-    const card =
-      this.library.find((candidate) => candidate.name === want) ??
-      this.library.find((candidate) => candidate.land?.basic) ??
-      null;
-    if (!card) return;
-    this.takeCardIfThere(card, 'library');
-    this.shuffle();
-    const basicLand = new Permanent(card, card.land, true);
-    basicLand.sick = false;
-    this.putOntoBattlefield(basicLand);
-    this.onLandEnter(basicLand, false);
+    fetchLand(this, 'basic', true);
   }
 
   /** The basic land we'd fetch: a Forest when we have no more Forests than Swamps, else a Swamp. */

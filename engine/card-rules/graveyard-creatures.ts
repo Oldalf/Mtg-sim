@@ -27,8 +27,7 @@ export const GRAVEYARD_CREATURES: CardRules[] = [
       game.say('  Twilight Diviner copies', entered.card);
       game.enter(entered.card, 'token', { token: true });
     },
-    notModelled:
-      'a creature cast from a graveyard (not put onto the battlefield from it) does not count',
+    // CHECK WHEN ANOTHER DECK PLAYS IT: a creature cast from a graveyard (not put onto the battlefield from it) does not count
   },
   {
     names: ["Stitcher's Supplier"],

@@ -62,8 +62,6 @@ function resolveCardAdvantageOnEnter(
       game.gainLife(power);
       game.draw(power, 'Disciple of Bolas');
     }
-  } else if (name === 'Simulacrum Shaper') {
-    game.fetchBasic();
   } else if (enterTriggerOfCommonCard(game, permanent)) {
     // the engine's rules (Satyr Wayfinder, Stitcher's Supplier, Vile Entomber, Grim Servant, Woe Strider, Grave
     // Titan, Shriekmaw, Lotleth Giant, Twilight Diviner, Solemn, the Witnesses...)
@@ -183,10 +181,8 @@ function resolveVindictiveLichInPod(game: MerenGame): void {
 /** What the creature itself does when it dies (draw, drain, reanimate, put creatures onto the battlefield). */
 function resolveDeathEffect(game: MerenGame, permanent: Permanent): void {
   const name = permanent.card.name;
-  if (name === 'Simulacrum Shaper') {
-    game.draw(1, name);
-  } else if (deathTriggerOfCommonCard(game, permanent)) {
-    // the engine's rules (Stitcher's Supplier, Protean Hulk, Solemn Simulacrum)
+  if (deathTriggerOfCommonCard(game, permanent)) {
+    // the engine's rules (Simulacrum Shaper, Stitcher's Supplier, Protean Hulk, Solemn Simulacrum)
   } else if (name === 'Vindictive Lich') {
     if (game.inArena()) resolveVindictiveLichInPod(game);
     else {

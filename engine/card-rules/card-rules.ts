@@ -44,9 +44,6 @@ export interface HowCast {
 export interface CardRules {
   /** The card, or the cards that share these rules word for word. */
   names: string[];
-  /** What the card's text does that these rules don't (yet), or a choice built in that suits only the decks that play
-   *  it now. A list that plays the card prints it as a note (checkList), so a new deck sees it. */
-  notModelled?: string;
   /** An instant or sorcery resolves (it goes to the graveyard afterwards; the engine does that). */
   resolve?(game: GameCore, spell: CardDef, howCast: HowCast): void;
   /** Its enter trigger. */
@@ -242,14 +239,4 @@ export function triggersOnOtherPlayersCreatureDeath(
       permanent,
       dead,
     );
-}
-
-/** "Card: what is not modelled" for each card of the list whose engine rules say so. */
-export function notModelledNotes(cardNames: string[]): string[] {
-  const notes = new Set<string>();
-  for (const name of cardNames) {
-    const notModelled = RULES_BY_NAME.get(name)?.notModelled;
-    if (notModelled) notes.add(`${name}: ${notModelled}`);
-  }
-  return [...notes];
 }

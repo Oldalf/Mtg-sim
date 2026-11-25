@@ -25,6 +25,15 @@ export const PERMANENTS: CardRules[] = [
     },
   },
   {
+    names: ['Simulacrum Shaper'],
+    onEnter(game) {
+      fetchLand(game, 'basic', true);
+    },
+    onDies(game, permanent) {
+      game.draw(1, permanent.card.name);
+    },
+  },
+  {
     names: ['Wood Elves'],
     onEnter(game) {
       fetchLand(game, 'forest', false);
@@ -129,15 +138,14 @@ export const PERMANENTS: CardRules[] = [
   },
   {
     names: ['Grave Titan'],
-    notModelled: 'its attack trigger (two more Zombies) is not modelled',
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its attack trigger (two more Zombies) is not modelled
     onEnter(game) {
       game.createTokens(ZOMBIE, 2);
     },
   },
   {
     names: ['Shriekmaw'],
-    notModelled:
-      "its target is the biggest threat's best creature: nonartifact and nonblack are not checked",
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its target is the biggest threat's best creature: nonartifact and nonblack are not checked
     onEnter(game) {
       game.podSnipe(SHRIEKMAW, 'Shriekmaw');
     },

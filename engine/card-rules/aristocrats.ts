@@ -12,8 +12,7 @@ import type { CardRules } from './card-rules';
 export const ARISTOCRATS: CardRules[] = [
   {
     names: ['Blood Artist'],
-    notModelled:
-      "its drain counts only our creatures dying, not other players' (a pod)",
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its drain counts only our creatures dying, not other players' (a pod)
     onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature) game.drainOne(1);
     },
@@ -34,22 +33,21 @@ export const ARISTOCRATS: CardRules[] = [
   },
   {
     names: ['Cruel Celebrant'],
-    notModelled: "our planeswalkers dying don't count",
+    // CHECK WHEN ANOTHER DECK PLAYS IT: our planeswalkers dying don't count
     onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature) game.drainAllOpponents(1);
     },
   },
   {
     names: ['Cordial Vampire'],
-    notModelled: "counts only our creatures dying, not other players' (a pod)",
+    // CHECK WHEN ANOTHER DECK PLAYS IT: counts only our creatures dying, not other players' (a pod)
     onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature) addCounterToEachVampire(game);
     },
   },
   {
     names: ['Elenda, the Dusk Rose'],
-    notModelled:
-      "her counters count only our creatures dying, not other players' (a pod)",
+    // CHECK WHEN ANOTHER DECK PLAYS IT: her counters count only our creatures dying, not other players' (a pod)
     onOurPermanentDies(_game, permanent, dead) {
       if (permanent !== dead && dead.card.isCreature) permanent.counters += 1;
     },
@@ -72,8 +70,7 @@ export const ARISTOCRATS: CardRules[] = [
   },
   {
     names: ['Carmen, Cruel Skymarcher'],
-    notModelled:
-      "counts only our sacrifices, not other players' (a pod); her attack picks by battlefieldValue",
+    // CHECK WHEN ANOTHER DECK PLAYS IT: counts only our sacrifices, not other players' (a pod); her attack picks by battlefieldValue
     onOurPermanentDies(game, permanent, dead) {
       if (game.isSacrificing && permanent !== dead) {
         permanent.counters += 1;
@@ -124,8 +121,7 @@ export const ARISTOCRATS: CardRules[] = [
   },
   {
     names: ['Mayhem Devil'],
-    notModelled:
-      "counts only our sacrifices, not other players'; it always pings the opponent closest to dead",
+    // CHECK WHEN ANOTHER DECK PLAYS IT: counts only our sacrifices, not other players'; it always pings the opponent closest to dead
     onOurPermanentDies(game) {
       // "whenever a player sacrifices a permanent": 1 damage to the opponent closest to dead
       if (!game.isSacrificing) return;
