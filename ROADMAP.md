@@ -102,7 +102,7 @@ The plan and its notes per task are in git (`PLAN.md` at commit `29f352e`), task
 
 ## 12. A heavier engine, one board, missing cards and the app's missing commands (in progress)
 
-The plan is in `PLAN.md` (tasks U1 to U4, picked by Pontus on 2026-11-24): card rules out of the big deck files and the engine's big files split, one board for the analyzer and the viewer, the cards not modelled yet (Edgar, Aesi, Gale, Codie), and the app's missing commands (`--rank`, `--cut`, `--hands`, `--analyze`, editing lists, a card's print).
+The plan is in `PLAN.md` (tasks U1 to U4, picked by Pontus on 2026-11-24): card rules out of the big deck files and the engine's big files split, one board for the analyzer and the viewer, the cards not modelled yet (Edgar, Aesi, Gale, Codie), and the app's missing commands (`--rank`, `--cut`, `--hands`, `--analyze`, editing lists, a card's print). U1b (2026-11-25) moves every card's rules into the engine; its step 5 then makes every card do what its text says (the `CHECK WHEN ANOTHER DECK PLAYS IT` comments and the cards a deck still codes because the engine lacks a piece: until-end-of-turn effects, the monarch, delayed triggers, token copies' types, activated abilities).
 
 ## Ideas not decided (Pontus picks)
 
