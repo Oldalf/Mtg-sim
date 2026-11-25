@@ -32,10 +32,19 @@ export interface HowCast {
   mode: string | null;
 }
 
-/** One card's rules. Every hook is optional: a card has only the ones its text has. */
+/** One card's rules. Every hook is optional: a card has only the ones its text has.
+ *
+ * Whose permanents a hook sees: each player's game has only its own battlefield, so "you control" is built in. Our
+ * hooks run for our permanents only (an opponent's creature entering or dying never reaches onAnotherOfOursEnters or
+ * onOurPermanentDies); a card whose text also counts other players' creatures ("whenever another creature dies") adds
+ * onOtherPlayersCreatureDies, which only a pod calls. A permanent that changes control doesn't enter (no enter
+ * triggers); when it dies, its controller's game runs the death. */
 export interface CardRules {
   /** The card, or the cards that share these rules word for word. */
   names: string[];
+  /** What the card's text does that these rules don't (yet), or a choice built in that suits only the decks that play
+   *  it now. A list that plays the card prints it as a note (checkList), so a new deck sees it. */
+  notModelled?: string;
   /** An instant or sorcery resolves (it goes to the graveyard afterwards; the engine does that). */
   resolve?(game: GameCore, spell: CardDef, howCast: HowCast): void;
   /** Its enter trigger. */
@@ -44,19 +53,31 @@ export interface CardRules {
   onDies?(game: GameCore, permanent: Permanent): void;
   /** At the beginning of our upkeep, while it is on the battlefield. */
   onUpkeep?(game: GameCore, permanent: Permanent): void;
-  /** Another permanent entered while this one is on the battlefield ("whenever another creature enters"). */
-  onOtherPermanentEnters?(
+  /** Another permanent of ours entered while this one is on the battlefield ("whenever another creature you control
+   *  enters"). */
+  onAnotherOfOursEnters?(
     game: GameCore,
     permanent: Permanent,
     entered: Permanent,
   ): void;
   /** A permanent of ours died: runs for each of our permanents on the battlefield and for the dead one itself
-   *  ("whenever this or another creature dies"; permanent === dead when it is itself). */
-  onPermanentDies?(game: GameCore, permanent: Permanent, dead: Permanent): void;
-  /** A land entered under our control while this is on the battlefield (landfall). */
+   *  ("whenever this or another creature you control dies"; permanent === dead when it is itself). */
+  onOurPermanentDies?(
+    game: GameCore,
+    permanent: Permanent,
+    dead: Permanent,
+  ): void;
+  /** A land entered under our control while this is on the battlefield (landfall: "a land you control enters"). */
   onLandfall?(game: GameCore, permanent: Permanent, land: Permanent): void;
   /** The additional land drops it gives each turn while it is on the battlefield. */
   landDropsItGives?(game: GameCore, permanent: Permanent): number;
+  /** Another player's creature died (a pod only), while this is on our battlefield ("whenever another creature
+   *  dies" counts theirs too). */
+  onOtherPlayersCreatureDies?(
+    game: GameCore,
+    permanent: Permanent,
+    dead: Permanent,
+  ): void;
   /** It attacks. */
   onAttacks?(game: GameCore, permanent: Permanent): void;
   /** We attack, while it is on the battlefield, after the attackers' own triggers ("whenever you attack with..."). */
@@ -145,7 +166,7 @@ export function triggersOfOthersOnEnter(
 ): void {
   for (const permanent of game.battlefield.slice())
     if (permanent !== entered)
-      rulesOf(permanent.card)?.onOtherPermanentEnters?.(
+      rulesOf(permanent.card)?.onAnotherOfOursEnters?.(
         game,
         permanent,
         entered,
@@ -156,7 +177,7 @@ export function triggersOfOthersOnEnter(
  *  engine's onDies runs them before the dead permanent's own death trigger. */
 export function triggersOnDeath(game: GameCore, dead: Permanent): void {
   for (const permanent of [...game.battlefield, dead])
-    rulesOf(permanent.card)?.onPermanentDies?.(game, permanent, dead);
+    rulesOf(permanent.card)?.onOurPermanentDies?.(game, permanent, dead);
 }
 
 /** The attack triggers: each attacker's own, then our permanents' "whenever you attack" ones. */
@@ -192,4 +213,28 @@ export function landDropsFromPermanents(game: GameCore): number {
   for (const permanent of game.battlefield)
     drops += rulesOf(permanent.card)?.landDropsItGives?.(game, permanent) ?? 0;
   return drops;
+}
+
+/** The triggers of our permanents for another player's creature dying (a pod). The engine's onOtherPlayersCreatureDies
+ *  runs them. */
+export function triggersOnOtherPlayersCreatureDeath(
+  game: GameCore,
+  dead: Permanent,
+): void {
+  for (const permanent of game.battlefield.slice())
+    rulesOf(permanent.card)?.onOtherPlayersCreatureDies?.(
+      game,
+      permanent,
+      dead,
+    );
+}
+
+/** "Card: what is not modelled" for each card of the list whose engine rules say so. */
+export function notModelledNotes(cardNames: string[]): string[] {
+  const notes = new Set<string>();
+  for (const name of cardNames) {
+    const notModelled = RULES_BY_NAME.get(name)?.notModelled;
+    if (notModelled) notes.add(`${name}: ${notModelled}`);
+  }
+  return [...notes];
 }

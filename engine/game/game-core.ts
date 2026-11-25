@@ -113,6 +113,7 @@ import {
   landfallTriggers,
   triggersOfOthersOnEnter,
   triggersOnDeath,
+  triggersOnOtherPlayersCreatureDeath,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
@@ -1517,7 +1518,9 @@ export abstract class GameCore<S = unknown> {
   /** A creature of ours died: tell the other players, so their "whenever another creature dies" cards trigger. */
   podAnnounceDeath(_permanent: Permanent): void {}
   /** A creature of another player died (a pod only): Syr Konrad, Sangromancer. A deck overrides it. */
-  onOtherPlayersCreatureDies(_permanent: Permanent): void {}
+  onOtherPlayersCreatureDies(permanent: Permanent): void {
+    triggersOnOtherPlayersCreatureDeath(this, permanent);
+  }
   /** Creatures attack us (a pod, after the attacker's removal answers): "whenever a creature attacks you" (Thantis). */
   onAttackedBy(_attackerCount: number): void {}
   /** An opponent cast this spell: run our triggers for it (see opponent-cast-triggers.ts). A deck may add its own. */

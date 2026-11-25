@@ -68,7 +68,7 @@ export const PERMANENTS: CardRules[] = [
   },
   {
     names: ['Welcoming Vampire'],
-    onOtherPermanentEnters(game, _permanent, entered) {
+    onAnotherOfOursEnters(game, _permanent, entered) {
       // another creature with power 2 or less enters: draw a card (once each turn)
       if (!entered.card.isCreature || game.power(entered) > 2) return;
       if (game.useOnceEachTurn('Welcoming Vampire')) game.draw(1);
@@ -76,7 +76,7 @@ export const PERMANENTS: CardRules[] = [
   },
   {
     names: ['Baron Bertram Graywater'],
-    onOtherPermanentEnters(game, _permanent, entered) {
+    onAnotherOfOursEnters(game, _permanent, entered) {
       // tokens enter: create a 1/1 lifelink Vampire (once each turn)
       if (!entered.token) return;
       if (game.useOnceEachTurn('Baron Bertram Graywater'))

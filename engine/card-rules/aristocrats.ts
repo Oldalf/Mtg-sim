@@ -11,35 +11,46 @@ import type { CardRules } from './card-rules';
 
 export const ARISTOCRATS: CardRules[] = [
   {
-    // "Whenever this or another creature you control dies, target opponent loses 1 life and you gain 1 life."
-    names: ['Blood Artist', 'Vengeful Bloodwitch'],
-    onPermanentDies(game, _permanent, dead) {
+    names: ['Blood Artist'],
+    notModelled:
+      "its drain counts only our creatures dying, not other players' (a pod)",
+    onOurPermanentDies(game, _permanent, dead) {
+      if (dead.card.isCreature) game.drainOne(1);
+    },
+  },
+  {
+    names: ['Vengeful Bloodwitch'],
+    onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature) game.drainOne(1);
     },
   },
   {
     // "Whenever this or another creature or artifact you control dies, target opponent loses 1 life and you gain 1."
     names: ['Susurian Voidborn'],
-    onPermanentDies(game, _permanent, dead) {
+    onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature || dead.card.types.has('artifact'))
         game.drainOne(1);
     },
   },
   {
     names: ['Cruel Celebrant'],
-    onPermanentDies(game, _permanent, dead) {
+    notModelled: "our planeswalkers dying don't count",
+    onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature) game.drainAllOpponents(1);
     },
   },
   {
     names: ['Cordial Vampire'],
-    onPermanentDies(game, _permanent, dead) {
+    notModelled: "counts only our creatures dying, not other players' (a pod)",
+    onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature) addCounterToEachVampire(game);
     },
   },
   {
     names: ['Elenda, the Dusk Rose'],
-    onPermanentDies(_game, permanent, dead) {
+    notModelled:
+      "her counters count only our creatures dying, not other players' (a pod)",
+    onOurPermanentDies(_game, permanent, dead) {
       if (permanent !== dead && dead.card.isCreature) permanent.counters += 1;
     },
     onDies(game, permanent) {
@@ -48,20 +59,22 @@ export const ARISTOCRATS: CardRules[] = [
   },
   {
     names: ['Pitiless Plunderer'],
-    onPermanentDies(game, permanent, dead) {
+    onOurPermanentDies(game, permanent, dead) {
       if (permanent !== dead && dead.card.isCreature)
         game.createTokens(TREASURE);
     },
   },
   {
     names: ['Pawn of Ulamog'],
-    onPermanentDies(game, _permanent, dead) {
+    onOurPermanentDies(game, _permanent, dead) {
       if (dead.card.isCreature && !dead.token) game.createTokens(ELDRAZI_SPAWN);
     },
   },
   {
     names: ['Carmen, Cruel Skymarcher'],
-    onPermanentDies(game, permanent, dead) {
+    notModelled:
+      "counts only our sacrifices, not other players' (a pod); her attack picks by battlefieldValue",
+    onOurPermanentDies(game, permanent, dead) {
       if (game.isSacrificing && permanent !== dead) {
         permanent.counters += 1;
         game.gainLife(1);
@@ -85,7 +98,9 @@ export const ARISTOCRATS: CardRules[] = [
   },
   {
     names: ['Mayhem Devil'],
-    onPermanentDies(game) {
+    notModelled:
+      "counts only our sacrifices, not other players'; it always pings the opponent closest to dead",
+    onOurPermanentDies(game) {
       // "whenever a player sacrifices a permanent": 1 damage to the opponent closest to dead
       if (!game.isSacrificing) return;
       const target = game.chooseTargetOpponent();

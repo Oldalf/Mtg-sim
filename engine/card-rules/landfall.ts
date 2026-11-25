@@ -14,9 +14,10 @@ export const LANDFALL: CardRules[] = [
   },
   {
     names: ['Lotus Cobra'],
+    notModelled:
+      'its "any colour" mana is always blue or green (the colours of Aesi, who plays it): a deck of other colours needs a colour choice hook here',
     onLandfall(game) {
-      // one mana of any colour: blue or green, whichever the pool has less of (Aesi's colours; another deck would
-      // need a choice hook here)
+      // one mana of any colour: blue or green, whichever the pool has less of
       if (game.pool.U <= game.pool.G) game.pool.U += 1;
       else game.pool.G += 1;
     },
