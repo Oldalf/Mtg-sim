@@ -255,6 +255,24 @@ export class CardDef {
   }
 }
 
+/** How many {W}, {U}, {B}, {R} or {G} symbols (by letter) a cost has. Hybrid symbols are not counted. */
+export function colouredPips(cost: Cost, colourLetter: string): number {
+  switch (colourLetter) {
+    case 'W':
+      return cost.white;
+    case 'U':
+      return cost.blue;
+    case 'B':
+      return cost.black;
+    case 'R':
+      return cost.red;
+    case 'G':
+      return cost.green;
+    default:
+      return 0;
+  }
+}
+
 /** The devotion a Theros god needs to be a creature: to these colours together, at least this much. */
 export interface DevotionNeeded {
   colours: ('W' | 'U' | 'B' | 'R' | 'G')[];

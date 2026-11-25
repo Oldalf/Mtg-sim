@@ -22,7 +22,6 @@ import { TREASURE } from '../../engine/cards/tokens';
 import {
   AGENT_OF_THE_IRON_THRONE,
   ART_TOKENS,
-  BASIC_COL,
   CLUE,
   FOOD,
   FRODO,
@@ -377,29 +376,6 @@ export class SamFrodoGame extends CreatureDeckGame {
       permanent.card.name === 'Scoured Barrens'
     )
       this.gainLife(1);
-  }
-
-  /** The basic land of the colour we have the fewest sources of (Plains, then Swamp, then Forest on a tie). */
-  override chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
-    const sourcesOfColour = (colour: string) =>
-      this.landsOnBattlefield().filter((permanent) => {
-        const kind = this.manaSourceKind(permanent, true) ?? '';
-        return (
-          kind === colour ||
-          kind === 'A' ||
-          (kind.length === 3 && kind.includes(colour))
-        );
-      }).length;
-    const basicNames = Object.keys(BASIC_COL);
-    const basics = candidates.filter((card) => card.name in BASIC_COL);
-    return (basics.length ? basics : candidates)
-      .slice()
-      .sort(
-        (first, second) =>
-          sourcesOfColour(BASIC_COL[first.name] ?? '') -
-            sourcesOfColour(BASIC_COL[second.name] ?? '') ||
-          basicNames.indexOf(first.name) - basicNames.indexOf(second.name),
-      )[0];
   }
 
   // ================================================================ mana

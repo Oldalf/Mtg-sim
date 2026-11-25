@@ -1637,16 +1637,28 @@ export abstract class GameCore<S = unknown> {
     this.putOntoBattlefield(permanent);
     this.onLandEnter(permanent, false);
   }
-  /** Which land a land-search spell takes from these (engine/game/land-search.ts). By default the one that makes
-   *  the deck's colour we have the fewest lands for. */
+  /** Which land a land-search spell takes from these (engine/game/land-search.ts; the card says which lands may be
+   *  taken and whether they enter tapped). By default the one that makes the colours we are shortest of: for each of
+   *  the deck's colours, the most pips of it one card in hand (or a commander not cast yet) needs, minus our lands
+   *  that make it. With no card waiting for a colour, that is the colour we have the fewest lands for. */
   chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
     const landsMaking = (colour: string) =>
       this.landsOnBattlefield().filter((permanent) =>
         C.landMakes(permanent.card, colour),
       ).length;
-    const fewest = Math.min(...this.colors.map(landsMaking));
+    const waitingCards = [...this.hand, ...this.command].filter(
+      (card) => card.land === null,
+    );
+    const mostPipsOneCardNeeds = (colour: string) =>
+      Math.max(
+        0,
+        ...waitingCards.map((card) => C.colouredPips(card.cost, colour)),
+      );
+    const shortfall = (colour: string) =>
+      mostPipsOneCardNeeds(colour) - landsMaking(colour);
+    const biggestShortfall = Math.max(...this.colors.map(shortfall));
     const shortColours = this.colors.filter(
-      (colour) => landsMaking(colour) === fewest,
+      (colour) => shortfall(colour) === biggestShortfall,
     );
     return firstMax(
       candidates,

@@ -347,20 +347,6 @@ export class MerenGame extends CreatureDeckGame {
     fetchLand(this, 'basic', true);
   }
 
-  /** The basic land we'd fetch: a Forest when we have no more Forests than Swamps, else a Swamp. */
-  override chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
-    const want =
-      this.landsOnBattlefield().filter(
-        (permanent) => permanent.land!.mana === 'G',
-      ).length <=
-      this.landsOnBattlefield().filter(
-        (permanent) => permanent.land!.mana === 'B',
-      ).length
-        ? 'Forest'
-        : 'Swamp';
-    return candidates.find((card) => card.name === want) ?? candidates[0];
-  }
-
   /** Eternal Witness: the card we want most, a noncreature first (Meren brings creatures back anyway). */
   override returnToHandValue(card: CardDef): number {
     return this.cardValue(card) + (card.isCreature ? 0 : 10);
