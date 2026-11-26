@@ -45,7 +45,10 @@ export function fetchLand(
 ): CardDef | null {
   const candidates = game.library.filter((card) => isLandOfKind(card, kind));
   if (!candidates.length) return null;
-  const pick = game.chooseLandToFetch(candidates, toHand);
+  const pick =
+    kind === 'any'
+      ? game.chooseAnyLandToFetch(candidates, toHand)
+      : game.chooseLandToFetch(candidates, toHand);
   game.takeCardIfThere(pick, 'library');
   if (toHand) {
     game.shuffle();

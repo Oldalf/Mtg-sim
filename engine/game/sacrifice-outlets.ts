@@ -197,7 +197,7 @@ export function castFoulRebirth(
     return false;
   game.takeCard(card, 'hand');
   game.sayEvent('cast', 'cast Foul Rebirth (adventure of', card, ')');
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   game.sacrifice(creature);
   game.createTokens(VAMPIRE_DEMON, 1);
   game.putCard(card, 'exile');
@@ -214,7 +214,7 @@ export function castFromAdventure(game: GameCore, card: CardDef): boolean {
   game.takeCard(card, 'exile');
   game.spellsCast += 1;
   game.sayEvent('cast', 'cast from its adventure', card);
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   game.enter(card, 'exile');
   return true;
 }

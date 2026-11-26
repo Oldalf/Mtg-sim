@@ -75,7 +75,7 @@ export function castFarmerCotton(
   if (!game.pay(card.cost.withGeneric(xValue))) return false;
   game.takeCardIfThere(card, 'hand');
   game.spellsCast += 1;
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   game.say(`cast Farmer Cotton (X=${xValue})`);
   game.farmerCottonX = xValue;
   game.enter(card);

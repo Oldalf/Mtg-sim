@@ -1,7 +1,8 @@
 /**
  * Checks of the card rules two or three decks used to code each (U1b step 3): Syr Konrad, Bontu's Monument,
  * Garruk's Uprising, Whip of Erebos, Explore, Growth Spiral, Buried Alive, Breach the Multiverse in a goldfish game,
- * Morbid Opportunist, Windfall, Jeska's Will and Meren's end step.
+ * Morbid Opportunist, Windfall, Jeska's Will and Meren's end step; and of the cards one deck coded and others play
+ * (step 4): Pensive Professor, the scry lands, Grow from the Ashes, Crop Rotation and Selvala.
  * Run: npm run pod -- --test
  */
 import * as C from '../cards/cards';
@@ -209,6 +210,66 @@ export function runMergedCardTests(allDecks: Record<string, Deck>): boolean {
       "Meren's end step: the best creature card comes back to hand (its mana value is above our experience)",
       game.hand.map((card) => card.name),
       ['Rune-Scarred Demon'],
+    );
+  }
+  {
+    const game = newGame(allDecks);
+    const professor = putOnBattlefield(game, 'Pensive Professor');
+    game.weCastSpell(C.get('Wall of Omens')); // 2 mana: more than its power 0
+    game.weCastSpell(C.get('Sol Ring')); // 1 mana: not more than its power 1
+    check(
+      'Pensive Professor: a spell with more mana than its power or toughness: a counter and a card',
+      [professor.counters, game.hand.length],
+      [1, 1],
+    );
+  }
+  {
+    const game = newGame(allDecks);
+    let cardsScried = 0;
+    const scry = game.scry.bind(game);
+    game.scry = (count, surveil) => {
+      cardsScried += count;
+      scry(count, surveil);
+    };
+    game.onLandEnter(putOnBattlefield(game, 'Temple of Mystery'), false);
+    game.onLandEnter(putOnBattlefield(game, 'Forest'), false);
+    check(
+      'Temple of Mystery: scry 1 as it enters (a Forest: none)',
+      cardsScried,
+      1,
+    );
+  }
+  {
+    const game = newGame(allDecks, ['Forest', 'Forest', 'Forest']);
+    game.resolve(C.get('Grow from the Ashes'), false, 'kicked');
+    check(
+      'Grow from the Ashes kicked: two basics onto the battlefield',
+      game.landsOnBattlefield().length,
+      2,
+    );
+  }
+  {
+    const game = newGame(allDecks);
+    const sacrificed = putOnBattlefield(game, 'Island');
+    game.resolve(C.get('Crop Rotation'));
+    check(
+      'Crop Rotation: a land sacrificed, a land card from the library onto the battlefield',
+      [
+        game.landsOnBattlefield().filter((land) => land !== sacrificed).length,
+        game.graveyard.map((card) => card.name),
+      ],
+      [1, ['Island']],
+    );
+  }
+  {
+    const game = newGame(allDecks);
+    putOnBattlefield(game, 'Selvala, Heart of the Wilds'); // a 2/3
+    game.enter(C.get('Llanowar Elves'));
+    game.enter(C.get('Sheoldred, Whispering One'), 'graveyard');
+    check(
+      'Selvala: a creature with more power than each other creature enters: a card (a 1/1: none)',
+      game.hand.length,
+      1,
     );
   }
 

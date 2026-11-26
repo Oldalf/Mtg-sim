@@ -209,6 +209,9 @@ export interface CardRules {
     spell: CardDef,
     manaSpent: number,
   ): void;
+  /** We cast any spell (a permanent, an instant or a sorcery; a copy we cast too), while it is on the battlefield.
+   *  GameCore.weCastSpell runs it. */
+  onWeCastSpell?(game: GameCore, permanent: Permanent, spell: CardDef): void;
   /** At the beginning of our end step, while it is on the battlefield. */
   onEndStep?(game: GameCore, permanent: Permanent): void;
   /** We create one or more tokens at once, while it is on the battlefield: the tokens it adds to them (Peregrin
@@ -712,6 +715,17 @@ export function permanentSpellCastTriggers(
       );
   }
   rulesOf(spell)?.whenCast?.(game, spell);
+}
+
+/** Our permanents' "whenever you cast a spell" triggers (Pensive Professor). GameCore.weCastSpell runs them. */
+export function spellCastTriggers(game: GameCore, spell: CardDef): void {
+  for (const permanent of game.battlefield.slice()) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onWeCastSpell)
+      runTrigger(game, permanent, () =>
+        rules.onWeCastSpell!(game, permanent, spell),
+      );
+  }
 }
 
 /** The end step triggers of our permanents. GameCore.endStep runs them. */

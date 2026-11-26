@@ -207,6 +207,16 @@ export function putLandOntoBattlefield(
   tapped = false,
 ): Permanent | null {
   game.takeCardIfThere(card, from);
+  return placeLand(game, card, how, tapped);
+}
+
+/** A land already taken from its zone enters (a land search took it from the library). */
+export function placeLand(
+  game: AesiGame,
+  card: CardDef,
+  how: string,
+  tapped = false,
+): Permanent | null {
   const landInfo = card.land!;
   if (landInfo.special === 'wilds') {
     game.putCard(card, 'graveyard');

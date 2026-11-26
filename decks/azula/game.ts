@@ -175,8 +175,8 @@ export class AzulaGame extends CreatureDeckGame {
   // ================================================================ casting: copies and free casts
   /** Every spell we cast passes here (the engine announces it to a pod): Vivi pings; Azula, Storm of Saruman and
    *  Prismari copy it; Arcane Bombardment casts its exiled cards again. */
-  override podAnnounceCast(card: CardDef): void {
-    super.podAnnounceCast(card);
+  override weCastSpell(card: CardDef): void {
+    super.weCastSpell(card);
     if (!card.isCreature) this.viviPings();
     if (this.isCastingAnswer) return;
     if (this.isAzulaAttacking) {
@@ -243,7 +243,7 @@ export class AzulaGame extends CreatureDeckGame {
     this.chosenX = 0;
     this.spellsCast += 1;
     if (card.isInstantOrSorcery) this.onCastInstantOrSorcery(false);
-    this.podAnnounceCast(card);
+    this.weCastSpell(card);
     if (this.podCounters(card)) return;
     if (card.isInstantOrSorcery) this.resolve(card);
     else if (!card.types.has('legendary'))

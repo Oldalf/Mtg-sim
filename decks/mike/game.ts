@@ -21,6 +21,7 @@
  * Combat: flyers and unblockable creatures connect, half the ground attackers are blocked (engine rules).
  * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
+import { landEnterTrigger } from '../../engine/game/land-play';
 import {
   combatDamageTriggerOf,
   landfallTriggers,
@@ -513,7 +514,8 @@ export class MikeGame extends GameWithoutKillSearch {
       );
     return super.entersTapped(card);
   }
-  override onLandEnter(permanent: Permanent, _gone: boolean): void {
+  override onLandEnter(permanent: Permanent, gone: boolean): void {
+    landEnterTrigger(this, permanent, gone);
     const name = permanent.card.name;
     if (
       name === AVISHKAR_RACEWAY ||
@@ -825,13 +827,6 @@ export class MikeGame extends GameWithoutKillSearch {
       return false;
     if (DRAW_SPELLS_WORTH_COPYING.has(card.name)) this.imitate(card, mode);
     return true;
-  }
-  override castPerm(card: CardDef, fromCommand = false): boolean {
-    const wasCast = super.castPerm(card, fromCommand);
-    if (wasCast) {
-      // Pensive Professor: Increment (not modelled); Thunderclap Drake etc. are plain creatures here
-    }
-    return wasCast;
   }
 
   // ================================================================ the planner's score

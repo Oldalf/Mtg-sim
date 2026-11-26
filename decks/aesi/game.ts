@@ -23,6 +23,7 @@
  * summoning sick). Attacks: flyers whenever they can, ground creatures only if it kills the table
  * (half of them blocked). No crackback.
  */
+import { landEnterTrigger } from '../../engine/game/land-play';
 import {
   landDropsFromPermanents,
   landfallTriggerOf,
@@ -75,6 +76,7 @@ import {
   colourWeWant,
   putLandThatWay,
   playLandsFromTopWithCase,
+  placeLand,
   putLandOntoBattlefield,
   returnLandForGrowthChamber,
 } from './land-drops';
@@ -421,11 +423,15 @@ export class AesiGame extends Game<AesiGame> {
   /** The land enters before the shuffle (landfall draws come from the unshuffled library) and counts as having
    *  entered this turn (matters only when lands are creatures). */
   override putSearchedLand(land: CardDef, tapped: boolean): void {
-    const permanent = new Permanent(land, land.land, tapped);
-    permanent.sick = true;
-    this.putOntoBattlefield(permanent);
-    this.onLandEnter(permanent, false);
+    placeLand(this, land, 'search', tapped);
     this.shuffle();
+  }
+  /** A search for any land (Sylvan Scrying, Crop Rotation): the Retreat loop's Chamber, else the most landfall. */
+  override chooseAnyLandToFetch(
+    candidates: CardDef[],
+    _toHand: boolean,
+  ): CardDef {
+    return chooseLandTutorTarget(this) ?? candidates[0];
   }
   /** The basic of the colour we need, else any basic. */
   override chooseLandToFetch(candidates: CardDef[], _toHand: boolean): CardDef {
@@ -441,7 +447,7 @@ export class AesiGame extends Game<AesiGame> {
   override onLandEnter(permanent: Permanent, _gone: boolean): void {
     if (this.aesiDraw === null && this.isOnBattlefield(AESI))
       this.aesiDraw = this.turn;
-    if (permanent.land?.scry && !_gone) this.scry(1); // Temple of Mystery
+    landEnterTrigger(this, permanent, _gone);
     for (const otherPermanent of this.battlefield.slice()) {
       const name = otherPermanent.card.name;
       // the engine's landfall cards (Aesi, Lotus Cobra, Druid Class, Khalni...), then Aesi's own, in battlefield order

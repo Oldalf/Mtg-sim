@@ -35,7 +35,6 @@ import {
   MIDNIGHT_PATHLIGHTER,
   MORNINGTIDES_LIGHT,
   OJI,
-  PENSIVE_PROFESSOR,
   PREPARED,
   RASPUTIN,
   SKYCOACH_CONDUCTOR,
@@ -236,11 +235,10 @@ export class DndGame extends CreatureDeckGame {
   }
 
   // ================================================================ spells we cast
-  /** Every spell we cast passes here (the engine announces it to a pod): Pensive Professor, Hullbreaker Horror,
+  /** Every spell we cast passes here (after the engine's cast triggers: Pensive Professor): Hullbreaker Horror,
    *  Kykar, and on our second spell of the turn Oji and Tomb of Horrors Adventurer. */
-  override podAnnounceCast(card: CardDef): void {
-    super.podAnnounceCast(card);
-    this.pensiveProfessorGrows(card);
+  override weCastSpell(card: CardDef): void {
+    super.weCastSpell(card);
     this.hullbreakerBounces();
     if (!card.isCreature) this.kykarTriggers();
     if (this.spellsCast !== 2) return;
@@ -251,21 +249,6 @@ export class DndGame extends CreatureDeckGame {
       i++
     )
       this.copySpell(card, this.completedDungeons > 0 ? 2 : 1);
-  }
-
-  /** Pensive Professor (increment): a spell with more mana spent than its power or toughness gives it a +1/+1
-   *  counter, and the counter draws a card. (The mana spent is taken as the spell's mana value.) */
-  pensiveProfessorGrows(card: CardDef): void {
-    for (const professor of this.battlefield.slice()) {
-      if (professor.card.name !== PENSIVE_PROFESSOR) continue;
-      const smaller = Math.min(
-        this.power(professor),
-        this.toughness(professor),
-      );
-      if (card.manaValue <= smaller) continue;
-      professor.counters += 1;
-      this.draw(1);
-    }
   }
 
   /** Hullbreaker Horror, in a pod: each spell we cast returns the opponents' best nonland permanent to its owner's
@@ -325,7 +308,7 @@ export class DndGame extends CreatureDeckGame {
     );
     this.spellsCast += 1;
     this.onCastInstantOrSorcery(false);
-    this.podAnnounceCast(spell);
+    this.weCastSpell(spell);
     if (!this.podCounters(spell)) this.resolve(spell);
     return true;
   }

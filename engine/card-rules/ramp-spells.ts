@@ -10,6 +10,23 @@ import type { CardRules } from './card-rules';
 
 export const RAMP_SPELLS: CardRules[] = [
   {
+    // a basic onto the battlefield; kicked ({4}), two
+    names: ['Grow from the Ashes'],
+    resolve(game, _spell, { mode }) {
+      const basicCount = mode === 'kicked' ? 2 : 1;
+      for (let i = 0; i < basicCount; i++) fetchLand(game, 'basic', false);
+    },
+  },
+  {
+    // sacrificing a land is part of its cost; then any land card onto the battlefield (chooseAnyLandToFetch)
+    names: ['Crop Rotation'],
+    resolve(game) {
+      const landToSacrifice = game.chooseLandToSacrifice();
+      if (landToSacrifice) putLandIntoGraveyard(game, landToSacrifice);
+      fetchLand(game, 'any', false);
+    },
+  },
+  {
     names: ['Explore'],
     resolve(game) {
       game.draw(1);

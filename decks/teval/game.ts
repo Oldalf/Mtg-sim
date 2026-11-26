@@ -10,6 +10,7 @@
  * them. Self-mill (Teval's attack, Sidisi, Six, Lumra, the Grave-Reaver) fills the graveyard and lands come back
  * from it (landfall: Rampaging Baloths, Ob Nixilis, Tatyova, Aesi).
  */
+import { landEnterTrigger } from '../../engine/game/land-play';
 import { MULDROTHA, TEVAL, VALUE, isZombie } from './cards';
 import { buildCandidates } from './candidates';
 import { CardDef } from '../../engine/cards/cards';
@@ -42,7 +43,8 @@ export class TevalGame extends CreatureDeckGame {
   }
 
   /** Landfall: the engine's rules (Rampaging Baloths, Ob Nixilis, Aesi, Tatyova), in battlefield order. */
-  override onLandEnter(land: Permanent, _gone: boolean): void {
+  override onLandEnter(land: Permanent, gone: boolean): void {
+    landEnterTrigger(this, land, gone);
     for (const permanent of this.battlefield.slice())
       landfallTriggerOf(this, permanent, land);
   }
@@ -122,7 +124,7 @@ export class TevalGame extends CreatureDeckGame {
     this.takeCard(card, 'graveyard');
     this.spellsCast += 1;
     this.sayEvent('cast', 'cast from the graveyard', card);
-    this.podAnnounceCast(card);
+    this.weCastSpell(card);
     this.enter(card, 'graveyard');
     return true;
   }

@@ -257,7 +257,7 @@ export function runDndTests(): boolean {
   // ---------------------------------------------------------------- spells cast
   {
     const game = board(['Pensive Professor']);
-    for (let i = 0; i < 3; i++) game.podAnnounceCast(C.get('Wall of Omens'));
+    for (let i = 0; i < 3; i++) game.weCastSpell(C.get('Wall of Omens'));
     check(
       'Pensive Professor: 2-mana spells grow it (and draw) while its power is below 2',
       [game.findPermanent('Pensive Professor')!.counters, game.hand.length],
@@ -267,10 +267,10 @@ export function runDndTests(): boolean {
   {
     const game = board(['Oji, the Exquisite Blade', 'Wall of Omens']);
     game.spellsCast = 1;
-    game.podAnnounceCast(C.get('Brainstorm'));
+    game.weCastSpell(C.get('Brainstorm'));
     check('Oji: no blink on the first spell', game.hand.length, 0);
     game.spellsCast = 2;
-    game.podAnnounceCast(C.get('Brainstorm'));
+    game.weCastSpell(C.get('Brainstorm'));
     check('Oji: the second spell blinks Wall of Omens', game.hand.length, 1);
   }
   {
@@ -280,9 +280,9 @@ export function runDndTests(): boolean {
       'Veteran Dungeoneer',
     ]);
     game.step = 'main2';
-    game.podAnnounceCast(C.get('Sol Ring'));
+    game.weCastSpell(C.get('Sol Ring'));
     const exiledUntilEndStep = !game.isOnBattlefield('Veteran Dungeoneer');
-    game.podAnnounceCast(C.get('Wall of Omens'));
+    game.weCastSpell(C.get('Wall of Omens'));
     game.endTurn();
     check(
       'Kykar: a noncreature spell blinks Veteran Dungeoneer until the end step (it ventures then); a creature spell does nothing',
@@ -297,7 +297,7 @@ export function runDndTests(): boolean {
   {
     const game = board(['Kykar, Zephyr Awakener', 'Veteran Dungeoneer']);
     game.step = 'main1';
-    game.podAnnounceCast(C.get('Sol Ring'));
+    game.weCastSpell(C.get('Sol Ring'));
     check(
       'Kykar before combat: a Spirit (the attacker is not blinked away)',
       [
@@ -320,7 +320,7 @@ export function runDndTests(): boolean {
   {
     const game = board(['Tomb of Horrors Adventurer']);
     game.spellsCast = 2;
-    game.podAnnounceCast(C.get('Veteran Dungeoneer'));
+    game.weCastSpell(C.get('Veteran Dungeoneer'));
     check(
       'Tomb of Horrors Adventurer: the second spell is copied (a token Veteran Dungeoneer ventures)',
       [
@@ -508,7 +508,7 @@ export function runDndTests(): boolean {
   {
     const game = board(['Hullbreaker Horror']);
     const calls = joinPod(game, 'a Sol Ring');
-    game.podAnnounceCast(C.get('Brainstorm'));
+    game.weCastSpell(C.get('Brainstorm'));
     check(
       "Hullbreaker Horror in a pod: each spell we cast bounces an opponent's best nonland permanent",
       calls,

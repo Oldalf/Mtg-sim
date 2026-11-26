@@ -37,7 +37,7 @@ export function castAndResolveInstantOrSorcery(
   game.onCastInstantOrSorcery(fromGraveyard);
   game.castTriggers(card, fromGraveyard, triggerOptions);
   copyNextInstantOrSorcery(game, card, mode);
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   if (game.podCounters(card)) {
     game.putCard(card, fromGraveyard ? 'exile' : 'graveyard');
     shuffleBackIntoLibrary(game, card);
@@ -77,7 +77,7 @@ export function castCardsExiledWithRebound(game: GameCore): void {
     game.spellsCast += 1;
     game.onCastInstantOrSorcery(false);
     copyNextInstantOrSorcery(game, card, null);
-    game.podAnnounceCast(card);
+    game.weCastSpell(card);
     game.resolve(card);
     game.putCard(card, 'graveyard');
   }
@@ -121,7 +121,7 @@ export function castPermanentSpell(
   game.spellsCast += 1;
   if (card.isCreature) game.creatureSpellsCastThisTurn += 1;
   game.sayEvent('cast', 'cast', card);
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   if (game.podCounters(card)) {
     // countered: a commander goes back to the command zone (its tax still counts this cast)
     game.putCard(card, fromCommand ? 'command' : 'graveyard');
@@ -140,7 +140,7 @@ export function castWithFlashback(game: GameCore, card: CardDef): boolean {
   game.spellsCast += 1;
   game.onCastInstantOrSorcery(true);
   copyNextInstantOrSorcery(game, card, null);
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   game.resolve(card, true);
   game.putCard(card, 'exile');
   return true;
@@ -154,7 +154,7 @@ export function castAndActivateWishclaw(
     return false;
   game.takeCard(card, 'hand'); // it goes to an opponent
   game.say('Wishclaw Talisman (cast + activate)');
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   game.doTutor(() => true, false);
   return true;
 }

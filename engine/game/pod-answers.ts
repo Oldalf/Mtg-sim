@@ -74,7 +74,7 @@ export function castAnswerFromHand(
     game.putCard(island.card, 'hand');
   }
   game.moveCard(card, 'hand', 'graveyard');
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   const life = game.answer(card)?.pay ?? 0;
   if (life) game.loseLife(life);
   return true;

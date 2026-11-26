@@ -291,7 +291,7 @@ export function selfCounterDevelopmentCandidates(game: GaleGame): Candidate[] {
 }
 
 function announceSpells(game: GaleGame, spells: CardDef[]): void {
-  for (const spell of spells) game.podAnnounceCast(spell);
+  for (const spell of spells) game.weCastSpell(spell);
 }
 
 export function castSelfCounter(

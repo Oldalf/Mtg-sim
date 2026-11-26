@@ -74,7 +74,7 @@ Pontus is considering it for more card draw. Swapped for each of seven draw card
 
 ## Not modelled / open
 
-- Atomic Microsizer's trigger, Amonkhet Raceway's haste, Castle Vantress's scry, The Water Crystal's mill, Folio of Fancies's opponents drawing too, Pensive Professor's increment, Body of Knowledge's damage draw, Volatile Stormdrake's exchange in a goldfish game (no creature to take: it is a plain 3/2 flyer; in a pod it takes a creature, see `POD_PLAN.md`), Harmonized Trio's prepared state (modelled as: tap Trio and two creatures, cast a copy of Brainstorm for {U}).
+- Atomic Microsizer's trigger, Amonkhet Raceway's haste, Castle Vantress's scry, The Water Crystal's mill, Folio of Fancies's opponents drawing too, Body of Knowledge's damage draw, Volatile Stormdrake's exchange in a goldfish game (no creature to take: it is a plain 3/2 flyer; in a pod it takes a creature, see `POD_PLAN.md`), Harmonized Trio's prepared state (modelled as: tap Trio and two creatures, cast a copy of Brainstorm for {U}).
 - Interaction is held and never cast. Judge counterspells and bounce yourself.
 - Whether Laboratory Maniac / Jace should be held until the library is low (safer against removal, about 4 points slower here).
 - Mulligan rule is in `mulligan.ts`; cut ideas from Pontus: none yet (no cut tests before he names them).
@@ -102,3 +102,5 @@ Pontus didn't like the first round's swap candidates, so Fblthp replaced Mischie
 | Krang | 64.2 (+1.7) | 86.3 (+1.2) | 95.2 (+0.2) | 34.1 |
 
 All four are about +1.5 to +2 by turn 9 and +1 by turn 10: at the edge of the noise (about ±2), the same size as the first round, so Fblthp is a small plus in place of any of them and none of the four is clearly the best cut. Krang's swap shifts wins from damage (39.5% -> 35.7%) to mill and Toad; Krang is also the doubler for Crawler and Seas, which this goldfish model counts only through those wins.
+
+Pensive Professor's increment is the engine's card rule (DnD's version) since U1b step 4 (2026-11-26): a spell with more mana than its power or toughness gives it a counter and a card.

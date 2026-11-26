@@ -102,8 +102,8 @@ export function runThantisTests(): boolean {
   }
   {
     const game = board(['Ruric Thar, the Unbowed']);
-    game.podAnnounceCast(C.get('Explore'));
-    game.podAnnounceCast(C.get('Eternal Witness'));
+    game.weCastSpell(C.get('Explore'));
+    game.weCastSpell(C.get('Eternal Witness'));
     check('Ruric Thar: our noncreature spell costs 6 life', game.myLife, 34);
   }
   {
@@ -340,6 +340,17 @@ export function runThantisTests(): boolean {
       'Glissa Sunslayer draws, Whip of Erebos gives lifelink',
       [game.hand.length - handBefore, game.myLife],
       [1, 40 - 1 + 3],
+    );
+  }
+  {
+    const game = board(['Taurean Mauler']); // a 2/2, and 4/4 with two counters
+    game.findPermanent('Taurean Mauler')!.counters = 2;
+    const handBefore = game.hand.length;
+    game.enter(C.get("Garruk's Uprising"));
+    check(
+      "Garruk's Uprising enters with a 4-power creature out: one card (not two)",
+      game.hand.length - handBefore,
+      1,
     );
   }
 

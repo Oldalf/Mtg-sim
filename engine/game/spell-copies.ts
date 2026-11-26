@@ -157,7 +157,7 @@ export function castCopyWithoutPaying(
   game.onCastInstantOrSorcery(false);
   game.castTriggers(card, false, {});
   copyNextInstantOrSorcery(game, card, null);
-  game.podAnnounceCast(card);
+  game.weCastSpell(card);
   if (game.podCounters(card)) return;
   game.resolve(card, false, null);
 }

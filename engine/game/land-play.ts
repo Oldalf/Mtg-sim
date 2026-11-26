@@ -10,6 +10,16 @@ import { Permanent } from './game-types';
 import { COLOURS } from './mana-payment';
 import { firstMax } from '../util/lists';
 
+/** A land's own enter trigger ("When this land enters, scry 1": the Temples). onLandEnter runs it before landfall;
+ *  a deck that overrides onLandEnter calls it first. Not for a land that is gone at once (a cracked fetch). */
+export function landEnterTrigger(
+  game: GameCore,
+  land: Permanent,
+  isGone: boolean,
+): void {
+  if (land.land?.scry && !isGone) game.scry(1);
+}
+
 const BASIC_OF: Record<string, string> = {
   W: 'Plains',
   U: 'Island',

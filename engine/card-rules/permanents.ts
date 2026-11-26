@@ -26,6 +26,40 @@ const DESTROY_CREATURE: Answer = {
 
 export const PERMANENTS: CardRules[] = [
   {
+    // another creature enters with more power than each other creature: a card. Its power is read after riot's
+    // counter and the other replacements (it enters with them).
+    // CHECK WHEN ANOTHER DECK PLAYS IT: in a pod, other players' creatures entering (their controller draws) and
+    // their creatures in the comparison; its mana ability ({G}, {T}: X mana, X the greatest power among our
+    // creatures) is Thantis's {C}{C} (step 5a).
+    names: ['Selvala, Heart of the Wilds'],
+    onAnotherOfOursEnters(game, _selvala, entered) {
+      if (!entered.card.isCreature) return;
+      const power = game.power(entered);
+      if (
+        game
+          .creatures()
+          .every((other) => other === entered || game.power(other) < power)
+      )
+        game.draw(1);
+    },
+  },
+  {
+    // Increment: a spell with more mana spent than its power or toughness gives it a +1/+1 counter, and the counter
+    // draws a card. The mana spent is taken as the spell's mana value.
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the mana really spent (cost reductions, X, free casts), and the draw for
+    // +1/+1 counters put on it by other cards (proliferate, Hardened Scales).
+    names: ['Pensive Professor'],
+    onWeCastSpell(game, professor, spell) {
+      const smaller = Math.min(
+        game.power(professor),
+        game.toughness(professor),
+      );
+      if (spell.manaValue <= smaller) return;
+      professor.counters += 1;
+      game.draw(1);
+    },
+  },
+  {
     names: ['Whip of Erebos'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: its activated ability (a creature back for a turn) is not modelled.
     givesOurCreaturesKeywords() {

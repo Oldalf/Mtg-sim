@@ -132,6 +132,7 @@ import {
   opponentLifeLossTriggers,
   ourLifeLossTriggers,
   permanentSpellCastTriggers,
+  spellCastTriggers,
   endStepTriggers,
   tokensWeCreate,
   tokenCreatedTriggers,
@@ -157,7 +158,11 @@ import {
   tapForMana,
   whatPoolIsShortOf,
 } from './mana-payment';
-import { entersTappedByItsText, playBestLand } from './land-play';
+import {
+  entersTappedByItsText,
+  landEnterTrigger,
+  playBestLand,
+} from './land-play';
 import {
   developTurn,
   moveRockFirst,
@@ -1565,7 +1570,8 @@ export abstract class GameCore<S = unknown> {
   }
 
   /** A land entered the battlefield under our control (landfall). gone = it was sacrificed right away (Evolving Wilds). */
-  onLandEnter(permanent: Permanent, _gone: boolean): void {
+  onLandEnter(permanent: Permanent, gone: boolean): void {
+    landEnterTrigger(this, permanent, gone);
     landfallOfCommonCards(this);
     landfallTriggers(this, permanent);
   }
@@ -2023,6 +2029,12 @@ export abstract class GameCore<S = unknown> {
   /** We cast this spell: tell the opponents, so their "whenever an opponent casts a spell" cards trigger (before
    *  any counterspell, as the trigger goes on the stack above the spell). */
   podAnnounceCast(_card: CardDef): void {}
+  /** We cast a spell (any spell, a copy we cast too): the opponents hear of it (podAnnounceCast), then our
+   *  permanents' "whenever you cast a spell" triggers run (Pensive Professor). Every way of casting calls it. */
+  weCastSpell(card: CardDef): void {
+    this.podAnnounceCast(card);
+    spellCastTriggers(this, card);
+  }
   /** A creature of ours died: tell the other players, so their "whenever another creature dies" cards trigger. */
   podAnnounceDeath(_permanent: Permanent): void {}
   /** A creature of another player died (a pod only): Syr Konrad, Sangromancer. A deck overrides it. */
@@ -2108,6 +2120,11 @@ export abstract class GameCore<S = unknown> {
     permanent.sick = false;
     this.putOntoBattlefield(permanent);
     this.onLandEnter(permanent, false);
+  }
+  /** Which land a search for any land card takes (Sylvan Scrying, Crop Rotation): by default the same as a search
+   *  for a basic. Aesi overrides it (the land with the most landfall). */
+  chooseAnyLandToFetch(candidates: CardDef[], toHand: boolean): CardDef {
+    return this.chooseLandToFetch(candidates, toHand);
   }
   /** Which land a land-search spell takes from these (engine/game/land-search.ts; the card says which lands may be
    *  taken and whether they enter tapped). By default the one that makes the colours we are shortest of: for each of

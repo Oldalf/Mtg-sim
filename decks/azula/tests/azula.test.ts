@@ -107,7 +107,7 @@ export function runAzulaTests(): boolean {
   {
     const game = board(['Storm of Saruman']);
     game.spellsCast = 2;
-    game.podAnnounceCast(C.get('Storm of Saruman'));
+    game.weCastSpell(C.get('Storm of Saruman'));
     check(
       'Storm of Saruman copying a Storm of Saruman: one token',
       countOf(game, 'Storm of Saruman'),

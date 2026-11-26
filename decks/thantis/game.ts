@@ -1,7 +1,7 @@
 /**
  * Thantis, the Warweaver's deck (Friend 2's Jund forced-combat deck, pod-only): the cards the engine doesn't have yet
  * (Zopandrel and Pyrewood Gearhulk's until-end-of-turn pumps, Grave Venerations's monarch, Avacyn's return, Professor
- * Dellian Fel, Ruric Thar's trigger on our own spells) and Selvala (played by another deck too: U1b step 4).
+ * Dellian Fel, Ruric Thar's trigger on our own spells) and Selvala's mana ({C}{C}: mana abilities wait for step 5a).
  * The win, combat, values and the planner's score come from the engine's CreatureDeckGame; the forced attacks
  * ("attacks each combat if able", Thantis, goad) are the pod's (engine/pod).
  *
@@ -13,7 +13,6 @@
 import {
   AVACYN,
   DELLIAN_FEL,
-  GARRUKS_UPRISING,
   GRAVE_VENERATIONS,
   MEREN,
   PYREWOOD_GEARHULK,
@@ -26,12 +25,7 @@ import {
 } from './cards';
 import { buildCandidates } from './candidates';
 import { CardDef } from '../../engine/cards/cards';
-import {
-  Candidate,
-  Fighter,
-  Permanent,
-  Zone,
-} from '../../engine/game/game-types';
+import { Candidate, Permanent, Zone } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
   deathTriggerOfCommonCard,
@@ -84,17 +78,7 @@ export class ThantisGame extends CreatureDeckGame {
     return super.manaSourceKind(permanent, ignoreSick);
   }
 
-  // ================================================================ trample, power
-  override fighter(
-    permanent: Permanent,
-    powerOf?: (otherPermanent: Permanent) => number,
-    toughnessOf?: (otherPermanent: Permanent) => number,
-  ): Fighter {
-    const fighter = super.fighter(permanent, powerOf, toughnessOf);
-    if (this.isOnBattlefield(GARRUKS_UPRISING)) fighter.trample = true; // (Brawn's: the engine's)
-    return fighter;
-  }
-
+  // ================================================================ power
   /** The engine's bonuses, Pyrewood Gearhulk's pump, then Zopandrel's doubling. */
   override powerBonus(permanent: Permanent): number {
     let bonus =
@@ -118,8 +102,8 @@ export class ThantisGame extends CreatureDeckGame {
   // ================================================================ spells we cast
   /** Ruric Thar: a noncreature spell of ours costs us 6 life. (An opponent's costs it the 6: the engine's
    *  opponent-cast triggers.) */
-  override podAnnounceCast(card: CardDef): void {
-    super.podAnnounceCast(card);
+  override weCastSpell(card: CardDef): void {
+    super.weCastSpell(card);
     if (!card.isCreature && this.isOnBattlefield(RURIC_THAR)) {
       this.say(`${card.name}: 6 damage to us from`, RURIC_THAR);
       this.loseLife(6);
@@ -132,7 +116,7 @@ export class ThantisGame extends CreatureDeckGame {
   override onEnter(permanent: Permanent, from: Zone): void {
     enterTriggerOfCommonCard(this, permanent);
     const card = permanent.card;
-    if (card.isCreature) this.creatureEntered(permanent);
+    if (card.isCreature) replacementsAsAnotherOfOursEnters(this, permanent); // riot
     triggersOfOthersOnEnter(this, permanent, from);
     switch (card.name) {
       case GRAVE_VENERATIONS:
@@ -141,29 +125,10 @@ export class ThantisGame extends CreatureDeckGame {
       case PYREWOOD_GEARHULK:
         this.pumpThisTurn += 2;
         break;
-      case GARRUKS_UPRISING:
-        if (this.creatures().some((other) => this.power(other) >= 4))
-          this.draw(1);
-        break;
       case DELLIAN_FEL:
         this.useDellianFel();
         break;
     }
-  }
-
-  /** A creature of ours entered: riot (the engine's Rhythm of the Wild), Selvala. Selvala looks at its power before
-   *  riot's counter, as Thantis always had it. */
-  creatureEntered(permanent: Permanent): void {
-    const power = this.power(permanent);
-    replacementsAsAnotherOfOursEnters(this, permanent);
-    if (
-      permanent.card.name !== SELVALA &&
-      this.isOnBattlefield(SELVALA) &&
-      this.creatures().every(
-        (other) => other === permanent || this.power(other) < power,
-      )
-    )
-      this.draw(1);
   }
 
   /** Professor Dellian Fel: +2 (gain 3) when we are low on life, else 0 (draw a card, lose 1 life). We use her at
