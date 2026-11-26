@@ -7,7 +7,7 @@ import { Permanent } from '../../engine/game/game-types';
 /** Goldfish combat: only Frodo (for the Ring) and Gollum (for its end-step drain) attack, unless everything kills the table. */
 export function playCombat(game: SamFrodoGame): void {
   game.phase = 'combat';
-  if (game.isOnBattlefield(SAM)) game.makeTokens([FOOD]); // Sam: at the beginning of combat on your turn
+  if (game.isOnBattlefield(SAM)) game.createTokenGroup([FOOD]); // Sam: at the beginning of combat on your turn
   if (game.checkKill() === 2) return;
   if (game.inArena()) {
     playPodCombat(game);
@@ -70,7 +70,7 @@ function makeFoodsForMeriadoc(game: SamFrodoGame): void {
   for (const _ of game.battlefield.filter(
     (permanent) => permanent.card.name === 'Meriadoc Brandybuck',
   ))
-    game.makeTokens([FOOD]);
+    game.createTokenGroup([FOOD]);
 }
 
 /** Rapacious Guest: a Food each time a creature of ours deals combat damage to an opponent. */
@@ -78,7 +78,7 @@ function makeFoodsForRapaciousGuests(game: SamFrodoGame): void {
   for (const _ of game.battlefield.filter(
     (permanent) => permanent.card.name === 'Rapacious Guest',
   ))
-    game.makeTokens([FOOD]);
+    game.createTokenGroup([FOOD]);
 }
 
 /** Frodo attacks: with 3 life gained the Ring tempts us. The Ring's second ability (draw, then discard) only works if it

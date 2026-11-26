@@ -28,7 +28,7 @@ export function valueOfGainingLife(game: SamFrodoGame, amount: number): number {
       game.lifeGainedThisTurn === 0
     )
       value += 20;
-    else if (name === 'Cat Collector' && !game.firstLifeGainHappened)
+    else if (name === 'Cat Collector' && game.lifeGainedThisTurn === 0)
       value += 12;
     else if (name === 'Dawn of Hope' || name === 'Well of Lost Dreams')
       value += 10;
@@ -106,7 +106,7 @@ export function activateWitchsOven(
   const big = game.toughness(victim) >= 4;
   game.say("Witch's Oven eats", victim.card);
   game.sacrifice(victim);
-  game.makeTokens(big ? [FOOD, FOOD] : [FOOD]);
+  game.createTokenGroup(big ? [FOOD, FOOD] : [FOOD]);
   return true;
 }
 

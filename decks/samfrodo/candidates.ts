@@ -301,7 +301,7 @@ function addPermanentAbilityCandidate(
   else if (name === 'Pippin, Warden of Isengard' && isReady && main2)
     add(30, new Cost(1), false, () =>
       payTapAndActivate(game, permanent, new Cost(1), () =>
-        game.makeTokens([FOOD]),
+        game.createTokenGroup([FOOD]),
       ),
     );
   else if (
@@ -317,19 +317,19 @@ function addPermanentAbilityCandidate(
   else if (name === 'Nuka-Cola Vending Machine' && !permanent.tapped && main2)
     add(33, new Cost(1), false, () =>
       payTapAndActivate(game, permanent, new Cost(1), () =>
-        game.makeTokens([FOOD]),
+        game.createTokenGroup([FOOD]),
       ),
     );
   else if (name === 'Gilded Goose' && isReady && main2)
     add(20, Cost.parse('{1}{G}'), false, () =>
       payTapAndActivate(game, permanent, Cost.parse('{1}{G}'), () =>
-        game.makeTokens([FOOD]),
+        game.createTokenGroup([FOOD]),
       ),
     );
   else if (name === 'Dawn of Hope' && main2)
     add(28, Cost.parse('{3}{W}'), false, () =>
       payAndActivate(game, Cost.parse('{3}{W}'), () =>
-        game.makeTokens([TOK.soldier]),
+        game.createTokenGroup([TOK.soldier]),
       ),
     );
   else if (
@@ -369,7 +369,7 @@ function addTradingPostCandidate(
     add(26, new Cost(1), false, () =>
       activateTradingPost(game, tradingPost, () => {
         game.loseLife(1);
-        game.makeTokens([TOK.goat]);
+        game.createTokenGroup([TOK.goat]);
       }),
     );
 }

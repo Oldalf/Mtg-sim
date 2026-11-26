@@ -1,11 +1,17 @@
 /** The cards of the Sam & Frodo deck that have rules of their own, and the facts about them. */
-import { TREASURE } from '../../engine/cards/tokens';
-import * as C from '../../engine/cards/cards';
 import {
-  CardDef,
-  makeArtifactToken,
-  makeToken,
-} from '../../engine/cards/cards';
+  CAT,
+  CLUE,
+  FOOD,
+  GOAT,
+  GREAT_BIRD,
+  HALFLING,
+  LIFELINK_SOLDIER,
+  SERVO,
+  TREASURE,
+} from '../../engine/cards/tokens';
+import * as C from '../../engine/cards/cards';
+import { CardDef } from '../../engine/cards/cards';
 
 export const FRODO = 'Frodo, Adventurous Hobbit';
 export const SAM = 'Sam, Loyal Attendant';
@@ -18,15 +24,14 @@ export const AGENT_OF_THE_IRON_THRONE = 'Agent of the Iron Throne';
 /** {T}: draw a card, only in a turn we created a token. (Its 10/10 Eldrazi ability is not modelled.) */
 export const IDOL_OF_OBLIVION = 'Idol of Oblivion';
 
-export const FOOD = makeArtifactToken('Food');
-export const CLUE = makeArtifactToken('Clue');
+export { CLUE, FOOD };
 export const TOK = {
-  halfling: makeToken('Halfling', 1, 1, 'white'),
-  soldier: makeToken('Soldier', 1, 1, 'white', ['lifelink']),
-  cat: makeToken('Cat', 1, 1, 'white'),
-  goat: makeToken('Goat', 0, 1, 'white'),
-  bird: makeToken('Bird', 3, 3, 'white', ['flying']),
-  servo: makeArtifactToken('Servo', 1, 1),
+  halfling: HALFLING,
+  soldier: LIFELINK_SOLDIER,
+  cat: CAT,
+  goat: GOAT,
+  bird: GREAT_BIRD,
+  servo: SERVO,
 };
 export const ART_TOKENS = new Set([FOOD, TREASURE, CLUE]);
 

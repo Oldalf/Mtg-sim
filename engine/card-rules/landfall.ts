@@ -1,10 +1,23 @@
 /**
  * Landfall ("whenever a land enters under your control") and the permanents that give extra land drops.
  */
-import { BEAST } from '../cards/tokens';
+import { BEAST, FOOD, TREASURE } from '../cards/tokens';
 import type { CardRules } from './card-rules';
 
 export const LANDFALL: CardRules[] = [
+  {
+    names: ['Tireless Provisioner'],
+    onLandfall(game) {
+      game.createTokens(game.chooseTokenToCreate([FOOD, TREASURE]));
+    },
+  },
+  {
+    names: ['Graypelt Refuge', 'Scoured Barrens'],
+    // its own "when this enters, you gain 1 life" (a land enters through landfall, not onEnter)
+    onLandfall(game, permanent, land) {
+      if (land === permanent) game.gainLife(1);
+    },
+  },
   {
     names: ['Geode Rager'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: a land that is gone at once (Evolving Wilds) doesn't trigger it (the card: it

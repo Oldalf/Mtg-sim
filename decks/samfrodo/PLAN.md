@@ -4,7 +4,7 @@ Abzan tokens / aristocrats, bracket 2–3. Wins by draining: tokens and Foods ar
 
 ## Files
 
-- `cards.ts`: the card names and facts about them. `game.ts`: `SamFrodoGame` (state, life gain, tokens, sacrifice values, mana, turn steps). `triggers.ts`: enter, death and Food triggers. `candidates.ts`: what the AI may do now, with a score. `actions.ts`: what the abilities do. `combat.ts`: goldfish combat, pod combat, the all-in attack. `index.ts`: deck registration and --diag / --hands measures. `mulligan.ts`, `config.ts`, `tests/`.
+- `cards.ts`: the card names and facts about them. `game.ts`: `SamFrodoGame` (state, its choices for the engine's card rules, sacrifice values, mana, turn steps, the order of the triggers). `triggers.ts`: Farmer Cotton's enter trigger and the death loop (Susurian Voidborn). The other cards' rules are in the engine (`engine/card-rules/tokens-and-life-gain.ts`, `landfall.ts`; U1b step 2, 2026-11-26). `candidates.ts`: what the AI may do now, with a score. `actions.ts`: what the abilities do. `combat.ts`: goldfish combat, pod combat, the all-in attack. `index.ts`: deck registration and --diag / --hands measures. `mulligan.ts`, `config.ts`, `tests/`.
 
 ## How the deck wins (Pontus, 2026-11-05)
 

@@ -5,12 +5,13 @@
  *
  * The topic files (draw-spells.ts, mana-spells-and-tutors.ts, permanents.ts, aristocrats.ts, attack-triggers.ts,
  * ramp-spells.ts, landfall.ts,
- * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts, cost-and-mana.ts, life-loss.ts, big-creatures.ts, blink-and-dungeons.ts) list
+ * graveyard-creatures.ts, damage-spells.ts, self-mill.ts, doublers.ts, cost-and-mana.ts, life-loss.ts, big-creatures.ts, blink-and-dungeons.ts, tokens-and-life-gain.ts) list
  * the cards; this file collects them
  * and runs the hook a moment in the game asks for. A card with no rules here may still be handled by an engine topic
  * file (blink, reanimation, land search...) or by its deck.
  */
 import { CARD_RULES } from '../cards/cards';
+import { FOOD } from '../cards/tokens';
 import type { CardDef } from '../cards/cards';
 import type { GameCore } from '../game/game-core';
 import type { Permanent, Zone } from '../game/game-types';
@@ -35,6 +36,7 @@ import { LANDFALL } from './landfall';
 import { MANA_SPELLS_AND_TUTORS } from './mana-spells-and-tutors';
 import { PERMANENTS } from './permanents';
 import { RAMP_SPELLS } from './ramp-spells';
+import { TOKENS_AND_LIFE_GAIN } from './tokens-and-life-gain';
 
 /** How a spell was cast, for a rule that cares. */
 export interface HowCast {
@@ -196,6 +198,31 @@ export interface CardRules {
   ): void;
   /** At the beginning of our end step, while it is on the battlefield. */
   onEndStep?(game: GameCore, permanent: Permanent): void;
+  /** We create one or more tokens at once, while it is on the battlefield: the tokens it adds to them (Peregrin
+   *  Took's Food). GameCore.createTokenGroup asks every permanent, then the replacements below. */
+  extraTokensWhenWeCreate?(game: GameCore, permanent: Permanent): CardDef[];
+  /** Instead of creating this token, the tokens it gives (Academy Manufactor), or null to leave it. */
+  replacesTokenWeCreate?(
+    game: GameCore,
+    permanent: Permanent,
+    token: CardDef,
+  ): CardDef[] | null;
+  /** We created a token (it has entered), while it is on the battlefield ("whenever you create a token"). */
+  onWeCreateToken?(
+    game: GameCore,
+    permanent: Permanent,
+    token: Permanent,
+  ): void;
+  /** We gained life (amount > 0), while it is on the battlefield. */
+  onWeGainLife?(game: GameCore, permanent: Permanent, amount: number): void;
+  /** We sacrificed a permanent (it is already gone), while it is on the battlefield. */
+  onWeSacrifice?(
+    game: GameCore,
+    permanent: Permanent,
+    sacrificed: Permanent,
+  ): void;
+  /** We sacrificed a Food, while it is on the battlefield (after every onWeSacrifice). */
+  onWeSacrificeFood?(game: GameCore, permanent: Permanent): void;
 }
 
 const RULES_BY_NAME = new Map<string, CardRules>();
@@ -215,6 +242,7 @@ for (const rules of [
   ...LIFE_LOSS,
   ...BIG_CREATURES,
   ...BLINK_AND_DUNGEONS,
+  ...TOKENS_AND_LIFE_GAIN,
 ])
   for (const name of rules.names) {
     if (RULES_BY_NAME.has(name)) throw new Error(`two rules for ${name}`);
@@ -485,7 +513,13 @@ export function hasStaticEffect(card: CardDef): boolean {
       rules.onLandTappedForMana !== undefined ||
       rules.opponentLifeLossMultiplier !== undefined ||
       rules.onOpponentLosesLife !== undefined ||
-      rules.onWeLoseLife !== undefined)
+      rules.onWeLoseLife !== undefined ||
+      rules.extraTokensWhenWeCreate !== undefined ||
+      rules.replacesTokenWeCreate !== undefined ||
+      rules.onWeCreateToken !== undefined ||
+      rules.onWeGainLife !== undefined ||
+      rules.onWeSacrifice !== undefined ||
+      rules.onWeSacrificeFood !== undefined)
   );
 }
 
@@ -634,11 +668,97 @@ export function permanentSpellCastTriggers(
 export function endStepTriggers(game: GameCore): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
+  ))
+    endStepTriggerOf(game, permanent);
+}
+
+/** One permanent's end step trigger (a deck that runs its own end step cards between them calls it). */
+export function endStepTriggerOf(game: GameCore, permanent: Permanent): void {
+  const rules = rulesOf(permanent.card);
+  if (rules?.onEndStep)
+    runTrigger(game, permanent, () => rules.onEndStep!(game, permanent));
+}
+
+/** The tokens we create when we would create these at once: our permanents add theirs (Peregrin Took), then the
+ *  replacements change each one (Academy Manufactor). GameCore.createTokenGroup asks it. */
+export function tokensWeCreate(game: GameCore, tokens: CardDef[]): CardDef[] {
+  let group = tokens.slice();
+  for (const permanent of game.battlefield) {
+    const extra = rulesOf(permanent.card)?.extraTokensWhenWeCreate;
+    if (extra) group.push(...extra(game, permanent));
+  }
+  for (const permanent of game.battlefield) {
+    const replace = rulesOf(permanent.card)?.replacesTokenWeCreate;
+    if (replace)
+      group = group.flatMap(
+        (token) => replace(game, permanent, token) ?? [token],
+      );
+  }
+  return group;
+}
+
+/** The "whenever you create a token" triggers of our permanents, for one token that entered. */
+export function tokenCreatedTriggers(game: GameCore, token: Permanent): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
   )) {
     const rules = rulesOf(permanent.card);
-    if (rules?.onEndStep)
-      runTrigger(game, permanent, () => rules.onEndStep!(game, permanent));
+    if (rules?.onWeCreateToken)
+      runTrigger(game, permanent, () =>
+        rules.onWeCreateToken!(game, permanent, token),
+      );
   }
+}
+
+/** The "whenever you gain life" triggers of our permanents. GameCore.gainLife runs them. */
+export function lifeGainTriggers(game: GameCore, amount: number): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onWeGainLife)
+      runTrigger(game, permanent, () =>
+        rules.onWeGainLife!(game, permanent, amount),
+      );
+  }
+}
+
+/** The "whenever you sacrifice" triggers of our permanents, then for a Food the "whenever you sacrifice a Food"
+ *  ones. GameCore.sacrifice runs them. */
+export function sacrificeTriggers(game: GameCore, sacrificed: Permanent): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onWeSacrifice)
+      runTrigger(game, permanent, () =>
+        rules.onWeSacrifice!(game, permanent, sacrificed),
+      );
+  }
+  if (sacrificed.card !== FOOD) return;
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onWeSacrificeFood)
+      runTrigger(game, permanent, () =>
+        rules.onWeSacrificeFood!(game, permanent),
+      );
+  }
+}
+
+/** One permanent's "whenever another permanent of ours dies" trigger (a deck with death cards of its own runs them
+ *  in the same loop, so the order stays the battlefield's). */
+export function ourPermanentDiesTriggerOf(
+  game: GameCore,
+  permanent: Permanent,
+  dead: Permanent,
+): void {
+  const rules = rulesOf(permanent.card);
+  if (rules?.onOurPermanentDies)
+    runTrigger(game, permanent, () =>
+      rules.onOurPermanentDies!(game, permanent, dead),
+    );
 }
 
 /** What another creature of ours enters with (Rhythm of the Wild's riot), before any trigger. */

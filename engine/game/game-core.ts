@@ -31,7 +31,7 @@ import * as C from '../cards/cards';
 import type { Answer } from './answers';
 import * as Facts from '../cards/card-facts';
 import { Cost, CardDef } from '../cards/cards';
-import { CLUE, ELDRAZI_SPAWN, TREASURE } from '../cards/tokens';
+import { CLUE, ELDRAZI_SPAWN, FOOD, TREASURE } from '../cards/tokens';
 import { Rng } from '../util/rng';
 import { MulliganRule } from './mulligan';
 import {
@@ -127,6 +127,10 @@ import {
   ourLifeLossTriggers,
   permanentSpellCastTriggers,
   endStepTriggers,
+  tokensWeCreate,
+  tokenCreatedTriggers,
+  lifeGainTriggers,
+  sacrificeTriggers,
   ourCreaturesHaveKeywordFromCards,
   replacementsAsAnotherOfOursEnters,
   combatDamageTriggerOf,
@@ -276,6 +280,10 @@ export abstract class GameCore<S = unknown> {
   hasCreatureEnteredSinceLastUpkeep = false;
   /** No maximum hand size for the rest of the game (Sea Gate Restoration). */
   hasNoMaximumHandSizeForTheGame = false;
+  /** Did we create a token this turn (Idol of Oblivion)? */
+  hasCreatedTokenThisTurn = false;
+  /** The Foods we sacrificed this turn (Elanor Gardner). */
+  foodsSacrificedThisTurn = 0;
 
   /**
    * mode "any": go for the first kill found.  mode "protected": only go when a counterspell can
@@ -1008,14 +1016,32 @@ export abstract class GameCore<S = unknown> {
     count = 1,
     options: { tapped?: boolean } = {},
   ): Permanent[] {
-    const out: Permanent[] = [];
     const tokenCount = this.mayHaveStaticEffects
       ? count * multiplierFromPermanents(this, 'tokenMultiplier')
       : count;
-    for (let i = 0; i < tokenCount; i++)
-      out.push(
-        this.enter(card, 'token', { token: true, tapped: options.tapped }),
-      );
+    return this.createTokenGroup(new Array(tokenCount).fill(card), options);
+  }
+
+  /** Create these tokens at once (one event: Peregrin Took adds one Food to it, Academy Manufactor replaces its
+   *  Foods, Clues and Treasures). Each one enters, then the "whenever you create a token" triggers run for it. */
+  createTokenGroup(
+    tokens: CardDef[],
+    options: { tapped?: boolean } = {},
+  ): Permanent[] {
+    if (!tokens.length) return [];
+    const group = this.mayHaveStaticEffects
+      ? tokensWeCreate(this, tokens)
+      : tokens;
+    this.hasCreatedTokenThisTurn = true;
+    const out: Permanent[] = [];
+    for (const card of group) {
+      const token = this.enter(card, 'token', {
+        token: true,
+        tapped: options.tapped,
+      });
+      out.push(token);
+      if (this.mayHaveStaticEffects) tokenCreatedTriggers(this, token);
+    }
     return out;
   }
 
@@ -1076,12 +1102,16 @@ export abstract class GameCore<S = unknown> {
   }
 
   sacrifice(permanent: Permanent): void {
+    const wasOnBattlefield = this.battlefield.includes(permanent);
     const wasSacrificing = this.isSacrificing;
     this.isSacrificing = true;
     this.say('sacrifice', permanent.card);
     this.dies(permanent);
     if (permanent.card === CLUE) clueSacrificed(this);
     this.isSacrificing = wasSacrificing;
+    if (!wasOnBattlefield) return;
+    if (permanent.card === FOOD) this.foodsSacrificedThisTurn += 1;
+    if (this.mayHaveStaticEffects) sacrificeTriggers(this, permanent);
   }
   /** Land drops added for this turn only (Summer Bloom, Explore); beginNewTurn clears it. A deck that plays more than
    *  one land a turn counts it (Aesi's dropsAllowed). */
@@ -1158,6 +1188,39 @@ export abstract class GameCore<S = unknown> {
    *  choice). Default: battlefield order. */
   orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
     return permanents;
+  }
+  /** Do we pay this optional cost to draw now (Dawn of Hope's {2}, Well of Lost Dreams's {X}, Mentor of the Meek's
+   *  {1})? Default yes, when we can. */
+  paysToDraw(_sourceName: string): boolean {
+    return true;
+  }
+  /** The creature of ours that gets a +1/+1 counter a card gives "target creature" (Rosie Cotton, Of Herbs and
+   *  Stewed Rabbit), not `except`. Default: the one with the most power. */
+  creatureForCounter(except: Permanent | null = null): Permanent | null {
+    const creatures = this.creatures().filter(
+      (creature) => creature !== except,
+    );
+    return creatures.length
+      ? firstMax(creatures, (creature) => this.power(creature))
+      : null;
+  }
+  /** The token we sacrifice for a card's "you may sacrifice a token" (Shire Shirriff), or null not to. Default: in a
+   *  pod the first token, else none. */
+  tokenToSacrificeFor(_sourceName: string): Permanent | null {
+    if (!this.inArena()) return null;
+    return this.battlefield.find((permanent) => permanent.token) ?? null;
+  }
+  /** Which of these tokens a card that offers a choice creates (Tireless Provisioner: a Food or a Treasure).
+   *  Default: a Treasure while we have fewer than six mana sources, else the first other. */
+  chooseTokenToCreate(choices: CardDef[]): CardDef {
+    const treasure = choices.find((card) => card === TREASURE);
+    if (treasure && this.manaSources() < 6) return treasure;
+    return choices.find((card) => card !== TREASURE) ?? choices[0];
+  }
+  /** Do we take a "you may search for a land" that costs us something (Unlucky Cabbage Merchant goes to the
+   *  library)? Default: below seven lands. */
+  wantsLandFor(_sourceName: string): boolean {
+    return this.landsOnBattlefield().length < 7;
   }
   /** A d20 (Djinni Windseer). */
   rollD20(): number {
@@ -1277,7 +1340,9 @@ export abstract class GameCore<S = unknown> {
 
   gainLife(amount: number): void {
     this.myLife += amount;
-    if (amount > 0) this.lifeGainedThisTurn += amount;
+    if (amount <= 0) return;
+    this.lifeGainedThisTurn += amount;
+    if (this.mayHaveStaticEffects) lifeGainTriggers(this, amount);
   }
 
   /** Do we control one of our commanders? */
@@ -1500,6 +1565,8 @@ export abstract class GameCore<S = unknown> {
     this.opponentLifeAtTurnStart = this.life.slice();
     this.creatureSpellsCastThisTurn = 0;
     this.lifeGainedThisTurn = 0;
+    this.hasCreatedTokenThisTurn = false;
+    this.foodsSacrificedThisTurn = 0;
   }
 
   /** Our next turn begins: the turn number moves on, the opponents have each drawn a card, everything untaps, the

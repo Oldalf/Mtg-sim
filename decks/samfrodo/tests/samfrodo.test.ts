@@ -50,6 +50,8 @@ function board(
   }
   game.hand = hand.map((cardName) => C.get(cardName));
   game.graveyard = graveyardNames.map((cardName) => C.get(cardName));
+  // the board is pushed, not entered: the engine's static and token / life / sacrifice triggers must still run
+  game.mayHaveStaticEffects = true;
   return game;
 }
 
@@ -71,7 +73,7 @@ export function runSamFrodoTests(): boolean {
     'Tippy-Toe, Terrific Partner',
     'Academy Manufactor',
   ]);
-  game.makeTokens([FOOD]);
+  game.createTokenGroup([FOOD]);
   check(
     'Peregrin + Tippy-Toe + Manufactor: one Food becomes 3 Food, 3 Clue, 3 Treasure',
     [count(game, FOOD), count(game, CLUE), count(game, TREASURE)],
@@ -80,7 +82,7 @@ export function runSamFrodoTests(): boolean {
 
   // Mirkwood Bats: creating a token and sacrificing a token each drain every opponent 1
   game = board(['Mirkwood Bats', 'Umbral Collar Zealot']);
-  const [otherPermanent] = game.makeTokens([FOOD]);
+  const [otherPermanent] = game.createTokenGroup([FOOD]);
   game.sacrifice(otherPermanent);
   check(
     'Mirkwood Bats: create + sacrifice a Food = 2 each',
@@ -101,7 +103,7 @@ export function runSamFrodoTests(): boolean {
   // Marionette Master with fabricate 3 as counters (power 4): each artifact to the graveyard drains 4
   game = board([], ['Marionette Master'], [], [...repeatName('Swamp', 6)]);
   game.castPerm(C.get('Marionette Master'));
-  game.sacrifice(game.makeTokens([FOOD])[0]);
+  game.sacrifice(game.createTokenGroup([FOOD])[0]);
   check(
     'Marionette Master (4 power): a Food sacrificed = 4 to one opponent',
     game.life,
@@ -117,7 +119,7 @@ export function runSamFrodoTests(): boolean {
       repeatName('Swamp', 6),
     );
     finishBoard.findPermanent('Marionette Master')!.counters = 3;
-    finishBoard.makeTokens(new Array(6).fill(FOOD));
+    finishBoard.createTokenGroup(new Array(6).fill(FOOD));
     finishBoard.life = [opponentLife, opponentLife, opponentLife];
     return finishBoard;
   };
@@ -138,7 +140,7 @@ export function runSamFrodoTests(): boolean {
     repeatName('Forest', 12),
   );
   game.findPermanent('Marionette Master')!.counters = 3;
-  game.makeTokens(new Array(3).fill(FOOD));
+  game.createTokenGroup(new Array(3).fill(FOOD));
   game.life = [8, 8, 8];
   check(
     'Master finish: Second Harvest first, then 6 Foods',
@@ -167,7 +169,7 @@ export function runSamFrodoTests(): boolean {
 
   // Popular Egotist + Susurian Voidborn: a sacrificed Food = 1 + 1 to opponents and 2 life for us
   game = board(['Popular Egotist', 'Susurian Voidborn']);
-  game.sacrifice(game.makeTokens([FOOD])[0]);
+  game.sacrifice(game.createTokenGroup([FOOD])[0]);
   check(
     'Egotist + Voidborn: sacrificed Food drains 2 in total',
     game.life.reduce((total, value) => total + value, 0),
@@ -229,8 +231,8 @@ export function runSamFrodoTests(): boolean {
 
   // Merry: artifacts entering make a lifelink Soldier once each turn
   game = board(['Merry, Warden of Isengard']);
-  game.makeTokens([FOOD]);
-  game.makeTokens([FOOD]);
+  game.createTokenGroup([FOOD]);
+  game.createTokenGroup([FOOD]);
   check(
     'Merry: one Soldier for two Foods in a turn',
     game.battlefield.filter((permanent) => permanent.card.name === 'Soldier')
@@ -251,7 +253,7 @@ export function runSamFrodoTests(): boolean {
   // Belladonna Took: tokens entering: 1st gain 1, 2nd draw, 3rd +1/+1 counter on each creature
   game = board(['Belladonna Took']);
   const handSizeBefore = game.hand.length;
-  game.makeTokens([FOOD, FOOD, FOOD]);
+  game.createTokenGroup([FOOD, FOOD, FOOD]);
   check(
     'Belladonna: gain 1, draw 1, counters',
     [
@@ -264,7 +266,7 @@ export function runSamFrodoTests(): boolean {
 
   // a Treasure used for mana is sacrificed (Mirkwood Bats: 1 each for creating it and 1 for sacrificing it)
   game = board(['Mirkwood Bats'], [], [], []);
-  game.makeTokens([TREASURE]);
+  game.createTokenGroup([TREASURE]);
   check('Treasure pays for {1}', game.pay(new Cost(1)), true);
   check(
     '... and is sacrificed: Bats drain 2 each',
@@ -366,21 +368,22 @@ export function runSamFrodoTests(): boolean {
 
   // Agent of the Iron Throne: 1 per commander on the battlefield, for an artifact or creature of ours dying
   game = board([AGENT_OF_THE_IRON_THRONE, SAM, FRODO]);
-  game.sacrifice(game.makeTokens([FOOD])[0]);
+  game.commanderNames = [SAM, FRODO];
+  game.sacrifice(game.createTokenGroup([FOOD])[0]);
   check(
     'Agent of the Iron Throne with Sam and Frodo: a Food sacrificed = 2 each',
     game.life,
     [38, 38, 38],
   );
   game = board([AGENT_OF_THE_IRON_THRONE, SAM]);
-  const agentFood = game.makeTokens([FOOD])[0];
+  const agentFood = game.createTokenGroup([FOOD])[0];
   check(
     '  ... with Sam only: the AI counts 1 each for the Food',
     game.sacrificeValue(agentFood),
     3,
   );
   game = board([AGENT_OF_THE_IRON_THRONE]);
-  game.sacrifice(game.makeTokens([FOOD])[0]);
+  game.sacrifice(game.createTokenGroup([FOOD])[0]);
   check('  ... with no commander out: nothing', game.life, [40, 40, 40]);
 
   // Idol of Oblivion: draws only in a turn we created a token
@@ -388,7 +391,7 @@ export function runSamFrodoTests(): boolean {
   const idolCandidates = () =>
     game.candidates(true).filter((candidate) => candidate.score === 50).length;
   check('Idol of Oblivion: no token this turn, no draw', idolCandidates(), 0);
-  game.makeTokens([FOOD]);
+  game.createTokenGroup([FOOD]);
   check('  ... after a Food: it may draw', idolCandidates(), 1);
   game.startTurn();
   check('  ... next turn: not until a new token', idolCandidates(), 0);

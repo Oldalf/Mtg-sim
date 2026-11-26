@@ -26,6 +26,21 @@ export const ZOMBIE_DRUID = makeToken('Zombie Druid', 2, 2, 'black');
 /** A 4/4 green Beast (Rampaging Baloths). */
 export const BEAST = makeToken('Beast', 4, 4, 'green');
 
+/** "{2}, {T}, Sacrifice this token: You gain 3 life." */
+export const FOOD = makeArtifactToken('Food');
+/** A 1/1 white Halfling (Farmer Cotton, Of Herbs and Stewed Rabbit). */
+export const HALFLING = makeToken('Halfling', 1, 1, 'white');
+/** A 1/1 white Soldier with lifelink (Merry, Warden of Isengard). */
+export const LIFELINK_SOLDIER = makeToken('Soldier', 1, 1, 'white', [
+  'lifelink',
+]);
+/** A 1/1 white Cat (Cat Collector). */
+export const CAT = makeToken('Cat', 1, 1, 'white');
+/** A 1/1 colourless Servo artifact creature (fabricate: Marionette Apprentice). */
+export const SERVO = makeArtifactToken('Servo', 1, 1);
+/** Gwaihir's 3/3 white Bird with flying. */
+export const GREAT_BIRD = makeToken('Bird', 3, 3, 'white', ['flying']);
+
 /** Desolation Twin's. */
 export const ELDRAZI = makeToken('Eldrazi', 10, 10);
 /** Ob Nixilis, the Ascended's. */

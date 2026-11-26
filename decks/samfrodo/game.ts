@@ -5,7 +5,8 @@
  * Files:
  *   cards.ts       the card names and the facts about them (values, token definitions, Halfling check)
  *   game.ts        this file: SamFrodoGame, its state, life gain, tokens, sacrifice values, mana and turn steps
- *   triggers.ts    what happens when a permanent enters, dies or a Food is sacrificed
+ *   triggers.ts    Farmer Cotton's enter trigger and the death triggers (the other cards' rules are the engine's:
+ *                  engine/card-rules/tokens-and-life-gain.ts, landfall.ts)
  *   candidates.ts  everything the AI may do now, with a score each
  *   actions.ts     what the abilities do when the AI picks them
  *   combat.ts      goldfish combat, pod combat and the all-in attack
@@ -21,7 +22,6 @@
 import { TREASURE } from '../../engine/cards/tokens';
 import {
   AGENT_OF_THE_IRON_THRONE,
-  ART_TOKENS,
   CLUE,
   FOOD,
   FRODO,
@@ -31,7 +31,6 @@ import {
   OWN_KILL_EXILES,
   RAMP_EARLY,
   RING_TRACKER,
-  SAGA,
   SAM,
   TOK,
   VALUE,
@@ -40,11 +39,8 @@ import {
 import { buildCandidates } from './candidates';
 import { finishWithMasterDrain } from './drain-finish';
 import { playCombat } from './combat';
-import {
-  onFoodSacrificed,
-  onPermanentDied,
-  onPermanentEntered,
-} from './triggers';
+import { farmerCottonEnters, onPermanentDied } from './triggers';
+import { endStepTriggerOf } from '../../engine/card-rules/card-rules';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -60,6 +56,23 @@ import { MULLIGAN } from './mulligan';
 
 type Phase = 'main1' | 'combat' | 'main2' | 'end';
 
+const GWAIHIR = 'Gwaihir, Greatest of the Eagles';
+
+/** orderSimultaneousTriggers: later numbers resolve later (the rest: 0). Gaining life: Cat Collector, Sanguine Bond,
+ *  Prize Pig, Dawn of Hope, Well of Lost Dreams; a creature entering: Merry, Belladonna Took, Prosperous Innkeeper,
+ *  Mentor of the Meek. */
+const TRIGGER_ORDER: Record<string, number> = {
+  'Cat Collector': 1,
+  'Sanguine Bond': 2,
+  'Prize Pig': 3,
+  'Dawn of Hope': 4,
+  'Well of Lost Dreams': 5,
+  'Merry, Warden of Isengard': 6,
+  'Belladonna Took': 7,
+  'Prosperous Innkeeper': 8,
+  'Mentor of the Meek': 9,
+};
+
 export class SamFrodoGame extends CreatureDeckGame {
   readonly values = VALUE;
   override mulliganRule(): MulliganRule | null {
@@ -67,15 +80,9 @@ export class SamFrodoGame extends CreatureDeckGame {
   }
   override colors = ['W', 'B', 'G'];
   phase: Phase = 'main1';
-  firstLifeGainHappened = false; // Cat Collector: first life gain this turn happened
-  foodSacrificedThisTurn = false; // a Food was sacrificed this turn (Elanor)
-  belladonnaTriggers = 0; // Belladonna Took: times its ability resolved this turn
-  merryUsed = false; // Merry: once each turn
   ringTempts = 0; // the Ring tempted us (Frodo is always the Ring-bearer)
   gollumHit: boolean[] = new Array(this.life.length).fill(false); // opponents dealt combat damage by Gollum this game
-  pigRibbonCounters = 0; // Prize Pig's ribbon counters
   farmerCottonX = 0; // X for Farmer Cotton while it enters
-  hasCreatedTokenThisTurn = false; // Idol of Oblivion
   allInWin = false; // the win came from an all-in attack (for the stats)
 
   // ---------------------------------------------------------------- log analyzer hooks
@@ -118,86 +125,17 @@ export class SamFrodoGame extends CreatureDeckGame {
     const target = this.opponentWithMostLife();
     if (target !== null && amount > 0) this.damageOpponent(target, amount);
   }
-
-  override gainLife(amount: number): void {
-    if (amount <= 0) return;
-    super.gainLife(amount); // (counts lifeGainedThisTurn)
-    if (!this.firstLifeGainHappened) {
-      this.firstLifeGainHappened = true;
-      for (const permanent of this.battlefield.filter(
-        (candidate) => candidate.card.name === 'Cat Collector',
-      ))
-        if (this.battlefield.includes(permanent)) this.makeTokens([TOK.cat]);
-    }
-    for (const battlefieldPermanent of this.battlefield)
-      if (battlefieldPermanent.card.name === 'Sanguine Bond')
-        this.drainTargetOpponent(amount);
-    const pig = this.findPermanent('Prize Pig');
-    if (pig) {
-      this.pigRibbonCounters += amount;
-      if (this.pigRibbonCounters >= 3) {
-        this.pigRibbonCounters = 0;
-        pig.tapped = false;
-      }
-    }
-    if (this.phase !== 'main1') {
-      if (this.isOnBattlefield('Dawn of Hope') && this.pay(new Cost(2))) {
-        this.say('Dawn of Hope: pay 2, draw');
-        this.draw(1);
-      }
-      if (this.isOnBattlefield('Well of Lost Dreams')) {
-        let payableAmount = 0;
-        while (
-          payableAmount < amount &&
-          this.canPay(new Cost(payableAmount + 1))
-        )
-          payableAmount++;
-        if (payableAmount > 0 && this.pay(new Cost(payableAmount))) {
-          this.say(`Well of Lost Dreams: draw ${payableAmount}`);
-          this.draw(payableAmount);
-        }
-      }
-    }
+  /** The engine's "target opponent" (Sanguine Bond, Marionette Master, Rapacious Guest...): the one with the most
+   *  life. */
+  override chooseTargetOpponent(): number | null {
+    return this.opponentWithMostLife();
   }
 
   // ================================================================ tokens
-  /** Create tokens as one event: Peregrin Took and Tippy-Toe add a Food each, Academy Manufactor turns each
-   *  Food / Clue / Treasure into one of each. Then each token enters (and "create" triggers fire). */
-  makeTokens(cds: CardDef[], options: { tapped?: boolean } = {}): Permanent[] {
-    if (!cds.length) return [];
-    const list = cds.slice();
-    if (this.isOnBattlefield('Peregrin Took')) list.push(FOOD);
-    if (this.isOnBattlefield('Tippy-Toe, Terrific Partner')) list.push(FOOD);
-    const all = this.isOnBattlefield('Academy Manufactor')
-      ? list.flatMap((card) =>
-          ART_TOKENS.has(card) ? [FOOD, CLUE, TREASURE] : [card],
-        )
-      : list;
-    const out: Permanent[] = [];
-    this.hasCreatedTokenThisTurn = true;
-    for (const tokenCard of all) {
-      const permanent = this.enter(tokenCard, 'token', {
-        token: true,
-        tapped: options.tapped,
-      });
-      out.push(permanent);
-      // "whenever you create a token"
-      for (const battlefieldPermanent of this.battlefield.slice()) {
-        if (battlefieldPermanent.card.name === 'Mirkwood Bats')
-          this.drainEach(1);
-        else if (
-          battlefieldPermanent.card.name === 'Rosie Cotton of South Lane'
-        ) {
-          const counterRecipient = this.bestCounterTarget(battlefieldPermanent);
-          if (counterRecipient) counterRecipient.counters += 1;
-        }
-      }
-    }
-    return out;
-  }
-
   /** The best creature for a +1/+1 counter: Marionette Master (its power is the drain), Rapacious Guest, Frodo. */
-  bestCounterTarget(exclude: Permanent | null = null): Permanent | null {
+  override creatureForCounter(
+    exclude: Permanent | null = null,
+  ): Permanent | null {
     const permanents = this.creatures().filter(
       (permanent) => permanent !== exclude,
     );
@@ -234,26 +172,48 @@ export class SamFrodoGame extends CreatureDeckGame {
     return this.creatures().filter((permanent) => isHalfling(permanent.card))
       .length;
   }
-  override onEnter(permanent: Permanent, _from: Zone): void {
-    return onPermanentEntered(this, permanent, _from);
+  /** The engine's enter triggers, then Farmer Cotton's (its X is ours). */
+  override onEnter(permanent: Permanent, from: Zone): void {
+    super.onEnter(permanent, from);
+    if (permanent.card.name === 'Farmer Cotton') farmerCottonEnters(this);
+  }
+
+  /** Our order for triggers that happen together (later numbers later; the rest first, in battlefield order): what
+   *  gaining life and a creature entering trigger. */
+  override orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
+    return permanents
+      .map((permanent, index) => ({ permanent, index }))
+      .sort(
+        (first, second) =>
+          (TRIGGER_ORDER[first.permanent.card.name] ?? 0) -
+            (TRIGGER_ORDER[second.permanent.card.name] ?? 0) ||
+          first.index - second.index,
+      )
+      .map(({ permanent }) => permanent);
+  }
+
+  /** Dawn of Hope, Well of Lost Dreams and Mentor of the Meek draw for mana outside the first main phase (there the
+   *  mana goes to spells). */
+  override paysToDraw(_sourceName: string): boolean {
+    return this.phase !== 'main1';
+  }
+
+  /** Shire Shirriff: in a pod our worst spare token (for its exile); in a goldfish game one worth sacrificing. */
+  override tokenToSacrificeFor(_sourceName: string): Permanent | null {
+    const spare = this.spareSacrifices();
+    if (this.inArena())
+      return spare.find((candidate) => candidate.token) ?? null;
+    return (
+      spare.find(
+        (candidate) => candidate.token && this.sacrificeValue(candidate) >= 3,
+      ) ?? null
+    );
   }
 
   // ================================================================ leaving
   override sacrifice(permanent: Permanent): void {
     if (!this.battlefield.includes(permanent)) return;
-    const food = permanent.card === FOOD;
-    super.sacrifice(permanent); // -> dies -> onDies
-    for (const battlefieldPermanent of this.battlefield) {
-      if (battlefieldPermanent.card.name === 'Popular Egotist') {
-        this.drainTargetOpponent(1);
-        this.gainLife(1);
-      } else if (
-        battlefieldPermanent.card.name === 'Mirkwood Bats' &&
-        permanent.token
-      )
-        this.drainEach(1);
-    }
-    if (food) onFoodSacrificed(this);
+    super.sacrifice(permanent); // -> dies -> onDies, then the sacrifice and Food triggers
   }
   override onDies(permanent: Permanent): void {
     return onPermanentDied(this, permanent);
@@ -364,18 +324,6 @@ export class SamFrodoGame extends CreatureDeckGame {
     return out.sort((first, second) => rank(first) - rank(second));
   }
 
-  // ================================================================ lands
-  override onLandEnter(permanent: Permanent, _gone: boolean): void {
-    for (const battlefieldPermanent of this.battlefield.slice())
-      if (battlefieldPermanent.card.name === 'Tireless Provisioner')
-        this.makeTokens([this.manaSources() < 6 ? TREASURE : FOOD]);
-    if (
-      permanent.card.name === 'Graypelt Refuge' ||
-      permanent.card.name === 'Scoured Barrens'
-    )
-      this.gainLife(1);
-  }
-
   // ================================================================ mana
   override manaSourceKind(
     permanent: Permanent,
@@ -463,30 +411,6 @@ export class SamFrodoGame extends CreatureDeckGame {
       ).length;
     super.startTurn();
     this.phase = 'main1';
-    this.firstLifeGainHappened =
-      this.foodSacrificedThisTurn =
-      this.merryUsed =
-        false;
-    this.belladonnaTriggers = 0;
-    this.hasCreatedTokenThisTurn = false;
-  }
-
-  override upkeep(): void {
-    // the saga's next chapter (really after the draw step; close enough)
-    for (const permanent of this.battlefield.filter(
-      (candidate) => candidate.card.name === SAGA,
-    )) {
-      permanent.counters += 1;
-      if (permanent.counters === 2) {
-        this.draw(1);
-        this.makeTokens([FOOD]);
-      } else if (permanent.counters >= 3) {
-        this.makeTokens(
-          new Array(this.foodsOnBattlefield().length).fill(TOK.halfling),
-        );
-        this.sacrifice(permanent);
-      }
-    }
   }
 
   override develop(main2 = false): boolean {
@@ -496,27 +420,19 @@ export class SamFrodoGame extends CreatureDeckGame {
     return super.develop(main2);
   }
 
+  /** The engine's end step triggers, with Gollum's drain after Gwaihir's Birds (they enter first: the life they give
+   *  counts) and before the others (Elanor's land would bring more tokens and life). */
   override endStep(): void {
     this.phase = 'end';
-    const gainedThisTurn = () => this.lifeGainedThisTurn;
     for (const permanent of this.battlefield.slice())
-      if (
-        permanent.card.name === 'Gwaihir, Greatest of the Eagles' &&
-        gainedThisTurn() >= 3
-      )
-        this.makeTokens([TOK.bird]);
-    if (this.isOnBattlefield(GOLLUM) && gainedThisTurn() > 0)
+      if (permanent.card.name === GWAIHIR) endStepTriggerOf(this, permanent);
+    const gainedThisTurn = this.lifeGainedThisTurn;
+    if (this.isOnBattlefield(GOLLUM) && gainedThisTurn > 0)
       for (let i = 0; i < this.life.length; i++)
         if (this.gollumHit[i] && this.isOpponentAlive(i))
-          this.damageOpponent(i, gainedThisTurn());
-    for (const battlefieldPermanent of this.battlefield.slice()) {
-      const name = battlefieldPermanent.card.name;
-      if (name === 'The Gaffer' && gainedThisTurn() >= 3) this.draw(1);
-      else if (name === 'Tippy-Toe, Terrific Partner' && gainedThisTurn() > 0)
-        this.draw(1);
-      else if (name === 'Elanor Gardner' && this.foodSacrificedThisTurn)
-        fetchLand(this, 'basic', true);
-    }
+          this.damageOpponent(i, gainedThisTurn);
+    for (const permanent of this.battlefield.slice())
+      if (permanent.card.name !== GWAIHIR) endStepTriggerOf(this, permanent);
     this.checkKill();
   }
   override combat(): void {
@@ -567,13 +483,13 @@ export class SamFrodoGame extends CreatureDeckGame {
     else if (name === 'Deadly Dispute') {
       // the engine's rule, but the Treasure is made our way (Peregrin, Manufactor, Bats see it)
       this.draw(2 * this.spellSacrifices, name);
-      this.makeTokens(new Array(this.spellSacrifices).fill(TREASURE));
+      this.createTokenGroup(new Array(this.spellSacrifices).fill(TREASURE));
     } else if (name === 'Cultivate') {
       fetchLand(this, 'basic', true);
       fetchLand(this, 'basic', true, true);
     } else if (name === 'Farseek') fetchLand(this, 'types', true);
     else if (name === 'Second Harvest')
-      this.makeTokens(
+      this.createTokenGroup(
         this.battlefield
           .filter((permanent) => permanent.token)
           .map((permanent) => permanent.card),
