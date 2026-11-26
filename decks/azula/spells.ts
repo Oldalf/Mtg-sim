@@ -1,39 +1,20 @@
 /** What Azula's own instants and sorceries do when they resolve (a copy resolves the same way). The engine resolves
- *  the ones it knows (Frantic Search, Snap, Waterlogged Teachings); the additional costs (a discard, an artifact)
+ *  the ones it knows (Frantic Search, Snap, Waterlogged Teachings, the burn and draw spells: engine/card-rules/); the additional costs (a discard, an artifact)
  *  are paid when the card is cast (candidates.ts), so a copy doesn't pay them. */
 import {
-  BIG_SCORE,
-  BREATH_OF_MALFEGOR,
-  DEMAND_ANSWERS,
-  ELECTRODOMINANCE,
   JESKAS_WILL,
-  KILL_MAIM_BURN,
-  LIGHTNING_BOLT,
   MANA_GEYSER,
   SCARRING_MEMORIES,
-  SEA_GATE_RESTORATION,
   SEETHING_SONG,
   SOZINS_COMET,
   TORMENT_OF_HAILFIRE,
-  UNEXPECTED_WINDFALL,
 } from './cards';
 import type { AzulaGame } from './game';
 import { CardDef } from '../../engine/cards/cards';
-import { TREASURE } from '../../engine/cards/tokens';
 
 /** Resolves one of the deck's spells. Returns false if it isn't one. */
 export function resolveAzulaSpell(game: AzulaGame, card: CardDef): boolean {
   switch (card.name) {
-    case LIGHTNING_BOLT:
-    case KILL_MAIM_BURN:
-      damageWeakestOpponent(game, 3);
-      return true;
-    case ELECTRODOMINANCE:
-      damageWeakestOpponent(game, game.chosenX);
-      return true;
-    case BREATH_OF_MALFEGOR:
-      game.drainEach(5);
-      return true;
     case TORMENT_OF_HAILFIRE:
       tormentOfHailfire(game, game.chosenX);
       return true;
@@ -52,29 +33,12 @@ export function resolveAzulaSpell(game: AzulaGame, card: CardDef): boolean {
     case JESKAS_WILL:
       jeskasWill(game);
       return true;
-    case BIG_SCORE:
-    case UNEXPECTED_WINDFALL:
-      game.draw(2);
-      game.createTokens(TREASURE, 2);
-      return true;
-    case DEMAND_ANSWERS:
-      game.draw(2);
-      return true;
-    case SEA_GATE_RESTORATION:
-      game.hasSeaGateRestorationResolved = true;
-      game.draw(game.hand.length + 1);
-      return true;
     case SOZINS_COMET:
       game.sozinsCometTurn = game.turn;
       return true;
     default:
       return false;
   }
-}
-
-function damageWeakestOpponent(game: AzulaGame, damage: number): void {
-  const target = game.chooseTargetOpponent();
-  if (target !== null) game.damageOpponent(target, damage);
 }
 
 /** Jeska's Will: {R} for each card in the fullest opponent's hand; with a commander out also the top three cards

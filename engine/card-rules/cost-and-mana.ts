@@ -11,6 +11,16 @@ import type { CardRules } from './card-rules';
 
 export const COST_AND_MANA: CardRules[] = [
   {
+    names: ['Mindsplice Apparatus'],
+    // its oil counters (Permanent.otherCounters); a counter doubler doesn't double them
+    onUpkeep(_game, permanent) {
+      permanent.otherCounters = (permanent.otherCounters ?? 0) + 1;
+    },
+    costReduction(_game, permanent, spell) {
+      return spell.isInstantOrSorcery ? (permanent.otherCounters ?? 0) : 0;
+    },
+  },
+  {
     names: ['Goreclaw, Terror of Qal Sisma'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: its attack trigger (+1/+1 and trample for our big creatures) is not modelled.
     costReduction(_game, _permanent, spell) {

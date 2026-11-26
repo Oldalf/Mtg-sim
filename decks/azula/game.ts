@@ -18,11 +18,8 @@ import {
   EQUIPMENT,
   FATED_FIREPOWER,
   FINISHERS,
-  FIREBENDER_ASCENSION,
-  FIREBENDING_SOLDIER,
   FLASH_FOR_ALL,
   HOLD,
-  MINDSPLICE_APPARATUS,
   MYSTERIOUS_STRANGER,
   OZAI,
   PRISMARI,
@@ -36,10 +33,12 @@ import {
   WEARS_CLOAK,
   WEARS_GREAVES,
   WIZARDS_OF_THAY,
+  X_SPELLS,
 } from './cards';
 import { buildCandidates } from './candidates';
 import { ComboWin, missingComboPiece } from './combos';
 import { resolveAzulaSpell } from './spells';
+import { attackTriggers } from '../../engine/card-rules/card-rules';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -51,7 +50,6 @@ import {
 import { Answer } from '../../engine/game/answers';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import type { TurnStep } from '../../engine/game/game-core';
-import { printedFirebending } from '../../engine/game/firebending';
 import { copySpell } from '../../engine/game/spell-copies';
 import { firstMax } from '../../engine/util/lists';
 
@@ -65,17 +63,11 @@ export class AzulaGame extends CreatureDeckGame {
   chosenX = 0;
   /** The turn we cast Sozin's Comet: each creature has firebending 5. */
   sozinsCometTurn = -1;
-  /** Firebender Ascension's quest counters (the list has one Ascension). */
-  firebenderQuestCounters = 0;
-  /** Mindsplice Apparatus's oil counters, over all of them: each makes instants and sorceries cost {1} less. */
-  mindspliceOilCounters = 0;
   /** Arcane Bombardment's exiled cards (one Bombardment in the list); it triggers on the first spell each turn. */
   cardsExiledWithBombardment: CardDef[] = [];
   hasBombardmentTriggeredThisTurn = false;
   /** Jeska's Will's exiled cards we may play this turn (in hand until the end of the turn). */
   cardsPlayableThisTurnOnly: CardDef[] = [];
-  /** Sea Gate Restoration: no maximum hand size for the rest of the game. */
-  hasSeaGateRestorationResolved = false;
   /** The combo we went off with this turn (for the pod's answers). */
   comboWin: ComboWin | null = null;
   /** We are casting an answer on another player's turn: none of our "whenever you cast" copies apply. */
@@ -306,19 +298,23 @@ export class AzulaGame extends CreatureDeckGame {
       super.resolveOther(card, fromGraveyard, mode);
   }
 
-  /** Mindsplice Apparatus's oil counters make instants and sorceries cheaper. */
-  override instantOrSorceryCostReduction(): number {
-    return super.instantOrSorceryCostReduction() + this.mindspliceOilCounters;
+  /** Our X spells and their copies resolve with the X we chose (the engine's rules read it from the mode). */
+  override resolve(
+    card: CardDef,
+    fromGraveyard = false,
+    mode: string | null = null,
+  ): void {
+    super.resolve(
+      card,
+      fromGraveyard,
+      mode ?? (X_SPELLS.has(card.name) ? `x=${this.chosenX}` : null),
+    );
   }
 
   // ================================================================ enter
   override onEnter(permanent: Permanent, from: Zone): void {
     super.onEnter(permanent, from);
     switch (permanent.card.name) {
-      case FIREBENDER_ASCENSION:
-        this.firebenderQuestCounters = 0;
-        this.createTokens(FIREBENDING_SOLDIER);
-        break;
       case FATED_FIREPOWER:
         permanent.counters = this.chosenX; // its fire counters
         break;
@@ -327,11 +323,6 @@ export class AzulaGame extends CreatureDeckGame {
         break;
       case TORRENTIAL_GEARHULK:
         this.torrentialGearhulkCasts();
-        break;
-      case 'Necron Deathmark':
-        // destroy a creature (the pod's biggest threat's best); the mill is not modelled
-        if (this.inArena())
-          this.arena!.snipe(this, CREATURE_REMOVAL, 'Necron Deathmark');
         break;
     }
   }
@@ -358,11 +349,6 @@ export class AzulaGame extends CreatureDeckGame {
     this.castCopyWithoutPaying(card, TORRENTIAL_GEARHULK);
   }
 
-  override upkeep(): void {
-    super.upkeep();
-    this.mindspliceOilCounters += this.countOnBattlefield(MINDSPLICE_APPARATUS);
-  }
-
   override endTurn(): void {
     for (const card of this.cardsPlayableThisTurnOnly)
       if (this.hand.includes(card)) this.moveCard(card, 'hand', 'exile');
@@ -370,35 +356,22 @@ export class AzulaGame extends CreatureDeckGame {
     super.endTurn();
   }
 
-  /** Sea Gate Restoration too. */
-  override hasNoMaximumHandSize(): boolean {
-    return this.hasSeaGateRestorationResolved || super.hasNoMaximumHandSize();
-  }
-
   // ================================================================ combat
   /** Azula's attack: her firebending (the engine's) pays for spells cast now, and she copies each one. Sozin's
-   *  Comet gives each attacker firebending 5; Firebender Ascension copies a firebending trigger from its fourth
-   *  quest counter. Then we cast what we held for combat (candidates.ts), a combo first if one is ready. */
+   *  Comet gives each attacker firebending 5; then the engine's attack triggers (Firebender Ascension). Then we cast
+   *  what we held for combat (candidates.ts), a combo first if one is ready. */
   override onAttack(attackers: Permanent[]): Permanent[] {
-    for (const attacker of attackers) {
-      if (this.sozinsCometTurn === this.turn) {
+    if (this.sozinsCometTurn === this.turn)
+      for (const attacker of attackers) {
         this.pool.R += 5;
         this.say(`  firebending 5 (${SOZINS_COMET}):`, attacker.card);
       }
-      const firebending = printedFirebending(attacker.card);
-      if (firebending > 0 && this.isOnBattlefield(FIREBENDER_ASCENSION)) {
-        this.firebenderQuestCounters += 1;
-        if (this.firebenderQuestCounters >= 4) {
-          this.pool.R += firebending;
-          this.say(`  ${FIREBENDER_ASCENSION} copies firebending`);
-        }
-      }
-    }
+    const joined = attackTriggers(this, attackers);
     if (attackers.some((attacker) => attacker.card.name === AZULA)) {
       this.isAzulaAttacking = true;
       this.developWin(false);
     }
-    return [];
+    return joined;
   }
 
   /** Azula's copies end with combat. Ozai: mana we would lose becomes red instead (it stays in the pool). */
@@ -561,14 +534,6 @@ export class AzulaGame extends CreatureDeckGame {
     return buildCandidates(this, main2);
   }
 }
-
-/** Necron Deathmark's enter trigger, as the pod's removal. */
-const CREATURE_REMOVAL: Answer = {
-  kind: 'removal',
-  instant: false,
-  hits: ['creature'],
-  how: 'destroy',
-};
 
 function colouredPips(cost: Cost): number {
   return (

@@ -33,6 +33,28 @@ export const FLYING_ANGEL = makeToken('Angel', 4, 4, 'white', ['flying']);
 /** Koma, World-Eater's. */
 export const KOMAS_COIL = makeToken("Koma's Coil", 3, 3, 'blue');
 
+/** Firebender Ascension's 2/2 red Soldier with firebending 1. */
+export const FIREBENDING_SOLDIER = new CardDef(
+  'Soldier',
+  {
+    name: 'Soldier',
+    type_line: 'Token Creature — Soldier',
+    power: '2',
+    toughness: '2',
+    keywords: ['Firebending'],
+    oracle: 'Firebending 1',
+    token: true,
+  } as CardData,
+  {
+    name: 'Soldier',
+    face: {
+      power: 2,
+      toughness: 2,
+      colours: ['red'],
+      keywords: ['firebending'],
+    },
+  },
+);
 /** Undercellar Sweep's, tapped and attacking. */
 export const SOLDIER = makeToken('Soldier', 1, 1, 'white');
 /** Genku, Future Shaper's three, one of each a turn. */

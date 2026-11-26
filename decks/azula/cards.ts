@@ -1,4 +1,5 @@
-/** Fire Lord Azula's deck: card names and values. The rules are in game.ts, spells.ts and combos.ts. */
+/** Fire Lord Azula's deck: card names and values. The rules are in the engine (engine/card-rules/) and in game.ts,
+ *  spells.ts and combos.ts. */
 import * as C from '../../engine/cards/cards';
 import {
   ARCHMAGE_EMERITUS,
@@ -83,28 +84,8 @@ export const FINISHERS = new Set([
   SCARRING_MEMORIES,
 ]);
 
-/** Firebender Ascension's 2/2 red Soldier with firebending 1. */
-export const FIREBENDING_SOLDIER = new C.CardDef(
-  'Soldier',
-  {
-    name: 'Soldier',
-    type_line: 'Token Creature — Soldier',
-    power: '2',
-    toughness: '2',
-    keywords: ['Firebending'],
-    oracle: 'Firebending 1',
-    token: true,
-  } as C.CardData,
-  {
-    name: 'Soldier',
-    face: {
-      power: 2,
-      toughness: 2,
-      colours: ['red'],
-      keywords: ['firebending'],
-    },
-  },
-);
+/** Our spells with X in their cost: they and their copies resolve with the X we chose (game.chosenX). */
+export const X_SPELLS = new Set([ELECTRODOMINANCE, TORMENT_OF_HAILFIRE]);
 
 /** How much the AI wants each card on the battlefield (the rest: 40 for a creature, 30 otherwise). Spells have a
  *  value too: it is how much we want them in hand (discards, tutors). */

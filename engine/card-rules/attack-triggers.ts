@@ -1,14 +1,37 @@
 /**
  * Cards with attack triggers: a creature's own ("whenever this attacks") and our permanents' "whenever you attack".
  */
-import { LIFELINK_VAMPIRE } from '../cards/tokens';
+import { FIREBENDING_SOLDIER, LIFELINK_VAMPIRE } from '../cards/tokens';
+import { printedFirebending } from '../game/firebending';
 import { addCounterToEachVampire } from './aristocrats';
 import type { GameCore } from '../game/game-core';
 import type { CardRules } from './card-rules';
 
 export const LEGIONS_LANDING = "Legion's Landing";
 
+/** Firebender Ascension copies the firebending triggers from this many quest counters on. */
+const FIREBENDER_QUEST_COUNTERS = 4;
+
 export const ATTACK_TRIGGERS: CardRules[] = [
+  {
+    names: ['Firebender Ascension'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: only printed firebending counts (not Sozin's Comet's), and a counter doubler
+    // doesn't double the quest counters (Permanent.otherCounters).
+    onEnter(game) {
+      game.createTokens(FIREBENDING_SOLDIER);
+    },
+    onWeAttack(game, permanent, attackers) {
+      for (const attacker of attackers) {
+        const firebending = printedFirebending(attacker.card);
+        if (firebending === 0) continue;
+        permanent.otherCounters = (permanent.otherCounters ?? 0) + 1;
+        if (permanent.otherCounters >= FIREBENDER_QUEST_COUNTERS) {
+          game.pool.R += firebending;
+          game.say(`  ${permanent.card.name} copies firebending`);
+        }
+      }
+    },
+  },
   {
     names: ['Archon of Cruelty'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: the opponent's sacrifice and discard are not modelled.

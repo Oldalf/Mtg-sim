@@ -6,6 +6,7 @@ import * as C from '../cards/cards';
 import type { CardDef } from '../cards/cards';
 import { GOAT, LIFELINK_VAMPIRE, ZOMBIE } from '../cards/tokens';
 import { SHRIEKMAW } from '../game/answers';
+import type { Answer } from '../game/answers';
 import type { GameCore } from '../game/game-core';
 import { corpseAugurDies, CORPSE_AUGUR } from '../game/card-draw';
 import { fetchLand } from '../game/land-search';
@@ -15,7 +16,22 @@ import { returnBestCreatureCardToHand } from './self-mill';
 
 export const MASSACRE_WURM = 'Massacre Wurm';
 
+/** Necron Deathmark's "destroy target creature", as the pod's removal. */
+const DESTROY_CREATURE: Answer = {
+  kind: 'removal',
+  instant: false,
+  hits: ['creature'],
+  how: 'destroy',
+};
+
 export const PERMANENTS: CardRules[] = [
+  {
+    names: ['Necron Deathmark'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the mill is not modelled.
+    onEnter(game, permanent) {
+      game.podSnipe(DESTROY_CREATURE, permanent.card.name);
+    },
+  },
   {
     names: ['Solemn Simulacrum'],
     onEnter(game) {

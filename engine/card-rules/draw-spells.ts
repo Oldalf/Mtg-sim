@@ -2,11 +2,36 @@
  * Draw, scry and "look at the top cards" spells. Which cards to keep is the deck's choice (cardValue).
  */
 import type { CardDef } from '../cards/cards';
+import { TREASURE } from '../cards/tokens';
 import type { GameCore } from '../game/game-core';
 import { firstMax, firstMin, sortDesc } from '../util/lists';
 import type { CardRules, HowCast } from './card-rules';
 
 export const DRAW_SPELLS: CardRules[] = [
+  {
+    names: ['Big Score', 'Unexpected Windfall'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the discard (an additional cost) is paid by the deck that casts it (Azula's
+    // candidates); a copy doesn't pay it.
+    resolve(game) {
+      game.draw(2);
+      game.createTokens(TREASURE, 2);
+    },
+  },
+  {
+    names: ['Demand Answers'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the sacrifice or discard (an additional cost) is paid by the deck that casts it
+    // (Azula's candidates).
+    resolve(game) {
+      game.draw(2);
+    },
+  },
+  {
+    names: ['Sea Gate Restoration'],
+    resolve(game) {
+      game.hasNoMaximumHandSizeForTheGame = true;
+      game.draw(game.hand.length + 1);
+    },
+  },
   {
     names: ['Brainstorm'],
     resolve(game) {

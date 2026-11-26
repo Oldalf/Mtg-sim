@@ -274,6 +274,8 @@ export abstract class GameCore<S = unknown> {
   /** Did a creature enter under our control since the last upkeep (ours or an opponent's)? The upkeep dispatchers
    *  clear it (Ephara). */
   hasCreatureEnteredSinceLastUpkeep = false;
+  /** No maximum hand size for the rest of the game (Sea Gate Restoration). */
+  hasNoMaximumHandSizeForTheGame = false;
 
   /**
    * mode "any": go for the first kill found.  mode "protected": only go when a counterspell can
@@ -1549,6 +1551,7 @@ export abstract class GameCore<S = unknown> {
   /** Do we skip the discard to seven at the end of the turn? (A deck adds its own cards.) */
   hasNoMaximumHandSize(): boolean {
     return (
+      this.hasNoMaximumHandSizeForTheGame ||
       this.isOnBattlefield('Reliquary Tower') ||
       this.isOnBattlefield('Thought Vessel') ||
       this.isOnBattlefield('Decanter of Endless Water') ||
