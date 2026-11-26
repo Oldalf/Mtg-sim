@@ -9,6 +9,18 @@ import type { CardRules, HowCast } from './card-rules';
 
 export const DRAW_SPELLS: CardRules[] = [
   {
+    names: ['Flux'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the opponents' discards and draws are not modelled.
+    resolve(game, spell) {
+      const discarded = game.handCardsToDiscardAndRedraw(spell);
+      for (const card of discarded) {
+        game.takeCardIfThere(card, 'hand');
+        game.toGraveyard(card);
+      }
+      game.draw(discarded.length + 1);
+    },
+  },
+  {
     names: ['Big Score', 'Unexpected Windfall'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: the discard (an additional cost) is paid by the deck that casts it (Azula's
     // candidates); a copy doesn't pay it.

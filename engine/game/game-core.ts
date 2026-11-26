@@ -2026,6 +2026,18 @@ export abstract class GameCore<S = unknown> {
     );
     return Array.from({ length: count }, (_, i) => ranked[i % ranked.length]);
   }
+  /** Flux: the cards in hand we discard to draw as many again (by default none). */
+  handCardsToDiscardAndRedraw(_spell: CardDef): CardDef[] {
+    return [];
+  }
+  /** Mystic Sanctuary: the instant or sorcery in our graveyard we put on top of the library (default the one worth
+   *  most), or null for none. */
+  instantOrSorceryToPutOnTop(): CardDef | null {
+    const spells = this.graveyard.filter((card) => card.isInstantOrSorcery);
+    return spells.length
+      ? firstMax(spells, (card) => this.cardValue(card))
+      : null;
+  }
   /** Valakut Awakening: the cards in hand we put on the bottom to draw as many again (by default none). */
   handCardsToRedraw(_spell: CardDef): CardDef[] {
     return [];

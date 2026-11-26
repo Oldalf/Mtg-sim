@@ -21,12 +21,15 @@
  * Combat: flyers and unblockable creatures connect, half the ground attackers are blocked (engine rules).
  * The game itself (mana, zones, casting, turns) is the shared engine in engine/game/game-core.ts.
  */
+import {
+  combatDamageTriggerOf,
+  landfallTriggers,
+} from '../../engine/card-rules/card-rules';
 import * as C from '../../engine/cards/cards';
 import {
   AMONKHET_RACEWAY,
   AQUEOUS_FORM,
   AVISHKAR_RACEWAY,
-  ROIL_CARTOGRAPHER,
   LIVING_CONUNDRUM,
   COUNTERSPELLS,
   PSYCHOSIS_CRAWLER,
@@ -37,7 +40,6 @@ import {
   DRAW_SPELLS_WORTH_COPYING,
   SLICK_IMITATOR,
   JACE,
-  LOOTER_IL_KOR,
   KRANG,
   LABORATORY_MANIAC,
   EMRAKULS_MESSENGER,
@@ -54,7 +56,6 @@ import {
   MYSTIC_SANCTUARY,
   OMINOUS_SEAS,
   AURORA_SHIFTER,
-  SHORELINE_LOOTER,
   CLINQUANT_SKYMAGE,
   TEFERIS_AGELESS_INSIGHT,
   TWENTY_TOED_TOAD,
@@ -79,6 +80,16 @@ import { GameWithoutKillSearch } from '../../engine/game/game';
 import { firstMax, firstMin } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
+
+/** Mystic Sanctuary's pick from the graveyard, best first. */
+const SANCTUARY_ORDER = [
+  'Pull from Tomorrow',
+  'Treasure Cruise',
+  'Brainstorm',
+  'Windfall',
+  'Frantic Search',
+  'Consider',
+];
 
 export class MikeGame extends GameWithoutKillSearch {
   override mulliganRule(): MulliganRule | null {
@@ -502,7 +513,7 @@ export class MikeGame extends GameWithoutKillSearch {
       );
     return super.entersTapped(card);
   }
-  override onLandEnter(permanent: Permanent, gone: boolean): void {
+  override onLandEnter(permanent: Permanent, _gone: boolean): void {
     const name = permanent.card.name;
     if (
       name === AVISHKAR_RACEWAY ||
@@ -510,28 +521,15 @@ export class MikeGame extends GameWithoutKillSearch {
       name === AMONKHET_RACEWAY
     )
       this.startEngines();
-    if (this.isOnBattlefield(ROIL_CARTOGRAPHER) && !gone)
-      this.gainEnergy(this.countOnBattlefield(ROIL_CARTOGRAPHER));
-    if (name === MYSTIC_SANCTUARY && !permanent.tapped) {
-      const order = [
-        'Pull from Tomorrow',
-        'Treasure Cruise',
-        'Brainstorm',
-        'Windfall',
-        'Frantic Search',
-        'Consider',
-      ];
-      const card = order
-        .map((name) =>
-          this.graveyard.find((candidate) => candidate.name === name),
-        )
-        .find((found) => found !== undefined);
-      if (card) {
-        this.takeCardIfThere(card, 'graveyard');
-        this.putCardsOnTopOfLibrary([card]);
-        this.say('Mystic Sanctuary: put', card, 'on top');
-      }
-    }
+    landfallTriggers(this, permanent); // Roil Cartographer, Mystic Sanctuary
+  }
+  /** Mystic Sanctuary takes back our best draw spell. */
+  override instantOrSorceryToPutOnTop(): CardDef | null {
+    return (
+      SANCTUARY_ORDER.map((name) =>
+        this.graveyard.find((candidate) => candidate.name === name),
+      ).find((found) => found !== undefined) ?? null
+    );
   }
   override onDies(permanent: Permanent): void {
     if (permanent.card.name === AURORA_SHIFTER) this.shifterCopy = null;
@@ -712,15 +710,9 @@ export class MikeGame extends GameWithoutKillSearch {
   }
   override onCombatDamage(connected: Permanent[], _damage: number): void {
     for (const permanent of connected) {
-      const name = this.effectiveCard(permanent).name;
-      if (name === SHORELINE_LOOTER) {
-        this.draw(1);
-        if (this.graveyard.length < 7) this.discard(1);
-      } else if (name === LOOTER_IL_KOR) {
-        this.draw(1);
-        this.discard(1);
-      } else if (name === AURORA_SHIFTER)
+      if (this.effectiveCard(permanent).name === AURORA_SHIFTER)
         this.gainEnergy(this.power(permanent));
+      else combatDamageTriggerOf(this, permanent); // the Looters
     }
     const fblthp = this.findPermanent(FBLTHP);
     if (fblthp && connected.length) {
@@ -786,28 +778,22 @@ export class MikeGame extends GameWithoutKillSearch {
       this.arena!.bounceColour(this, mode as 'W' | 'U' | 'B' | 'R' | 'G', name);
       return;
     }
-    if (name === 'Flux') {
-      const all =
-        this.isSafeToEmptyLibrary() &&
-        this.refillDraws(this.hand.length, true) >= this.library.length;
-      const bad = all
-        ? this.hand.slice()
-        : this.hand
-            .filter(
-              (candidate) =>
-                candidate !== card &&
-                (candidate.land !== null || HOLD.has(candidate.name)),
-            )
-            .sort(
-              (first, second) => this.cardValue(first) - this.cardValue(second),
-            )
-            .slice(0, 4);
-      for (const discardedCard of bad) {
-        this.takeCardIfThere(discardedCard, 'hand');
-        this.toGraveyard(discardedCard);
-      }
-      this.draw(bad.length + 1);
-    } else super.resolve(card, fromGraveyard, mode);
+    super.resolve(card, fromGraveyard, mode);
+  }
+  /** Flux: the whole hand when that draws the rest of a library we may empty, else up to four lands and held cards. */
+  override handCardsToDiscardAndRedraw(spell: CardDef): CardDef[] {
+    const all =
+      this.isSafeToEmptyLibrary() &&
+      this.refillDraws(this.hand.length, true) >= this.library.length;
+    if (all) return this.hand.slice();
+    return this.hand
+      .filter(
+        (candidate) =>
+          candidate !== spell &&
+          (candidate.land !== null || HOLD.has(candidate.name)),
+      )
+      .sort((first, second) => this.cardValue(first) - this.cardValue(second))
+      .slice(0, 4);
   }
   /** Slick Imitator at max speed: {1}, sacrifice it: copy a spell we cast (a copy of a draw spell draws again). */
   imitatorReady(): boolean {

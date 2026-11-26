@@ -9,6 +9,8 @@ Mono-blue card draw, bracket 2–3. "Mike" is the nickname (Mike Wazowski: one e
 
 - `cards.ts`: the card names and facts about them. `game.ts`: `MikeGame` (state, win checks, drawing and speed, combat, spells). `candidates.ts`: what the AI may do now, with a score. `actions.ts`: what some abilities do. `index.ts`: deck registration and --diag / --hands measures. `mulligan.ts`, `config.ts`, `tests/`.
 
+U1b step 2 (2026-11-26): Shoreline Looter, Looter il-Kor, Roil Cartographer, Mystic Sanctuary's return and Flux are engine card rules (`engine/card-rules/`); Mike's choices for them are `instantOrSorceryToPutOnTop` and `handCardsToDiscardAndRedraw` in `game.ts`. The rest of Mike's cards wait for engine pieces (the root `PLAN.md`, U1b step 5a).
+
 ## How the deck wins (Pontus)
 
 - **Mill yourself:** draw the whole library with Laboratory Maniac (or Jace, Wielder of Mysteries) on the battlefield. Living Conundrum and Ormos are the safety: if you draw too much without a win card (or it gets removed) they stop you from losing.

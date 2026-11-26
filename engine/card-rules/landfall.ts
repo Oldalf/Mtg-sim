@@ -6,6 +6,25 @@ import type { CardRules } from './card-rules';
 
 export const LANDFALL: CardRules[] = [
   {
+    names: ['Roil Cartographer'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: no energy for a land that is gone at once (Evolving Wilds).
+    onLandfall(game, _permanent, land) {
+      if (game.battlefield.includes(land)) game.gainEnergy(1);
+    },
+  },
+  {
+    names: ['Mystic Sanctuary'],
+    // its own entering untapped: an instant or sorcery from the graveyard on top (instantOrSorceryToPutOnTop picks)
+    onLandfall(game, permanent, land) {
+      if (land !== permanent || permanent.tapped) return;
+      const card = game.instantOrSorceryToPutOnTop();
+      if (!card) return;
+      game.takeCardIfThere(card, 'graveyard');
+      game.putCardsOnTopOfLibrary([card]);
+      game.say('Mystic Sanctuary: put', card, 'on top');
+    },
+  },
+  {
     names: ['Tireless Provisioner'],
     onLandfall(game) {
       game.createTokens(game.chooseTokenToCreate([FOOD, TREASURE]));

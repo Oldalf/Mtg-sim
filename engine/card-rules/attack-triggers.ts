@@ -14,6 +14,21 @@ const FIREBENDER_QUEST_COUNTERS = 4;
 
 export const ATTACK_TRIGGERS: CardRules[] = [
   {
+    names: ['Shoreline Looter'],
+    // (its evasion is the deck's)
+    onCombatDamageToPlayer(game) {
+      game.draw(1);
+      if (game.graveyard.length < 7) game.discard(1);
+    },
+  },
+  {
+    names: ['Looter il-Kor'],
+    onCombatDamageToPlayer(game) {
+      game.draw(1);
+      game.discard(1);
+    },
+  },
+  {
     names: ['Firebender Ascension'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: only printed firebending counts (not Sozin's Comet's), and a counter doubler
     // doesn't double the quest counters (Permanent.otherCounters).
