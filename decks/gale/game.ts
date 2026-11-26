@@ -43,11 +43,7 @@ import {
 } from './candidates';
 import { BORNE_UPON_A_WIND, QUICKEN } from '../../engine/game/instant-speed';
 import { buildKillSearchState } from './snapshot';
-import {
-  chooseGiftsUngivenPile,
-  resolveGaleSpell,
-  resolveUnearth,
-} from './spells';
+import { chooseGiftsUngivenPile, resolveUnearth } from './spells';
 import { CardDef, Cost } from '../../engine/cards/cards';
 import {
   Candidate,
@@ -118,10 +114,29 @@ export class GaleGame extends Game<KillSearchState> {
     });
   }
 
-  // ---------------------------------------------------------------- card rules only Gale uses
-  override onToGraveyard(card: CardDef): void {
-    if (card.isCreature && this.isOnBattlefield('Syr Konrad, the Grim'))
-      this.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, 1]);
+  // ---------------------------------------------------------------- the engine's cards, through Gale's opponents
+  /** Syr Konrad's damage goes through the kill search's opponents (The Mindskinner turns it into mill). */
+  override dealDamageToEachOpponent(amount: number): void {
+    this.applyOpponentEvents([OPPONENT_EVENT.KONRAD, -1, amount]);
+  }
+  /** A goldfish opponent's hand: config opp_hand_size. */
+  override goldfishOpponentHandSize(): number {
+    return this.config.opp_hand_size as number;
+  }
+  /** Windfall: the opponents' discards go to their graveyards (Konrad, Gray Merchant's copies count them). */
+  override opponentsWheelTheirHands(ourHandSize: number): number {
+    const opponentHandSize = this.goldfishOpponentHandSize();
+    if (this.inArena()) {
+      const events: number[] = [];
+      for (let i = 0; i < this.life.length; i++)
+        events.push(OPPONENT_EVENT.PUTGY, i, opponentHandSize);
+      this.applyOpponentEvents(events);
+      return super.opponentsWheelTheirHands(ourHandSize);
+    }
+    // the goldfish opponents discard their hands and draw as many as the biggest hand, as the kill search counts it
+    const cardsDrawn = Math.max(ourHandSize, opponentHandSize);
+    this.applyOpponentStep(['windfall', opponentHandSize, cardsDrawn]);
+    return cardsDrawn;
   }
 
   override castTriggers(
@@ -260,13 +275,6 @@ export class GaleGame extends Game<KillSearchState> {
     // Gale's own Unearth, not the engine's: it picks by the kill line's roles and triggers Syr Konrad
     if (isUnearthLike(card.name)) resolveUnearth(this, card.name);
     else super.resolve(card, fromGraveyard, mode);
-  }
-  override resolveOther(
-    card: CardDef,
-    _fromGraveyard: boolean,
-    _mode: string | null,
-  ): void {
-    return resolveGaleSpell(this, card, _fromGraveyard, _mode);
   }
 
   buildKillSearchState(

@@ -26,6 +26,47 @@ const DESTROY_CREATURE: Answer = {
 
 export const PERMANENTS: CardRules[] = [
   {
+    names: ['Whip of Erebos'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: its activated ability (a creature back for a turn) is not modelled.
+    givesOurCreaturesKeywords() {
+      return ['lifelink'];
+    },
+  },
+  {
+    names: ['Rune-Scarred Demon'],
+    onEnter(game) {
+      game.doTutor(() => true, false);
+    },
+  },
+  {
+    names: ['Disciple of Bolas'],
+    // which creature is the deck's choice (creatureToSacrificeFor)
+    onEnter(game, permanent) {
+      const sacrificed = game.creatureToSacrificeFor(permanent);
+      if (!sacrificed) return;
+      const power = game.power(sacrificed);
+      game.sacrifice(sacrificed);
+      game.gainLife(power);
+      game.draw(power, permanent.card.name);
+    },
+  },
+  {
+    names: ['Sheoldred, Whispering One'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: each opponent's sacrifice at its upkeep is not modelled.
+    onUpkeep(game) {
+      const creature = game.bestCreatureInGraveyard();
+      if (creature) game.reanimate(creature);
+    },
+  },
+  {
+    names: ['Indulgent Tormentor'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: the opponent always pays 3 life (the card: or sacrifices a creature, else we
+    // draw a card).
+    onUpkeep(game) {
+      game.targetOpponentLosesLife(3);
+    },
+  },
+  {
     names: ['Necron Deathmark'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: the mill is not modelled.
     onEnter(game, permanent) {

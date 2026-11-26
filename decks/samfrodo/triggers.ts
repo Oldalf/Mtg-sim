@@ -18,24 +18,15 @@ export function farmerCottonEnters(game: SamFrodoGame): void {
 }
 
 /** Put into the graveyard from the battlefield (sacrificed, destroyed; tokens too): our other permanents' death
- *  triggers in battlefield order, then the dead one's own. Susurian Voidborn is still the deck's (Edgar codes it too:
- *  U1b step 3); the engine's triggers run in the same loop, so the order stays the battlefield's. */
+ *  triggers in battlefield order, then the dead one's own (Susurian Voidborn's "this or another" is its death trigger
+ *  for itself), as Sam & Frodo always had it. */
 export function onPermanentDied(
   game: SamFrodoGame,
   permanent: Permanent,
 ): void {
-  const isArtifactOrCreature =
-    permanent.card.types.has('artifact') || permanent.card.isCreature;
-  for (const battlefieldPermanent of game.battlefield.slice()) {
-    if (battlefieldPermanent.card.name !== SUSURIAN_VOIDBORN)
-      ourPermanentDiesTriggerOf(game, battlefieldPermanent, permanent);
-    else if (isArtifactOrCreature) susurianVoidbornDrains(game);
-  }
-  if (permanent.card.name === SUSURIAN_VOIDBORN) susurianVoidbornDrains(game);
+  for (const battlefieldPermanent of game.battlefield.slice())
+    ourPermanentDiesTriggerOf(game, battlefieldPermanent, permanent);
+  if (permanent.card.name === SUSURIAN_VOIDBORN)
+    ourPermanentDiesTriggerOf(game, permanent, permanent);
   else deathTriggerOfCommonCard(game, permanent);
-}
-
-function susurianVoidbornDrains(game: SamFrodoGame): void {
-  game.drainTargetOpponent(1);
-  game.gainLife(1);
 }

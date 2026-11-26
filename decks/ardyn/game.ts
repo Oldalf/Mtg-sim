@@ -1,7 +1,6 @@
 /**
- * Ardyn, the Usurper's deck (Friend 3's mono-black Demons, pod-only): its choices and the cards the engine doesn't
- * have yet (Ardyn himself, Unholy Annex, and the cards other decks code too: Gray Merchant, Rune-Scarred Demon,
- * Disciple of Bolas, Indulgent Tormentor, Sheoldred, Bontu's Monument, Herald's Horn).
+ * Ardyn, the Usurper's deck (Friend 3's mono-black Demons, pod-only): its choices (Demon for the cards that name a
+ * type), the order of its upkeep triggers, and the cards the engine doesn't have yet (Ardyn himself, Unholy Annex).
  * The win, combat, values and the planner's score come from the engine's CreatureDeckGame.
  *
  * Files: cards.ts (names, values, the Demon check), game.ts (this file), candidates.ts (what the AI may do now).
@@ -17,22 +16,26 @@ import {
   isDemon,
 } from './cards';
 import { buildCandidates } from './candidates';
-import { CardDef, Cost, makeToken } from '../../engine/cards/cards';
+import { CardDef, makeToken } from '../../engine/cards/cards';
 import { Candidate, Permanent, Zone } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
-  permanentSpellCastTriggers,
   deathTriggerOfCommonCard,
   enterTriggerOfCommonCard,
   triggersOfOthersOnEnter,
   triggersOnDeath,
   upkeepOfCommonCards,
+  upkeepTriggerOf,
 } from '../../engine/card-rules/card-rules';
-import { castPermanentSpell } from '../../engine/game/casting';
-import {
-  enterTriggerCount,
-  triggerCount,
-} from '../../engine/game/trigger-doublers';
+import { enterTriggerCount } from '../../engine/game/trigger-doublers';
+
+const HERALDS_HORN = "Herald's Horn";
+/** The upkeep cards Ardyn runs after the engine's others: Indulgent Tormentor and Sheoldred, then Herald's Horn. */
+const UPKEEP_AFTER_THE_OTHERS = [
+  'Indulgent Tormentor',
+  'Sheoldred, Whispering One',
+  HERALDS_HORN,
+];
 
 export class ArdynGame extends CreatureDeckGame {
   override colors = ['B'];
@@ -43,32 +46,7 @@ export class ArdynGame extends CreatureDeckGame {
     return 'Demon';
   }
 
-  // ================================================================ mana and costs
-  override effectiveCost(
-    card: CardDef,
-    base: Cost | null = null,
-    fromGraveyard = false,
-  ): Cost {
-    const cost = super.effectiveCost(card, base, fromGraveyard);
-    if (!card.isCreature) return cost;
-    let reduction = 0;
-    if (card.cost.black > 0)
-      reduction += this.countOnBattlefield("Bontu's Monument");
-    if (isDemon(card)) reduction += this.countOnBattlefield("Herald's Horn");
-    return cost.withGeneric(Math.max(0, cost.generic - reduction));
-  }
-
   // ================================================================ cast triggers
-  /** Bontu's Monument: each creature spell drains 1 (before the engine's cast triggers, as it always ran). */
-  override castPerm(card: CardDef, fromCommand = false): boolean {
-    const manaSpent = this.manaToCast(card, fromCommand);
-    if (!castPermanentSpell(this, card, fromCommand)) return false;
-    if (card.isCreature)
-      for (let i = 0; i < this.countOnBattlefield("Bontu's Monument"); i++)
-        this.drainAll(1);
-    permanentSpellCastTriggers(this, card, manaSpent);
-    return true;
-  }
 
   // ================================================================ life
   /** Each opponent loses n and we gain what they lost. */
@@ -82,39 +60,8 @@ export class ArdynGame extends CreatureDeckGame {
     if (isDemon(permanent.card) && this.isOnBattlefield(ARDYN))
       permanent.sick = false; // Ardyn: Demons have haste
     const triggers = enterTriggerCount(this, permanent);
-    for (let i = 0; i < triggers; i++) {
+    for (let i = 0; i < triggers; i++)
       enterTriggerOfCommonCard(this, permanent);
-      this.enterTrigger(permanent);
-    }
-  }
-
-  enterTrigger(permanent: Permanent): void {
-    switch (permanent.card.name) {
-      case 'Gray Merchant of Asphodel':
-        this.drainAll(this.devotion('B'));
-        break;
-      case 'Rune-Scarred Demon':
-        this.doTutor(() => true, false);
-        break;
-      case 'Disciple of Bolas':
-        this.sacrificeForDiscipleOfBolas(permanent);
-        break;
-    }
-  }
-
-  /** Disciple of Bolas: sacrifice our least valuable other creature; gain life and draw cards equal to its power. */
-  sacrificeForDiscipleOfBolas(disciple: Permanent): void {
-    const others = this.creatures().filter((other) => other !== disciple);
-    if (!others.length) return;
-    const fodder = others.reduce((first, second) =>
-      this.battlefieldValue(second.card) < this.battlefieldValue(first.card)
-        ? second
-        : first,
-    );
-    const power = this.power(fodder);
-    this.sacrifice(fodder);
-    this.gainLife(power);
-    this.draw(power);
   }
 
   /** The dead one's own trigger first, then the others' (as Ardyn always had it). */
@@ -124,32 +71,17 @@ export class ArdynGame extends CreatureDeckGame {
   }
 
   // ================================================================ upkeep and end step
+  /** The engine's upkeep cards, then Indulgent Tormentor and Sheoldred in battlefield order, then Herald's Horn, as
+   *  Ardyn always had it. */
   override upkeep(): void {
-    upkeepOfCommonCards(this);
-    for (const permanent of this.battlefield.slice()) {
-      const triggers = triggerCount(this, permanent);
-      for (let i = 0; i < triggers; i++)
-        switch (permanent.card.name) {
-          case 'Indulgent Tormentor': // (the opponent pays 3 life rather than give us a card)
-            this.targetOpponentLosesLife(3);
-            break;
-          case 'Sheoldred, Whispering One': {
-            const creature = this.bestCreatureInGraveyard();
-            if (creature) this.reanimate(creature);
-            break;
-          }
-        }
-    }
-    if (this.isOnBattlefield("Herald's Horn")) this.revealWithHeraldsHorn();
-  }
-
-  /** Herald's Horn: a Demon on top of the library goes to our hand. */
-  revealWithHeraldsHorn(): void {
-    const top = this.library[0];
-    if (top && top.isCreature && isDemon(top)) {
-      this.takeCard(top, 'library');
-      this.putCard(top, 'hand');
-    }
+    upkeepOfCommonCards(this, (permanent) =>
+      UPKEEP_AFTER_THE_OTHERS.includes(permanent.card.name),
+    );
+    for (const permanent of this.battlefield.slice())
+      if (UPKEEP_AFTER_THE_OTHERS.slice(0, 2).includes(permanent.card.name))
+        upkeepTriggerOf(this, permanent);
+    const heraldsHorn = this.findPermanent(HERALDS_HORN);
+    if (heraldsHorn) upkeepTriggerOf(this, heraldsHorn);
   }
 
   /** The engine's end step triggers, then Unholy Annex (it counts Starscourge's copies as Demons: isDemon). */

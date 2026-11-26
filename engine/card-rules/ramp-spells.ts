@@ -10,6 +10,22 @@ import type { CardRules } from './card-rules';
 
 export const RAMP_SPELLS: CardRules[] = [
   {
+    names: ['Explore'],
+    resolve(game) {
+      game.draw(1);
+      game.useAdditionalLandDrop();
+    },
+  },
+  {
+    names: ['Growth Spiral'],
+    // which land is the deck's choice (landToPutFromHand)
+    resolve(game) {
+      game.draw(1);
+      const land = game.landToPutFromHand();
+      if (land) game.putLandFromHand(land);
+    },
+  },
+  {
     names: ['Skyshroud Claim'],
     resolve(game) {
       // two Forest cards onto the battlefield untapped

@@ -4,7 +4,7 @@ Bant ramp into big creatures, bracket 2-3. A friend's deck, **pod-only** (Pontus
 
 ## Files
 
-- `cards.ts`: names, `VALUE`, `HOLD`. `game.ts`: `HelgaGame` (extends the engine's `CreatureDeckGame`): Helga's mana (`castWithHelga`), Craterhoof and Become the Avalanche (until-end-of-turn pump), Regal Behemoth (the monarch), and Lightning Greaves, Garruk's Uprising and Explore (other decks code them too: U1b step 3). Every other card's rules, Helga's cast trigger and the Eldrazi among them, are in `engine/card-rules/` (`big-creatures`, `cost-and-mana`, `permanents`). `candidates.ts`: what the AI may do now. `tests/helga.test.ts`.
+- `cards.ts`: names, `VALUE`, `HOLD`. `game.ts`: `HelgaGame` (extends the engine's `CreatureDeckGame`): Helga's mana (`castWithHelga`), Craterhoof and Become the Avalanche (until-end-of-turn pump), Regal Behemoth (the monarch), and Lightning Greaves (equipment: U1b step 5a). Garruk's Uprising and Explore are engine card rules (U1b step 3, 2026-11-26). Every other card's rules, Helga's cast trigger and the Eldrazi among them, are in `engine/card-rules/` (`big-creatures`, `cost-and-mana`, `permanents`). `candidates.ts`: what the AI may do now. `tests/helga.test.ts`.
 
 ## How the deck wins (Pontus, 2026-11-15)
 

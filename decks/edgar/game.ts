@@ -22,7 +22,6 @@ import {
   EDGAR,
   ELDRAZI_MONUMENT,
   EVERETH,
-  BONTUS_MONUMENT,
   HERALDS_HORN,
   OKETRAS_MONUMENT,
   SORIN,
@@ -48,7 +47,10 @@ import {
 } from '../../engine/game/game-types';
 import { Answer } from '../../engine/game/answers';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
-import { upkeepOfCommonCards } from '../../engine/card-rules/card-rules';
+import {
+  upkeepOfCommonCards,
+  upkeepTriggerOf,
+} from '../../engine/card-rules/card-rules';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { firstMax } from '../../engine/util/lists';
 import { MULLIGAN } from './mulligan';
@@ -272,16 +274,19 @@ export class EdgarGame extends CreatureDeckGame {
     return true;
   }
 
-  /** Bontu's Monument: each creature spell drains 1. Oketra's Monument: each makes a 1/1 Warrior. */
+  /** Oketra's Monument: each creature spell makes a 1/1 Warrior (Bontu's Monument's drain is the engine's). */
   creatureSpellMonumentsTrigger(): void {
-    for (let i = 0; i < this.countOnBattlefield(BONTUS_MONUMENT); i++)
-      this.drainAllOpponents(1);
     for (let i = 0; i < this.countOnBattlefield(OKETRAS_MONUMENT); i++)
       this.createTokens(TOKENS.warrior);
   }
 
-  /** Bontu's Monument (black creature spells), Oketra's Monument (white ones) and Herald's Horn (Vampires, the type
-   *  we choose) make creature spells cost {1} less each. */
+  /** Herald's Horn names Vampire. */
+  override chosenCreatureType(card: CardDef): string | null {
+    return card.name === HERALDS_HORN ? 'Vampire' : null;
+  }
+
+  /** Oketra's Monument makes white creature spells cost {1} less (Bontu's Monument's and Herald's Horn's are the
+   *  engine's). */
   override effectiveCost(
     card: CardDef,
     base: Cost | null = null,
@@ -290,11 +295,8 @@ export class EdgarGame extends CreatureDeckGame {
     const cost = super.effectiveCost(card, base, fromGraveyard);
     if (!card.isCreature) return cost;
     let reduction = 0;
-    if (card.cost.black > 0)
-      reduction += this.countOnBattlefield(BONTUS_MONUMENT);
     if (card.cost.white > 0)
       reduction += this.countOnBattlefield(OKETRAS_MONUMENT);
-    if (isVampire(card)) reduction += this.countOnBattlefield(HERALDS_HORN);
     return cost.withGeneric(Math.max(0, cost.generic - reduction));
   }
 
@@ -347,7 +349,10 @@ export class EdgarGame extends CreatureDeckGame {
     }
     this.pendingCrackback = 0;
     this.fogUsed = false;
-    upkeepOfCommonCards(this);
+    upkeepOfCommonCards(
+      this,
+      (permanent) => permanent.card.name === HERALDS_HORN,
+    );
     this.upkeepOfNewCards();
     if (this.isOnBattlefield('Black Market Connections'))
       this.chooseBlackMarketModes();
@@ -367,14 +372,8 @@ export class EdgarGame extends CreatureDeckGame {
         this.drainAllOpponents(top.manaValue);
       }
     }
-    const top = this.library[0];
-    if (
-      this.isOnBattlefield(HERALDS_HORN) &&
-      top &&
-      top.isCreature &&
-      isVampire(top)
-    )
-      this.putCard(this.takeTopCardsOfLibrary(1)[0], 'hand');
+    const heraldsHorn = this.findPermanent(HERALDS_HORN);
+    if (heraldsHorn) upkeepTriggerOf(this, heraldsHorn);
     const vampires = this.vampires();
     if (this.isOnBattlefield(SORIN) && vampires.length)
       firstMax(vampires, (vampire) => this.power(vampire)).counters += 1;

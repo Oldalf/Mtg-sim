@@ -39,6 +39,19 @@ const DEFILER_COUNTERS_IN_A_POD = 6;
 
 export const BIG_CREATURES: CardRules[] = [
   {
+    names: ["Garruk's Uprising"],
+    onEnter(game) {
+      if (game.creatures().some((creature) => game.power(creature) >= 4))
+        game.draw(1);
+    },
+    onAnotherOfOursEnters(game, _permanent, entered) {
+      if (entered.card.isCreature && game.power(entered) >= 4) game.draw(1);
+    },
+    givesOurCreaturesKeywords() {
+      return ['trample'];
+    },
+  },
+  {
     names: ['Helga, Skittish Seer'],
     // (her mana, for big creature spells only, is the deck's: castWithHelga)
     onWeCast(game, permanent, spell) {

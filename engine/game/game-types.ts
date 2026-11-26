@@ -309,6 +309,10 @@ export interface Arena {
   ): string | null;
   /** How many creature cards opponent `slot` has in its graveyard. */
   creatureCardsInGraveyard(game: Game<unknown>, slot: number): number;
+  /** The cards in opponent `slot`'s graveyard. */
+  cardsOfGraveyard(game: Game<unknown>, slot: number): CardDef[];
+  /** Opponent `slot` mills cards (Breach the Multiverse). */
+  millOpponent(game: Game<unknown>, slot: number, count: number): void;
   /** The creature cards in opponent `slot`'s graveyard. */
   creatureCardsOfGraveyard(game: Game<unknown>, slot: number): CardDef[];
   /** A creature card leaves opponent `slot`'s graveyard for our battlefield (Sepulchral Primordial, Rise of the Dark

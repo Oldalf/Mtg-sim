@@ -87,7 +87,7 @@ export function resolveJunjiDeath(game: MerenGame): void {
   if (target && target.worth >= junjiDiscardWorth(game)) {
     game.say(`  Junji returns`, target.card);
     if (target.slot === null) game.reanimate(target.card);
-    else game.stealCreatureCard(target.slot, target.card);
+    else game.stealCardFromGraveyard(target.slot, target.card);
     game.loseLife(2);
     return;
   }

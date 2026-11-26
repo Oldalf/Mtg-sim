@@ -4,7 +4,7 @@ Grixis spells, bracket 4. A friend's deck, **pod-only** (Pontus, 2026-11-15). Ru
 
 ## Files
 
-- `cards.ts`: names, `VALUE`, `HOLD`, `FINISHERS`, `X_SPELLS`. `game.ts`: `AzulaGame` (extends `CreatureDeckGame`): the cast triggers on every spell (Azula, Vivi, Storm of Saruman, Prismari, Arcane Bombardment), the free casts of copies (Arcane Bombardment, Mysterious Stranger, Torrential Gearhulk), Ozai, Sozin's Comet, the flash permissions, the equipment, Fated Firepower. Every other card's rules are in the engine (`engine/card-rules/`; U1b step 2, 2026-11-26). `spells.ts`: what the deck's other spells do (Scarring Memories, Sozin's Comet; Seething Song, Mana Geyser, Jeska's Will, Torment of Hailfire until step 3). `combos.ts`: the ten combos. `candidates.ts`. `tests/azula.test.ts`.
+- `cards.ts`: names, `VALUE`, `HOLD`, `FINISHERS`, `X_SPELLS`. `game.ts`: `AzulaGame` (extends `CreatureDeckGame`): the cast triggers on every spell (Azula, Vivi, Storm of Saruman, Prismari, Arcane Bombardment), the free casts of copies (Arcane Bombardment, Mysterious Stranger, Torrential Gearhulk), Ozai, Sozin's Comet, the flash permissions, the equipment, Fated Firepower. Every other card's rules are in the engine (`engine/card-rules/`; U1b step 2, 2026-11-26). `spells.ts`: what the deck's other spells do (Scarring Memories, Sozin's Comet, Torment of Hailfire). Seething Song, Mana Geyser and Jeska's Will are engine card rules (U1b step 3, 2026-11-26). `combos.ts`: the ten combos. `candidates.ts`. `tests/azula.test.ts`.
 
 ## How the deck wins (Pontus, 2026-11-16)
 

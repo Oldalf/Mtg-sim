@@ -4,7 +4,7 @@ Mono-black Demons, bracket 3 (Friend 3 mostly plays bracket 2; this deck is his 
 
 ## Files
 
-- `cards.ts`: names, `VALUE`, `HOLD`, the Demon check (`isDemon`, on the engine's `hasCreatureType`). `game.ts`: `ArdynGame` (extends `CreatureDeckGame`): its choices (Demon for Roaming Throne, Urza's Incubator and Herald's Horn), Ardyn himself, Unholy Annex (both count Starscourge's copies as Demons) and the cards other decks code too (Gray Merchant, Rune-Scarred Demon, Disciple of Bolas, Indulgent Tormentor, Sheoldred, Bontu's Monument, Herald's Horn; U1b step 3). Every other card's rules are in `engine/card-rules/` (`cost-and-mana`, `life-loss`, `aristocrats`, `permanents`, `self-mill`). `candidates.ts`. `tests/ardyn.test.ts`.
+- `cards.ts`: names, `VALUE`, `HOLD`, the Demon check (`isDemon`, on the engine's `hasCreatureType`). `game.ts`: `ArdynGame` (extends `CreatureDeckGame`): its choices (Demon for Roaming Throne, Urza's Incubator and Herald's Horn), Ardyn himself, Unholy Annex (both count Starscourge's copies as Demons) and the order of its upkeep triggers. Gray Merchant, Rune-Scarred Demon, Disciple of Bolas, Indulgent Tormentor, Sheoldred, Bontu's Monument and Herald's Horn are engine card rules (U1b step 3, 2026-11-26). Every other card's rules are in `engine/card-rules/` (`cost-and-mana`, `life-loss`, `aristocrats`, `permanents`, `self-mill`). `candidates.ts`. `tests/ardyn.test.ts`.
 
 ## How the deck wins (Pontus, 2026-11-15)
 

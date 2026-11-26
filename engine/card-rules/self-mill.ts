@@ -12,6 +12,36 @@ import type { CardRules } from './card-rules';
 
 export const SELF_MILL: CardRules[] = [
   {
+    names: ['Buried Alive'],
+    // which creatures is the deck's choice (cardToPutInGraveyard)
+    resolve(game) {
+      for (let i = 0; i < 3; i++) {
+        const creatures = game.library.filter((card) => card.isCreature);
+        if (!creatures.length) break;
+        const card = game.cardToPutInGraveyard(creatures);
+        game.takeCard(card, 'library');
+        game.toGraveyard(card, true);
+      }
+      game.shuffle();
+    },
+  },
+  {
+    names: ['Breach the Multiverse'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: a planeswalker card in our own graveyard is never the one we choose.
+    resolve(game) {
+      game.millOurselves(10);
+      game.millEachOpponent(10);
+      const creature = game.bestCreatureInGraveyard();
+      if (creature) game.reanimate(creature);
+      // a creature or planeswalker card from each opponent's graveyard (a goldfish game: a 5/5 stand-in)
+      game.stealCreatureCards(
+        1,
+        Infinity,
+        (card) => card.isCreature || card.types.has('planeswalker'),
+      );
+    },
+  },
+  {
     names: ['Sidisi, Brood Tyrant'],
     onEnter(game) {
       game.millOurselves(3);

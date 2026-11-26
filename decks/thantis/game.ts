@@ -1,8 +1,7 @@
 /**
  * Thantis, the Warweaver's deck (Friend 2's Jund forced-combat deck, pod-only): the cards the engine doesn't have yet
  * (Zopandrel and Pyrewood Gearhulk's until-end-of-turn pumps, Grave Venerations's monarch, Avacyn's return, Professor
- * Dellian Fel, Ruric Thar's trigger on our own spells) and the cards other decks code or play too (Syr Konrad, Morbid
- * Opportunist, Meren's end step, Garruk's Uprising, Whip of Erebos, Indulgent Tormentor, Selvala: U1b steps 3 and 4).
+ * Dellian Fel, Ruric Thar's trigger on our own spells) and Selvala (played by another deck too: U1b step 4).
  * The win, combat, values and the planner's score come from the engine's CreatureDeckGame; the forced attacks
  * ("attacks each combat if able", Thantis, goad) are the pod's (engine/pod).
  *
@@ -17,21 +16,18 @@ import {
   GARRUKS_UPRISING,
   GRAVE_VENERATIONS,
   MEREN,
-  MORBID_OPPORTUNIST,
   PYREWOOD_GEARHULK,
   RURIC_THAR,
   SELVALA,
   SYR_KONRAD,
   THANTIS,
   VALUE,
-  WHIP_OF_EREBOS,
   ZOPANDREL,
 } from './cards';
 import { buildCandidates } from './candidates';
 import { CardDef } from '../../engine/cards/cards';
 import {
   Candidate,
-  CardListZone,
   Fighter,
   Permanent,
   Zone,
@@ -46,11 +42,16 @@ import {
   triggersOnDeath,
   triggersOnOtherPlayersCreatureDeath,
   endStepTriggers,
+  endStepTriggerOf,
   combatDamageTriggerOf,
 } from '../../engine/card-rules/card-rules';
 import { returnBestCreatureCardToHand } from '../../engine/card-rules/self-mill';
 
 const NEYITH = 'Neyith of the Dire Hunt';
+
+const INDULGENT_TORMENTOR = 'Indulgent Tormentor';
+/** The upkeep cards Thantis runs after the engine's others, in battlefield order. */
+const UPKEEP_IN_ORDER = [NEYITH, INDULGENT_TORMENTOR, DELLIAN_FEL];
 
 export class ThantisGame extends CreatureDeckGame {
   override colors = ['B', 'R', 'G'];
@@ -61,7 +62,6 @@ export class ThantisGame extends CreatureDeckGame {
   /** Zopandrel: our creatures' power and toughness are doubled until end of turn (from the beginning of combat). */
   isDoubledThisTurn = false;
   /** Morbid Opportunist draws only once each turn. */
-  hasMorbidOpportunistDrawn = false;
   /** Grave Venerations made us the monarch: a card at each end step (others taking it is not modelled). */
   isMonarch = false;
   /** Avacyn: nontoken creatures that died, back at the next end step. */
@@ -69,7 +69,6 @@ export class ThantisGame extends CreatureDeckGame {
 
   override startTurn(): void {
     super.startTurn();
-    this.hasMorbidOpportunistDrawn = false;
   }
 
   // ================================================================ mana
@@ -152,12 +151,11 @@ export class ThantisGame extends CreatureDeckGame {
     }
   }
 
-  /** A creature of ours entered: riot (the engine's Rhythm of the Wild), Garruk's Uprising, Selvala. The last two
-   *  look at its power before riot's counter, as Thantis always had it. */
+  /** A creature of ours entered: riot (the engine's Rhythm of the Wild), Selvala. Selvala looks at its power before
+   *  riot's counter, as Thantis always had it. */
   creatureEntered(permanent: Permanent): void {
     const power = this.power(permanent);
     replacementsAsAnotherOfOursEnters(this, permanent);
-    if (power >= 4 && this.isOnBattlefield(GARRUKS_UPRISING)) this.draw(1);
     if (
       permanent.card.name !== SELVALA &&
       this.isOnBattlefield(SELVALA) &&
@@ -181,7 +179,6 @@ export class ThantisGame extends CreatureDeckGame {
   // ================================================================ deaths
   override onDies(permanent: Permanent): void {
     deathTriggerOfCommonCard(this, permanent);
-    this.creatureDied(permanent);
     for (let i = 0; i < this.countOnBattlefield(GRAVE_VENERATIONS); i++) {
       this.drainEach(1);
       this.gainLife(1);
@@ -196,29 +193,7 @@ export class ThantisGame extends CreatureDeckGame {
 
   /** A creature of another player died (a pod). */
   override onOtherPlayersCreatureDies(permanent: Permanent): void {
-    this.creatureDied(permanent);
-    triggersOnOtherPlayersCreatureDeath(this, permanent); // Sangromancer
-  }
-
-  /** Any creature died (ours or not): Syr Konrad drains each opponent 1, Morbid Opportunist draws (once a turn). */
-  creatureDied(_permanent: Permanent): void {
-    for (let i = 0; i < this.countOnBattlefield(SYR_KONRAD); i++)
-      this.drainEach(1);
-    if (
-      this.isOnBattlefield(MORBID_OPPORTUNIST) &&
-      !this.hasMorbidOpportunistDrawn
-    ) {
-      this.hasMorbidOpportunistDrawn = true;
-      this.draw(1);
-    }
-  }
-
-  /** Syr Konrad: a creature card leaving our graveyard (reanimated, returned to hand) drains each opponent 1. */
-  override takeCard(card: CardDef, fromZone: CardListZone): void {
-    super.takeCard(card, fromZone);
-    if (fromZone === 'graveyard' && card.isCreature)
-      for (let i = 0; i < this.countOnBattlefield(SYR_KONRAD); i++)
-        this.drainEach(1);
+    triggersOnOtherPlayersCreatureDeath(this, permanent); // Sangromancer, Syr Konrad, Morbid Opportunist
   }
 
   // ================================================================ upkeep and end step
@@ -226,18 +201,14 @@ export class ThantisGame extends CreatureDeckGame {
    *  in battlefield order (Neyith's life loss before Dellian Fel's look at our life, as Thantis always had it). */
   override upkeep(): void {
     for (const permanent of this.battlefield.slice())
-      if (permanent.card.name !== NEYITH) upkeepTriggerOf(this, permanent);
+      if (!UPKEEP_IN_ORDER.includes(permanent.card.name))
+        upkeepTriggerOf(this, permanent);
     for (const permanent of this.battlefield.slice())
       switch (permanent.card.name) {
         case NEYITH:
+        case INDULGENT_TORMENTOR:
           upkeepTriggerOf(this, permanent);
           break;
-        case 'Indulgent Tormentor': {
-          // (the opponent pays 3 life rather than give us a card)
-          const target = this.chooseTargetOpponent();
-          if (target !== null) this.damageOpponent(target, 3);
-          break;
-        }
         case DELLIAN_FEL:
           this.useDellianFel();
           break;
@@ -252,19 +223,12 @@ export class ThantisGame extends CreatureDeckGame {
       if (this.isOnBattlefield(GRAVE_VENERATIONS))
         returnBestCreatureCardToHand(this);
     }
-    this.merenReturnsCreature();
-    endStepTriggers(this); // Alesha
+    // Meren first, then the others (Alesha), as Thantis always had it
+    const isMeren = (permanent: Permanent) => permanent.card.name === MEREN;
+    for (const meren of this.battlefield.filter(isMeren))
+      endStepTriggerOf(this, meren);
+    endStepTriggers(this, isMeren);
     this.avacynReturnsCreatures();
-  }
-
-  /** Meren: the best creature card in our graveyard comes back, to the battlefield if its mana value is no more
-   *  than our experience, else to our hand. */
-  merenReturnsCreature(): void {
-    if (!this.isOnBattlefield(MEREN)) return;
-    const creature = this.bestCreatureInGraveyard();
-    if (!creature) return;
-    if (creature.manaValue <= this.experienceCounters) this.reanimate(creature);
-    else returnBestCreatureCardToHand(this);
   }
 
   /** Avacyn: the nontoken creatures of ours that died this turn come back. */
@@ -281,18 +245,10 @@ export class ThantisGame extends CreatureDeckGame {
     super.combat();
   }
 
-  /** Each creature's combat damage trigger (Glissa Sunslayer), then Whip of Erebos's lifelink for it, as Thantis
-   *  always had it. */
+  /** Lifelink (Whip of Erebos's too), then each creature's combat damage trigger (Glissa Sunslayer). */
   override onCombatDamage(connected: Permanent[]): void {
     this.gainLifeFromLifelink(connected);
-    for (const permanent of connected) {
-      combatDamageTriggerOf(this, permanent);
-      if (
-        this.isOnBattlefield(WHIP_OF_EREBOS) &&
-        !permanent.card.keywords.has('lifelink')
-      )
-        this.gainLife(this.power(permanent));
-    }
+    for (const permanent of connected) combatDamageTriggerOf(this, permanent);
   }
 
   // ================================================================ the planner and the pod

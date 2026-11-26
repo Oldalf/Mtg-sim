@@ -1,14 +1,7 @@
 /** What Azula's own instants and sorceries do when they resolve (a copy resolves the same way). The engine resolves
  *  the ones it knows (Frantic Search, Snap, Waterlogged Teachings, the burn and draw spells: engine/card-rules/); the additional costs (a discard, an artifact)
  *  are paid when the card is cast (candidates.ts), so a copy doesn't pay them. */
-import {
-  JESKAS_WILL,
-  MANA_GEYSER,
-  SCARRING_MEMORIES,
-  SEETHING_SONG,
-  SOZINS_COMET,
-  TORMENT_OF_HAILFIRE,
-} from './cards';
+import { SCARRING_MEMORIES, SOZINS_COMET, TORMENT_OF_HAILFIRE } from './cards';
 import type { AzulaGame } from './game';
 import { CardDef } from '../../engine/cards/cards';
 
@@ -24,31 +17,11 @@ export function resolveAzulaSpell(game: AzulaGame, card: CardDef): boolean {
       if (target !== null) game.opponentLosesLife(target, 3);
       return true;
     }
-    case SEETHING_SONG:
-      game.pool.R += 5;
-      return true;
-    case MANA_GEYSER:
-      game.pool.R += game.opponentsTappedLands();
-      return true;
-    case JESKAS_WILL:
-      jeskasWill(game);
-      return true;
     case SOZINS_COMET:
       game.sozinsCometTurn = game.turn;
       return true;
     default:
       return false;
-  }
-}
-
-/** Jeska's Will: {R} for each card in the fullest opponent's hand; with a commander out also the top three cards
- *  of the library, which we may play this turn (they go to hand and back to exile at the end of the turn). */
-function jeskasWill(game: AzulaGame): void {
-  game.pool.R += game.mostCardsInAnOpponentsHand();
-  if (!game.controlsCommander()) return;
-  for (const card of game.takeTopCardsOfLibrary(3)) {
-    game.putCard(card, 'hand');
-    game.cardsPlayableThisTurnOnly.push(card);
   }
 }
 

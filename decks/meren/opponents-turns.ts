@@ -28,8 +28,7 @@ export function playsOnOpponentsTurns(game: MerenGame): boolean {
 
 /** Another player's turn starts: our "once each turn" abilities can trigger again. */
 export function resetOnceEachTurnAbilities(game: MerenGame): void {
-  game.morbidUsed = false;
-  game.onceEachTurnUsed = []; // the engine's "once each turn" cards (Twilight Diviner)
+  game.onceEachTurnUsed = []; // the engine's "once each turn" cards (Twilight Diviner, Morbid Opportunist)
 }
 
 /** At another player's end step: Junji for Gray Merchant, then the Snake. */
@@ -47,7 +46,8 @@ function sacrificeSnake(game: MerenGame): boolean {
   if (!snake || !game.hasOutletNow()) return false;
   const isWorthSomething =
     game.isOnBattlefield(MEREN) ||
-    (game.isOnBattlefield('Morbid Opportunist') && !game.morbidUsed);
+    (game.isOnBattlefield('Morbid Opportunist') &&
+      !game.hasUsedOnceEachTurn('Morbid Opportunist'));
   if (!isWorthSomething) return false;
   return game.sacrificeToOutlet(snake);
 }

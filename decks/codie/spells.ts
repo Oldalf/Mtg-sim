@@ -26,15 +26,6 @@ export function resolveCodieSpell(game: CodieGame, spell: CardDef): boolean {
 /** Rituals, Treasure makers and Manamorphose. */
 function resolveManaSpell(game: CodieGame, spell: CardDef): boolean {
   switch (spell.name) {
-    case 'Seething Song':
-      game.pool.R += 5;
-      return true;
-    case JESKAS_WILL:
-      game.pool.R += game.opponentHandSize();
-      return true;
-    case MANA_GEYSER:
-      game.pool.R += game.opponentTappedLands();
-      return true;
     default:
       return false;
   }
@@ -43,9 +34,6 @@ function resolveManaSpell(game: CodieGame, spell: CardDef): boolean {
 /** Draw and "look at the top" spells. */
 function resolveCardSelection(game: CodieGame, spell: CardDef): boolean {
   switch (spell.name) {
-    case 'Growth Spiral':
-      game.draw(1); // the land drop is played by the AI
-      return true;
     case 'Brainstorm':
       game.draw(3);
       putCardsBackOnLibrary(game, 2);
@@ -53,12 +41,6 @@ function resolveCardSelection(game: CodieGame, spell: CardDef): boolean {
     case 'Stock Up':
       lookAtTopAndKeep(game, 5, 2);
       return true;
-    case 'Windfall': {
-      const handSize = game.hand.length;
-      for (const card of game.takeAllCards('hand')) game.toGraveyard(card);
-      game.draw(Math.max(handSize, 7));
-      return true;
-    }
     default:
       return false;
   }

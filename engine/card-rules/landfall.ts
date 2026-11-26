@@ -6,6 +6,13 @@ import type { CardRules } from './card-rules';
 
 export const LANDFALL: CardRules[] = [
   {
+    names: ['Tatyova, Benthic Druid'],
+    onLandfall(game) {
+      game.gainLife(1);
+      game.draw(1);
+    },
+  },
+  {
     names: ['Roil Cartographer'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: no energy for a land that is gone at once (Evolving Wilds).
     onLandfall(game, _permanent, land) {

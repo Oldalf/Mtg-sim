@@ -19,6 +19,7 @@ function board(
   const game = new ThantisGame([], library, new Rng(1), { ...CFG });
   game.startTurn();
   game.turn = 6;
+  game.mayHaveStaticEffects = true; // the board is put on the battlefield directly (Whip of Erebos's lifelink)
   for (const landName of lands) {
     const card = C.get(landName);
     const permanent = new Permanent(card, card.land);

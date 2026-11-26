@@ -9,6 +9,21 @@ import type { CardRules, HowCast } from './card-rules';
 
 export const DRAW_SPELLS: CardRules[] = [
   {
+    names: ['Windfall'],
+    resolve(game) {
+      const handSize = game.hand.length;
+      for (const discarded of game.takeAllCards('hand'))
+        game.toGraveyard(discarded);
+      game.draw(game.opponentsWheelTheirHands(handSize));
+    },
+  },
+  {
+    names: ['Harmonize'],
+    resolve(game) {
+      game.draw(3);
+    },
+  },
+  {
     names: ['Flux'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: the opponents' discards and draws are not modelled.
     resolve(game, spell) {

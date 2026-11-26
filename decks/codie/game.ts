@@ -155,15 +155,6 @@ export class CodieGame extends Game<CodieGame> {
   }
 
   // ================================================================ rules of the cards
-  opponentHandSize(): number {
-    return this.config.opp_hand as number;
-  }
-  opponentTappedLands(): number {
-    const fixed = this.config.opp_tapped_lands as number;
-    return fixed > 0
-      ? fixed
-      : Math.round((this.config.opp_tapped_per_turn as number) * this.turn);
-  }
   inHand(name: string): boolean {
     return this.hand.some((card) => card.name === name);
   }

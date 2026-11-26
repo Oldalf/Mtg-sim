@@ -80,9 +80,9 @@ export function entersTappedByItsText(game: GameCore, card: CardDef): boolean {
   return false;
 }
 
-/** Plays the best land from hand, if we haven't played one this turn. */
-export function playBestLand(game: GameCore): void {
-  if (game.landPlayed) return;
+/** Plays the best land from hand, if we haven't played one this turn (or it is an additional land drop: Explore). */
+export function playBestLand(game: GameCore, isAdditionalDrop = false): void {
+  if (game.landPlayed && !isAdditionalDrop) return;
   const lands = landsWeCouldPlay(game);
   if (!lands.length) return;
   const landsOnBattlefield = game.landsOnBattlefield().length;

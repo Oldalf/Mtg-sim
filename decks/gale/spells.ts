@@ -1,45 +1,11 @@
-/** What Windfall and Unearth do in Gale's deck, and Gale's Gifts Ungiven pile (the engine handles the rest). */
+/** What Unearth does in Gale's deck, and Gale's Gifts Ungiven pile (the engine handles the rest; Windfall's discards
+ *  reach the kill search's opponents through GaleGame.opponentsWheelTheirHands). */
 import { GALE, permScore, unearthMaxManaValue } from './roles';
 import { OPPONENT_EVENT } from './kill-state';
 import { chooseGiftsPile, chooseTutorTarget } from './tutoring';
 import type { GaleGame } from './game';
 import { CardDef } from '../../engine/cards/cards';
 import { firstMax, sortDesc } from '../../engine/util/lists';
-
-export function resolveGaleSpell(
-  game: GaleGame,
-  spell: CardDef,
-  _fromGraveyard: boolean,
-  _mode: string | null,
-): void {
-  switch (spell.name) {
-    case 'Windfall':
-      resolveWindfall(game);
-      break;
-  }
-}
-
-/** Everyone discards their hand and draws again; the opponents' discards go to their graveyards. */
-function resolveWindfall(game: GaleGame): void {
-  const handSize = game.hand.length;
-  for (const card of game.hand.slice()) {
-    game.takeCard(card, 'hand');
-    game.toGraveyard(card);
-  }
-  const opponentHandSize = game.config.opp_hand_size as number;
-  if (game.inArena()) {
-    const events: number[] = [];
-    for (let i = 0; i < game.life.length; i++)
-      events.push(OPPONENT_EVENT.PUTGY, i, opponentHandSize);
-    game.applyOpponentEvents(events);
-    game.draw(game.arena!.wheel(game, handSize));
-    return;
-  }
-  // the goldfish opponents discard their hands and draw as many as the biggest hand, as the kill search counts it
-  const cardsDrawn = Math.max(handSize, opponentHandSize);
-  game.applyOpponentStep(['windfall', opponentHandSize, cardsDrawn]);
-  game.draw(cardsDrawn);
-}
 
 /** Return the best creature the spell allows (Unearth: mana value 3 or less) from the graveyard to the battlefield. */
 export function resolveUnearth(game: GaleGame, spellName: string): void {

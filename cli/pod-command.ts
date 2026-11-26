@@ -18,6 +18,7 @@ import { runTreasureTests } from '../engine/game/treasure.test';
 import { runPodRankTests } from '../engine/pod/pod-rank.test';
 import { runCardDrawTests } from '../engine/game/card-draw.test';
 import { runCommonCardTests } from '../engine/game/common-cards.test';
+import { runMergedCardTests } from '../engine/card-rules/merged-cards.test';
 import { runSearchManaTests } from '../engine/game/search-mana.test';
 import { runBlinkAnswerTests } from '../engine/pod/pod-blink-answer.test';
 import { runOpponentCastTests } from '../engine/pod/pod-opponent-cast.test';
@@ -88,6 +89,7 @@ export async function runPodCommand(
     const areDungeonsRight = runDungeonTests(decks);
     const areTreasuresRight = runTreasureTests(decks);
     const areCommonCardsRight = runCommonCardTests(decks);
+    const areMergedCardsRight = runMergedCardTests(decks);
     const areCardDrawCardsRight = runCardDrawTests(decks);
     const isPodRankRight = runPodRankTests();
     const areEldraziRight = runEldraziTests(decks);
@@ -109,6 +111,7 @@ export async function runPodCommand(
         areDungeonsRight &&
         areTreasuresRight &&
         areCommonCardsRight &&
+        areMergedCardsRight &&
         areCardDrawCardsRight &&
         isPodRankRight &&
         areEldraziRight &&

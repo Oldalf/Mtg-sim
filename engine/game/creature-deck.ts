@@ -128,7 +128,10 @@ export abstract class CreatureDeckGame extends GameWithoutKillSearch {
   /** The lifelink creatures among those that connected gain us their power. */
   gainLifeFromLifelink(connected: Permanent[]): void {
     for (const permanent of connected)
-      if (permanent.card.keywords.has('lifelink'))
+      if (
+        permanent.card.keywords.has('lifelink') ||
+        this.ourCreaturesHave('lifelink')
+      )
         this.gainLife(this.power(permanent));
   }
 

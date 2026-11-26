@@ -32,6 +32,7 @@ import {
   TOKENS,
   VALUE,
 } from './cards';
+import { STOLEN_CREATURE } from '../../engine/cards/tokens';
 import { buildCandidates } from './candidates';
 import {
   howMuchWeMindSacrificing,
@@ -60,13 +61,17 @@ import {
   Zone,
 } from '../../engine/game/game-types';
 import { CreatureDeckGame } from '../../engine/game/creature-deck';
-import { upkeepOfCommonCards } from '../../engine/card-rules/card-rules';
+import {
+  endStepTriggerOf,
+  upkeepOfCommonCards,
+} from '../../engine/card-rules/card-rules';
 import { fetchLand } from '../../engine/game/land-search';
 import { firstMax, firstMin } from '../../engine/util/lists';
 import { MulliganRule } from '../../engine/game/mulligan';
 import { MULLIGAN } from './mulligan';
 
 /** The order Meren resolves the triggers of these cards in when they trigger together. */
+const MORBID_OPPORTUNIST = 'Morbid Opportunist';
 const TRIGGER_ORDER = [
   'Liliana the Repentant',
   "Garruk's Packleader",
@@ -147,7 +152,6 @@ export class MerenGame extends CreatureDeckGame {
       hand6: this.handAtTurnEnd[6] ?? null,
     };
   }
-  morbidUsed = false; // Morbid Opportunist: once each turn
   leftThisTurn = false; // a nonland permanent left the battlefield this turn (Decode Transmissions' void)
   prepared = new Set<Permanent>(); // Studious First-Year / Grave Researcher can cast their spell copy
   lilianaUsed = false;
@@ -163,7 +167,7 @@ export class MerenGame extends CreatureDeckGame {
   override logToken(name: string): CardDef | null {
     const lowerCaseName = name.toLowerCase();
     if (lowerCaseName.includes('demon') || lowerCaseName.includes('stolen'))
-      return TOKENS.stolen; // Pontus plays stolen creatures as 5/5 Demons
+      return STOLEN_CREATURE; // Pontus plays stolen creatures as 5/5 Demons
     if (lowerCaseName.includes('insect')) return TOKENS.insect;
     if (lowerCaseName.includes('zombie')) return TOKENS.zombie;
     if (lowerCaseName.includes('goat')) return TOKENS.goat;
@@ -275,51 +279,13 @@ export class MerenGame extends CreatureDeckGame {
 
   /** Rise of the Dark Realms: every creature card in the opponents' graveyards comes too. */
   override reanimateFromOtherGraveyards(): void {
-    this.stealCreatures(Infinity);
+    this.stealCreatureCards(Infinity);
   }
 
-  /** Creature cards from the opponents' graveyards onto our battlefield (Sepulchral Primordial, Rise of the Dark Realms,
-   *  Puppeteer Clique, Junji): in a pod the real cards, the ones we value most first (at most `perOpponent` from each
-   *  graveyard, `total` in all). In a goldfish game there are no graveyards to look at: a vanilla 5/5 for each opponent,
-   *  as an estimate (Pontus, 2026-11-19). */
-  stealCreatures(perOpponent: number, total = Infinity): Permanent[] {
-    const opponents = [...this.life.keys()].filter((slot) =>
-      this.isOpponentAlive(slot),
-    );
-    const stolen: Permanent[] = [];
-    if (!this.inArena()) {
-      for (const _opponent of opponents.slice(0, total))
-        stolen.push(this.enterAsStolen(TOKENS.stolen));
-      return stolen;
-    }
-    const arena = this.arena!;
-    const taken = new Map<number, number>();
-    const options = opponents.flatMap((slot) =>
-      arena
-        .creatureCardsOfGraveyard(this, slot)
-        .map((card) => ({ slot, card })),
-    );
-    options.sort(
-      (first, second) =>
-        this.battlefieldValue(second.card) - this.battlefieldValue(first.card),
-    );
-    for (const { slot, card } of options) {
-      if (stolen.length >= total || (taken.get(slot) ?? 0) >= perOpponent)
-        continue;
-      taken.set(slot, (taken.get(slot) ?? 0) + 1);
-      stolen.push(this.stealCreatureCard(slot, card));
-    }
-    return stolen;
-  }
-
-  /** A pod: this creature card from that opponent's graveyard onto our battlefield. */
-  stealCreatureCard(slot: number, card: CardDef): Permanent {
-    this.arena!.takeCreatureCardFromGraveyard(this, slot, card);
-    return this.enterAsStolen(card);
-  }
-
-  private enterAsStolen(card: CardDef): Permanent {
-    const permanent = this.enter(card, 'graveyard', { token: true });
+  /** A creature from another graveyard (the engine's stealCreatureCards, Junji) is marked: worth keeping, not
+   *  fodder. */
+  override enterFromAnotherGraveyard(card: CardDef): Permanent {
+    const permanent = super.enterFromAnotherGraveyard(card);
     permanent.marks |= STOLEN_MARK;
     return permanent;
   }
@@ -327,7 +293,8 @@ export class MerenGame extends CreatureDeckGame {
   /** A creature we took from a graveyard or made a copy of (Breach the Multiverse): worth keeping, not fodder. */
   isStolen(permanent: Permanent): boolean {
     return (
-      (permanent.marks & STOLEN_MARK) !== 0 || permanent.card === TOKENS.stolen
+      (permanent.marks & STOLEN_MARK) !== 0 ||
+      permanent.card === STOLEN_CREATURE
     );
   }
 
@@ -375,8 +342,10 @@ export class MerenGame extends CreatureDeckGame {
 
   /** Disciple of Bolas sacrifices for the most cards: power is cards and life; a creature whose death is worth
    *  something, or whose enter trigger Meren can give us again this turn, is a good one to lose. */
-  chooseDiscipleSacrifice(disciple: Permanent): Permanent | null {
-    return discipleSacrificeChoice(this, disciple);
+  override creatureToSacrificeFor(source: Permanent): Permanent | null {
+    return source.card.name === 'Disciple of Bolas'
+      ? discipleSacrificeChoice(this, source)
+      : super.creatureToSacrificeFor(source);
   }
 
   /** D'Ghor Bloodletter's mode in a pod: -1/-1 to all other creatures (true) or the edict. The -1/-1 when it kills
@@ -431,9 +400,11 @@ export class MerenGame extends CreatureDeckGame {
   }
 
   /** Liliana's mill, then Packleader's draw, then Twilight Diviner's copy (whose own triggers come in between); the
-   *  others in battlefield order. */
+   *  others in battlefield order; Morbid Opportunist's draw last, as Meren always had it. */
   override orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
     const rank = (permanent: Permanent) => {
+      if (permanent.card.name === MORBID_OPPORTUNIST)
+        return TRIGGER_ORDER.length + 1;
       const index = TRIGGER_ORDER.indexOf(permanent.card.name);
       return index < 0 ? TRIGGER_ORDER.length : index;
     };
@@ -547,7 +518,7 @@ export class MerenGame extends CreatureDeckGame {
         this.findFreeSacrificeOutlet() !== null;
     }
     super.startTurn();
-    this.morbidUsed = this.leftThisTurn = this.gristUsed = false;
+    this.leftThisTurn = this.gristUsed = false;
   }
 
   override upkeep(): void {
@@ -611,9 +582,21 @@ export class MerenGame extends CreatureDeckGame {
     return scoreForMerenToReturn(this, card, experience);
   }
 
-  /** Feed Meren with a free sacrifice outlet, then return the best creature card from the graveyard. */
+  /** Feed Meren with a free sacrifice outlet, then her end step trigger (the engine's). */
   feedMerenAtEndStep(): void {
     feedMeren(this);
+    const meren = this.findPermanent(MEREN);
+    if (meren) endStepTriggerOf(this, meren);
+  }
+  /** Meren returns the card with the best merenReturnScore (counting the ones that go to hand, for --diag). */
+  override creatureCardForMerenToReturn(): CardDef | null {
+    const candidates = this.graveyard.filter((card) => card.isCreature);
+    if (!candidates.length) return null;
+    const best = firstMax(candidates, (card) =>
+      this.merenReturnScore(card, this.experienceCounters),
+    );
+    if (best.manaValue > this.experienceCounters) this.merenReturnsToHand++;
+    return best;
   }
 
   // ================================================================ combat
@@ -752,19 +735,6 @@ export class MerenGame extends CreatureDeckGame {
       this.draw(2, name);
       if (this.leftThisTurn) this.drainEach(2);
       else this.loseLife(2);
-    } else if (name === 'Breach the Multiverse') {
-      this.millOurselves(10);
-      for (let i = 0; i < this.opponentLibrarySizes.length; i++)
-        this.opponentLibrarySizes[i] = Math.max(
-          0,
-          this.opponentLibrarySizes[i] - 10,
-        );
-      const best = this.bestCreatureInGraveyard();
-      if (best) this.reanimate(best);
-      // a 5/5 copy of a creature in each graveyard
-      for (let i = 0; i < this.countOpponentsAlive(); i++)
-        this.enter(TOKENS.stolen, 'graveyard', { token: true }).marks |=
-          STOLEN_MARK;
     } else if (name === 'Deadly Brew') {
       if (this.inArena()) this.arena!.edict(this, false);
       const permanent = this.sacrificeOrder()[0];
@@ -782,9 +752,6 @@ export class MerenGame extends CreatureDeckGame {
           this.putCard(creature, 'hand');
         }
       }
-    } else if (name === 'Buried Alive') {
-      for (let copyNumber = 0; copyNumber < 3; copyNumber++)
-        this.tutorToGraveyard((candidate) => candidate.isCreature);
     } else if (name === "Dina's Guidance") {
       if (mode === 'gy')
         this.tutorToGraveyard((candidate) => candidate.isCreature);

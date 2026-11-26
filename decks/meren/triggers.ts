@@ -1,7 +1,7 @@
 /** What happens when a permanent enters the battlefield or dies: the engine's card rules (engine/card-rules/) in the
  *  order Meren had them, and the triggers of Meren's own cards (the ones other decks code too, or that hang on
  *  Meren's state and choices). */
-import { DGHOR_BLOODLETTER, EDICT_ETB, GRAY_MERCHANT, MEREN } from './cards';
+import { DGHOR_BLOODLETTER, EDICT_ETB, MEREN } from './cards';
 import type { MerenGame } from './game';
 import { Permanent, Zone } from '../../engine/game/game-types';
 import { firstMax } from '../../engine/util/lists';
@@ -27,25 +27,9 @@ export function onPermanentEntered(
   triggersOfOthersOnEnter(game, permanent, from); // Liliana, Packleader, Twilight Diviner
   triggersOfCreatureEntering(game, permanent); // Ayara
   // enters-the-battlefield effects (token copies have them too)
-  if (resolveDrainOnEnter(game, permanent)) return;
   if (resolveCardAdvantageOnEnter(game, permanent)) return;
   if (resolveTokensOnEnter(game, permanent)) return;
   resolveRemovalOnEnter(game, permanent);
-}
-
-/** Gray Merchant. Returns true if the permanent was it. */
-function resolveDrainOnEnter(game: MerenGame, permanent: Permanent): boolean {
-  const name = permanent.card.name;
-  if (name === GRAY_MERCHANT) {
-    const devotion = game.devotion('B');
-    const drained = game.drainEach(devotion);
-    game.gainLife(drained);
-    game.say(
-      `  Gray Merchant drains ${devotion} each (devotion ${devotion}), ${game.describeOpponentLife()}`,
-    );
-    return true;
-  }
-  return false;
 }
 
 /** Cards drawn, tutored, milled or returned from the graveyard when a creature enters. Returns true if handled. */
@@ -54,19 +38,9 @@ function resolveCardAdvantageOnEnter(
   permanent: Permanent,
 ): boolean {
   const name = permanent.card.name;
-  if (name === 'Disciple of Bolas') {
-    const sacrificed = game.chooseDiscipleSacrifice(permanent);
-    if (sacrificed) {
-      const power = game.power(sacrificed);
-      game.sacrifice(sacrificed);
-      game.gainLife(power);
-      game.draw(power, 'Disciple of Bolas');
-    }
-  } else if (enterTriggerOfCommonCard(game, permanent)) {
-    // the engine's rules (Satyr Wayfinder, Stitcher's Supplier, Vile Entomber, Grim Servant, Woe Strider, Grave
-    // Titan, Shriekmaw, Lotleth Giant, Twilight Diviner, Solemn, the Witnesses...)
-  } else if (name === 'Rune-Scarred Demon') {
-    game.doTutor(() => true, false);
+  if (enterTriggerOfCommonCard(game, permanent)) {
+    // the engine's rules (Gray Merchant, Disciple of Bolas, Rune-Scarred Demon, Satyr Wayfinder, Stitcher's Supplier,
+    // Vile Entomber, Grim Servant, Woe Strider, Grave Titan, Shriekmaw, Lotleth Giant, Twilight Diviner, Solemn...)
   } else if (name === 'Studious First-Year') {
     game.prepared.add(permanent);
   } else {
@@ -79,14 +53,14 @@ function resolveCardAdvantageOnEnter(
 function resolveTokensOnEnter(game: MerenGame, permanent: Permanent): boolean {
   switch (permanent.card.name) {
     case 'Puppeteer Clique': {
-      for (const stolen of game.stealCreatures(Infinity, 1)) {
+      for (const stolen of game.stealCreatureCards(Infinity, 1)) {
         stolen.sick = false; // it gains haste
         game.exileAtEnd.push(stolen);
       }
       return true;
     }
     case 'Sepulchral Primordial':
-      game.stealCreatures(1);
+      game.stealCreatureCards(1);
       return true;
     default:
       return false;
@@ -119,11 +93,8 @@ function resolveRemovalOnEnter(game: MerenGame, permanent: Permanent): void {
 // ================================================================ dying
 export function onPermanentDied(game: MerenGame, permanent: Permanent): void {
   if (!permanent.card.land) game.leftThisTurn = true;
-  triggersOnDeath(game, permanent); // Butcher of Malakir, Meren's experience, Grim Haruspex
-  if (permanent.card.isCreature) {
-    triggerMorbidOpportunist(game);
-    drawWhenCreatureDies(game, permanent); // Midnight Reaper, Moldervine Reclamation
-  }
+  triggersOnDeath(game, permanent); // Butcher of Malakir, Meren's experience, Grim Haruspex, Morbid Opportunist
+  if (permanent.card.isCreature) drawWhenCreatureDies(game, permanent); // Midnight Reaper, Moldervine Reclamation
   game.prepared.delete(permanent);
   resolveDeathEffect(game, permanent);
   // persist: comes back with a -1/-1 counter if it had none
@@ -135,14 +106,6 @@ export function onPermanentDied(game: MerenGame, permanent: Permanent): void {
   ) {
     const returned = game.reanimate(permanent.card);
     returned.counters -= 1;
-  }
-}
-
-/** Morbid Opportunist: a creature died: draw a card (once each turn). Thantis codes it too (U1b step 3). */
-function triggerMorbidOpportunist(game: MerenGame): void {
-  if (game.isOnBattlefield('Morbid Opportunist') && !game.morbidUsed) {
-    game.morbidUsed = true;
-    game.draw(1, 'Morbid Opportunist');
   }
 }
 

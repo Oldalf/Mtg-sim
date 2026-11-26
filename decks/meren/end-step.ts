@@ -94,7 +94,8 @@ function sacrificeOneMerenReturnsAtOnce(game: MerenGame): void {
   game.sacrificeToOutlet(choice);
 }
 
-/** Feed Meren with a free sacrifice outlet, then return the best creature card from the graveyard. */
+/** Feed Meren with a free sacrifice outlet before her end step trigger (MerenGame.creatureCardForMerenToReturn picks
+ *  the card she returns). */
 export function feedMeren(game: MerenGame): void {
   // Greater Good: a big creature Meren can return now, for cards and a full graveyard
   const toGreaterGood = game.isOnBattlefield(GREATER_GOOD)
@@ -127,23 +128,6 @@ export function feedMeren(game: MerenGame): void {
   )
     game.sacrificeToOutlet(bloodletter);
   if (game.config.end_step_fodder !== 0) sacrificeOneMerenReturnsAtOnce(game);
-  const candidates = game.graveyard.filter((card) => card.isCreature);
-  if (!candidates.length) return;
-  const best = firstMax(candidates, (card) =>
-    game.merenReturnScore(card, game.experienceCounters),
-  );
-  if (best.manaValue <= game.experienceCounters) {
-    game.say(`Meren (${game.experienceCounters} experience) returns`, best);
-    game.reanimate(best);
-  } else {
-    game.takeCardIfThere(best, 'graveyard');
-    game.putCard(best, 'hand');
-    game.merenReturnsToHand++;
-    game.say(
-      `Meren (${game.experienceCounters} experience) returns to hand`,
-      best,
-    );
-  }
 }
 
 /** Promise of Aclazotz at our end step: sacrifice a token or a creature whose death is worth something (not a

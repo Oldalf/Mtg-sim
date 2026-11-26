@@ -56,8 +56,8 @@ export function manaPerLoopCopy(
   game: CodieGame,
   spell: string,
 ): [number, 'R' | 'any'] {
-  if (spell === JESKAS_WILL) return [game.opponentHandSize(), 'R'];
-  if (spell === MANA_GEYSER) return [game.opponentTappedLands(), 'R'];
+  if (spell === JESKAS_WILL) return [game.mostCardsInAnOpponentsHand(), 'R'];
+  if (spell === MANA_GEYSER) return [game.opponentsTappedLands(), 'R'];
   return [game.landsOnBattlefield().length, 'any']; // Brass's Bounty: a Treasure for each land
 }
 

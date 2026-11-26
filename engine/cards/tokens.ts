@@ -70,6 +70,9 @@ export const FIREBENDING_SOLDIER = new CardDef(
     },
   },
 );
+/** A goldfish game's stand-in for a creature card taken from an opponent's graveyard (Breach the Multiverse,
+ *  Sepulchral Primordial): there are no graveyards to look at, so a vanilla 5/5 (Pontus, 2026-11-19). */
+export const STOLEN_CREATURE = makeToken('Stolen creature', 5, 5);
 /** Undercellar Sweep's, tapped and attacking. */
 export const SOLDIER = makeToken('Soldier', 1, 1, 'white');
 /** Genku, Future Shaper's three, one of each a turn. */

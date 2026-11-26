@@ -66,8 +66,6 @@ export class AzulaGame extends CreatureDeckGame {
   /** Arcane Bombardment's exiled cards (one Bombardment in the list); it triggers on the first spell each turn. */
   cardsExiledWithBombardment: CardDef[] = [];
   hasBombardmentTriggeredThisTurn = false;
-  /** Jeska's Will's exiled cards we may play this turn (in hand until the end of the turn). */
-  cardsPlayableThisTurnOnly: CardDef[] = [];
   /** The combo we went off with this turn (for the pod's answers). */
   comboWin: ComboWin | null = null;
   /** We are casting an answer on another player's turn: none of our "whenever you cast" copies apply. */
@@ -123,33 +121,6 @@ export class AzulaGame extends CreatureDeckGame {
       card.name === 'Scarring Memories' &&
       (this.isAzulaAttacking || this.step !== 'combat')
     );
-  }
-
-  /** The most cards an opponent holds (a goldfish opponent: config opp_hand). */
-  mostCardsInAnOpponentsHand(): number {
-    let most = 0;
-    for (let slot = 0; slot < this.life.length; slot++)
-      if (this.isOpponentAlive(slot))
-        most = Math.max(
-          most,
-          this.inArena()
-            ? this.arena!.handSize(this, slot)
-            : (this.config.opp_hand as number),
-        );
-    return most;
-  }
-
-  /** The tapped lands the opponents control in all (goldfish: config opp_tapped_per_turn a turn). */
-  opponentsTappedLands(): number {
-    if (!this.inArena())
-      return Math.round(
-        (this.config.opp_tapped_per_turn as number) * this.turn,
-      );
-    let total = 0;
-    for (let slot = 0; slot < this.life.length; slot++)
-      if (this.isOpponentAlive(slot))
-        total += this.arena!.tappedLands(this, slot);
-    return total;
   }
 
   /** What an opponent can give up to Torment of Hailfire: its hand and its creatures (goldfish: config opp_hand). */
@@ -347,13 +318,6 @@ export class AzulaGame extends CreatureDeckGame {
     const card = firstMax(instants, (instant) => this.cardValue(instant));
     this.moveCard(card, 'graveyard', 'exile');
     this.castCopyWithoutPaying(card, TORRENTIAL_GEARHULK);
-  }
-
-  override endTurn(): void {
-    for (const card of this.cardsPlayableThisTurnOnly)
-      if (this.hand.includes(card)) this.moveCard(card, 'hand', 'exile');
-    this.cardsPlayableThisTurnOnly = [];
-    super.endTurn();
   }
 
   // ================================================================ combat

@@ -57,7 +57,6 @@ import {
   SPIRITS,
   STOLEN_LAND,
   SWARM,
-  TATYOVA,
   TOK,
   UYO,
   UYO_COPY,
@@ -344,6 +343,18 @@ export class AesiGame extends Game<AesiGame> {
   chooseLand(lands: CardDef[]): CardDef {
     return landToPut(this, lands);
   }
+  /** Explore: our land loop plays the additional drop (dropsAllowed counts it). */
+  override useAdditionalLandDrop(): void {
+    this.extraLandDropsThisTurn += 1;
+  }
+  /** Growth Spiral: the land chooseLand picks, put our way (fetch lands crack, landfall). */
+  override landToPutFromHand(): CardDef | null {
+    const lands = this.landsInHand();
+    return lands.length ? this.chooseLand(lands) : null;
+  }
+  override putLandFromHand(card: CardDef): void {
+    this.putLand(card, 'hand', 'puts from hand');
+  }
   /** A spell in hand we could cast with one more mana. */
   needManaNow(): boolean {
     const avail = this.availMana();
@@ -437,11 +448,6 @@ export class AesiGame extends Game<AesiGame> {
       if (landfallTriggerOf(this, otherPermanent, permanent)) continue;
       if (name === RETREAT) this.retreat(true);
       else if (name === RAFT) this.retreat(false);
-      else if (
-        name === TATYOVA &&
-        this.library.length > this.libraryCardsToKeep()
-      )
-        this.draw(1);
     }
     if (!this.kodamaBusy) this.kodamaTrigger(permanent.card.manaValue);
   }

@@ -15,8 +15,10 @@ import {
 } from './pod-interaction';
 import {
   bounceEveryPermanentOfColour,
+  cardsOfGraveyard,
   creatureCardsInGraveyard,
   creatureCardsOfGraveyard,
+  millOpponent,
   exileCreaturesFromGraveyard,
   takeCreatureCardFromGraveyard,
   fightBestCreature,
@@ -134,6 +136,9 @@ export function buildArena(table: PodTable): Arena {
       creatureCardsInGraveyard(table, game, slot),
     creatureCardsOfGraveyard: (game, slot) =>
       creatureCardsOfGraveyard(table, game, slot),
+    cardsOfGraveyard: (game, slot) => cardsOfGraveyard(table, game, slot),
+    millOpponent: (game, slot, count) =>
+      table.runOffTurn(() => millOpponent(table, game, slot, count)),
     takeCreatureCardFromGraveyard: (game, slot, card) =>
       table.runOffTurn(() =>
         takeCreatureCardFromGraveyard(table, game, slot, card),

@@ -1,8 +1,8 @@
 /**
  * Helga, Skittish Seer's deck (Friend 2's, Bant ramp into big creatures, pod-only): Helga's mana (an activated
  * ability the planner uses: castWithHelga), the cards the engine doesn't have yet (Craterhoof Behemoth and Become the
- * Avalanche's until-end-of-turn pump, Regal Behemoth's monarch) and the cards other decks code too (Lightning Greaves,
- * Garruk's Uprising, Explore: U1b step 3). Every other card's rules are in engine/card-rules/.
+ * Avalanche's until-end-of-turn pump, Regal Behemoth's monarch, Lightning Greaves: equipment, U1b step 5a). Every
+ * other card's rules are in engine/card-rules/.
  * The win, combat, values and the planner's score come from the engine's CreatureDeckGame.
  *
  * Files: cards.ts (names, values, tokens), game.ts (this file), candidates.ts (what the AI may do now).
@@ -27,6 +27,8 @@ import {
 } from '../../engine/card-rules/card-rules';
 
 type Colour = 'W' | 'U' | 'G';
+
+const GARRUKS_UPRISING = "Garruk's Uprising";
 
 export class HelgaGame extends CreatureDeckGame {
   override colors = ['G', 'W', 'U'];
@@ -109,24 +111,29 @@ export class HelgaGame extends CreatureDeckGame {
   }
 
   // ================================================================ enter, upkeep, end step
-  /** Its own enter trigger, Lightning Greaves and Garruk's Uprising, then the others' triggers (Elemental Bond,
-   *  Guardian Project, Verdant Sun's Avatar), as Helga always had it. */
+  /** Its own enter trigger, Lightning Greaves, then the others' triggers (Garruk's Uprising first, then Elemental
+   *  Bond, Guardian Project, Verdant Sun's Avatar), as Helga always had it. */
   override onEnter(permanent: Permanent, from: Zone): void {
     enterTriggerOfCommonCard(this, permanent);
     const card = permanent.card;
     if (card.isCreature) {
       if (this.isOnBattlefield(LIGHTNING_GREAVES)) permanent.sick = false; // (equip {0}: haste)
-      if (
-        this.power(permanent) >= 4 &&
-        this.isOnBattlefield("Garruk's Uprising")
-      )
-        this.draw(1);
     }
     triggersOfOthersOnEnter(this, permanent, from);
-    if (card.name === "Garruk's Uprising" && this.hasCreatureWithPower(4))
-      this.draw(1);
     if (card.name === REGAL_BEHEMOTH) this.isMonarch = true;
     if (card.name === CRATERHOOF) this.pumpThisTurn += this.creatures().length;
+  }
+
+  /** Garruk's Uprising's draw before the other triggers. */
+  override orderSimultaneousTriggers(permanents: Permanent[]): Permanent[] {
+    return [
+      ...permanents.filter(
+        (permanent) => permanent.card.name === GARRUKS_UPRISING,
+      ),
+      ...permanents.filter(
+        (permanent) => permanent.card.name !== GARRUKS_UPRISING,
+      ),
+    ];
   }
 
   hasCreatureWithPower(power: number): boolean {

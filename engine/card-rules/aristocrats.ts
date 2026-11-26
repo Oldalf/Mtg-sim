@@ -11,6 +11,34 @@ import type { CardRules } from './card-rules';
 
 export const ARISTOCRATS: CardRules[] = [
   {
+    names: ['Morbid Opportunist'],
+    onOurPermanentDies(game, permanent, dead) {
+      if (dead !== permanent && dead.card.isCreature)
+        drawOnceEachTurn(game, permanent);
+    },
+    onOtherPlayersCreatureDies(game, permanent) {
+      drawOnceEachTurn(game, permanent);
+    },
+  },
+  {
+    names: ['Syr Konrad, the Grim'],
+    // CHECK WHEN ANOTHER DECK PLAYS IT: creature cards put into another player's graveyard from anywhere but the
+    // battlefield (their mills and discards) are not seen.
+    onOurPermanentDies(game, permanent, dead) {
+      if (dead !== permanent && dead.card.isCreature)
+        game.dealDamageToEachOpponent(1);
+    },
+    onOtherPlayersCreatureDies(game) {
+      game.dealDamageToEachOpponent(1);
+    },
+    onCreatureCardToOurGraveyard(game) {
+      game.dealDamageToEachOpponent(1);
+    },
+    onCreatureCardLeavesOurGraveyard(game) {
+      game.dealDamageToEachOpponent(1);
+    },
+  },
+  {
     names: ['Spinner of Souls'],
     onOurPermanentDies(game, permanent, dead) {
       // another nontoken creature of ours died: the first creature card from the top to our hand
@@ -150,6 +178,25 @@ export const ARISTOCRATS: CardRules[] = [
     onOurPermanentDies(game, permanent, dead) {
       if (permanent !== dead && dead.card.isCreature) game.gainExperience();
     },
+    // which card is the deck's choice (creatureCardForMerenToReturn)
+    onEndStep(game) {
+      const creature = game.creatureCardForMerenToReturn();
+      if (!creature) return;
+      if (creature.manaValue <= game.experienceCounters) {
+        game.say(
+          `Meren (${game.experienceCounters} experience) returns`,
+          creature,
+        );
+        game.reanimate(creature);
+      } else {
+        game.say(
+          `Meren (${game.experienceCounters} experience) returns to hand`,
+          creature,
+        );
+        game.takeCard(creature, 'graveyard');
+        game.putCard(creature, 'hand');
+      }
+    },
   },
   {
     names: ['Grim Haruspex'],
@@ -190,4 +237,10 @@ function vampiresOf(game: GameCore): Permanent[] {
 /** "Whenever another creature dies": the dead one is a creature and not this permanent. */
 function isAnotherCreature(permanent: Permanent, dead: Permanent): boolean {
   return dead !== permanent && dead.card.isCreature;
+}
+
+/** "Draw a card; this ability triggers only once each turn" (Morbid Opportunist). */
+function drawOnceEachTurn(game: GameCore, permanent: Permanent): void {
+  if (game.useOnceEachTurn(permanent.card.name))
+    game.draw(1, permanent.card.name);
 }

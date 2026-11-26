@@ -476,24 +476,10 @@ export class SamFrodoGame extends CreatureDeckGame {
     mode: string | null = null,
   ): void {
     const name = card.name;
-    if (name === "Night's Whisper") {
-      this.draw(2);
-      this.loseLife(2);
-    } else if (name === 'Harmonize') this.draw(3);
-    else if (name === 'Deadly Dispute') {
-      // the engine's rule, but the Treasure is made our way (Peregrin, Manufactor, Bats see it)
-      this.draw(2 * this.spellSacrifices, name);
-      this.createTokenGroup(new Array(this.spellSacrifices).fill(TREASURE));
-    } else if (name === 'Cultivate') {
+    if (name === 'Cultivate') {
       fetchLand(this, 'basic', true);
       fetchLand(this, 'basic', true, true);
     } else if (name === 'Farseek') fetchLand(this, 'types', true);
-    else if (name === 'Second Harvest')
-      this.createTokenGroup(
-        this.battlefield
-          .filter((permanent) => permanent.token)
-          .map((permanent) => permanent.card),
-      );
     else if (name === 'Crypt Incursion') {
       const target = this.cryptIncursionTarget();
       if (target.slot !== null) {

@@ -17,27 +17,12 @@ export function resolveAesiSpell(
       game.fetchBasic();
       if (mode === 'kicked') game.fetchBasic();
       return true;
-    case 'Growth Spiral': {
-      game.draw(1);
-      const landsInHand = game.landsInHand();
-      if (landsInHand.length)
-        game.putLand(
-          game.chooseLand(landsInHand),
-          'hand',
-          'Growth Spiral puts',
-        );
-      return true;
-    }
     case SCRYING:
       tutorLand(game, false);
       return true;
     case CROP:
       sacrificeLand(game, game.chooseLandToSacrifice());
       tutorLand(game, true);
-      return true;
-    case 'Explore':
-      game.extraLandDropsThisTurn += 1;
-      game.draw(1);
       return true;
     case AWAKENING:
       game.awakened = true;

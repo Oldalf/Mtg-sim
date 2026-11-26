@@ -5,6 +5,12 @@ import type { CardRules } from './card-rules';
 
 export const LIFE_LOSS: CardRules[] = [
   {
+    names: ['Gray Merchant of Asphodel'],
+    onEnter(game) {
+      game.gainLife(game.drainEach(game.devotion('B')));
+    },
+  },
+  {
     names: ['Bloodletter of Aclazotz'],
     // CHECK WHEN ANOTHER DECK PLAYS IT: it doubles on every turn (the card: only during our turn).
     opponentLifeLossMultiplier() {

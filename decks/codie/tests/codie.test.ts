@@ -339,11 +339,11 @@ export function runCodieTests(): boolean {
   // ---- the opponents' tapped lands grow with the turn
   game = board(five, []);
   game.turn = 3;
-  const tappedLandCount = game.opponentTappedLands();
+  const tappedLandCount = game.opponentsTappedLands();
   game.turn = 6;
   check(
     'tapped opposing lands: 6 on turn 3, 13 on turn 6',
-    [tappedLandCount, game.opponentTappedLands()],
+    [tappedLandCount, game.opponentsTappedLands()],
     [6, 13],
   );
 

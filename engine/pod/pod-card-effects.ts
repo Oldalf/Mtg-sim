@@ -377,6 +377,33 @@ export function creatureCardsInGraveyard(
     .length;
 }
 
+/** The cards in opponent `slot`'s graveyard. */
+export function cardsOfGraveyard(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+): CardDef[] {
+  const opponent = table.opponentsOf[table.playerOrCopyOf(game)][slot];
+  return table.games[opponent].graveyard.slice();
+}
+
+/** Opponent `slot` mills cards (its own mill triggers run). */
+export function millOpponent(
+  table: PodTable,
+  game: Game<unknown>,
+  slot: number,
+  count: number,
+): void {
+  const opponent = table.opponentsOf[table.playerOf(game)][slot];
+  table.games[opponent].millOurselves(count);
+  table.sayAs(
+    table.playerOf(game),
+    `${table.playerName(opponent)} mills ${count}`,
+    'note',
+    [],
+  );
+}
+
 /** The creature cards in opponent `slot`'s graveyard. */
 export function creatureCardsOfGraveyard(
   table: PodTable,

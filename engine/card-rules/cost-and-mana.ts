@@ -11,6 +11,40 @@ import type { CardRules } from './card-rules';
 
 export const COST_AND_MANA: CardRules[] = [
   {
+    names: ["Bontu's Monument"],
+    costReduction(_game, _permanent, spell) {
+      return spell.isCreature && spell.cost.black > 0 ? 1 : 0;
+    },
+    onWeCast(game, _permanent, spell) {
+      if (spell.isCreature) game.drainAllOpponents(1);
+    },
+  },
+  {
+    names: ["Herald's Horn"],
+    // the type is the deck's choice (chosenCreatureType)
+    costReduction(game, permanent, spell) {
+      const chosenType = game.chosenCreatureType(permanent.card);
+      return spell.isCreature &&
+        chosenType !== null &&
+        C.hasCreatureType(spell, chosenType)
+        ? 1
+        : 0;
+    },
+    onUpkeep(game, permanent) {
+      const chosenType = game.chosenCreatureType(permanent.card);
+      const top = game.library[0];
+      if (
+        chosenType === null ||
+        !top ||
+        !top.isCreature ||
+        !C.hasCreatureType(top, chosenType)
+      )
+        return;
+      game.takeCard(top, 'library');
+      game.putCard(top, 'hand');
+    },
+  },
+  {
     names: ['Mindsplice Apparatus'],
     // its oil counters (Permanent.otherCounters); a counter doubler doesn't double them
     onUpkeep(_game, permanent) {

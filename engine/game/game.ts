@@ -176,13 +176,6 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       (this.isCommander(permanent) ? 100 : 0)
     );
   }
-  isCommander(permanent: Permanent): boolean {
-    return (
-      !permanent.token &&
-      permanent.owner === null &&
-      this.commanderNames.includes(permanent.card.name)
-    );
-  }
   fighter(
     permanent: Permanent,
     powerOf?: (otherPermanent: Permanent) => number,
@@ -339,9 +332,6 @@ export abstract class Game<S = unknown> extends GameCore<S> {
       this.islandTyped(permanent),
     );
     return islands.find((island) => island.tapped) ?? islands[0] ?? null;
-  }
-  controlsCommander(): boolean {
-    return this.battlefield.some((permanent) => this.isCommander(permanent));
   }
   /** Force of Will's other cost: a blue card from hand to exile (the least wanted), or null. */
   forceOfWillPitch(forceOfWill: CardDef): CardDef | null {
@@ -537,22 +527,73 @@ export abstract class Game<S = unknown> extends GameCore<S> {
     return card && this.podCast(card) ? 'bounce' : 'none';
   }
 
-  /** Windfall: each player discards their hand and draws as many cards as the biggest hand discarded (in a goldfish
-   *  game at least 7, a goldfish opponent's hand). A deck with its own Windfall (Gale, Codie) resolves it first. */
-  override resolveOther(
-    card: CardDef,
-    _fromGraveyard: boolean,
-    _mode: string | null,
-  ): void {
-    if (card.name !== 'Windfall') return;
-    const handSize = this.hand.length;
-    for (const discarded of this.takeAllCards('hand'))
-      this.toGraveyard(discarded);
-    this.draw(
-      this.inArena()
-        ? this.arena!.wheel(this, handSize)
-        : Math.max(handSize, 7),
+  /** Windfall in a pod: the real opponents' hands. */
+  override opponentsWheelTheirHands(ourHandSize: number): number {
+    return this.inArena()
+      ? this.arena!.wheel(this, ourHandSize)
+      : super.opponentsWheelTheirHands(ourHandSize);
+  }
+  override mostCardsInAnOpponentsHand(): number {
+    if (!this.inArena()) return super.mostCardsInAnOpponentsHand();
+    let most = 0;
+    for (let slot = 0; slot < this.life.length; slot++)
+      if (this.isOpponentAlive(slot))
+        most = Math.max(most, this.arena!.handSize(this, slot));
+    return most;
+  }
+  override opponentsTappedLands(): number {
+    if (!this.inArena()) return super.opponentsTappedLands();
+    let total = 0;
+    for (let slot = 0; slot < this.life.length; slot++)
+      if (this.isOpponentAlive(slot))
+        total += this.arena!.tappedLands(this, slot);
+    return total;
+  }
+  /** In a pod the opponents mill their real libraries (their mill triggers run). */
+  override millEachOpponent(count: number): void {
+    if (this.inArena())
+      for (let slot = 0; slot < this.life.length; slot++)
+        if (this.isOpponentAlive(slot))
+          this.arena!.millOpponent(this, slot, count);
+    super.millEachOpponent(count);
+  }
+  /** In a pod the real cards, the ones we value most first; an opponent with none gives nothing. */
+  override stealCreatureCards(
+    perOpponent: number,
+    total = Infinity,
+    allowed: (card: CardDef) => boolean = (card) => card.isCreature,
+  ): Permanent[] {
+    if (!this.inArena())
+      return super.stealCreatureCards(perOpponent, total, allowed);
+    const arena = this.arena!;
+    const options = [...this.life.keys()]
+      .filter((slot) => this.isOpponentAlive(slot))
+      .flatMap((slot) =>
+        arena
+          .cardsOfGraveyard(this, slot)
+          .filter(allowed)
+          .map((card) => ({ slot, card })),
+      );
+    options.sort(
+      (first, second) =>
+        this.battlefieldValue(second.card) - this.battlefieldValue(first.card),
     );
+    const stolen: Permanent[] = [];
+    const taken = new Map<number, number>();
+    for (const { slot, card } of options) {
+      if (stolen.length >= total || (taken.get(slot) ?? 0) >= perOpponent)
+        continue;
+      // taking one can move others (the owner's triggers on cards leaving its graveyard)
+      if (!arena.cardsOfGraveyard(this, slot).includes(card)) continue;
+      taken.set(slot, (taken.get(slot) ?? 0) + 1);
+      stolen.push(this.stealCardFromGraveyard(slot, card));
+    }
+    return stolen;
+  }
+  /** A pod: this card from that opponent's graveyard onto our battlefield. */
+  stealCardFromGraveyard(slot: number, card: CardDef): Permanent {
+    this.arena!.takeCreatureCardFromGraveyard(this, slot, card);
+    return this.enterFromAnotherGraveyard(card);
   }
 
   // ================================================================ change of control (a pod only)

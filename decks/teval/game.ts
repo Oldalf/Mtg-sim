@@ -1,7 +1,6 @@
 /**
- * Teval, the Balanced Scale's deck (Friend 4's Sultai self-mill and graveyard value, pod-only): its choices, Muldrotha,
- * and the cards other decks code too (Tatyova, Sheoldred, Meren, Whip of Erebos, Growth Spiral, Buried Alive, Breach
- * the Multiverse: U1b step 3). The win, combat, values and the planner's score come from the engine's
+ * Teval, the Balanced Scale's deck (Friend 4's Sultai self-mill and graveyard value, pod-only): its choices and
+ * Muldrotha (casting from the graveyard). The win, combat, values and the planner's score come from the engine's
  * CreatureDeckGame; the rules of its other cards are the engine's (engine/card-rules/self-mill.ts, doublers.ts...).
  *
  * Files: cards.ts (names, values), game.ts (this file), candidates.ts (what the AI may do now).
@@ -19,6 +18,7 @@ import { CreatureDeckGame } from '../../engine/game/creature-deck';
 import {
   attackTriggers,
   deathTriggerOfCommonCard,
+  endStepTriggerOf,
   enterTriggerOfCommonCard,
   landfallTriggerOf,
   upkeepTriggerOf,
@@ -41,15 +41,10 @@ export class TevalGame extends CreatureDeckGame {
     return this.creatures().filter((permanent) => isZombie(permanent.card));
   }
 
-  /** Landfall: the engine's rules (Rampaging Baloths, Ob Nixilis, Aesi), and Tatyova (step 3), in battlefield order. */
+  /** Landfall: the engine's rules (Rampaging Baloths, Ob Nixilis, Aesi, Tatyova), in battlefield order. */
   override onLandEnter(land: Permanent, _gone: boolean): void {
-    for (const permanent of this.battlefield.slice()) {
+    for (const permanent of this.battlefield.slice())
       landfallTriggerOf(this, permanent, land);
-      if (permanent.card.name === 'Tatyova, Benthic Druid') {
-        this.gainLife(1);
-        this.draw(1);
-      }
-    }
   }
 
   // ================================================================ enter, attack, die
@@ -73,15 +68,10 @@ export class TevalGame extends CreatureDeckGame {
   }
 
   // ================================================================ upkeep and end step
-  /** Upkeep: the engine's rules, and Sheoldred (step 3), in battlefield order. */
+  /** Upkeep: the engine's rules in battlefield order. */
   override upkeep(): void {
-    for (const permanent of this.battlefield.slice()) {
+    for (const permanent of this.battlefield.slice())
       upkeepTriggerOf(this, permanent);
-      if (permanent.card.name === 'Sheoldred, Whispering One') {
-        const creature = this.bestCreatureInGraveyard();
-        if (creature) this.reanimate(creature);
-      }
-    }
   }
 
   /** The best creature card in our graveyard to our hand (paying life if lifeCost is set). */
@@ -89,28 +79,13 @@ export class TevalGame extends CreatureDeckGame {
     return returnBestCreatureCardToHand(this, lifeCost);
   }
 
-  /** Meren: the best creature card in our graveyard comes back, to the battlefield if its mana value is no more than
-   *  our experience, else to our hand. */
+  /** The end step: Meren's trigger (the engine's) only, as Teval always had it. */
   override endStep(): void {
-    if (!this.isOnBattlefield('Meren of Clan Nel Toth')) return;
-    const creature = this.bestCreatureInGraveyard();
-    if (!creature) return;
-    if (creature.manaValue <= this.experienceCounters) this.reanimate(creature);
-    else {
-      this.takeCard(creature, 'graveyard');
-      this.putCard(creature, 'hand');
-    }
+    const meren = this.findPermanent('Meren of Clan Nel Toth');
+    if (meren) endStepTriggerOf(this, meren);
   }
 
   // ================================================================ combat
-  /** Whip of Erebos: our creatures have lifelink. */
-  override onCombatDamage(connected: Permanent[]): void {
-    super.onCombatDamage(connected);
-    if (!this.isOnBattlefield('Whip of Erebos')) return;
-    for (const permanent of connected)
-      if (!permanent.card.keywords.has('lifelink'))
-        this.gainLife(this.power(permanent));
-  }
 
   // ================================================================ spells and Muldrotha
   override resolveOther(card: CardDef): void {
@@ -131,37 +106,7 @@ export class TevalGame extends CreatureDeckGame {
         }
         break;
       }
-      case 'Buried Alive':
-        this.buryCreatures(3);
-        break;
-      case 'Breach the Multiverse': {
-        this.millOurselves(10);
-        for (let i = 0; i < this.opponentLibrarySizes.length; i++)
-          this.opponentLibrarySizes[i] = Math.max(
-            0,
-            this.opponentLibrarySizes[i] - 10,
-          );
-        const creature = this.bestCreatureInGraveyard();
-        if (creature) this.reanimate(creature);
-        break;
-      }
     }
-  }
-
-  /** Buried Alive: the creatures we'd most like to reanimate go from the library to the graveyard. */
-  buryCreatures(count: number): void {
-    const creatures = this.library
-      .filter((card) => card.isCreature)
-      .sort(
-        (first, second) =>
-          this.battlefieldValue(second) - this.battlefieldValue(first),
-      )
-      .slice(0, count);
-    for (const card of creatures) {
-      this.takeCard(card, 'library');
-      this.toGraveyard(card, true);
-    }
-    this.shuffle();
   }
 
   /** Muldrotha: one creature card a turn may be cast from the graveyard. */

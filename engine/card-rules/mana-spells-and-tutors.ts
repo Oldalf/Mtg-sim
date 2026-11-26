@@ -11,6 +11,30 @@ import type { CardRules } from './card-rules';
 
 export const MANA_SPELLS_AND_TUTORS: CardRules[] = [
   {
+    names: ['Mana Geyser'],
+    resolve(game) {
+      game.pool.R += game.opponentsTappedLands();
+    },
+  },
+  {
+    names: ["Jeska's Will"],
+    // the target is the opponent with the most cards; with a commander out both modes
+    resolve(game) {
+      game.pool.R += game.mostCardsInAnOpponentsHand();
+      if (!game.controlsCommander()) return;
+      for (const card of game.takeTopCardsOfLibrary(3)) {
+        game.putCard(card, 'hand');
+        game.cardsPlayableThisTurnOnly.push(card);
+      }
+    },
+  },
+  {
+    names: ['Seething Song'],
+    resolve(game) {
+      game.pool.R += 5;
+    },
+  },
+  {
     names: ['Snap'],
     resolve(game) {
       game.untapLands(2);

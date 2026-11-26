@@ -31,7 +31,13 @@ import * as C from '../cards/cards';
 import type { Answer } from './answers';
 import * as Facts from '../cards/card-facts';
 import { Cost, CardDef } from '../cards/cards';
-import { CLUE, ELDRAZI_SPAWN, FOOD, TREASURE } from '../cards/tokens';
+import {
+  CLUE,
+  ELDRAZI_SPAWN,
+  FOOD,
+  STOLEN_CREATURE,
+  TREASURE,
+} from '../cards/tokens';
 import { Rng } from '../util/rng';
 import { MulliganRule } from './mulligan';
 import {
@@ -140,6 +146,8 @@ import {
   leaveTriggers,
   opponentUpkeepTriggers,
   creaturesDealtCombatDamageTriggers,
+  creatureCardLeavesGraveyardTriggers,
+  creatureCardToGraveyardTriggers,
 } from '../card-rules/card-rules';
 import { resolveLandSearch } from './land-search';
 import { reanimateAsAuraEnters, resolveReanimationSpell } from './reanimation';
@@ -659,6 +667,8 @@ export abstract class GameCore<S = unknown> {
     removeOrThrow(this[fromZone], card);
     this.moveRecorder?.noteCardLeft(card, LOG_ZONE[fromZone]);
     if (fromZone !== 'graveyard') return;
+    if (card.isCreature && this.mayHaveStaticEffects)
+      creatureCardLeavesGraveyardTriggers(this, card);
     if (this.graveyardEventDepth > 0) this.cardsLeftDuringGraveyardEvent = true;
     else graveyardLeaveTriggers(this);
   }
@@ -818,7 +828,16 @@ export abstract class GameCore<S = unknown> {
   toGraveyard(card: CardDef, _fromLibrary = false): void {
     this.putCard(card, 'graveyard');
     this.onToGraveyard(card);
+    if (
+      card.isCreature &&
+      !this.isPuttingDeadCardInGraveyard &&
+      this.mayHaveStaticEffects
+    )
+      creatureCardToGraveyardTriggers(this, card);
   }
+  /** True while a dying permanent's card goes to the graveyard (it died: "from anywhere but the battlefield" is not
+   *  it). */
+  isPuttingDeadCardInGraveyard = false;
 
   /** Draws cards. `_source` names the card that makes us draw (a deck may count what each card gives it). */
   draw(count = 1, _source: string | null = null): void {
@@ -1095,7 +1114,11 @@ export abstract class GameCore<S = unknown> {
   dies(permanent: Permanent): void {
     if (!this.battlefield.includes(permanent)) return;
     this.takeFromBattlefield(permanent);
-    if (!permanent.token) this.toGraveyard(permanent.card);
+    if (!permanent.token) {
+      this.isPuttingDeadCardInGraveyard = true;
+      this.toGraveyard(permanent.card);
+      this.isPuttingDeadCardInGraveyard = false;
+    }
     this.onDies(permanent);
     this.onLeave(permanent);
     this.podAnnounceDeath(permanent);
@@ -1203,6 +1226,100 @@ export abstract class GameCore<S = unknown> {
     return creatures.length
       ? firstMax(creatures, (creature) => this.power(creature))
       : null;
+  }
+  /** The other creature of ours a card makes us sacrifice for its effect (Disciple of Bolas), or null for none.
+   *  Default: the one we least want on the battlefield. */
+  creatureToSacrificeFor(source: Permanent): Permanent | null {
+    const others = this.creatures().filter((other) => other !== source);
+    return others.length
+      ? firstMin(others, (other) => this.battlefieldValue(other.card))
+      : null;
+  }
+  /** Explore's additional land drop: by default we play a land from hand now (the turn's land drop is past). A deck
+   *  that plays lands in its own loop counts the drop instead (Aesi). */
+  useAdditionalLandDrop(): void {
+    this.extraLandDropsThisTurn += 1;
+    playBestLand(this, true);
+  }
+  /** The land from hand a card lets us put onto the battlefield (Growth Spiral), or null for none. Default the first. */
+  landToPutFromHand(): CardDef | null {
+    return this.hand.find((card) => card.land !== null) ?? null;
+  }
+  /** Puts this land from hand onto the battlefield (not a land drop). */
+  putLandFromHand(card: CardDef): void {
+    this.takeCard(card, 'hand');
+    const permanent = new Permanent(card, card.land, this.entersTapped(card));
+    permanent.sick = false;
+    this.putOntoBattlefield(permanent);
+    this.onLandEnter(permanent, false);
+  }
+  /** How many cards a goldfish opponent holds (config opp_hand, else 7). */
+  goldfishOpponentHandSize(): number {
+    return (this.config.opp_hand as number | undefined) ?? 7;
+  }
+  /** Windfall: each opponent discards its hand and draws as many as the most cards discarded. Returns that number
+   *  (what we draw too). A goldfish game: at least a goldfish opponent's hand. */
+  opponentsWheelTheirHands(ourHandSize: number): number {
+    return Math.max(ourHandSize, this.goldfishOpponentHandSize());
+  }
+  /** The most cards an opponent holds (Jeska's Will). */
+  mostCardsInAnOpponentsHand(): number {
+    return this.countOpponentsAlive() > 0 ? this.goldfishOpponentHandSize() : 0;
+  }
+  /** The tapped lands the opponents control in all (Mana Geyser). A goldfish game: config opp_tapped_lands, else
+   *  config opp_tapped_per_turn a turn (0 without them). */
+  opponentsTappedLands(): number {
+    const fixed = (this.config.opp_tapped_lands as number | undefined) ?? 0;
+    if (fixed > 0) return fixed;
+    return Math.round(
+      ((this.config.opp_tapped_per_turn as number | undefined) ?? 0) *
+        this.turn,
+    );
+  }
+  /** Each opponent mills cards (Breach the Multiverse). A goldfish game counts their libraries only. */
+  millEachOpponent(count: number): void {
+    for (let i = 0; i < this.opponentLibrarySizes.length; i++)
+      this.opponentLibrarySizes[i] = Math.max(
+        0,
+        this.opponentLibrarySizes[i] - count,
+      );
+  }
+  /** Cards from the opponents' graveyards onto our battlefield (Breach the Multiverse, Sepulchral Primordial): in a pod
+   *  the real cards (Game), at most perOpponent from each graveyard and total in all. A goldfish game has no
+   *  graveyards to look at: a 5/5 stand-in for each opponent (up to total). */
+  stealCreatureCards(
+    _perOpponent: number,
+    total = Infinity,
+    _allowed: (card: CardDef) => boolean = (card) => card.isCreature,
+  ): Permanent[] {
+    const stolen: Permanent[] = [];
+    for (let slot = 0; slot < this.life.length; slot++)
+      if (this.isOpponentAlive(slot) && stolen.length < total)
+        stolen.push(this.enterFromAnotherGraveyard(STOLEN_CREATURE));
+    return stolen;
+  }
+  /** A card from another player's graveyard enters under our control (as a token: it never goes to our graveyard). */
+  enterFromAnotherGraveyard(card: CardDef): Permanent {
+    return this.enter(card, 'graveyard', { token: true });
+  }
+  /** Is this permanent one of our commanders (not a token, not someone else's)? */
+  isCommander(permanent: Permanent): boolean {
+    return (
+      !permanent.token &&
+      permanent.owner === null &&
+      this.commanderNames.includes(permanent.card.name)
+    );
+  }
+  controlsCommander(): boolean {
+    return this.battlefield.some((permanent) => this.isCommander(permanent));
+  }
+  /** Damage to each opponent (Syr Konrad). A deck with its own model of the opponents routes it there (Gale). */
+  dealDamageToEachOpponent(amount: number): void {
+    this.drainEach(amount);
+  }
+  /** The creature card Meren of Clan Nel Toth returns at our end step (default the best one), or null for none. */
+  creatureCardForMerenToReturn(): CardDef | null {
+    return this.bestCreatureInGraveyard();
   }
   /** The token we sacrifice for a card's "you may sacrifice a token" (Shire Shirriff), or null not to. Default: in a
    *  pod the first token, else none. */
@@ -1606,7 +1723,12 @@ export abstract class GameCore<S = unknown> {
     returnCardsBlinkedInOpponentTurn(this);
   }
 
+  /** Cards exiled that we may play this turn only (Jeska's Will): in hand until the end of the turn, then exiled. */
+  cardsPlayableThisTurnOnly: CardDef[] = [];
   endTurn(): void {
+    for (const card of this.cardsPlayableThisTurnOnly)
+      if (this.hand.includes(card)) this.moveCard(card, 'hand', 'exile');
+    this.cardsPlayableThisTurnOnly = [];
     returnBlinkedCards(this);
     this.endStep();
     if (this.isCast >= 4 && this.isOnBattlefield('Case of the Ransacked Lab'))

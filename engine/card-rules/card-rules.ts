@@ -120,6 +120,19 @@ export interface CardRules {
   /** One or more cards left our graveyard, while it is on the battlefield. One trigger per event: a spell's
    *  resolution, or an effect run as GameCore.asOneGraveyardEvent, is one event however many cards leave. */
   onCardsLeaveOurGraveyard?(game: GameCore, permanent: Permanent): void;
+  /** While it is on the battlefield: a creature card was put into our graveyard from anywhere but the battlefield
+   *  (milled, discarded, a spell's own card). GameCore.toGraveyard runs it. */
+  onCreatureCardToOurGraveyard?(
+    game: GameCore,
+    permanent: Permanent,
+    card: CardDef,
+  ): void;
+  /** While it is on the battlefield: a creature card left our graveyard (each card). GameCore.takeCard runs it. */
+  onCreatureCardLeavesOurGraveyard?(
+    game: GameCore,
+    permanent: Permanent,
+    card: CardDef,
+  ): void;
   /** While it is on the battlefield: the tokens we create are multiplied by this (Doubling Season: 2). */
   tokenMultiplier?(game: GameCore, permanent: Permanent): number;
   /** While it is on the battlefield: the counters put on our permanents (GameCore.addCounters) are multiplied by this. */
@@ -316,11 +329,14 @@ export function deathTriggerOfCommonCard(
 
 /** The upkeep triggers of our permanents that the engine has rules for. Then a new "since the last upkeep" begins
  *  (Ephara). */
-export function upkeepOfCommonCards(game: GameCore): void {
+export function upkeepOfCommonCards(
+  game: GameCore,
+  runsElsewhere: (permanent: Permanent) => boolean = () => false,
+): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
   ))
-    upkeepTriggerOf(game, permanent);
+    if (!runsElsewhere(permanent)) upkeepTriggerOf(game, permanent);
   game.hasCreatureEnteredSinceLastUpkeep = false;
 }
 
@@ -496,6 +512,38 @@ export function graveyardLeaveTriggers(game: GameCore): void {
   }
 }
 
+/** The triggers of our permanents for a creature card put into our graveyard from anywhere but the battlefield. */
+export function creatureCardToGraveyardTriggers(
+  game: GameCore,
+  card: CardDef,
+): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onCreatureCardToOurGraveyard)
+      runTrigger(game, permanent, () =>
+        rules.onCreatureCardToOurGraveyard!(game, permanent, card),
+      );
+  }
+}
+
+/** The triggers of our permanents for a creature card leaving our graveyard. */
+export function creatureCardLeavesGraveyardTriggers(
+  game: GameCore,
+  card: CardDef,
+): void {
+  for (const permanent of game.orderSimultaneousTriggers(
+    game.battlefield.slice(),
+  )) {
+    const rules = rulesOf(permanent.card);
+    if (rules?.onCreatureCardLeavesOurGraveyard)
+      runTrigger(game, permanent, () =>
+        rules.onCreatureCardLeavesOurGraveyard!(game, permanent, card),
+      );
+  }
+}
+
 /** Does the card have a static effect (a multiplier, a power bonus, a cost reduction, flying from the graveyard) or a
  *  trigger on mana or life (a land tapped, life lost)? GameCore skips those checks, which run very often, until a card
  *  with one could be on its battlefield (mayHaveStaticEffects). */
@@ -519,7 +567,9 @@ export function hasStaticEffect(card: CardDef): boolean {
       rules.onWeCreateToken !== undefined ||
       rules.onWeGainLife !== undefined ||
       rules.onWeSacrifice !== undefined ||
-      rules.onWeSacrificeFood !== undefined)
+      rules.onWeSacrificeFood !== undefined ||
+      rules.onCreatureCardToOurGraveyard !== undefined ||
+      rules.onCreatureCardLeavesOurGraveyard !== undefined)
   );
 }
 
@@ -665,11 +715,14 @@ export function permanentSpellCastTriggers(
 }
 
 /** The end step triggers of our permanents. GameCore.endStep runs them. */
-export function endStepTriggers(game: GameCore): void {
+export function endStepTriggers(
+  game: GameCore,
+  runsElsewhere: (permanent: Permanent) => boolean = () => false,
+): void {
   for (const permanent of game.orderSimultaneousTriggers(
     game.battlefield.slice(),
   ))
-    endStepTriggerOf(game, permanent);
+    if (!runsElsewhere(permanent)) endStepTriggerOf(game, permanent);
 }
 
 /** One permanent's end step trigger (a deck that runs its own end step cards between them calls it). */

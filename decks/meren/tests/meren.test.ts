@@ -350,7 +350,7 @@ export function runMerenTests(): boolean {
   const disciple = new Permanent(C.get('Disciple of Bolas'));
   check(
     'Disciple of Bolas: Satyr Wayfinder (Meren returns it, it mills again) over Llanowar Elves',
-    game.chooseDiscipleSacrifice(disciple)?.card.name,
+    game.creatureToSacrificeFor(disciple)?.card.name,
     'Satyr Wayfinder',
   );
 
